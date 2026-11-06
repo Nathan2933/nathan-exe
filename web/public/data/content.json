@@ -9,7 +9,7 @@
     "role": "Software Developer · IT Undergraduate",
     "location": "India",
     "availability": "Open to internships and full-time roles",
-    "summary": "I build full-stack products and explore cybersecurity, post-quantum cryptography and AI. My path went from a university in Russia, interrupted by war, to finishing my degree in India — and the discipline I learned rebuilding my body is the same discipline I bring to code.",
+    "summary": "I build full-stack products and explore cybersecurity, post-quantum cryptography and AI. My path went from a university in Russia to finishing my degree in India, and the discipline I learned rebuilding my body is the same discipline I bring to code.",
     "about": [
       "Replace this with your own about text. Write it in first person, keep each paragraph short.",
       "Second paragraph: what you care about, what you are looking for next."
@@ -52,11 +52,11 @@
       "id": "russia",
       "district": "winter-campus",
       "title": "The Detour",
-      "subtitle": "Russia, and an interrupted plan",
+      "subtitle": "My first chapter abroad",
       "period": "20XX – 20XX",
       "body": [
         "Where you studied, what you were studying, what life there was like.",
-        "When the Russia–Ukraine war began, you had to discontinue. Keep this short and factual."
+        "What you took away from your time there, and how it shaped the next chapter in India."
       ],
       "highlights": [
         "University name and programme",
@@ -314,7 +314,7 @@
       "district": "winter-campus",
       "title": "The last lecture",
       "year": "2022",
-      "text": "The day you understood you would have to leave. Keep it factual and personal: what you decided, what you took with you, who helped.",
+      "text": "Your last lecture there: what you remember about the day, the people, and what you took with you to the next chapter.",
       "image": ""
     },
     {
@@ -437,7 +437,7 @@
       "topics": [
         "What was he like here? :: Write how a classmate would describe you: the subjects you were good at, the study group, the late nights. // One honest, specific detail.",
         "What was it like studying here? :: The language, the lectures, the cold, the people. // Something that surprised you. [memory:first-snow]",
-        "Why did he leave? :: Keep this short and factual: the war began, studies were interrupted, and you chose to continue in India. // What you learned from starting over."
+        "What did he take away from here? :: What studying abroad taught you: independence, a new language, a different way of learning. // One thing you still carry with you."
       ]
     },
     {
