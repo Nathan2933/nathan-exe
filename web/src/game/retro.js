@@ -5,8 +5,9 @@ import * as THREE from 'three';
  * through a colour-grade pass. Two independent switches:
  *
  *   pixels  'smooth' — full resolution, 4× MSAA, no dithering (clean low-poly)
- *           'retro'  — small target upscaled with nearest filtering, ordered
- *                      dither + colour quantize (chunky pixel-art look)
+ *           'retro'  — small target upscaled with nearest filtering, 1-pixel
+ *                      depth outlines, gentle ordered dither + colour quantize
+ *                      (clean pixel-art look)
  *   palette 'bright' — saturated, sunny grade
  *           'pastel' — softened saturation, lifted shadows, warm cream tint
  */
@@ -28,8 +29,10 @@ export class RetroRenderer {
       uniforms: {
         tDiffuse: { value: this.target.texture },
         uRes: { value: new THREE.Vector2(2, 2) },
-        uLevels: { value: 14.0 },
-        uDither: { value: 0.8 },
+        uLevels: { value: 22.0 },
+        uDither: { value: 0.45 },
+        tDepth: { value: null },
+        uOutline: { value: 1 },
         uRetro: { value: 0 },
         uSat: { value: 1.14 },
         uContrast: { value: 1.06 },
@@ -44,6 +47,8 @@ export class RetroRenderer {
       `,
       fragmentShader: /* glsl */ `
         uniform sampler2D tDiffuse;
+        uniform sampler2D tDepth;
+        uniform float uOutline;
         uniform vec2 uRes;
         uniform float uLevels, uDither, uRetro, uSat, uContrast, uBright, uLift;
         uniform vec3 uLiftColor, uTint;
@@ -68,8 +73,17 @@ export class RetroRenderer {
           col = mix(col, uLiftColor, uLift * (1.0 - l * 0.6));  // lift darks toward cream: pastel
           col *= uTint;
           if (uRetro > 0.5) {
-            float d = bayer4(px) * uDither / uLevels;
-            col = floor((col + d) * uLevels + 0.5) / uLevels;
+            // 1-pixel outlines where a nearer object meets something farther away
+            if (uOutline > 0.5) {
+              vec2 o = 1.0 / uRes, c = (px + 0.5) / uRes;
+              float d0 = texture2D(tDepth, c).r;
+              float dn = max(max(texture2D(tDepth, c + vec2(o.x, 0.0)).r, texture2D(tDepth, c - vec2(o.x, 0.0)).r),
+                             max(texture2D(tDepth, c + vec2(0.0, o.y)).r, texture2D(tDepth, c - vec2(0.0, o.y)).r));
+              float edge = smoothstep(0.0005, 0.0018, dn - d0);
+              col = mix(col, col * vec3(0.32, 0.30, 0.42), edge * 0.85);
+            }
+            float dth = bayer4(px) * uDither / uLevels;
+            col = floor((col + dth) * uLevels + 0.5) / uLevels;
           }
           gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
         }
@@ -80,6 +94,7 @@ export class RetroRenderer {
     this.quadScene = new THREE.Scene();
     this.quadCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
     this.quadScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), this.material));
+    this.material.uniforms.tDepth.value = this.target.depthTexture || null;
     this.setMode({});
   }
 
@@ -92,6 +107,11 @@ export class RetroRenderer {
       samples: retro ? 0 : 4,
     });
     t.texture.colorSpace = THREE.SRGBColorSpace;
+    if (retro) {
+      t.depthTexture = new THREE.DepthTexture(2, 2);
+      t.depthTexture.type = THREE.UnsignedIntType;
+      t.depthTexture.minFilter = t.depthTexture.magFilter = THREE.NearestFilter;
+    }
     return t;
   }
 
@@ -103,6 +123,7 @@ export class RetroRenderer {
       this.target.dispose();
       this.target = this.#makeTarget();
       this.material.uniforms.tDiffuse.value = this.target.texture;
+      this.material.uniforms.tDepth.value = this.target.depthTexture || null;
       this.setSize(...this.size);
     }
     const u = this.material.uniforms, p = PALETTES[this.mode.palette] || PALETTES.bright;
@@ -116,7 +137,8 @@ export class RetroRenderer {
     let w, h;
     if (this.mode.pixels === 'retro') {
       // Pixel size from the short side so phones (portrait) keep enough horizontal detail.
-      this.pixelSize = Math.min(4, Math.max(2, Math.round(Math.min(cssW, cssH) / 240)));
+      // Finer pixels than before (2 on most screens, 3 on big ones) for more detail.
+      this.pixelSize = Math.min(3, Math.max(2, Math.round(Math.min(cssW, cssH) / 360)));
       w = Math.ceil(cssW / this.pixelSize); h = Math.ceil(cssH / this.pixelSize);
     } else {
       // Smooth: render at screen resolution (up to 1.5× on high-DPI screens).
