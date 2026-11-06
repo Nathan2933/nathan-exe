@@ -46,7 +46,39 @@ const bootLines = [
   'Detecting drives ..... /russia  /india  /garage',
   'Loading save file .... ',
 ];
+// Boot screen: a big Nathan slowly turning on a character-select stage.
+function bootHero() {
+  const cv = $('#boot-hero'); if (!cv) return () => {};
+  const r = new THREE.WebGLRenderer({ canvas: cv, antialias: false, alpha: true });
+  r.setPixelRatio(1);
+  const W = 180, H = 240; r.setSize(W, H, false);              // low-res, scaled up crisp by CSS
+  r.outputColorSpace = THREE.SRGBColorSpace;
+  const sc = new THREE.Scene();
+  sc.add(new THREE.HemisphereLight(0xfff4e0, 0x5a3a8a, 1.6));
+  const key = new THREE.DirectionalLight(0xffffff, 1.8); key.position.set(2, 4, 3); sc.add(key);
+  const cam = new THREE.PerspectiveCamera(30, W / H, 0.1, 50); cam.position.set(0, 1.4, 6.2); cam.lookAt(0, 1.15, 0);
+  const hero = new Player();
+  sc.add(hero.group);
+  const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 0.06, 24), new THREE.MeshBasicMaterial({ color: 0x2a2440 }));
+  disc.position.y = -0.03; sc.add(disc);
+  let raf = 0, last = performance.now(), alive = true;
+  const zero = new THREE.Vector3();
+  const tick = (now) => {
+    if (!alive) return;
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    hero.heading += dt * (reducedMotion ? 0 : 0.9);
+    hero.update(dt, zero, now / 1000);
+    r.render(sc, cam);
+    raf = requestAnimationFrame(tick);
+  };
+  raf = requestAnimationFrame(tick);
+  if (!reducedMotion) setTimeout(() => alive && hero.play('wave'), 900);
+  return () => { alive = false; cancelAnimationFrame(raf); r.dispose(); };
+}
+let stopBootHero = () => {};
+
 async function runBoot(loaded) {
+  stopBootHero = bootHero();
   const pre = $('#boot-text');
   const quick = reducedMotion || sessionStorage.getItem('nathan-exe:booted');
   for (const line of bootLines) {
@@ -1444,7 +1476,7 @@ function start() {
   state.started = true;
   const boot = $('#boot');
   boot.classList.add('fade');
-  setTimeout(() => boot.remove(), 600);
+  setTimeout(() => { stopBootHero(); boot.remove(); }, 600);
   document.body.classList.add('started');
   setSound(!!look.sound);
 }

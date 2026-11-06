@@ -711,3 +711,17 @@ body.game .passport-note { margin: 8px 0 0; font-size: 12px; }
 #cine .cine-skip { position: absolute; right: 16px; bottom: calc(9vh + 12px); pointer-events: auto; }
 
 body.cine-on .journey, body.cine-on .minimap-wrap, body.cine-on #prompt, body.cine-on .hud-top, body.cine-on #map-btn { visibility: hidden; }
+
+/* Boot screen: character-select hero */
+.boot { position: fixed; }
+.boot-hero { position: absolute; right: clamp(16px, 6vw, 120px); top: 50%; transform: translateY(-50%); width: min(38vw, 360px); aspect-ratio: 3 / 4; display: grid; place-items: center; pointer-events: none; }
+.boot-burst { position: absolute; inset: 0; background:
+  conic-gradient(from 0deg at 50% 55%, #7b2fbf 0 10%, #2bb3a3 10% 18%, #7b2fbf 18% 30%, #ffd257 30% 36%, #7b2fbf 36% 52%, #2bb3a3 52% 60%, #7b2fbf 60% 76%, #ff6a3d 76% 82%, #7b2fbf 82% 100%);
+  clip-path: polygon(6% 4%, 94% 0, 100% 92%, 0 100%); opacity: .9; animation: bootspin 18s linear infinite; image-rendering: pixelated; }
+@keyframes bootspin { to { filter: hue-rotate(40deg); } }
+#boot-hero { position: relative; width: 100%; height: auto; aspect-ratio: 3 / 4; image-rendering: pixelated; }
+.boot-tag { position: absolute; top: 4%; left: 8%; margin: 0; font-family: var(--font-pixel, monospace); font-size: 12px; letter-spacing: .15em; color: #ffd257; text-shadow: 2px 2px 0 #120e1c; }
+.boot-name { position: absolute; bottom: 4%; margin: 0; font-family: var(--font-pixel, monospace); font-size: clamp(16px, 2.4vw, 26px); color: #fff1d6; text-shadow: 3px 3px 0 #120e1c; }
+.boot-name b { color: #ff6a3d; }
+@media (prefers-reduced-motion: reduce) { .boot-burst { animation: none; } }
+@media (max-width: 700px) { .boot-hero { top: auto; bottom: 90px; right: 50%; transform: translateX(50%); width: 56vw; } }
