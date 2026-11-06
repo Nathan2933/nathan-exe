@@ -45,6 +45,7 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
   const weather = []; // rain zones
   const apis = {};    // pieces that expose controls (e.g. lighthouse.setLit)
   const nightGlow = []; // light pools etc. faded in at night
+  const bayScreens = []; // Garage project bays, by index
   const floors = []; // raised walkable surfaces (station platforms…): {minX,maxX,minZ,maxZ,h}
   const R = map.props.islandRadius || 44;
 
@@ -123,6 +124,7 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
     if (piece.animate) animated.push(piece.animate);
     if (piece.api) apis[type] = piece.api;
     if (piece.nightGlow) nightGlow.push(...piece.nightGlow);
+    if (piece.screen && props.index !== undefined) bayScreens[props.index] = piece.screen;
     for (const c of piece.colliders || []) colliders.push(transformCollider(c, x, z, rot));
     for (const f of piece.floors || []) {
       const r = transformCollider(f, x, z, rot);
@@ -270,6 +272,9 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
   // ---------- labels ----------
   const labels = map.labels.map((l) => ({ text: l.props.text || l.name, color: l.props.color || '#1e1b2e', pos: new THREE.Vector3(l.x, l.props.height || 5, l.z) }));
 
+  // ---------- Garage bays: one project per bay ----------
+  bayScreens.forEach((screen, i) => { if (screen) setBayScreen(screen, (content.projects || [])[i]); });
+
   // ---------- Memory Line ----------
   const stations = interactables.filter((i) => i.kind === 'station');
   const railway = buildRailway(root, map, stations, animated);
@@ -294,6 +299,49 @@ function pillarTex() {
   gr.addColorStop(0, 'rgba(255,255,255,.9)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
   g.fillStyle = gr; g.fillRect(0, 0, 4, 64);
   return (_pillar = new THREE.CanvasTexture(c));
+}
+
+/** Title card for a project bay; swapped for the project's image when it has one. */
+function setBayScreen(screen, project) {
+  const c = document.createElement('canvas'); c.width = 640; c.height = 360;
+  const g = c.getContext('2d');
+  g.fillStyle = '#261e3a'; g.fillRect(0, 0, 640, 360);
+  g.strokeStyle = '#f3e3c3'; g.lineWidth = 6; g.strokeRect(14, 14, 612, 332);
+  g.textBaseline = 'top';
+  if (!project) {
+    g.fillStyle = '#9d91bd'; g.font = '30px Silkscreen, monospace'; g.textAlign = 'center';
+    g.fillText('BAY OPEN', 320, 150); g.font = '18px Silkscreen, monospace'; g.fillText('next project goes here', 320, 196);
+  } else {
+    g.textAlign = 'left';
+    g.fillStyle = '#ffb347'; g.font = '18px Silkscreen, monospace';
+    g.fillText(project.year ? `PROJECT · ${project.year}` : 'PROJECT', 40, 40);
+    g.fillStyle = '#fff6e6';
+    let size = 40; g.font = `${size}px Silkscreen, monospace`;
+    const title = String(project.title || '').split(':')[0].toUpperCase();
+    while (size > 18 && g.measureText(title).width > 560) { size -= 2; g.font = `${size}px Silkscreen, monospace`; }
+    g.fillText(title, 40, 74);
+    g.fillStyle = '#cfc3e6'; g.font = '20px Inter, sans-serif';
+    const words = String(project.pitch || '').split(' '); let line = '', y = 74 + size + 26;
+    for (const w of words) {
+      if (g.measureText(line + w).width > 560) { g.fillText(line, 40, y); line = ''; y += 28; if (y > 250) break; }
+      line += w + ' ';
+    }
+    if (y <= 250) g.fillText(line, 40, y);
+    g.font = '15px Silkscreen, monospace'; let x = 40;
+    for (const t of (project.stack || []).slice(0, 5)) {
+      const tw = g.measureText(t).width + 18;
+      if (x + tw > 600) break;
+      g.strokeStyle = '#9d91bd'; g.lineWidth = 2; g.strokeRect(x, 292, tw, 30);
+      g.fillStyle = '#fff6e6'; g.fillText(t, x + 9, 300); x += tw + 10;
+    }
+  }
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+  screen.material = new THREE.MeshBasicMaterial({ map: tex });
+  if (project?.image) {
+    const base = import.meta.env.BASE_URL || '/';
+    const url = /^https?:/.test(project.image) ? project.image : base + String(project.image).replace(/^\//, '');
+    new THREE.TextureLoader().load(url, (img) => { img.colorSpace = THREE.SRGBColorSpace; screen.material = new THREE.MeshBasicMaterial({ map: img }); }, undefined, () => {});
+  }
 }
 
 function tileType(map, x, z) { return tileAt(map, x + 0.5, z + 0.5)?.type; }

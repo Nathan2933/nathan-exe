@@ -973,4 +973,27 @@ export const KIT = {
     k.cyl(0.08, 0.08, 0.2, C.accent, -0.4, 0.04, 0.3, 8);
     return { obj: g, colliders: [{ x: 0.5, z: -0.4, r: 0.35 }] };
   },
+
+  // ----- Garage project bay (one project per bay) -----
+  project_bay() {
+    // 5.2 m x 5.0 m painted bay. The display board at the back faces the camera;
+    // world.js puts the project's title card (or its image) on board.screen.
+    const g = new THREE.Group(), k = kit(g);
+    const W = 5.2, D = 5.0;
+    for (const [x, z, w, d] of [[0, -D / 2, W, 0.12], [0, D / 2, W, 0.12], [-W / 2, 0, 0.12, D], [W / 2, 0, 0.12, D]]) k.box(w, 0.02, d, C.yellow, x, 0.01, z, { shadow: false });
+    for (const sx of [-1, 1]) k.box(0.5, 0.02, 0.12, C.yellow, sx * (W / 2 - 0.45), 0.012, D / 2 - 0.4, { shadow: false, ry: sx * 0.8 });
+    // display board on two posts
+    for (const x of [-1.6, 1.6]) k.box(0.14, 3.6, 0.14, C.ink, x, 0, -1.9);
+    k.box(3.5, 2.1, 0.14, C.ink, 0, 1.4, -1.9);
+    const screen = new THREE.Mesh(new THREE.PlaneGeometry(3.3, 1.86), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+    screen.position.set(0, 2.45, -1.82); screen.userData.dynamic = true; g.add(screen);
+    k.box(3.6, 0.12, 0.3, C.accent, 0, 3.5, -1.9);
+    // workbench
+    const b = KIT.project_bench({}); b.obj.position.set(0, 0, -0.35); g.add(b.obj);
+    k.box(0.5, 0.5, 0.5, C.woodLight, 1.9, 0, -1.2); k.box(0.4, 0.35, 0.4, C.wood, 1.95, 0.5, -1.2);
+    return {
+      obj: g, screen,
+      colliders: [{ x: -1.6, z: -1.9, r: 0.14 }, { x: 1.6, z: -1.9, r: 0.14 }, { x: 0, z: -0.35, w: 1.7, d: 0.9 }, { x: 1.9, z: -1.2, w: 0.55, d: 0.55 }],
+    };
+  },
 };
