@@ -621,7 +621,18 @@ function sitDown(it) {
 function standUp() {
   const it = state.seated; if (!it) return;
   state.seated = null; state.nearby = null; player.pose = null;
-  player.group.position.set(it.x, heightAt(it.x, it.z), it.z);   // step off to the front of the bench
+  // step off to the nearest free spot in front of / beside the bench
+  const h = it.seat.heading, sx = it.seat.x, sz = it.seat.z;
+  let spot = null;
+  for (const d of [0.9, 1.2, 1.6, 2.0]) {
+    for (const ang of [0, 0.6, -0.6, Math.PI / 2, -Math.PI / 2, Math.PI]) {
+      const x = sx + Math.sin(h + ang) * d, z = sz + Math.cos(h + ang) * d;
+      if (solidFree(x, z) && !charBlocks(x, z)) { spot = { x, z }; break; }
+    }
+    if (spot) break;
+  }
+  spot = spot || { x: it.x, z: it.z };
+  player.group.position.set(spot.x, heightAt(spot.x, spot.z), spot.z);
 }
 
 // ---------------- Mounts: one controller for bicycles and the horse ----------------
