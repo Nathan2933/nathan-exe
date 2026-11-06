@@ -47,6 +47,8 @@ export function appearanceToOutfit(a = {}) {
     glasses: !!a.glasses, beard: a.beard && a.beard !== 'none' ? a.beard : false, beardColor: hex(a.beardColor, hex(a.hairColor, 0x1b1716)),
     build: Number(a.build) || 1, height: Number(a.height) || 1,
     accessory: a.accessory || null, scarfColor: hex(a.scarfColor, 0xffc14d),
+    extras: Array.isArray(a.extras) ? a.extras : String(a.extras || '').split(',').map((x) => x.trim()).filter(Boolean),
+    extraColor: hex(a.extraColor, 0xf2f0ea),
   };
 }
 
@@ -135,6 +137,13 @@ export class Character {
       part(bw + 0.06, 0.74, 0.4, top, 0, 0.2, 0, this.spine);
       part(0.04, 0.6, 0.02, 0xd8dee8, 0, 0.26, 0.205, this.spine);
       for (const y of [0.18, 0.42]) part(0.16, 0.05, 0.03, 0x1e1b2e, 0.14, y, 0.205, this.spine);
+    } else if (o.top === 'jacket') {
+      // leather jacket over a dark tee, with a popped collar
+      part(bw, 0.56, 0.34, 0x2a2430, 0, 0.28, 0, this.spine);
+      part(0.2, 0.58, 0.37, top, -0.19, 0.28, 0, this.spine); part(0.2, 0.58, 0.37, top, 0.19, 0.28, 0, this.spine);
+      part(0.6, 0.58, 0.2, top, 0, 0.28, -0.09, this.spine);
+      part(0.16, 0.18, 0.34, top, -0.2, 0.62, 0.0, this.spine).rotation.z = 0.25;
+      part(0.16, 0.18, 0.34, top, 0.2, 0.62, 0.0, this.spine).rotation.z = -0.25;
     } else if (o.top === 'kurta') {
       part(bw, 0.78, 0.34, top, 0, 0.18, 0, this.spine);
       part(0.06, 0.3, 0.02, 0xc96a43, 0, 0.36, 0.175, this.spine);
@@ -157,6 +166,7 @@ export class Character {
       part(0.15, 0.1, 0.17, o.limbColor ?? o.skin, 0, -0.27, 0, elbow);
       return { shoulder, elbow, side: s };
     });
+    this.#extras(o);
 
     // Head
     this.neck = pivot(0, 0.6, 0, this.spine);
@@ -201,6 +211,7 @@ export class Character {
       part(0.08, 0.03, 0.03, 0x1e1b2e, 0, 0.4, 0.28, H);
     }
     this.#hair(o, H);
+    (this.laterExtras || []).forEach((f) => f());
     this.#mergeParts();
 
     // animation state
@@ -292,6 +303,40 @@ export class Character {
     }
   }
 
+  /** Theme props for park characters (hats, hoods, capes, canes...). */
+  #extras(o) {
+    const ex = new Set(o.extras || []);
+    if (!ex.size) return;
+    const H = () => this.head, S = this.spine, c = o.extraColor;
+    const later = []; // head-mounted extras are added after the head exists
+    if (ex.has('cape')) { part(0.64, 1.0, 0.06, c, 0, 0.08, -0.22, S); part(0.68, 0.12, 0.44, c, 0, 0.56, 0, S); }
+    if (ex.has('crescent')) { part(0.05, 0.2, 0.03, 0xc6d2e0, 0.03, 0.36, 0.215, S); part(0.08, 0.04, 0.03, 0xc6d2e0, -0.01, 0.46, 0.215, S); part(0.08, 0.04, 0.03, 0xc6d2e0, -0.01, 0.26, 0.215, S); }
+    if (ex.has('web')) {
+      const k = 0x1e1b2e;
+      part(0.02, 0.54, 0.01, k, 0, 0.28, 0.172, S);
+      for (const y of [0.12, 0.28, 0.44]) part(0.5, 0.02, 0.01, k, 0, y, 0.172, S);
+      part(0.02, 0.54, 0.01, k, 0, 0.28, -0.172, S);
+      for (const y of [0.12, 0.28, 0.44]) part(0.5, 0.02, 0.01, k, 0, y, -0.172, S);
+    }
+    if (ex.has('backpack')) part(0.36, 0.42, 0.16, c, 0, 0.3, -0.25, S);
+    if (ex.has('bandana')) { part(0.46, 0.1, 0.42, 0xb8393a, 0, 0.57, 0, S); part(0.14, 0.14, 0.05, 0xb8393a, 0, 0.47, 0.2, S); }
+    if (ex.has('lanyard')) { part(0.02, 0.3, 0.02, 0x2f5fb0, -0.09, 0.42, 0.18, S); part(0.02, 0.3, 0.02, 0x2f5fb0, 0.09, 0.42, 0.18, S); part(0.12, 0.14, 0.02, 0xffffff, 0, 0.24, 0.19, S); }
+    const right = this.arms[1], left = this.arms[0];
+    if (ex.has('cane')) { part(0.04, 1.0, 0.04, 0xf4f4f4, 0, -0.74, 0.06, right.elbow); part(0.045, 0.12, 0.045, 0xc4402f, 0, -1.22, 0.06, right.elbow); }
+    if (ex.has('wraps')) for (const a of this.arms) part(0.17, 0.12, 0.19, 0xf2efe6, 0, -0.27, 0, a.elbow);
+    if (ex.has('coffee')) { part(0.09, 0.13, 0.09, 0xffffff, 0, -0.34, 0.1, right.elbow); part(0.095, 0.04, 0.095, 0x8a5a36, 0, -0.29, 0.1, right.elbow); }
+    if (ex.has('laptop')) part(0.04, 0.3, 0.4, 0x8a93a6, 0.13, -0.2, 0, left.shoulder);
+    if (ex.has('cowboy')) later.push(() => { part(0.98, 0.05, 0.86, c, 0, 0.64, 0.02, H()); part(0.6, 0.24, 0.52, c, 0, 0.78, 0, H()); part(0.61, 0.06, 0.53, 0x2a1a12, 0, 0.69, 0, H()); });
+    if (ex.has('hood')) later.push(() => {
+      part(0.72, 0.68, 0.2, c, 0, 0.36, -0.28, H());
+      part(0.07, 0.62, 0.56, c, -0.34, 0.34, -0.02, H()); part(0.07, 0.62, 0.56, c, 0.34, 0.34, -0.02, H());
+      part(0.7, 0.08, 0.62, c, 0, 0.68, -0.02, H()); part(0.68, 0.07, 0.07, c, 0, 0.64, 0.28, H());
+    });
+    if (ex.has('shades')) later.push(() => { for (const x of [-0.13, 0.13]) part(0.2, 0.11, 0.03, 0x14101f, x, 0.37, 0.28, H()); part(0.08, 0.03, 0.03, 0x14101f, 0, 0.4, 0.28, H()); part(0.6, 0.03, 0.03, 0x14101f, 0, 0.41, 0.27, H()); });
+    if (ex.has('redshades')) later.push(() => { for (const x of [-0.13, 0.13]) { part(0.17, 0.15, 0.03, 0x8a1f2a, x, 0.37, 0.285, H()); part(0.19, 0.03, 0.03, 0x2a1a1a, x, 0.45, 0.285, H()); } part(0.08, 0.03, 0.03, 0x2a1a1a, 0, 0.42, 0.285, H()); });
+    this.laterExtras = later;
+  }
+
   /** Fitness chapter easter egg: a little more muscle after the gym. */
   setBuff(on) { this.buffTarget = on ? 1 : 0; }
   /** One-shot action: 'interact' | 'flex' | 'wave' | 'nod' */
@@ -367,6 +412,31 @@ export class Character {
     }
     set('headY', yaw, 6);
     set('headX', this.talking ? Math.sin(t * 7) * 0.06 : 0, 10);
+
+    // --- idle poses for roaming characters (fade in only while standing still) ---
+    this.poseW = damp(this.poseW || 0, this.pose && walkW < 0.2 ? 1 : 0, 4, dt);
+    if (this.poseW > 0.01 && (this.pose || this.lastPose)) {
+      if (this.pose) this.lastPose = this.pose;
+      const pw = this.poseW, pm = (k, v) => (J[k] = J[k] * (1 - pw) + v * pw), P = this.lastPose;
+      if (P === 'sit') {
+        pm('hipY', -0.3); pm('th0', -1.45); pm('th1', -1.45); pm('kn0', 1.45); pm('kn1', 1.45); pm('spineX', -0.04);
+        pm('sx0', -0.45); pm('sx1', -0.45); pm('el0', -0.7); pm('el1', -0.7);
+      } else if (P === 'lean') {
+        pm('hipX', 0.05); pm('spineX', -0.08);
+        this.arms.forEach((a, i) => { pm(`sx${i}`, -0.95); pm(`sz${i}`, -a.side * 0.42); pm(`el${i}`, -1.75); });
+      } else if (P === 'look') {
+        pm('headY', Math.sin(t * 0.9) * 0.95); pm('headX', -0.08);
+      } else if (P === 'check') {
+        pm('spineX', 0.38); pm('sx1', -1.1); pm('el1', -0.5); pm('sx0', -0.55); pm('headX', 0.32);
+      } else if (P === 'punch') {
+        const k = Math.max(0, Math.sin(t * 6));
+        pm('sx1', -0.4 - 1.2 * k); pm('el1', -1.7 + 1.5 * k); pm('sx0', -1.05); pm('el0', -1.85); pm('spineY', 0.22 * k); pm('th0', -0.2); pm('kn0', 0.25);
+      } else if (P === 'type') {
+        pm('sx0', -0.95); pm('sx1', -0.95); pm('el0', -0.75 + 0.12 * Math.sin(t * 14)); pm('el1', -0.75 + 0.12 * Math.sin(t * 15 + 1)); pm('headX', 0.22); pm('spineX', 0.12);
+      } else if (P === 'gaze') {
+        pm('headX', -0.38); this.arms.forEach((a, i) => { pm(`sx${i}`, 0.4); pm(`el${i}`, -0.5); pm(`sz${i}`, a.side * 0.05); });
+      }
+    } else if (!this.pose) this.lastPose = null;
 
     // --- actions (override with fade) ---
     if (this.action) {

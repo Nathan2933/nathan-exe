@@ -788,6 +788,213 @@
         "Who gets to board? :: Only the ones on the list. You'll know when it's time."
       ],
       "scripted": true
+    },
+    {
+      "species": "human",
+      "build": 1,
+      "height": 1,
+      "accessory": null,
+      "scripted": true,
+      "district": "city-park",
+      "id": "soap",
+      "name": "Soap",
+      "role": "Basement philosopher · Boxing corner",
+      "theme": "fight",
+      "color": "#8a2a22",
+      "skin": "tan",
+      "hair": "short",
+      "hairColor": "#3a2418",
+      "top": "jacket",
+      "topColor": "#8a2a22",
+      "pants": "trousers",
+      "pantsColor": "#2a2730",
+      "shoes": "#1a1418",
+      "glasses": false,
+      "beard": "stubble",
+      "beardColor": "#3a2418",
+      "extras": "shades,wraps",
+      "extraColor": "#2a2440",
+      "lines": [
+        "Ever wondered how much of you is actually yours?"
+      ],
+      "topics": [
+        "What defines a person? :: Not the stuff on the shelf, that's for sure. // Take away the furniture and the job title and see what's still standing. That's the part worth working on.",
+        "Is change always a good thing? :: No. Change is just pressure. // What matters is whether you chose it, or whether it happened while you weren't looking.",
+        "What would you tell Nathan? :: Build things you actually believe in. // Not for the trophy shelf. For the version of you that's still there after the applause.",
+        "Can I hit the bag? :: Go on. One clean hit. Then let it go. [action:pop_boxing]"
+      ]
+    },
+    {
+      "species": "human",
+      "build": 1.08,
+      "height": 1,
+      "accessory": null,
+      "scripted": true,
+      "district": "city-park",
+      "id": "cal",
+      "name": "Cal",
+      "role": "Drifter · Western camp",
+      "theme": "western",
+      "color": "#6b4a32",
+      "skin": "tan",
+      "hair": "medium",
+      "hairColor": "#4a2e1c",
+      "top": "coat",
+      "topColor": "#6b4a32",
+      "pants": "trousers",
+      "pantsColor": "#3a3040",
+      "shoes": "#2a1a12",
+      "glasses": false,
+      "beard": "full",
+      "beardColor": "#4a2e1c",
+      "extras": "cowboy,bandana",
+      "extraColor": "#5a3a26",
+      "lines": [
+        "Long road, partner. What brings you out here?"
+      ],
+      "topics": [
+        "What makes a good life? :: Folks you'd ride back for. // A fire at night, honest work, and somebody who'd notice if you didn't come home.",
+        "Do our choices define us? :: Every one of 'em leaves a track. // You can't always pick the trail you're on. You can pick how you walk it.",
+        "What do you think about Nathan's journey? :: Took a few turns most wouldn't. // Way I see it, the detours taught him more than the straight roads ever could."
+      ]
+    },
+    {
+      "species": "human",
+      "build": 1,
+      "height": 1,
+      "accessory": null,
+      "scripted": true,
+      "district": "city-park",
+      "id": "vesper",
+      "name": "Vesper",
+      "role": "Night watcher · Moonlit court",
+      "theme": "moon",
+      "color": "#9fb4d8",
+      "skin": "tan",
+      "hair": "short",
+      "hairColor": "#1e1612",
+      "top": "coat",
+      "topColor": "#e8e6e0",
+      "pants": "trousers",
+      "pantsColor": "#c9c6be",
+      "shoes": "#e8e6e0",
+      "glasses": false,
+      "beard": "none",
+      "extras": "hood,cape,crescent",
+      "extraColor": "#f2f0ea",
+      "lines": [
+        "Funny how different the world looks under another light."
+      ],
+      "topics": [
+        "Can someone have different sides? :: Everyone does. Most people just never introduce them to each other. // The trick is getting them to work together instead of taking turns.",
+        "What makes us who we are? :: The stories we keep telling ourselves. // And the nerve to rewrite one when it stops being true.",
+        "What do you see in Nathan? :: Someone who has already been a few different people. // Athlete, student abroad, builder. Same person underneath, still finding out what comes next.",
+        "Is there anything hidden here? :: Look closely at the pool. Some things only show themselves when you pay attention. [action:pop_moon]"
+      ]
+    },
+    {
+      "species": "human",
+      "build": 1,
+      "height": 0.97,
+      "accessory": null,
+      "scripted": true,
+      "district": "city-park",
+      "id": "skip",
+      "name": "Skip",
+      "role": "Rooftop runner · Web frame",
+      "theme": "spider",
+      "color": "#c4302b",
+      "skin": "fair",
+      "hair": "curly",
+      "hairColor": "#2a1a12",
+      "top": "hoodie",
+      "topColor": "#c4302b",
+      "pants": "trousers",
+      "pantsColor": "#2f4f9a",
+      "shoes": "#c4302b",
+      "glasses": false,
+      "beard": "none",
+      "extras": "web,backpack",
+      "extraColor": "#2f5fb0",
+      "lines": [
+        "Hey! Nice place you've built here. Mind the rooftops."
+      ],
+      "topics": [
+        "How do you handle responsibility? :: Badly, at first! // Then you learn you can't carry everything at once. You pick what matters, and you show up for it every day.",
+        "What happens when things go wrong? :: They go wrong. A lot. // You dust off, laugh about it later, and swing back in. Nobody gets it right on the first try.",
+        "Got any advice for Nathan? :: Don't forget the people who helped you up. // And maybe sleep between hackathons. Just a thought.",
+        "Want to try the rooftop run? :: Three red rings, fifteen seconds. Run through all of them. Go! [action:pop_web]"
+      ]
+    },
+    {
+      "species": "human",
+      "build": 1,
+      "height": 1,
+      "accessory": null,
+      "scripted": true,
+      "district": "city-park",
+      "id": "hale",
+      "name": "Hale",
+      "role": "Listener · Red alley",
+      "theme": "dd",
+      "color": "#5a1a22",
+      "skin": "fair",
+      "hair": "short",
+      "hairColor": "#7a3a22",
+      "top": "coat",
+      "topColor": "#5a1a22",
+      "pants": "trousers",
+      "pantsColor": "#2a2030",
+      "shoes": "#1a1418",
+      "glasses": false,
+      "beard": "stubble",
+      "beardColor": "#7a3a22",
+      "extras": "redshades,cane",
+      "extraColor": "#5a1a22",
+      "lines": [
+        "You can learn a lot when you pay attention."
+      ],
+      "topics": [
+        "What does strength really mean? :: Getting up quietly, every time, with nobody watching. // Most real strength never makes a sound.",
+        "How do you keep going? :: One more round. Then one more. // You don't need to see the whole road. You just need to hear the next step.",
+        "What would you tell Nathan? :: Listen more than you speak, and you'll hear what the problem really is. // Works for code, too.",
+        "Can you show me how you listen? :: Close your eyes. Hear that? [action:pop_rooftop_red] // Every sound comes back a little different. That's the city talking."
+      ]
+    },
+    {
+      "species": "human",
+      "build": 0.95,
+      "height": 1,
+      "accessory": null,
+      "scripted": true,
+      "district": "city-park",
+      "id": "ollie",
+      "name": "Ollie",
+      "role": "Founder (pre-revenue) · Startup desk",
+      "theme": "sv",
+      "color": "#4a5a7a",
+      "skin": "fair",
+      "hair": "medium",
+      "hairColor": "#6b4a32",
+      "top": "hoodie",
+      "topColor": "#6b7280",
+      "pants": "jeans",
+      "pantsColor": "#2a2730",
+      "shoes": "#f6f3ec",
+      "glasses": true,
+      "beard": "stubble",
+      "beardColor": "#6b4a32",
+      "extras": "lanyard,coffee",
+      "extraColor": "#2f5fb0",
+      "lines": [
+        "So... technically it works. Just don't refresh it."
+      ],
+      "topics": [
+        "What's the hardest part of coding? :: Naming things. Then explaining to everyone why you named them that. // Also the bug that only shows up during the demo.",
+        "Is building a startup worth it? :: Statistically? Probably not. // Personally? You learn more in six months than in six comfortable years. Also there are snacks.",
+        "What do you think about Nathan's projects? :: Supply chains on a blockchain, security dashboards, a scheduler built in six hours... // He ships things. Do you know how rare that is? My pitch deck is older than most of his repos.",
+        "Help me debug this build? :: Okay, watch the screen. Compiling... [action:pop_startup] // Red. Classic. One missing bracket later... // Green! Don't touch anything."
+      ]
     }
   ],
   "interests": [
@@ -839,6 +1046,45 @@
       "zone": "Cinema and startup corner",
       "card": "Building something is one thing. Getting it to work is another.",
       "action": "Watch the build: compiling, failing, then finally working."
+    }
+  ],
+  "education": [
+    {
+      "id": "montfort",
+      "num": "01",
+      "label": "MONTFORT",
+      "tagline": "THE BEGINNING",
+      "institution": "St. Montfort Higher Secondary School",
+      "place": "Trichy",
+      "detail": "Class XII, 2021",
+      "district": "lake-park",
+      "station": "lake",
+      "npc": "shabeer"
+    },
+    {
+      "id": "tomsk",
+      "num": "02",
+      "label": "TOMSK",
+      "tagline": "THE DETOUR",
+      "institution": "Tomsk State University",
+      "place": "Russia",
+      "detail": "Two semesters",
+      "district": "winter-campus",
+      "station": "winter",
+      "npc": "guru"
+    },
+    {
+      "id": "tce",
+      "num": "03",
+      "label": "TCE",
+      "tagline": "THE RESTART",
+      "institution": "Thiagarajar College of Engineering",
+      "place": "Madurai",
+      "detail": "B.Tech Information Technology · 2023 – 2027",
+      "district": "monsoon-campus",
+      "station": "monsoon",
+      "npc": "anu",
+      "activities": true
     }
   ]
 }

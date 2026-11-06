@@ -190,7 +190,7 @@ body.started .minimap-wrap { opacity: 1; }
     background: var(--paper); border: var(--border); border-radius: var(--radius); box-shadow: var(--shadow);
     padding: 8px;
   }
-  .recruiter-bar.open { display: flex; }
+  .recruiter-bar.open { display: flex; z-index: 40; }
   .journey { width: auto; right: var(--gutter); padding: 8px 10px; }
   .journey.collapsed ol, .journey:not(.open-m) ol { display: none; }
   .journey:not(.open-m) .player-card { margin: 0; padding: 0; border: 0; }
@@ -675,3 +675,27 @@ body.game .gh-profile h2 { margin: 0; }
 body.game .gh-edu { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
 body.game .pop-card { margin: 12px 0; padding: 12px 14px; border-left: 4px solid #ffb347; background: var(--cream); font-size: 1.05rem; }
 body.game .pop-note { margin-top: 14px; font-size: 12px; color: var(--ink-3); }
+
+/* Music controls */
+body.game .look { flex-wrap: wrap; }
+body.game .look button.dim { opacity: .55; }
+body.game .music-vol { display: inline-flex; align-items: center; flex: 1 1 90px; min-width: 80px; }
+body.game .music-vol input { width: 100%; accent-color: #ffb347; height: 14px; }
+body.game .music-vol input:disabled { opacity: .4; }
+
+/* Education journey + passport */
+body.game .edu-list { list-style: none; margin: 12px 0; padding: 0; display: grid; gap: 10px; }
+body.game .edu-list li { display: grid; grid-template-columns: 44px 1fr; gap: 12px; padding: 12px; background: var(--cream); border: 2px solid var(--ink-3); }
+body.game .edu-list li b { display: block; }
+body.game .edu-num { font-family: var(--font-pixel, var(--font-mono)); font-size: 22px; color: #ffb347; line-height: 1; }
+body.game .edu-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+body.game .edu-extra { margin-top: 14px; padding: 12px; border: 2px dashed var(--ink-3); background: var(--cream); }
+body.game .edu-extra p { margin: 0; }
+body.game .passport { margin-top: 14px; padding: 12px; border: 2px solid #ffb347; background: var(--cream); }
+body.game .stamps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
+body.game .stamp { display: grid; place-items: center; gap: 4px; padding: 10px 4px; border: 2px dashed var(--ink-3); color: var(--ink-3); text-align: center; font-family: var(--font-mono); font-size: 11px; }
+body.game .stamp b { font-size: 12px; }
+body.game .stamp i { font-style: normal; letter-spacing: .1em; }
+body.game .stamp.on { border: 2px solid #ff6a3d; color: #ff6a3d; transform: rotate(-4deg); background: rgba(255,106,61,.08); }
+body.game .passport-note { margin: 8px 0 0; font-size: 12px; }
+@media (max-width: 420px) { body.game .stamps { grid-template-columns: 1fr; } }

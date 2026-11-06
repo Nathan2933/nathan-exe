@@ -161,18 +161,21 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
     pillar.visible = true; void withPillar;
     g.userData.dynamic = true;
     root.add(g);
-    animated.push((t) => {
-      const k = 0.5 + 0.5 * Math.sin(t * 2.6 + x);
-      ring.scale.setScalar(1 + k * 0.07);
-      disc.material.opacity = 0.4 + k * 0.3;
-      pillar.material.opacity = 0.28 + k * 0.22;
-    });
-    return {
+    const api = {
       group: g, gem: disc, ring,
-      // Visited spots keep their bright circle (you can always press E there);
-      // only the light column goes, so unvisited spots still stand out.
+      prom: 1, // 1 = normal; main.js lowers it for far-away spots and raises the nearest
       setVisited() { /* every E spot looks the same, visited or not */ },
     };
+    let pr = 1;
+    animated.push((t) => {
+      pr += (api.prom - pr) * 0.1;
+      const k = 0.5 + 0.5 * Math.sin(t * 2.6 + x);
+      ring.scale.setScalar((1 + k * 0.07) * (pr > 1 ? 1 + (pr - 1) * 0.35 : 1));
+      ring.material.opacity = Math.min(1, 0.35 + 0.65 * pr);
+      disc.material.opacity = (0.4 + k * 0.3) * Math.min(1.2, pr);
+      pillar.material.opacity = (0.28 + k * 0.22) * Math.min(1.3, pr);
+    });
+    return api;
   };
   const sparkle = (x, z) => {
     const g = new THREE.Group();
@@ -237,9 +240,9 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
     if (!def) { console.warn(`Route for unknown NPC "${path.props.npc}"`); continue; }
     if (npcs.some((n) => n.npcId === def.id)) continue;
     const pts = path.points.map((q) => new THREE.Vector3(q.x, 0, q.z));
-    npcs.push(makeNpc(def, pts, !!path.props.loop || path.closed, 0));
+    npcs.push(makeNpc(def, pts, !!path.props.loop || path.closed, 0, path.props));
   }
-  function makeNpc(def, pts, loop, heading) {
+  function makeNpc(def, pts, loop, heading, props = {}) {
     const ch = new Character(def.outfit && OUTFITS[def.outfit] ? OUTFITS[def.outfit] : appearanceToOutfit(def));
     const p0 = pts[0];
     const tile = tileAt(map, p0.x, p0.z);
@@ -250,8 +253,15 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
     const it = {
       x: p0.x, z: p0.z, visited: false, id: `npc:${def.id}`, kind: 'npc', npcId: def.id, district: def.district,
       radius: 2.0, character: ch, homeHeading: heading,
-      route: { pts, loop, seg: 0, dir: 1, t: 0, wait: 1 + Math.random() * 2 },
+      route: {
+        pts, loop, seg: 0, dir: 1, t: 0, wait: 1 + Math.random() * 2,
+        // optional per-waypoint idle pose ("sit,look,check") and facing in degrees ("0,,90")
+        idles: String(props.idles || '').split(',').map((v) => v.trim()),
+        faces: String(props.faces || '').split(',').map((v) => (v.trim() === '' ? null : (Number(v) * Math.PI) / 180)),
+      },
     };
+    if (it.route.idles[0]) { ch.pose = it.route.idles[0]; it.route.wait = 3 + Math.random() * 3; }
+    if (it.route.faces[0] != null) ch.heading = it.route.faces[0];
     it.beacon = beacon(p0.x, 0, p0.z, { pillar: false });
     hitBox(it, 1.2, 2.6, 1.2);
     interactables.push(it);
@@ -376,7 +386,8 @@ export function updateNpcs(npcs, dt, t, heightAt, player, talkingTo) {
       ch.heading += Math.atan2(Math.sin(target - ch.heading), Math.cos(target - ch.heading)) * Math.min(1, dt * rate);
     };
     if (it === talkingTo || dP < STOP_DIST) {
-      // Nathan is here: stop and face him
+      // Nathan is here: stop, stand up and face him
+      ch.pose = null;
       ch.lookAt(player);
       turnTo(player.x, player.z, it === talkingTo ? 8 : 4);
       if (r) r.wait = Math.max(r.wait, 0.8);
@@ -384,7 +395,12 @@ export function updateNpcs(npcs, dt, t, heightAt, player, talkingTo) {
       ch.lookAt(null);
       if (r.wait > 0) {
         r.wait -= dt;
-        if (r.wait < 1 && Math.sin(t * 0.7 + gp.x) > 0.6) ch.lookAt(_ahead.set(gp.x + Math.sin(t) * 3, 0, gp.z + Math.cos(t) * 3));
+        const idle = r.idles?.[r.seg];
+        if (idle && !ch.pose && r.wait > 0.6) ch.pose = idle;          // back to the idle after a chat
+        const face = r.faces?.[r.seg];
+        if (face != null) ch.heading += Math.atan2(Math.sin(face - ch.heading), Math.cos(face - ch.heading)) * Math.min(1, dt * 3);
+        if (r.wait < 0.5) ch.pose = null;                              // stand up before walking on
+        if (!idle && r.wait < 1 && Math.sin(t * 0.7 + gp.x) > 0.6) ch.lookAt(_ahead.set(gp.x + Math.sin(t) * 3, 0, gp.z + Math.cos(t) * 3));
       } else {
         const a = r.pts[r.seg], b = r.pts[(r.seg + r.dir + r.pts.length) % r.pts.length];
         const len = Math.max(0.01, a.distanceTo(b));
@@ -399,7 +415,7 @@ export function updateNpcs(npcs, dt, t, heightAt, player, talkingTo) {
             r.seg = (r.seg + r.dir + r.pts.length) % r.pts.length;
             const atEnd = !r.loop && (r.seg === r.pts.length - 1 || r.seg === 0);
             if (atEnd) r.dir *= -1;
-            r.wait = Math.random() < 0.5 ? 1.5 + Math.random() * 2.5 : 0.2;   // linger sometimes
+            r.wait = r.idles?.[r.seg] ? 4 + Math.random() * 4 : Math.random() < 0.5 ? 1.5 + Math.random() * 2.5 : 0.2;   // idle spots hold longer
           } else {
             gp.x = a.x + (b.x - a.x) * r.t; gp.z = a.z + (b.z - a.z) * r.t;
             _v.set(dirx, 0, dirz).multiplyScalar(NPC_SPEED);

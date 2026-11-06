@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { RetroRenderer } from './retro.js';
 import { applyPalette, SKY } from './palette.js';
 import { setGlowBoost } from './kit.js';
-import { sfx, setSound, setRain } from './audio.js';
+import { sfx, setSound, setRain, setMusic, setTheme } from './audio.js';
 import { buildWorld, loadKitOverrides, updateWalkers, updateNpcs, groundHeight } from './world.js';
 import { loadTiledMap, tileAt } from './tiled.js';
 import { NavGrid } from './nav.js';
@@ -96,6 +96,8 @@ if (qs.get('palette')) look.palette = qs.get('palette');
 if (qs.get('pixels')) look.pixels = qs.get('pixels');
 if (qs.get('time')) look.time = qs.get('time');
 if (!look.motion) look.motion = matchMedia('(prefers-reduced-motion: reduce)').matches ? 'off' : 'on';
+if (!look.music) look.music = 'on';
+if (typeof look.musicVol !== 'number') look.musicVol = 0.6;
 function applyLook() {
   retro.setMode(look);
   applyPalette(look.palette);
@@ -109,6 +111,11 @@ function applyLook() {
   if (tb) tb.textContent = { auto: '◐ Auto', day: '☀ Day', night: '☾ Night' }[look.time] || '◐ Auto';
   const mb = document.getElementById('look-motion');
   if (mb) { mb.textContent = look.motion === 'off' ? '⏸ Motion' : '▶ Motion'; mb.setAttribute('aria-pressed', String(look.motion !== 'off')); }
+  const mu = document.getElementById('look-music');
+  if (mu) { const on = look.music !== 'off'; mu.textContent = on ? '♫ Music' : '♫ Off'; mu.setAttribute('aria-pressed', String(on)); mu.classList.toggle('dim', !look.sound); mu.title = look.sound ? 'Character music on/off' : 'Turn sound on to hear character music'; }
+  const mv = document.getElementById('music-vol');
+  if (mv) { mv.value = Math.round(look.musicVol * 100); mv.disabled = !look.sound || look.music === 'off'; }
+  setMusic(look.music !== 'off', look.musicVol);
   const sb = document.getElementById('look-sound');
   if (sb) { sb.textContent = look.sound ? '♪ On' : '♪ Off'; sb.setAttribute('aria-pressed', String(!!look.sound)); }
   if (look.sound && !state.started) { /* audio may only start after a user gesture */ } else setSound(!!look.sound);
@@ -190,7 +197,7 @@ async function init() {
   const s = state.save;
   const spawn = s.pos && nav.isWalkable(s.pos.x, s.pos.z) ? s.pos : map.spawn || { x: 2, z: 6 };
   player.group.position.set(spawn.x, heightAt(spawn.x, spawn.z), spawn.z);
-  player.heading = Math.PI / 4;
+  player.heading = spawn === s.pos ? Math.PI / 4 : Math.PI; // new game: face the CRT
   world.interactables.forEach((it) => { if (isDone(it)) markVisited(it, true); });
   state.complete = MAIN_DISTRICTS.every((d) => s.chapters.includes(d.id));
   if (s.chapters.includes('iron-yard') || s.minigames.includes('lift')) player.setBuff(true);
@@ -245,6 +252,9 @@ function setupUI() {
   $('#look-pixels').addEventListener('click', () => { look.pixels = look.pixels === 'retro' ? 'smooth' : 'retro'; applyLook(); resize(); });
   $('#look-time').addEventListener('click', cycleTime);
   $('#look-motion')?.addEventListener('click', () => { look.motion = look.motion === 'off' ? 'on' : 'off'; applyLook(); });
+  $('#look-music')?.addEventListener('click', () => { look.music = look.music === 'off' ? 'on' : 'off'; if (look.music === 'on' && !look.sound) look.sound = true; applyLook(); });
+  $('#music-vol')?.addEventListener('input', (e) => { look.musicVol = Number(e.target.value) / 100; setMusic(look.music !== 'off', look.musicVol); try { localStorage.setItem(LOOK_KEY, JSON.stringify(look)); } catch { /* ignore */ } });
+  $('#nav-education')?.addEventListener('click', (e) => { e.preventDefault(); $('#recruiter-bar').classList.remove('open'); $('#menu-toggle').setAttribute('aria-expanded', 'false'); openEducation(); });
   $('#look-sound').addEventListener('click', () => { look.sound = !look.sound; applyLook(); if (look.sound) sfx.open(); });
   applyLook();
   $('#journey-toggle').addEventListener('click', () => $('.journey').classList.toggle(innerWidth <= 760 ? 'open-m' : 'collapsed'));
@@ -274,6 +284,7 @@ function setupUI() {
     if (it) { it.character.talking = false; it.character.lookAt(null); player.talking = false; }
   };
   dialogue.onMemory = (id) => unlockMemory(id);
+  dialogue.onAction = (name) => { world.apis[name]?.trigger({ toast, sfx }); state.talkingTo?.character.play('nod'); };
 }
 
 function renderJourney() {
@@ -343,6 +354,8 @@ function openInteractable(it) {
       ${(ch.body || []).map((p) => `<p>${esc(p)}</p>`).join('')}
       ${ch.highlights?.length ? `<ul class="highlights">${ch.highlights.map((h) => `<li>${esc(h)}</li>`).join('')}</ul>` : ''}
       ${mems.length ? `<p class="mem-hint">Memories here: <b>${found}/${mems.length}</b>${found < mems.length ? ' — look for the glowing ✦ nearby.' : ' — all found.'}</p>` : ''}`;
+    const edu = (c.education || []).find((e) => e.district === it.district);
+    if (edu) html += educationExtras(edu);
     if (it.district === 'garage') {
       html += `<div class="panel-projects">${c.projects.map(projectCard).join('')}</div><a class="btn" href="portfolio.html#projects">All projects →</a>`;
     }
@@ -362,6 +375,11 @@ function openInteractable(it) {
     }
   }
   showPanel(bar, html, it);
+  const eduHere = it.kind === 'chapter' && (c.education || []).find((e) => e.district === it.district);
+  if (eduHere && addUnique(state.save.stamps, eduHere.id)) {
+    persist(); sfx.memory();
+    setTimeout(() => toast(`PASSPORT STAMPED · ${eduHere.label}`), 900);
+  }
 
   // Garage exhibits open The Builder chapter (the Garage has no separate chapter spot)
   const chapterId = it.kind === 'chapter' ? it.district : it.kind === 'project' ? 'garage' : null;
@@ -536,6 +554,57 @@ function openInfoPanel(it) {
   }
 }
 
+
+// ---------------- Education journey ----------------
+function passportHTML() {
+  const c = state.content, got = state.save.stamps || [];
+  return `<div class="passport" aria-label="Education passport"><p class="eyebrow">EDUCATION PASSPORT · ${got.length}/${(c.education || []).length}</p>
+    <div class="stamps">${(c.education || []).map((e) => `<span class="stamp ${got.includes(e.id) ? 'on' : ''}" title="${got.includes(e.id) ? 'Stamped' : 'Visit the campus to stamp'}"><b>${esc(e.label)}</b><i>${got.includes(e.id) ? 'STAMPED' : '— — —'}</i></span>`).join('')}</div>
+    <p class="muted passport-note">Optional. Stamps come from visiting each campus; everything here is open either way.</p></div>`;
+}
+function educationExtras(e) {
+  const c = state.content, s = state.save;
+  const mems = (c.memories || []).filter((m) => m.district === e.district);
+  const npc = (c.npcs || []).find((n) => n.id === e.npc);
+  let h = `<div class="edu-extra"><p class="eyebrow">EDUCATION · ${esc(e.num)} · ${esc(e.label)}: ${esc(e.tagline)}</p>
+    <p><b>${esc(e.institution)}</b>${e.place ? `, ${esc(e.place)}` : ''}${e.detail ? `<br><span class="muted">${esc(e.detail)}</span>` : ''}</p>`;
+  if (mems.length) h += `<p class="eyebrow" style="margin-top:12px">MEMORIES</p><ul class="highlights">${mems.map((m) => s.memories.includes(m.id) ? `<li><b>${esc(m.title)}</b><br>${esc(m.text)}</li>` : `<li class="muted">✦ ${esc(m.title)} · find it on campus</li>`).join('')}</ul>`;
+  if (e.activities) {
+    const acts = (c.experience || []).filter((x) => /tce/i.test(x.org));
+    if (acts.length) h += `<p class="eyebrow" style="margin-top:12px">COLLEGE ACTIVITIES</p><ul class="highlights">${acts.map((x) => `<li><b>${esc(x.role)}</b> · ${esc(x.org)}<br>${esc(x.summary || '')}</li>`).join('')}</ul>`;
+    if ((c.achievements || []).length) h += `<p class="eyebrow" style="margin-top:12px">ACHIEVEMENTS</p><ul class="highlights">${c.achievements.map((a) => `<li><b>${esc(a.title)}</b>${a.detail ? ` · <span class="muted">${esc(a.detail)}</span>` : ''}</li>`).join('')}</ul>`;
+  }
+  if (npc) h += `<p class="muted" style="margin-top:10px">${esc(npc.name)} is around here. Say hi.</p>`;
+  return h + '</div>';
+}
+function openEducation(readId = null) {
+  const c = state.content, list = c.education || [];
+  if (readId) {
+    const e = list.find((x) => x.id === readId);
+    const ch = chapterFor(c, e.district) || { title: e.label, body: [] };
+    showPanel(`education/${e.id}.txt`, `${chapterHeader({ ...ch, period: `${e.num} · ${e.label}: ${e.tagline}` })}
+      ${(ch.body || []).map((p) => `<p>${esc(p)}</p>`).join('')}
+      ${educationExtras(e)}
+      <div class="transmit"><button type="button" class="btn primary" data-travel="${esc(e.id)}">Travel to campus →</button><button type="button" class="btn" data-edu-back>← All chapters</button></div>`, null, 'education');
+  } else {
+    showPanel('education/journey.txt', `<p class="eyebrow">EDUCATION</p><h2 id="panel-title">The education journey</h2>
+      <p class="subtitle">Three chapters, three campuses.</p>
+      <ol class="edu-list">${list.map((e) => `<li><div class="edu-num">${esc(e.num)}</div><div><p class="eyebrow">${esc(e.label)}: ${esc(e.tagline)}</p><b>${esc(e.institution)}</b><span class="muted">${esc(e.place || '')}</span>
+        <div class="edu-actions"><button type="button" class="btn primary" data-read="${esc(e.id)}">Read journey</button><button type="button" class="btn" data-travel="${esc(e.id)}">Travel to campus</button></div></div></li>`).join('')}</ol>
+      ${passportHTML()}`, null, 'education');
+  }
+  const body = $('#panel-body');
+  body.querySelectorAll('[data-read]').forEach((b) => b.addEventListener('click', () => openEducation(b.dataset.read)));
+  body.querySelector('[data-edu-back]')?.addEventListener('click', () => openEducation());
+  body.querySelectorAll('[data-travel]').forEach((b) => b.addEventListener('click', () => {
+    const e = list.find((x) => x.id === b.dataset.travel);
+    const dest = world.stations.find((st) => st.stationId === e.station);
+    if (!dest) return;
+    const p = player.group.position;
+    const from = world.stations.reduce((a, st) => (Math.hypot(st.x - p.x, st.z - p.z) < Math.hypot(a.x - p.x, a.z - p.z) ? st : a), world.stations[0]);
+    travel(from, dest);
+  }));
+}
 
 // ---------------- Lighthouse finale ----------------
 function runFinale(it) {
@@ -979,6 +1048,29 @@ function update(dt, t) {
     state.nearby = best;
     updatePrompt();
   }
+  // E-spot circles: far ones fade back, the one you can use right now stands out
+  for (const it of world.interactables) {
+    if (!it.beacon || it.kind === 'memory') continue;
+    const d = Math.hypot(pos.x - it.x, pos.z - it.z);
+    it.beacon.prom = it === best ? 1.5 : d < 9 ? 1 : d < 18 ? 0.7 : 0.45;
+  }
+  // Character themes: the nearest park character's music fades in, a bit
+  // louder while talking; only one theme ever plays
+  {
+    let theme = null, lvl = 0;
+    const talk = state.talkingTo && (state.content.npcs || []).find((n) => n.id === state.talkingTo.npcId);
+    if (talk?.theme) { theme = talk.theme; lvl = 0.8; }
+    else {
+      let bd = 7.5;
+      for (const n of world.npcs) {
+        const def = n.def || (n.def = (state.content.npcs || []).find((x) => x.id === n.npcId));
+        if (!def?.theme) continue;
+        const d = Math.hypot(pos.x - n.x, pos.z - n.z);
+        if (d < bd) { bd = d; theme = def.theme; lvl = Math.min(1, (7.5 - d) / 3.5) * 0.5; }
+      }
+    }
+    setTheme(state.started && !state.minigame ? theme : null, lvl);
+  }
   if (state.panelOpen && Math.hypot(pos.x - state.panelOpen.x, pos.z - state.panelOpen.z) > state.panelOpen.radius + 2.5) closePanel();
   if (dialogue.open && state.talkingTo && Math.hypot(pos.x - state.talkingTo.x, pos.z - state.talkingTo.z) > 4) dialogue.close();
 
@@ -1374,7 +1466,7 @@ function updatePrompt() {
   const mem = best.kind === 'memory' && (c.memories || []).find((m) => m.id === best.memoryId);
   const [kind, title] = {
     project: ['Inspect project', c.projects.find((p) => p.id === best.projectId)?.title],
-    about: ['Notice board', `About ${c.profile?.name || 'me'}`],
+    about: ['NATHAN.EXE', `About ${c.profile?.name || 'me'}`],
     npc: ['Talk', npc && `${npc.name}`],
     minigame: ['Try it', 'Lift the bar'],
     memory: ['Memory', mem ? 'Pick up ✦' : ''],

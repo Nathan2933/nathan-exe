@@ -6,7 +6,8 @@ import { sfx } from './audio.js';
 //
 // NPC content shape (content.json → npcs[]):
 //   { id, name, role, district, outfit, lines: [..], topics: ["Question :: answer text", ...] }
-// An answer may end with "[memory:some-id]" to unlock that memory.
+// An answer may end with "[memory:some-id]" to unlock that memory, or with
+// "[action:piece-id]" to start that prop's interaction (e.g. a mini challenge).
 
 export class Dialogue {
   constructor(root) {
@@ -67,6 +68,8 @@ export class Dialogue {
     let line = this.queue.shift() ?? '';
     const mem = line.match(/\[memory:([\w-]+)\]\s*$/);
     if (mem) { line = line.slice(0, mem.index).trim(); this.onMemory?.(mem[1]); }
+    const act = line.match(/\[action:([\w-]+)\]\s*$/);
+    if (act) { line = line.slice(0, act.index).trim(); this.onAction?.(act[1]); }
     this.#render(line, !this.queue.length);
   }
 

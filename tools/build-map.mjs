@@ -113,8 +113,9 @@ rect(-21, -19, -4, -4, T.lawn);           // Iron Yard lot
 rect(-20, -19, -9, -13, T.concrete);      //   gym slab
 rect(-12, -11, -5, -6, T.rubber);         //   outdoor training floor (smaller, calmer)
 rect(-9, -4, -8, -4, T.path);             //   gate
-rect(4, -21, 17, -4, T.lawn);             // Pop Culture Park (was City Park; grown 2 m north, ring road untouched)
-rect(9, -20, 10, -4, T.path); rect(4, -12, 16, -11, T.path); rect(8, -14, 11, -9, T.path); // walks + arcade square
+rect(3, -21, 18, -3, T.lawn);             // Pop Culture Park: fills its block up to the roads on all four sides
+rect(9, -20, 10, -3, T.path); rect(3, -12, 18, -11, T.path); rect(8, -14, 11, -9, T.path); // walks + arcade square
+rect(3, -18, 9, -13, T.rubber);           //   red alley floor (noir corner)
 disc(9.5, -11.5, 3.2, T.plaza);
 rect(-21, 4, -4, 18, T.lawn);             // Guild Hall lot (was Signal Tower)
 rect(3, 3, 17, 24, T.concrete);           // Garage: big open lot
@@ -177,8 +178,8 @@ for (let i = 0; i < 4; i++) {
   if (i !== 1) O('planter', +(cx * 7.2).toFixed(2), +(sz * 7.2).toFixed(2));
   O('lamp', +(cx * 8.7).toFixed(2), +(sz * 8.7).toFixed(2));
 }
-spawn.push(point('spawn', 1.2, 6.2));
-interact.push(point('about', -2.8, 2.8, { id: 'about' }));   // read-me beside the CRT monument
+spawn.push(point('spawn', 0, 5.4));      // in front of the CRT, facing it
+interact.push(point('about', 0, 3.7, { id: 'about' }));      // directly in front of the CRT screen
 labels.push(point('label', 0, 0, { text: 'NATHAN.EXE', color: '#ff6a3d', height: 7.4 }));
 
 // --- Street furniture along avenues and the ring (regular rhythm, both sides staggered) ---
@@ -213,54 +214,55 @@ interact.push(point('memory', -11.8, -12.6, { id: 'checkpoint-60' }));
 interact.push(point('memory', -5.6, -5.2, { id: 'fitness-chapter' }));
 
 // --- Pop Culture Park (was City Park) ---
-// Four zones around a small central arcade: noir corner (NW), adventure corner
-// (NE), cinema + startup corner (south). Each attraction has its own small
-// animation and an E interaction. Original homages, no official artwork.
-hedge(3, -21.8, 18, -21); hedge(17, -21, 18, -4); hedge(3, -21, 4, -13); hedge(3, -10, 4, -4);
-hedge(3, -4, 8, -3); hedge(11, -4, 18, -3);
+// A living character district. Roads bound the block on all four sides, so it
+// grows only to its own hedge lines. Six themed areas around a central arcade,
+// each with one roaming homage character (routes + dialogue in content.json):
+//   NW red alley (listener) · N rooftop (web runner) · NE western camp (drifter)
+//   SW boxing basement (philosopher) · S moonlit court (night watcher) · SE startup desk (founder)
+hedge(2.2, -21.8, 17.6, -21); hedge(18.2, -20.4, 18.9, -2.1); hedge(2.2, -21, 2.9, -13); hedge(2.2, -10, 2.9, -2.1);
+hedge(2.2, -2.9, 8, -2.1); hedge(11, -2.9, 18.9, -2.1);
 O('pop_arcade', 9.5, -11.5);
-// noir corner
-O('pop_rooftop', 5.4, -19.4, { variant: 'signal' });
-O('pop_rooftop', 7.75, -19.5, { variant: 'red' });
-O('pop_moon', 5.3, -15.4);
-// adventure corner
-O('pop_web', 12.2, -19.4);
-O('pop_camp', 14.8, -17.2);
-// cinema + startup corner
-O('pop_cinema', 6.4, -10.4);
-O('pop_boxing', 13.4, -7.6);
-O('pop_startup', 15.2, -9.8);
-O('tree_blossom', 16.2, -13.4); O('lamp', 10.8, -14.6); O('lamp', 8.4, -9.2);
-const POP = [
-  // [interest id, attraction piece, x, z, title]
-  ['batman', 'pop_rooftop_signal', 5.3, -17.4, 'Rooftop signal'],
-  ['daredevil', 'pop_rooftop_red', 7.8, -17.4, 'Red rooftop'],
-  ['moon-knight', 'pop_moon', 7.2, -14.6, 'Moonlit corner'],
-  ['spider-man', 'pop_web', 11.6, -17.4, 'Web frame'],
-  ['rdr2', 'pop_camp', 14.2, -14.8, 'Western camp'],
-  ['fight-club', 'pop_boxing', 12.6, -5.8, 'Basement corner'],
-  ['silicon-valley', 'pop_startup', 15.6, -8.2, 'Startup desk'],
-];
-for (const [interest, attraction, x, z, title] of POP) interact.push(point('panel', x, z, { id: `pop-${interest}`, district: 'city-park', panel: 'pop', interest, attraction, title }));
+// red alley + rooftop signal
+O('pop_rooftop', 5.0, -19.4, { variant: 'signal' });
+O('pop_rooftop', 7.4, -19.5, { variant: 'red' });
+O('alley_props', 4.2, -15.4);
+// rooftop + web agility frame
+O('pop_web', 12.0, -19.6);
+O('rooftop_props', 12.0, -19.6);
+// western camp
+O('pop_camp', 15.8, -17.6);
+// boxing basement
+O('pop_boxing', 6.4, -8.4);
+O('bench', 4.2, -6.8, { rot: 90 });
+// moonlit court
+O('moon_court', 12.4, -6.6);
+O('pop_moon', 12.4, -8.6);
+// startup desk
+O('pop_startup', 16.4, -8.4);
+O('lamp', 10.6, -14.6); O('lamp', 8.6, -6.4); O('tree_blossom', 17.4, -11.8, { scale: 0.85 });
+interact.push(point('panel', 3.7, -17.4, { id: 'pop-batman', district: 'city-park', panel: 'pop', interest: 'batman', attraction: 'pop_rooftop_signal', title: 'Rooftop signal' }));
 labels.push(point('label', 9.5, -11.5, { text: 'POP CULTURE PARK', color: '#3b6d11', height: 5 }));
 
 // --- Guild Hall (was Signal Tower): skills, trophies, quests, profile ---
+// The hall fills the back of its fenced lot; the four stations sit where they
+// belong: quest board and trophy podium flank the door, the skill tree grows in
+// the courtyard, the character profile greets you by the east entrance.
 hedge(-22, 3, -3, 4); hedge(-22, 4, -21, 19); hedge(-4, 7, -3, 19); hedge(-22, 19, -3, 20);
-O('guild_hall', -15, 7.4, { rot: 0 });
-O('guild_quest_board', -19.0, 12.6, { rot: 0 });
-O('guild_skill_tree', -14.6, 14.2);
-O('guild_trophy_stand', -10.2, 13.0, { rot: 0 });
-O('guild_profile_stand', -6.6, 15.4, { rot: 0 });
+O('guild_hall', -13.5, 7.6, { rot: 0, w: 12, d: 6 });
+O('guild_quest_board', -17.2, 12.4, { rot: 0 });
+O('guild_trophy_stand', -9.8, 12.4, { rot: 0 });
+O('guild_skill_tree', -13.5, 15.2);
+O('guild_profile_stand', -5.8, 14.0, { rot: 0 });
 O('lamp', -6.4, 9.6); O('lamp', -18.6, 16.8);
-labels.push(point('label', -15, 7.4, { text: 'GUILD HALL', color: '#2a2440', height: 8.6 }));
-interact.push(point('chapter', -6.8, 5.6, { id: 'signal-tower', district: 'signal-tower' }));
-interact.push(point('panel', -14.6, 16.2, { id: 'skilltree', district: 'signal-tower', panel: 'skilltree', title: 'Skill tree' }));
-interact.push(point('panel', -10.2, 15.0, { id: 'trophies', district: 'signal-tower', panel: 'trophies', title: 'Trophy collection' }));
-interact.push(point('panel', -18.6, 14.2, { id: 'quests', district: 'signal-tower', panel: 'quests', title: 'Quest log' }));
-interact.push(point('panel', -6.6, 17.0, { id: 'profile', district: 'signal-tower', panel: 'profile', title: 'Character profile' }));
-interact.push(point('memory', -12.4, 11.2, { id: 'the-pitch' }));
-interact.push(point('memory', -11.8, 17.6, { id: 'bug-report' }));
-interact.push(point('memory', -20.0, 17.4, { id: 'cluster-alert' }));
+labels.push(point('label', -13.5, 7.6, { text: 'GUILD HALL', color: '#2a2440', height: 9.2 }));
+interact.push(point('chapter', -5.6, 5.6, { id: 'signal-tower', district: 'signal-tower' }));
+interact.push(point('panel', -13.5, 17.3, { id: 'skilltree', district: 'signal-tower', panel: 'skilltree', title: 'Skill tree' }));
+interact.push(point('panel', -9.8, 14.2, { id: 'trophies', district: 'signal-tower', panel: 'trophies', title: 'Trophy collection' }));
+interact.push(point('panel', -17.6, 13.9, { id: 'quests', district: 'signal-tower', panel: 'quests', title: 'Quest log' }));
+interact.push(point('panel', -6.0, 15.6, { id: 'profile', district: 'signal-tower', panel: 'profile', title: 'Character profile' }));
+interact.push(point('memory', -19.6, 15.4, { id: 'the-pitch' }));
+interact.push(point('memory', -9.6, 17.4, { id: 'bug-report' }));
+interact.push(point('memory', -16.2, 17.8, { id: 'cluster-alert' }));
 
 // --- The Garage (projects + tech stack) ---
 // An open inventor's workshop: two lean-to roofs run along the back (north and
@@ -319,7 +321,7 @@ for (const [x, z] of [[40.6, 4.5], [39.8, 9.2], [36.6, 11.4], [26.8, 11.2], [26.
 O('puddle', 32.6, 0.4); O('puddle', 37.2, -0.3, { scale: 0.7 }); O('puddle', 30, 4.6, { scale: 0.8 });
 labels.push(point('label', 35.5, -9.2, { text: 'MONSOON CAMPUS', color: '#b5523b', height: 9.2 }));
 interact.push(point('chapter', 29.6, 1.8, { id: 'monsoon-campus', district: 'monsoon-campus' }));
-interact.push(point('memory', 28.6, 2.9, { id: 'madurai-checkpoint' }));
+interact.push(point('memory', 28.2, 4.4, { id: 'madurai-checkpoint' }));
 interact.push(point('memory', 32.6, 7.4, { id: 'montfort' }));
 interact.push(point('memory', 31, -1.6, { id: 'association-badge' }));
 interact.push(point('memory', 34, 3.6, { id: 'ecell-crowd' }));
@@ -398,12 +400,18 @@ for (let a = 0; a < Math.PI * 2; a += 0.085) {
 // npc = the character's id in content.json). Each route stays inside its own
 // district and on walkable ground; edit them in Tiled to change where people roam.
 // loop: true walks the polyline as a circuit, otherwise back and forth.
-const route = (npc, pts, loop = false) => paths.push(line('npc_route', pts, { npc, loop }));
+const route = (npc, pts, loop = false, extra = {}) => paths.push(line('npc_route', pts, { npc, loop, ...extra }));
 route('thianesh', [[-17, -9.0], [-11.5, -8.0], [-10.5, -5.5], [-16.5, -5.5]], true);     // Iron Yard
 route('guru', [[-3.4, -32.2], [-8.6, -32.4], [-7.8, -30.0]]);                              // Winter Campus (west)
 route('shabeer', [[-33.4, 2.6], [-33.0, 5.6], [-33.8, 7.6]]);                              // Montfort, the childhood hangout
 route('anu', [[33.2, -1.4], [36.4, -1.6], [39, 2.4], [35.8, 2.6]], true);                  // TCE forecourt
-route('harris', [[-4.6, 38.6], [1.0, 38.8], [4.0, 38.9], [5.8, 37.8]]);                     // Airport, terminal to the jet
+route('harris', [[-4.6, 38.6], [0.8, 39.3], [4.0, 39.3], [5.8, 37.8]], false, { idles: ',look,check,check', faces: ',,0,-90' });                     // Airport, terminal to the jet
+route('soap', [[6.4, -7.9], [5.0, -7.0], [7.8, -7.0]], false, { idles: 'punch,lean,look', faces: '180,90,' });                 // boxing basement
+route('cal', [[16.4, -15.9], [17.4, -17.0], [14.4, -14.8]], false, { idles: 'sit,check,look', faces: '-128,180,' });             // western camp
+route('vesper', [[12.4, -6.9], [12.4, -4.0], [10.3, -4.0]], false, { idles: 'gaze,look,look', faces: '180,,' });                  // moonlit court
+route('skip', [[11.0, -16.2], [13.2, -15.0], [12.2, -13.4]], false, { idles: 'look,check,look', faces: '0,180,' });               // rooftop
+route('hale', [[5.4, -17.0], [7.6, -17.0], [6.4, -14.0]], false, { idles: 'lean,look,gaze', faces: '0,45,' });                     // red alley
+route('ollie', [[16.4, -7.3], [15.0, -7.4], [16.6, -5.2]], false, { idles: 'type,check,look', faces: '180,180,' });               // startup desk
 route('akshai', [[10.3, 5.8], [10.3, 12.2], [10.3, 17.9]]);                                // Garage, centre aisle past the exhibits
 route('naveen', [[4.8, 23.3], [7.6, 23.3], [7.6, 18.6]]);                                  // Garage, tool wall to the centre bench
 route('shabesh', [[16.2, 23.3], [13.0, 23.3], [16.2, 18.6]], true);                        // Garage, east side by the exhibits
