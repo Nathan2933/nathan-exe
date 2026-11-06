@@ -41,12 +41,14 @@ const SCHEMA = [
   },
   {
     key: 'projects', label: 'Projects', type: 'array', itemTitle: (p) => `${p.featured ? '★ ' : ''}${p.title || 'Project'}`,
-    blank: () => ({ id: uid('project'), title: '', pitch: '', description: '', stack: [], tags: [], year: String(new Date().getFullYear()), github: '', demo: '', image: '', featured: false }),
-    note: 'The first 6 projects appear as workbenches in the Garage. Featured projects are listed first on the portfolio.',
+    blank: () => ({ id: uid('project'), title: '', pitch: '', description: '', architecture: [], contribution: '', stack: [], tags: [], year: String(new Date().getFullYear()), github: '', demo: '', image: '', featured: false }),
+    note: 'The first 5 projects are the Garage exhibits, in this order: Aratro, Microservices, Event Scheduler, CauverySite, NATHAN.EXE. Featured projects are listed first on the portfolio.',
     fields: [
       { key: 'title', label: 'Title', type: 'text' },
       { key: 'pitch', label: 'One-line pitch', type: 'text' },
       { key: 'description', label: 'Description', type: 'textarea' },
+      { key: 'architecture', label: 'Architecture (one step per line)', type: 'lines', hint: 'How the pieces fit, e.g. "Client → API → Database". Leave empty to hide.' },
+      { key: 'contribution', label: 'My contribution', type: 'textarea', hint: 'What you personally built. Leave empty to hide.' },
       { key: 'stack', label: 'Tech stack', type: 'tags', hint: 'Comma separated.' },
       { key: 'tags', label: 'Tags', type: 'tags' },
       { key: 'year', label: 'Year', type: 'text' },

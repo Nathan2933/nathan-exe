@@ -996,4 +996,223 @@ export const KIT = {
       colliders: [{ x: -1.6, z: -1.9, r: 0.14 }, { x: 1.6, z: -1.9, r: 0.14 }, { x: 0, z: -0.35, w: 1.7, d: 0.9 }, { x: 1.9, z: -1.2, w: 0.55, d: 0.55 }],
     };
   },
+
+  // ===== Garage: inventor's workshop =====
+  // Pieces animate with (t, state): state.playerPos is Nathan's position and
+  // state.reduceMotion respects the OS "reduce motion" setting.
+
+  workshop_canopy({ w = 13.6, d = 20.8 } = {}) {
+    // Open-sided steel canopy: pillars with warm lamps and a light eave frame
+    // always show; trusses, roof and hanging lamps sit in one group that fades
+    // away while Nathan is underneath, so the fixed camera always sees inside.
+    const g = new THREE.Group(), k = kit(g);
+    const H = 4.4, hw = w / 2, hd = d / 2;
+    const pillars = [];
+    for (const x of [-hw, hw]) for (const z of [-hd, 0, hd]) pillars.push([x, z]);
+    const lampMat = mat(C.amber, { emissive: C.amber, emissiveIntensity: 0.8 });
+    for (const [x, z] of pillars) {
+      k.box(0.36, 0.25, 0.36, C.plinth, x, 0, z);
+      k.box(0.2, H, 0.2, C.charcoal, x, 0.25, z);
+      k.box(0.22, 0.06, 0.22, C.accent, x, 1.2, z, { shadow: false });           // safety band
+      const inX = x < 0 ? 0.14 : -0.14;
+      k.box(0.12, 0.18, 0.16, lampMat, x + inX, 3.1, z, { shadow: false });         // pillar lamp
+    }
+    for (const x of [-hw, hw]) k.box(0.16, 0.18, d + 0.3, C.charcoal, x, H + 0.15, 0);
+    for (const z of [-hd, hd]) k.box(w + 0.3, 0.18, 0.16, C.charcoal, 0, H + 0.15, z);
+
+    // fading upper structure
+    const upper = new THREE.Group(); upper.userData.dynamic = true; g.add(upper);
+    const fadeMats = [];
+    const fm = (color, extra = {}) => { const m = new THREE.MeshLambertMaterial({ color, flatShading: true, transparent: true, opacity: 1, ...extra }); fadeMats.push(m); return m; };
+    const steel = fm(0x8a9ab3), roofM = fm(0xb8c4d6), ribM = fm(0x9aa8bf), cord = fm(C.ink), bulb = fm(C.amber, { emissive: C.amber, emissiveIntensity: 0.8 });
+    const add = (geo, m, x, y, z, rz = 0) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.rotation.z = rz; o.castShadow = m === roofM; upper.add(o); return o; };
+    for (let i = 0; i <= 4; i++) {
+      const z = -hd + (i * d) / 4;
+      add(new THREE.BoxGeometry(w, 0.1, 0.1), steel, 0, H + 0.3, z);
+      for (const sgn of [-1, 1]) add(new THREE.BoxGeometry(hw + 0.2, 0.08, 0.08), steel, sgn * hw / 2, H + 0.7, z, sgn * -0.17);
+    }
+    add(new THREE.BoxGeometry(0.12, 0.12, d), steel, 0, H + 1.08, 0);
+    for (const sgn of [-1, 1]) {
+      add(new THREE.BoxGeometry(hw + 0.5, 0.07, d + 0.5), roofM, sgn * (hw / 2 + 0.1), H + 0.8, 0, sgn * -0.17);
+      for (let i = 0; i < 5; i++) add(new THREE.BoxGeometry(0.05, 0.05, d + 0.5), ribM, sgn * (0.8 + i * (hw / 5)), H + 0.9 - i * (hw / 5) * 0.17, 0);
+    }
+    for (const x of [-hw / 2, hw / 2]) for (const z of [-hd / 2, hd / 2]) {
+      add(new THREE.BoxGeometry(0.03, 0.7, 0.03), cord, x, H - 0.05, z);
+      add(new THREE.CylinderGeometry(0.1, 0.24, 0.16, 8), cord, x, H - 0.45, z);
+      add(new THREE.BoxGeometry(0.14, 0.1, 0.14), bulb, x, H - 0.56, z);
+    }
+    const pools = [];
+    for (const [x, z] of [[-hw / 2, -hd / 2], [hw / 2, -hd / 2], [-hw / 2, hd / 2], [hw / 2, hd / 2], [0, 0]]) {
+      const pool = lightPool(2.6, 0xffd08a); pool.position.set(x, 0.09, z); g.add(pool); pools.push(pool);
+    }
+    let fade = 1;
+    return {
+      obj: g,
+      colliders: pillars.map(([x, z]) => ({ x, z, r: 0.24 })),
+      nightGlow: pools,
+      animate: (t, state) => {
+        const p = state.playerPos;
+        const lx = p ? p.x - g.position.x : 1e9, lz = p ? p.z - g.position.z : 1e9; // canopy is placed unrotated
+        const inside = Math.abs(lx) < hw + 2 && Math.abs(lz) < hd + 2;
+        fade += ((inside ? 0 : 1) - fade) * 0.12;
+        for (const m of fadeMats) { m.opacity = fade; m.depthWrite = fade > 0.95; }
+        upper.visible = fade > 0.02;
+      },
+    };
+  },
+
+  tool_wall({ len = 8, variant = 0 } = {}) {
+    // Low workshop wall along local x, facing +z: pegboard, shelves, tools, cables.
+    const g = new THREE.Group(), k = kit(g);
+    k.box(len, 2.2, 0.28, 0xd8c3a0, 0, 0, -0.14);                              // plank wall
+    for (let x = -len / 2 + 0.4; x < len / 2; x += 0.8) k.box(0.04, 2.2, 0.3, 0xb99c74, x, 0, -0.13, { shadow: false });
+    k.box(len + 0.1, 0.12, 0.34, C.wood, 0, 2.2, -0.14);
+    // shelves with jars / boxes / spools
+    const cols = [C.accent, C.teal, C.yellow, 0x6fa8dc, C.pink, C.cream];
+    for (let sx = -len / 2 + 0.9, i = 0; sx < len / 2 - 0.6; sx += 2.6, i++) {
+      for (const y of [1.05, 1.65]) {
+        k.box(1.8, 0.06, 0.32, C.wood, sx, y, 0.12);
+        for (let j = 0; j < 4; j++) k.box(0.22, 0.24, 0.2, cols[(i + j + (y > 1.2 ? 2 : 0)) % cols.length], sx - 0.6 + j * 0.4, y + 0.06, 0.13);
+      }
+      // pegboard with tools between shelf groups
+      const px = sx + 1.3;
+      if (px < len / 2 - 0.6) {
+        k.box(0.9, 0.9, 0.04, 0xd9a066, px, 0.95, 0.02);
+        k.box(0.06, 0.5, 0.04, C.steelDark, px - 0.25, 1.2, 0.06); k.box(0.3, 0.08, 0.04, C.steelDark, px - 0.25, 1.62, 0.06); // hammer
+        k.box(0.5, 0.06, 0.04, C.accent, px + 0.1, 1.45, 0.06);                                                          // wrench
+        k.box(0.08, 0.36, 0.04, C.yellow, px + 0.3, 1.0, 0.06);                                                          // screwdriver
+      }
+    }
+    // floor-level detail: cable reels, a toolbox, a crate
+    const fx = variant ? len / 2 - 1.2 : -len / 2 + 1.2;
+    k.cyl(0.32, 0.32, 0.18, C.wood, fx, 0, 0.35, 10, { rx: Math.PI / 2 }).position.y = 0.32;
+    k.cyl(0.2, 0.2, 0.2, C.ink, fx, 0, 0.35, 10, { rx: Math.PI / 2 }).position.y = 0.32;
+    k.box(0.7, 0.4, 0.35, C.accent, -fx * 0.4, 0, 0.3); k.box(0.72, 0.06, 0.37, C.ink, -fx * 0.4, 0.4, 0.3);
+    // a cable drooping along the wall
+    for (let i = 0; i < 10; i++) k.box(len / 10, 0.04, 0.04, C.ink, -len / 2 + (i + 0.5) * (len / 10), 2.0 - Math.sin((i / 9) * Math.PI) * 0.25, 0.03, { shadow: false });
+    return { obj: g, colliders: [{ x: 0, z: 0.05, w: len, d: 0.75 }] };
+  },
+
+  exhibit_aratro() {
+    // Tabletop diorama: farm field -> dirt road -> warehouse, a delivery truck,
+    // grain sacks and a floating blockchain that "verifies" each delivery.
+    // Activates (crops sway, truck drives, blocks light up in sequence) when
+    // Nathan comes within ~4.5 m.
+    const g = new THREE.Group(), k = kit(g);
+    const TW = 4.6, TD = 3.8, TH = 0.75;
+    // display table
+    k.box(TW, 0.12, TD, C.wood, 0, TH - 0.12, 0);
+    for (const x of [-TW / 2 + 0.2, TW / 2 - 0.2]) for (const z of [-TD / 2 + 0.2, TD / 2 - 0.2]) k.box(0.14, TH - 0.12, 0.14, C.wood, x, 0, z);
+    k.box(TW - 0.4, 0.06, TD - 0.4, C.woodLight, 0, 0.18, 0);
+    const top = TH;
+    k.box(TW - 0.1, 0.1, TD - 0.1, 0x9fd46a, 0, top, 0);                      // grass board
+    // dirt road along the front
+    k.box(TW - 0.4, 0.03, 0.55, 0xd9b27a, 0, top + 0.1, 1.05, { shadow: false });
+    // field: soil + crop rows (left)
+    k.box(1.9, 0.06, 1.9, 0x8a5a36, -1.1, top + 0.1, -0.55);
+    const crops = new THREE.Group(); crops.position.set(-1.1, top + 0.16, -0.55); crops.userData.dynamic = true; g.add(crops);
+    const wheat = mat(0xe8c35a), green = mat(C.leaf);
+    const cropList = [];
+    for (let r = 0; r < 4; r++) for (let c = 0; c < 5; c++) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.32 + ((r + c) % 3) * 0.05, 0.1), r % 2 ? green : wheat);
+      m.position.set(-0.72 + c * 0.36, 0.16, -0.66 + r * 0.44); m.castShadow = true; crops.add(m); cropList.push(m);
+    }
+    // little fence
+    for (let i = 0; i < 6; i++) k.box(0.05, 0.22, 0.05, C.cream, -2.05 + i * 0.38, top + 0.1, 0.5);
+    k.box(1.95, 0.04, 0.04, C.cream, -1.1, top + 0.24, 0.5);
+    // warehouse (right back)
+    const wx = 1.25, wz = -0.75;
+    k.box(1.6, 0.9, 1.3, C.cream, wx, top + 0.1, wz);
+    const roofShape = new THREE.Shape(); roofShape.moveTo(-0.75, 0); roofShape.lineTo(0.75, 0); roofShape.lineTo(0, 0.45); roofShape.closePath();
+    k.mesh(new THREE.ExtrudeGeometry(roofShape, { depth: 1.75, bevelEnabled: false }), C.terracotta, wx + 0.875, top + 1.0, wz, { ry: -Math.PI / 2 });
+    k.box(0.5, 0.6, 0.04, C.ink, wx - 0.2, top + 0.1, wz + 0.66);
+    k.box(0.34, 0.2, 0.04, glow(C.amber), wx + 0.45, top + 0.55, wz + 0.66, { shadow: false });
+    // grain sacks by the warehouse door
+    const sack = mat(0xe9d4a7);
+    for (const [x, y, z] of [[0.3, 0, 0.2], [0.55, 0, 0.25], [0.42, 0.18, 0.22], [0.75, 0, 0.1]]) {
+      const s2 = k.mesh(new THREE.IcosahedronGeometry(0.13, 0), sack, x, top + 0.22 + y, z); s2.scale.set(1.2, 0.8, 1);
+    }
+    // truck on the road
+    const truck = new THREE.Group(); truck.userData.dynamic = true; g.add(truck);
+    const tk = kit(truck);
+    tk.box(0.36, 0.3, 0.34, C.accent, 0.22, 0.08, 0);                          // cab
+    tk.box(0.2, 0.14, 0.3, 0xbfe6ff, 0.3, 0.26, 0, { shadow: false });         // windshield
+    tk.box(0.5, 0.12, 0.38, C.wood, -0.2, 0.08, 0);                            // bed
+    tk.box(0.5, 0.1, 0.04, C.wood, -0.2, 0.2, 0.17); tk.box(0.5, 0.1, 0.04, C.wood, -0.2, 0.2, -0.17);
+    for (const x of [-0.3, -0.12]) tk.mesh(new THREE.IcosahedronGeometry(0.08, 0), sack, x, 0.28, 0);
+    for (const x of [-0.3, 0.22]) for (const z of [-0.18, 0.18]) { const w2 = tk.cyl(0.07, 0.07, 0.05, C.ink, x, 0, z, 8, { rx: Math.PI / 2 }); w2.position.y = 0.07; }
+    truck.scale.setScalar(1.5); truck.position.set(-1.6, top + 0.1, 1.05);
+    // blockchain: four blocks linked above the diorama
+    const chain = new THREE.Group(); chain.position.set(0, top + 2.0, -0.6); chain.userData.dynamic = true; g.add(chain);
+    const blocks = [];
+    for (let i = 0; i < 4; i++) {
+      const bm = new THREE.MeshLambertMaterial({ color: 0x5a6b8a, emissive: 0x000000, flatShading: true });
+      const b = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), bm);
+      b.position.set(-1.35 + i * 0.9, 0, 0); b.castShadow = true; chain.add(b); blocks.push(b);
+      if (i < 3) { const l = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.07, 0.07), mat(C.steel)); l.position.set(-0.9 + i * 0.9, 0, 0); chain.add(l); }
+    }
+    const check = new THREE.Group(); check.position.set(1.35, 0.62, 0); check.scale.setScalar(1.6); chain.add(check);
+    const cm = new THREE.MeshBasicMaterial({ color: 0x5fe08a, transparent: true, opacity: 0 });
+    const c1 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.18, 0.06), cm); c1.position.set(-0.06, -0.03, 0); c1.rotation.z = 0.8;
+    const c2 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.34, 0.06), cm); c2.position.set(0.07, 0.04, 0); c2.rotation.z = -0.55;
+    check.add(c1, c2);
+    // trophy (Hack Odyssey 2K25) on the front-right corner
+    const gold = mat(0xffcf4a, { emissive: 0x6a4a00, emissiveIntensity: 0.4 });
+    k.box(0.26, 0.08, 0.26, C.ink, 1.85, top + 0.1, 1.4);
+    k.cyl(0.04, 0.06, 0.16, gold, 1.85, top + 0.18, 1.4, 6);
+    k.cyl(0.14, 0.06, 0.2, gold, 1.85, top + 0.34, 1.4, 8);
+    // little wooden name sign (front-left)
+    k.box(0.06, 0.4, 0.06, C.wood, -1.95, top + 0.1, 1.45);
+    k.box(0.9, 0.26, 0.05, C.wood, -1.6, top + 0.36, 1.45);
+    const sign = signMesh('ARATRO', 0.84, 0.2, { fg: '#fff1d6', bg: '#8b5a3c', size: 16, w: 128, h: 32 });
+    sign.position.set(-1.6, top + 0.49, 1.48); g.add(sign);
+
+    let act = 0, phase = 0;
+    return {
+      obj: g,
+      colliders: [{ x: 0, z: 0, w: TW, d: TD }],
+      animate: (t, state) => {
+        const p = state.playerPos;
+        const near = p && Math.hypot(p.x - g.position.x, p.z - g.position.z) < 4.6;
+        act += ((near ? 1 : 0) - act) * 0.06;
+        const live = state.reduceMotion ? 0 : act;
+        phase += live * 0.016;
+        // crops sway
+        cropList.forEach((m, i) => { m.rotation.z = Math.sin(t * 2.2 + i * 0.7) * 0.12 * live; });
+        // truck: farm -> warehouse -> back, easing at each end
+        const u = (Math.sin(phase * 1.6) + 1) / 2;
+        const x = -1.6 + u * 2.4;
+        const dir = Math.cos(phase * 1.6) >= 0 ? 1 : -1;
+        truck.position.x = x; truck.rotation.y = dir > 0 ? 0 : Math.PI;
+        truck.position.y = top + 0.1 + Math.abs(Math.sin(t * 18)) * 0.012 * live;
+        // blockchain verification: blocks light in sequence, then a green check
+        const cyc = (t * 0.9) % 6;
+        blocks.forEach((b, i) => {
+          const on = live > 0.05 && cyc > i * 0.9;
+          b.material.color.setHex(on ? 0x3fe0c8 : 0x6f7f9c);
+          b.material.emissive.setHex(on ? 0x1a8f80 : 0x000000);
+          b.position.y = on ? Math.max(0, Math.sin((cyc - i * 0.9) * 6) * 0.06) : 0;
+        });
+        cm.opacity = live > 0.05 && cyc > 3.6 ? Math.min(1, (cyc - 3.6) * 2) * live : 0;
+        chain.position.y = top + 2.0 + Math.sin(t * 1.4) * 0.05;
+      },
+    };
+  },
+
+  exhibit_covered({ w = 3.6, d = 3.0 } = {}) {
+    // Placeholder exhibit: a plinth with a tarp over the build ("in progress").
+    const g = new THREE.Group(), k = kit(g);
+    const TH = 0.75;
+    k.box(w, 0.12, d, C.wood, 0, TH - 0.12, 0);
+    for (const x of [-w / 2 + 0.2, w / 2 - 0.2]) for (const z of [-d / 2 + 0.2, d / 2 - 0.2]) k.box(0.14, TH - 0.12, 0.14, C.wood, x, 0, z);
+    const tarp = 0xdccdaa;
+    k.box(w - 0.6, 0.9, d - 0.6, tarp, 0, TH, 0);
+    k.box(w - 0.4, 0.5, d - 0.4, 0xc9b78f, 0, TH, 0);
+    k.mesh(new THREE.IcosahedronGeometry(0.55, 0), tarp, -0.4, TH + 1.0, -0.1).scale.set(1.3, 0.6, 1);
+    k.mesh(new THREE.IcosahedronGeometry(0.4, 0), 0xe6d9bb, 0.5, TH + 0.95, 0.2).scale.set(1.2, 0.6, 1);
+    for (const x of [-w / 2 + 0.4, w / 2 - 0.4]) k.box(0.05, 0.05, d - 0.3, C.yellow, x, TH + 0.05, 0, { shadow: false }); // tie-down straps
+    k.box(0.5, 0.3, 0.04, C.yellow, w / 2 - 0.5, TH + 0.2, d / 2 - 0.28);       // "WIP" tag
+    k.box(0.32, 0.06, 0.05, C.ink, w / 2 - 0.5, TH + 0.32, d / 2 - 0.25, { shadow: false });
+    return { obj: g, colliders: [{ x: 0, z: 0, w, d }] };
+  },
 };

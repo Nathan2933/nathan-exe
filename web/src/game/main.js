@@ -11,7 +11,7 @@ import { drawPortrait, portraitURL } from './portrait.js';
 import { Dialogue } from './dialogue.js';
 import { runLift } from './minigame.js';
 import { loadSave, writeSave, resetSave, addUnique, formatTime } from './save.js';
-import { loadContent, esc, safeUrl, chapterFor, projectCard, DISTRICTS, MAIN_DISTRICTS } from '../shared/content.js';
+import { loadContent, esc, safeUrl, chapterFor, projectCard, projectDetails, DISTRICTS, MAIN_DISTRICTS } from '../shared/content.js';
 
 const $ = (s) => document.querySelector(s);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -95,6 +95,7 @@ const qs = new URLSearchParams(location.search);
 if (qs.get('palette')) look.palette = qs.get('palette');
 if (qs.get('pixels')) look.pixels = qs.get('pixels');
 if (qs.get('time')) look.time = qs.get('time');
+if (!look.motion) look.motion = matchMedia('(prefers-reduced-motion: reduce)').matches ? 'off' : 'on';
 function applyLook() {
   retro.setMode(look);
   applyPalette(look.palette);
@@ -106,6 +107,8 @@ function applyLook() {
   if (xb) xb.textContent = look.pixels === 'retro' ? 'Pixel' : 'Smooth';
   const tb = document.getElementById('look-time');
   if (tb) tb.textContent = { auto: '◐ Auto', day: '☀ Day', night: '☾ Night' }[look.time] || '◐ Auto';
+  const mb = document.getElementById('look-motion');
+  if (mb) { mb.textContent = look.motion === 'off' ? '⏸ Motion' : '▶ Motion'; mb.setAttribute('aria-pressed', String(look.motion !== 'off')); }
   const sb = document.getElementById('look-sound');
   if (sb) { sb.textContent = look.sound ? '♪ On' : '♪ Off'; sb.setAttribute('aria-pressed', String(!!look.sound)); }
   if (look.sound && !state.started) { /* audio may only start after a user gesture */ } else setSound(!!look.sound);
@@ -241,6 +244,7 @@ function setupUI() {
   $('#look-palette').addEventListener('click', () => { look.palette = look.palette === 'pastel' ? 'bright' : 'pastel'; applyLook(); resize(); });
   $('#look-pixels').addEventListener('click', () => { look.pixels = look.pixels === 'retro' ? 'smooth' : 'retro'; applyLook(); resize(); });
   $('#look-time').addEventListener('click', cycleTime);
+  $('#look-motion')?.addEventListener('click', () => { look.motion = look.motion === 'off' ? 'on' : 'off'; applyLook(); });
   $('#look-sound').addEventListener('click', () => { look.sound = !look.sound; applyLook(); if (look.sound) sfx.open(); });
   applyLook();
   $('#journey-toggle').addEventListener('click', () => $('.journey').classList.toggle(innerWidth <= 760 ? 'open-m' : 'collapsed'));
@@ -320,7 +324,7 @@ function openInteractable(it) {
     const p = c.projects.find((x) => x.id === it.projectId);
     if (!p) return;
     bar = `projects/${p.id}.exe`;
-    html = `<h2 id="panel-title" class="sr-only">${esc(p.title)}</h2>${projectCard(p)}`;
+    html = `<h2 id="panel-title" class="sr-only">${esc(p.title)}</h2>${projectDetails(p)}`;
   } else if (it.kind === 'about') {
     const p = c.profile || {};
     bar = 'about/readme.txt';
@@ -923,6 +927,9 @@ function update(dt, t) {
     const s = it.beacon.gem.scale.x;
     if (s > 1) it.beacon.gem.scale.setScalar(Math.max(1, s - dt * 1.5));
   }
+  // exhibits wake up as Nathan approaches; Motion Off (or OS reduce-motion) freezes them
+  state.playerPos = state.ko ? null : pos;
+  state.reduceMotion = look.motion === 'off';
   world.animated.forEach((fn) => fn(t, state));
   marker.scale.setScalar(1 + Math.sin(t * 6) * 0.15);
 

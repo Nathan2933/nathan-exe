@@ -133,6 +133,12 @@
       "featured": true,
       "pitch": "Tracing agricultural supply chains from farmers to distribution, with blockchain-backed workflows.",
       "description": "Agricultural supply flows need clear visibility across farmers, warehouses and ration shops. In a team, I developed warehouse and inventory workflows and integrated Python-backed processes with Solidity smart contracts on an Ethereum/Ganache setup, covering MSP information, quality checks and inventory tracking. Won 1st place at Hack Odyssey 2K25, a 24-hour hackathon.",
+      "architecture": [
+        "Farmer → Warehouse → Ration shop supply flow",
+        "Python-backed workflows: warehouse, inventory, quality checks, MSP information",
+        "Solidity smart contracts on a local Ethereum chain (Ganache) record each step"
+      ],
+      "contribution": "Developed the warehouse and inventory workflows and integrated the Python-backed processes with the Solidity smart contracts (MSP information, quality checks and inventory tracking).",
       "stack": [
         "Python",
         "Solidity",
@@ -154,6 +160,8 @@
       "featured": true,
       "pitch": "Making Kubernetes activity easier to observe through runtime security alerts and dashboards.",
       "description": "Security events from containers and clusters are hard to review when they live in disconnected logs. During the HPE Career Preview Program, I contributed to a Kubernetes-based monitoring pipeline using Falco detection and Grafana dashboards, combining runtime activity with cluster and audit-event visibility.",
+      "architecture": [],
+      "contribution": "Contributed to the Kubernetes-based monitoring pipeline: Falco runtime detection feeding Grafana dashboards, with cluster and audit-event visibility.",
       "stack": [
         "Kubernetes",
         "Docker",
@@ -177,6 +185,8 @@
       "featured": false,
       "pitch": "Scheduling department events with practical admin and database workflows.",
       "description": "Built during a six-hour hackathon: a Flask and SQL event scheduler with an HTML/CSS frontend, focused on user navigation and database connectivity. Runner-up at HackFest 2025.",
+      "architecture": [],
+      "contribution": "",
       "stack": [
         "Python",
         "Flask",
@@ -199,6 +209,8 @@
       "featured": false,
       "pitch": "A role-aware property management platform for sales teams and administrators.",
       "description": "Property sales teams need a structured way to manage staff and see business operations. I built an application with Next.js, TypeScript and Tailwind CSS featuring role-specific dashboards, an employee hierarchy, profiles and sales overview modules.",
+      "architecture": [],
+      "contribution": "Built the application: role-specific dashboards, the employee hierarchy, profiles and the sales overview modules.",
       "stack": [
         "Next.js",
         "TypeScript",
@@ -218,6 +230,8 @@
       "featured": false,
       "pitch": "An interactive game portfolio built around the chapters of my life.",
       "description": "A compact 2.5D retro town with a playable character, fast travel on the Memory Line, collectible stories, interactive project exhibits and a recruiter-friendly quick view. In progress.",
+      "architecture": [],
+      "contribution": "",
       "stack": [
         "Three.js",
         "JavaScript",

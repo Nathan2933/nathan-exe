@@ -241,25 +241,35 @@ interact.push(point('memory', -7.4, 12.0, { id: 'bug-report' }));
 interact.push(point('memory', -18.0, 9.6, { id: 'cluster-alert' }));
 
 // --- The Garage (projects + tech stack) ---
-// An open lot: six marked project bays (2 columns x 3 rows) along a central
-// aisle. Each bay has a display board (title card now, your screenshot once a
-// project has an image), a workbench and its own interaction spot.
+// One open-sided inventor's workshop: a steel canopy (its roof fades away while
+// Nathan is inside), a tool wall on the west side, and five handcrafted project
+// exhibits around a central aisle. Exhibits wake up as Nathan approaches.
+// Project index = order in content.json projects.
 hedge(17, 3, 18, 25.2); hedge(3, 24.4, 17, 25.2);
+O('workshop_canopy', 10, 13.6, { w: 13.6, d: 20.4 });
 O('lot_sign', 10.3, 3.4, { text: 'THE GARAGE', color: '#ffb347', rot: 0 });
 O('skills_board', 13.6, 4.4, { rot: 0 });
 O('server_rack', 16.3, 4.4);
-const BAYS = [[7.0, 9.0], [13.6, 9.0], [7.0, 14.5], [13.6, 14.5], [7.0, 20.0], [13.6, 20.0]];
-BAYS.forEach(([x, z], i) => {
-  O('project_bay', x, z, { index: i });
-  interact.push(point('project', x, z + 1.5, { index: i }));
+O('tool_wall', 3.6, 18.6, { len: 8, rot: -90 });
+const EXHIBITS = [
+  // [piece, x, z, interact x, interact z]
+  ['exhibit_aratro', 6.6, 8.6, 6.6, 11.0],            // 0 Aratro
+  ['exhibit_covered', 14.0, 8.6, 14.0, 10.8],         // 1 Microservices Security
+  ['exhibit_covered', 6.6, 15.4, 6.6, 17.6],          // 2 TCE Event Scheduler
+  ['exhibit_covered', 14.0, 15.4, 14.0, 17.6],        // 3 CauverySite
+  ['exhibit_covered', 10.3, 21.0, 13.3, 21.0],        // 4 NATHAN.EXE (centre workbench)
+];
+EXHIBITS.forEach(([piece, x, z, ix, iz], i) => {
+  O(piece, x, z, { index: i });
+  interact.push(point('project', ix, iz, { index: i }));
 });
-labels.push(point('label', 10.3, 14.5, { text: 'THE GARAGE', color: '#2a2440', height: 6 }));
+labels.push(point('label', 10.3, 13.0, { text: 'THE GARAGE', color: '#2a2440', height: 7.4 }));
 interact.push(point('chapter', 7.8, 4.8, { id: 'garage', district: 'garage' }));
 interact.push(point('panel', 13.6, 5.6, { id: 'skills', district: 'garage', panel: 'skills', title: 'Tech stack' }));
-interact.push(point('memory', 10.3, 9.0, { id: 'six-hours' }));
-interact.push(point('memory', 10.3, 14.5, { id: 'warehouse-node' }));
-interact.push(point('memory', 10.3, 20.0, { id: 'hack-odyssey' }));
-interact.push(point('memory', 5.0, 23.4, { id: 'property-dashboard' }));
+interact.push(point('memory', 9.6, 6.8, { id: 'hack-odyssey' }));      // by the Aratro trophy
+interact.push(point('memory', 3.9, 11.8, { id: 'warehouse-node' }));   // by the Aratro warehouse
+interact.push(point('memory', 9.4, 15.4, { id: 'six-hours' }));        // by the Event Scheduler
+interact.push(point('memory', 16.3, 15.4, { id: 'property-dashboard' })); // by CauverySite
 // --- Winter Campus (Russia chapter) ---
 O('faculty_building', 0, -37.6, { text: 'TOMSK STATE UNIVERSITY' });
 labels.push(point('label', 0, -37.6, { text: 'WINTER CAMPUS', color: '#2f5f9a', height: 9.6 }));
@@ -371,9 +381,9 @@ route('thianesh', [[-17, -9.0], [-11.5, -8.0], [-10.5, -5.5], [-16.5, -5.5]], tr
 route('guru', [[-3.4, -32.2], [-8.6, -32.4], [-7.8, -30.0]]);                              // Winter Campus (west)
 route('shabeer', [[9.5, -7.0], [14.4, -11.5], [9.5, -16.0], [4.6, -11.5]], true);         // City Park, around the fountain
 route('anu', [[33.2, -1.4], [36.4, -1.6], [39, 2.4], [35.8, 2.6]], true);                  // TCE forecourt
-route('akshai', [[10.3, 6.4], [10.3, 14.5], [10.3, 23.4]]);                                // Garage, centre aisle
-route('naveen', [[4.8, 23.4], [7.2, 23.4], [9.6, 23.4]]);                                  // Garage, back strip (west)
-route('shabesh', [[11.0, 23.4], [13.6, 23.4], [16.2, 23.4]]);                              // Garage, back strip (east)
+route('akshai', [[10.3, 5.8], [10.3, 12.2], [10.3, 17.9]]);                                // Garage, centre aisle past the exhibits
+route('naveen', [[4.8, 23.3], [7.6, 23.3], [7.6, 18.6]]);                                  // Garage, tool wall to the centre bench
+route('shabesh', [[16.2, 23.3], [13.0, 23.3], [16.2, 18.6]], true);                        // Garage, east side by the exhibits
 
 // ---------------- Write map ----------------
 const layer = (name, objs) => ({ id: nextId++, name, type: 'objectgroup', draworder: 'topdown', opacity: 1, visible: true, x: 0, y: 0, objects: objs });

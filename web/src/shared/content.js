@@ -38,6 +38,29 @@ export function linkByLabel(content, label) {
   return (content.links || []).find((l) => l.label.toLowerCase() === label.toLowerCase());
 }
 
+/** Full project sheet for the Garage exhibits: links, architecture, stack, contribution. */
+export function projectDetails(p) {
+  const links = [
+    p.github && `<a class="pd-link" href="${esc(safeUrl(p.github))}" target="_blank" rel="noopener">GitHub ↗</a>`,
+    p.demo && `<a class="pd-link" href="${esc(safeUrl(p.demo))}" target="_blank" rel="noopener">Live demo ↗</a>`,
+  ].filter(Boolean).join('');
+  const arch = (p.architecture || []).filter(Boolean);
+  return `
+    <article class="project-details${p.featured ? ' is-featured' : ''}">
+      ${p.image ? `<img class="pd-shot" src="${esc(safeUrl(p.image))}" alt="" loading="lazy">` : ''}
+      <header class="pd-head">
+        <h3>${esc(p.title)}</h3>
+        ${p.year ? `<span class="project-year">${esc(p.year)}</span>` : ''}
+      </header>
+      ${p.pitch ? `<p class="pd-pitch">${esc(p.pitch)}</p>` : ''}
+      ${p.description ? `<p class="pd-desc">${esc(p.description)}</p>` : ''}
+      ${p.contribution ? `<section class="pd-sec"><h4>My contribution</h4><p>${esc(p.contribution)}</p></section>` : ''}
+      ${arch.length ? `<section class="pd-sec"><h4>Architecture</h4><ol class="pd-arch">${arch.map((a) => `<li>${esc(a)}</li>`).join('')}</ol></section>` : ''}
+      ${p.stack?.length ? `<section class="pd-sec"><h4>Tech stack</h4><ul class="chips">${p.stack.map((s) => `<li>${esc(s)}</li>`).join('')}</ul></section>` : ''}
+      ${links ? `<div class="pd-links">${links}</div>` : ''}
+    </article>`;
+}
+
 export function projectCard(p) {
   const links = [
     p.github && `<a href="${esc(safeUrl(p.github))}" target="_blank" rel="noopener">Code ↗</a>`,
