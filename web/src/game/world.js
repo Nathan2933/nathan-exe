@@ -250,9 +250,14 @@ function transformCollider(c, x, z, rotDeg) {
 }
 
 /** Walker NPCs stroll along their Tiled polylines, pausing at the ends. */
-export function updateWalkers(walkers, dt, t, heightAt) {
+export function updateWalkers(walkers, dt, t, heightAt, avoid = null) {
   for (const w of walkers) {
     const v = new THREE.Vector3();
+    // Step aside for the player: if Nathan is right ahead, pause and look at him.
+    const gp = w.ch.group.position;
+    const blocked = avoid && Math.hypot(avoid.x - gp.x, avoid.z - gp.z) < 1.1;
+    w.ch.lookAt(blocked ? avoid : null);
+    if (blocked && w.wait <= 0) { w.ch.group.position.y = heightAt(gp.x, gp.z); w.ch.update(dt, v, t); continue; }
     if (w.wait > 0) {
       w.wait -= dt;
     } else {

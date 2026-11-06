@@ -203,7 +203,7 @@ O('tree_round', -5.2, -17.6); O('tree_round', -8.6, -17.8, { scale: 0.85 });
 O('lot_sign', -11, -2.9, { text: 'IRON YARD', color: '#ff6a3d', rot: 0 });
 labels.push(point('label', -14.5, -16, { text: 'IRON YARD', color: '#1e1b2e', height: 7.2 }));
 interact.push(point('chapter', -8.5, -5.6, { id: 'iron-yard', district: 'iron-yard' }));
-interact.push(point('npc', -7.2, -11.4, { id: 'coach', rot: -90 }));
+interact.push(point('npc', -11.2, -9.6, { id: 'coach', rot: 90 }));
 interact.push(point('minigame', -8.5, -8.2, { id: 'lift', district: 'iron-yard' }));
 interact.push(point('memory', -18.6, -10.6, { id: 'before-photo' }));
 interact.push(point('memory', -11.8, -12.6, { id: 'first-logbook' }));
@@ -359,8 +359,8 @@ for (let a = 0; a < Math.PI * 2; a += 0.085) {
 }
 
 // NPC walking routes (ambient townsfolk follow these polylines back and forth)
-paths.push(line('walk', [[3.5, 30], [3.5, 9.8], [9.6, 3.5], [24, 3.5]], { outfit: 'teal' }));
-paths.push(line('walk', [[-30, -3.5], [-9.8, -3.5], [-3.5, -9.8], [-3.5, -30]], { outfit: 'saffron' }));
+paths.push(line('walk', [[2.7, 29], [2.7, 2.7], [23.5, 2.7]], { outfit: 'teal' }));          // along the sidewalks
+paths.push(line('walk', [[-29.5, -2.7], [-2.7, -2.7], [-2.7, -27]], { outfit: 'saffron' }));
 paths.push(line('walk', [[-6.2, 0.5], [-4.4, 4.4], [0.5, 6.2], [4.4, 4.4], [6.2, -0.5], [4.4, -4.4], [-0.5, -6.2], [-4.4, -4.4], [-6.2, 0.5]], { outfit: 'pink', loop: true }));
 
 // ---------------- Write map ----------------

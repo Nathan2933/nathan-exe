@@ -223,7 +223,13 @@ function setupUI() {
   renderJourney();
   $('#hint').innerHTML = isTouch
     ? 'Tap to walk · tap <b>◆</b> to interact'
-    : 'Click or <kbd>WASD</kbd> to walk · <kbd>Shift</kbd> run · <kbd>E</kbd> interact';
+    : '<kbd>WASD</kbd> walk <kbd>Space</kbd> jump <kbd>E</kbd> interact <kbd>M</kbd> map <kbd>H</kbd> help';
+  $('#help-btn').addEventListener('click', () => toggleControls());
+  $('#controls-close').addEventListener('click', () => toggleControls(false));
+  $('#map-btn').addEventListener('click', (e) => { e.stopPropagation(); toggleBigMap(true); });
+  $('#bigmap-close').addEventListener('click', () => toggleBigMap(false));
+  $('#bigmap').addEventListener('click', (e) => { if (e.target.id === 'bigmap') toggleBigMap(false); });
+  $('#bigmap-canvas').addEventListener('click', onBigMapClick);
 
   $('#prompt').addEventListener('click', () => state.nearby && interact(state.nearby));
   $('#panel-close').addEventListener('click', closePanel);
@@ -235,7 +241,15 @@ function setupUI() {
   $('#journey-toggle').addEventListener('click', () => $('.journey').classList.toggle(innerWidth <= 760 ? 'open-m' : 'collapsed'));
   window.addEventListener('keydown', (e) => {
     if (!state.started || state.minigame) return;
-    if (e.key === 'Escape') { if (dialogue.open) dialogue.close(); else closePanel(); }
+    if (e.target.closest?.('input, textarea')) return;
+    if (e.key === 'm' || e.key === 'M') { e.preventDefault(); toggleBigMap(); return; }
+    if (e.key === 'h' || e.key === 'H') { e.preventDefault(); toggleControls(); return; }
+    if (e.key === 'Escape') {
+      if (!$('#bigmap').classList.contains('hidden')) return toggleBigMap(false);
+      if (!$('#controls').classList.contains('hidden')) return toggleControls(false);
+      if (dialogue.open) dialogue.close(); else closePanel();
+    }
+    if (e.key === ' ' && !dialogue.open) { e.preventDefault(); if (player.jump()) sfx.rep(); return; }
     const act = e.key === 'e' || e.key === 'E' || e.key === 'Enter' || (e.key === ' ' && dialogue.open);
     const focused = document.activeElement;
     if (!act || focused?.closest?.('input, textarea, select')) return;
@@ -841,10 +855,11 @@ function update(dt, t) {
   const pos = player.group.position;
   const frozen = !!state.minigame;
 
-  if (state.started && !frozen && (kx || kz)) {
+  const keyboardMove = state.started && !frozen && !state.ko && !!(kx || kz);
+  if (keyboardMove) {
     state.path = []; state.pendingOpen = null; marker.visible = false;
     velocity.addScaledVector(right, kx).addScaledVector(fwd, kz).normalize().multiplyScalar(running ? RUN : SPEED);
-  } else if (!frozen && state.path.length) {
+  } else if (!frozen && !state.ko && state.path.length) {
     const wp = state.path[0];
     const dx = wp.x - pos.x, dz = wp.z - pos.z;
     const d = Math.hypot(dx, dz);
@@ -863,14 +878,17 @@ function update(dt, t) {
     }
   }
 
-  // Move with axis-separated sliding (feels better than stopping dead on walls)
-  if (velocity.lengthSq() > 0) {
+  // Move with axis-separated sliding (feels better than stopping dead on walls).
+  // Keyboard movement only respects solid things, so you *can* walk into the
+  // lake or off the island (and pay for it); click-to-move uses the nav grid.
+  const free = keyboardMove ? solidFree : (x, z) => nav.isWalkable(x, z, 0.32) && !charBlocks(x, z);
+  if (velocity.lengthSq() > 0 && !state.ko) {
     const nx = pos.x + velocity.x * dt, nz = pos.z + velocity.z * dt;
-    const okX = nav.isWalkable(nx, pos.z, 0.32), okZ = nav.isWalkable(pos.x, nz, 0.32);
-    if (okX) pos.x = nx; else velocity.x = 0;
-    if (okZ) pos.z = nz; else velocity.z = 0;
+    if (free(nx, pos.z)) pos.x = nx; else velocity.x = 0;
+    if (free(pos.x, nz)) pos.z = nz; else velocity.z = 0;
   }
-  pos.y += (heightAt(pos.x, pos.z) - pos.y) * Math.min(1, dt * 18);
+  if (!state.ko) pos.y += (heightAt(pos.x, pos.z) - pos.y) * Math.min(1, dt * 18);
+  checkHazards(dt);
   player.update(dt, velocity, t);
   stepT -= dt * Math.hypot(velocity.x, velocity.z);
   if (stepT < 0) { stepT = 1.55; if (velocity.lengthSq() > 1) sfx.step(); }
@@ -901,7 +919,7 @@ function update(dt, t) {
     }
     ch.update(dt, ZERO, t);
   }
-  updateWalkers(world.walkers, dt, t, heightAt);
+  updateWalkers(world.walkers, dt, t, heightAt, state.ko ? null : pos);
 
   for (const it of world.interactables) {
     if (!it.beacon) continue;
@@ -931,6 +949,8 @@ function update(dt, t) {
   sun.target.position.copy(camTarget);
   updateLabels();
   drawMinimap(t);
+  placePrompt();
+  if (state.started && !hintHidden && (t > 14 || state.save.chapters.length)) { hintHidden = true; $('#hint').classList.add('faded'); }
 
   const progress = MAIN_DISTRICTS.filter((d) => state.save.chapters.includes(d.id)).length / MAIN_DISTRICTS.length;
   scene.background.lerpColors(SKY_START, SKY_END, progress);
@@ -943,6 +963,188 @@ function update(dt, t) {
   if (DEBUG) updateDebug(dt);
 }
 const ZERO = new THREE.Vector3();
+let hintHidden = false;
+
+// The interaction prompt floats above the thing you can interact with (desktop);
+// on touch screens it stays a big tappable button at the bottom.
+const promptV = new THREE.Vector3();
+function placePrompt() {
+  const pr = $('#prompt');
+  if (isTouch || !state.nearby || pr.classList.contains('hidden')) return;
+  promptV.set(state.nearby.x, (state.nearby.kind === 'npc' ? 2.9 : 3.1), state.nearby.z).project(camera);
+  const x = (promptV.x * 0.5 + 0.5) * innerWidth, y = (-promptV.y * 0.5 + 0.5) * innerHeight;
+  pr.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px) translate(-50%, -100%)`;
+}
+
+function toggleControls(force) {
+  const el = $('#controls');
+  const open = force ?? el.classList.contains('hidden');
+  el.classList.toggle('hidden', !open);
+  $('#help-btn').setAttribute('aria-expanded', String(open));
+}
+
+// ---------------- Full map (M) ----------------
+const BM = { size: 0, scale: 0 };
+const rot45 = (u, v) => [u * Math.SQRT1_2 - v * Math.SQRT1_2, u * Math.SQRT1_2 + v * Math.SQRT1_2];
+function toggleBigMap(force) {
+  const el = $('#bigmap');
+  const open = force ?? el.classList.contains('hidden');
+  el.classList.toggle('hidden', !open);
+  if (open) { closePanel(); dialogue.close(); drawBigMap(); }
+}
+function bigMapPx(x, z) {
+  const [u, v] = rot45(x * BM.scale, z * BM.scale);
+  return [BM.size / 2 + u, BM.size / 2 + v];
+}
+function drawBigMap() {
+  const cv = $('#bigmap-canvas');
+  const css = Math.min(innerWidth - 48, innerHeight - 140, 720);
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  cv.style.width = cv.style.height = css + 'px';
+  cv.width = cv.height = Math.round(css * dpr);
+  BM.size = cv.width;
+  BM.scale = (BM.size / map.width) * 0.98;
+  const g = cv.getContext('2d');
+  g.fillStyle = '#2fb3c9'; g.fillRect(0, 0, BM.size, BM.size);
+  // tiles, rotated to match the camera
+  g.save(); g.translate(BM.size / 2, BM.size / 2); g.rotate(Math.PI / 4);
+  const s = BM.scale;
+  for (let j = 0; j < map.height; j++) for (let i = 0; i < map.width; i++) {
+    const gid = map.ground[j * map.width + i];
+    if (!gid) continue;
+    g.fillStyle = map.tiles.get(gid).color;
+    g.fillRect((i - map.half) * s, (j - map.half) * s, Math.ceil(s) + 0.5, Math.ceil(s) + 0.5);
+  }
+  for (const o of map.objects) {
+    if (o.type === 'hedge') { g.fillStyle = '#5f9a4a'; g.fillRect((o.x - o.w / 2) * s, (o.z - o.d / 2) * s, o.w * s, o.d * s); }
+  }
+  if (map.rail) {
+    g.strokeStyle = '#8a5a36'; g.lineWidth = s * 1.1; g.setLineDash([s * 0.5, s * 0.4]); g.beginPath();
+    map.rail.points.forEach((p, i) => (i ? g.lineTo(p.x * s, p.z * s) : g.moveTo(p.x * s, p.z * s)));
+    g.closePath(); g.stroke(); g.setLineDash([]);
+  }
+  g.restore();
+  // markers (unrotated so they stay upright)
+  const dot = (x, z, fill, r, shape = 'diamond') => {
+    const [px, py] = bigMapPx(x, z);
+    g.fillStyle = fill; g.strokeStyle = '#2a2440'; g.lineWidth = 2 * dpr;
+    g.beginPath();
+    if (shape === 'diamond') { g.moveTo(px, py - r); g.lineTo(px + r, py); g.lineTo(px, py + r); g.lineTo(px - r, py); g.closePath(); }
+    else g.rect(px - r, py - r, r * 2, r * 2);
+    g.fill(); g.stroke();
+  };
+  for (const st of world.stations) dot(st.x, st.z, '#ffd257', 6 * dpr, 'square');
+  for (const it of world.interactables) if (it.kind === 'chapter' || it.kind === 'finale') dot(it.x, it.z, it.visited ? '#9b94ad' : '#ff6a3d', 8 * dpr);
+  // labels
+  g.font = `${Math.round(11 * dpr)}px Silkscreen, monospace`; g.textAlign = 'center'; g.textBaseline = 'bottom';
+  for (const l of world.labels) {
+    const [px, py] = bigMapPx(l.pos.x, l.pos.z);
+    const w = g.measureText(l.text).width + 10 * dpr;
+    g.fillStyle = 'rgba(255,248,234,.92)'; g.fillRect(px - w / 2, py - 26 * dpr, w, 16 * dpr);
+    g.fillStyle = '#2a2440'; g.fillText(l.text, px, py - 12 * dpr);
+  }
+  // you
+  const p = player.group.position;
+  const [px, py] = bigMapPx(p.x, p.z);
+  g.fillStyle = '#2a2440'; g.beginPath(); g.arc(px, py, 8 * dpr, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#ff6a3d'; g.beginPath(); g.arc(px, py, 4.5 * dpr, 0, Math.PI * 2); g.fill();
+}
+function onBigMapClick(e) {
+  const r = e.currentTarget.getBoundingClientRect();
+  const k = BM.size / r.width;
+  const u = ((e.clientX - r.left) * k - BM.size / 2) / BM.scale, v = ((e.clientY - r.top) * k - BM.size / 2) / BM.scale;
+  const ix = u * Math.SQRT1_2 + v * Math.SQRT1_2, iz = -u * Math.SQRT1_2 + v * Math.SQRT1_2; // undo the 45° turn
+  // snap to a chapter marker if the click is close to one
+  const hit = world.interactables.filter((i) => i.kind === 'chapter' || i.kind === 'station' || i.kind === 'finale')
+    .find((i) => Math.hypot(i.x - ix, i.z - iz) < 3);
+  toggleBigMap(false);
+  if (hit) walkToInteractable(hit); else { state.pendingOpen = null; walkTo(ix, iz); }
+}
+
+// ---------------- Collisions with characters + hazards ----------------
+function charBlocks(x, z) {
+  for (const w of world.walkers) { const p = w.ch.group.position; if (Math.hypot(p.x - x, p.z - z) < 0.62) return true; }
+  return false;
+}
+function solidFree(x, z) {
+  const r = 0.32;
+  for (const c of world.colliders) {
+    if (c.r !== undefined) { if (Math.hypot(x - c.cx, z - c.cz) < c.r + r) return false; }
+    else if (x > c.minX - r && x < c.maxX + r && z > c.minZ - r && z < c.maxZ + r) return false;
+  }
+  if (Math.hypot(x, z) > (map.props.islandRadius || 44) + 3) return false; // don't swim to the horizon
+  // a stopped train is solid
+  if (world.railway && world.railway.speed < 0.5 && trainNear(x, z, 0.3)) return false;
+  return !charBlocks(x, z);
+}
+function onFloor(x, z) { return world.floors.some((f) => x >= f.minX && x <= f.maxX && z >= f.minZ && z <= f.maxZ); }
+function isWet(x, z) {
+  if (onFloor(x, z)) return false;
+  const t = tileAt(map, x, z);
+  return !t || t.type === 'water';
+}
+const trainLocal = new THREE.Vector3();
+function trainNear(x, z, pad = 0) {
+  for (const car of world.railway.train) {
+    trainLocal.set(x - car.position.x, 0, z - car.position.z).applyAxisAngle(UP, -car.rotation.y);
+    if (Math.abs(trainLocal.z) < 1.45 + pad && Math.abs(trainLocal.x) < 0.85 + pad) return true;
+  }
+  return false;
+}
+const UP = new THREE.Vector3(0, 1, 0);
+let safeT = 0;
+const lastSafe = new THREE.Vector3(1.2, 0, 6.2);
+function checkHazards(dt) {
+  if (!world || state.ko || !state.started) return;
+  const p = player.group.position;
+  // remember the last dry, off-track spot for respawning
+  safeT -= dt;
+  if (safeT < 0 && !player.airborne && !isWet(p.x, p.z) && solidFree(p.x, p.z) && !(world.railway && trainNear(p.x, p.z, 1.5))) {
+    // keep the respawn point a step back from the water's edge
+    if (!isWet(p.x + 0.8, p.z) && !isWet(p.x - 0.8, p.z) && !isWet(p.x, p.z + 0.8) && !isWet(p.x, p.z - 0.8)) lastSafe.copy(p);
+    safeT = 0.25;
+  }
+  if (!player.airborne && isWet(p.x, p.z)) return knockout('water');
+  if (world.railway && world.railway.speed > 0.5 && player.jumpY < 1.1 && trainNear(p.x, p.z)) return knockout('train');
+}
+function knockout(kind) {
+  state.ko = kind;
+  state.path = []; state.pendingOpen = null; marker.visible = false;
+  closePanel(); dialogue.close();
+  const p = player.group.position;
+  const msg = kind === 'water'
+    ? ['SPLASH!', 'Nathan can lift, but he can’t swim (yet).']
+    : ['MIND THE MEMORY LINE', 'Hit by the train. Respawning at the nearest station.'];
+  sfx.miss();
+  const el = $('#ko');
+  el.innerHTML = `<div class="ko-card"><b>${msg[0]}</b><span>${msg[1]}</span></div>`;
+  el.classList.remove('hidden');
+  const t0 = performance.now();
+  const fall = () => {
+    const k = Math.min(1, (performance.now() - t0) / 700);
+    if (kind === 'water') p.y = -0.9 * k;                       // sink
+    else { player.group.rotation.x = -1.4 * k; p.y = 0.2 * Math.sin(k * Math.PI); } // knocked flat
+    if (k < 1) requestAnimationFrame(fall);
+  };
+  requestAnimationFrame(fall);
+  setTimeout(() => {
+    el.classList.add('dark');
+    setTimeout(() => {
+      let spawn = lastSafe;
+      if (kind === 'train' && world.stations.length) {
+        const s = world.stations.reduce((a, b) => (Math.hypot(a.x - p.x, a.z - p.z) <= Math.hypot(b.x - p.x, b.z - p.z) ? a : b));
+        spawn = new THREE.Vector3(s.x, 0, s.z);
+      }
+      p.set(spawn.x, heightAt(spawn.x, spawn.z), spawn.z);
+      player.group.rotation.x = 0;
+      camTarget.set(p.x, 0, p.z);
+      el.classList.remove('dark');
+      el.classList.add('hidden');
+      state.ko = null;
+      persist();
+    }, reducedMotion ? 50 : 450);
+  }, reducedMotion ? 400 : 1300);
+}
 const RAIN_SKY = new THREE.Color(0x8fa6bd);
 let rainMix = 0;
 let stepT = 0;

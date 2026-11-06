@@ -55,9 +55,31 @@
       </div>
     </aside>
 
-    <div class="minimap-wrap" title="Map — click to travel">
+    <div class="minimap-wrap" title="Map: click to travel, M for the full map">
       <canvas id="minimap" aria-label="Island map. Click a spot to walk there."></canvas>
+      <button type="button" class="map-btn" id="map-btn" aria-label="Open full map (M)">M</button>
     </div>
+    <button type="button" class="help-btn" id="help-btn" aria-label="Controls (H)" aria-expanded="false">?</button>
+    <section class="controls window hidden" id="controls" aria-label="Controls">
+      <div class="window-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">controls.cfg</span><button class="panel-close" id="controls-close" aria-label="Close">✕</button></div>
+      <dl class="controls-list">
+        <dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / click</dt><dd>Walk</dd>
+        <dt><kbd>Shift</kbd></dt><dd>Run</dd>
+        <dt><kbd>Space</kbd></dt><dd>Jump</dd>
+        <dt><kbd>E</kbd></dt><dd>Interact · talk · next line</dd>
+        <dt><kbd>M</kbd></dt><dd>Full map</dd>
+        <dt><kbd>H</kbd></dt><dd>This help</dd>
+        <dt><kbd>Esc</kbd></dt><dd>Close window</dd>
+        <dt>Scroll / pinch</dt><dd>Zoom</dd>
+      </dl>
+    </section>
+    <section class="bigmap hidden" id="bigmap" role="dialog" aria-label="Island map">
+      <div class="bigmap-card window">
+        <div class="window-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">island.map · click to travel</span><button class="panel-close" id="bigmap-close" aria-label="Close map">✕</button></div>
+        <canvas id="bigmap-canvas"></canvas>
+        <div class="bigmap-legend"><span><i class="lg-ch"></i>Chapter</span><span><i class="lg-done"></i>Visited</span><span><i class="lg-st"></i>Station</span><span><i class="lg-you"></i>You</span></div>
+      </div>
+    </section>
 
     <div class="hint" id="hint"></div>
 
@@ -75,6 +97,7 @@
     <section class="minigame window hidden" id="minigame" role="dialog" aria-label="Minigame"></section>
     <div class="travel hidden" id="travel" role="dialog" aria-label="Travelling on the Memory Line"></div>
     <div class="finale hidden" id="finale"></div>
+    <div class="ko hidden" id="ko" role="alert"></div>
 
     <div class="toast hidden" id="toast" role="status"></div>
 

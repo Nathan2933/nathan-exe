@@ -94,5 +94,5 @@ export function buildRailway(root, map, stations, animated) {
       g.rotation.y = Math.atan2(tan.x, tan.z);
     });
   });
-  return { curve, length: L, train };
+  return { curve, length: L, train, get speed() { return state.v; } };
 }

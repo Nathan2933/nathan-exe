@@ -50,10 +50,15 @@ Security model: saving only works from `localhost` in dev mode, and `admin.html`
 
 | | Desktop | Mobile |
 |---|---|---|
-| Move | Click ground / WASD / arrows (Shift = faster) | Tap ground |
-| Open | Click a ◆, or E when near | Tap a ◆ or the prompt |
-| Zoom | Mouse wheel | Pinch |
-| Shortcut | Journey log entries walk you to a district | same |
+| Walk / run | WASD or click (Shift = run) | Tap |
+| Jump | Space | — |
+| Interact / talk / next line | E (or click the ◆) | Tap the ◆ or the prompt |
+| Full map | M (or the M button on the minimap) | M button |
+| Controls help | H or the ? button | ? button |
+| Close a window | Esc | ✕ |
+| Zoom | Scroll | Pinch |
+
+Hazards: walking into the lake or off the island, or standing in front of a moving Memory Line train, knocks Nathan out and respawns him (last dry spot / nearest station). Click-to-walk routes always avoid them.
 
 ## Deploy
 

@@ -172,6 +172,7 @@ export class Character {
     this.idleLookT = 3;
     this.idleYaw = 0;
     this.buff = 0; this.buffTarget = 0;
+    this.jumpY = 0; this.jumpV = 0; // vertical hop offset (metres) and velocity
     this.joints = {}; // smoothed joint values
   }
 
@@ -246,6 +247,9 @@ export class Character {
   /** World-space point to look at (or null). */
   lookAt(v) { this.look = v; }
   get busy() { return !!this.action; }
+  /** Hop. Returns false if already in the air. */
+  jump() { if (this.jumpY > 0.001) return false; this.jumpV = 5.6; return true; }
+  get airborne() { return this.jumpY > 0.001; }
 
   update(dt, velocity, t) {
     const J = this.joints;
@@ -344,6 +348,19 @@ export class Character {
     this.neck.rotation.x = -J.spineX * 0.6;
     this.head.rotation.y = J.headY;
     this.head.rotation.x = J.headX;
+
+    // jump arc: tuck legs and raise arms while airborne
+    if (this.jumpV !== 0 || this.jumpY > 0) {
+      this.jumpV -= 18 * dt;
+      this.jumpY = Math.max(0, this.jumpY + this.jumpV * dt);
+      if (this.jumpY === 0) this.jumpV = 0;
+    }
+    if (this.jumpY > 0) {
+      const a = Math.min(1, this.jumpY * 2);
+      this.legs.forEach((leg) => { leg.thigh.rotation.x = -0.7 * a; leg.knee.rotation.x = 1.2 * a; });
+      this.arms.forEach((arm) => { arm.shoulder.rotation.z = arm.side * 0.9 * a; arm.shoulder.rotation.x = -0.4 * a; });
+    }
+    this.hips.position.y += this.jumpY;
 
     this.buff = damp(this.buff, this.buffTarget, 2, dt);
     const b = 1 + this.buff * 0.14;
