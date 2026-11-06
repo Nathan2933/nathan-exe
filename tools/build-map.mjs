@@ -171,10 +171,10 @@ for (let i = 0; i < 4; i++) {
   if (i !== 1) O('planter', +(cx * 7.2).toFixed(2), +(sz * 7.2).toFixed(2));
   O('lamp', +(cx * 8.7).toFixed(2), +(sz * 8.7).toFixed(2));
 }
-O('notice_board', -4.2, 7.4, { rot: 0 });
+O('notice_board', 6.4, 2.7, { rot: 0 });
 O('bin', 3.4, 8.6);
 spawn.push(point('spawn', 1.2, 6.2));
-interact.push(point('about', -4.2, 8.9, { id: 'about' }));
+interact.push(point('about', 6.4, 4.1, { id: 'about' }));
 labels.push(point('label', 0, 0, { text: 'NATHAN.EXE', color: '#ff6a3d', height: 7.4 }));
 
 // --- Street furniture along avenues and the ring (regular rhythm, both sides staggered) ---

@@ -636,7 +636,7 @@ function openAlbum() {
 function markVisited(it, silent) {
   it.visited = true;
   if (!it.beacon) return;
-  if (it.kind === 'memory') { it.beacon.group.visible = false; return; }
+  if (it.kind === 'memory') { it.beacon.group.visible = false; if (it.ground) it.ground.group.visible = false; return; }
   if (it.beacon.setVisited) it.beacon.setVisited();
   if (!silent) it.beacon.gem.scale.setScalar(1.6);
 }
@@ -1166,6 +1166,77 @@ function checkHazards(dt) {
   if (!player.airborne && isWet(p.x, p.z)) return knockout('water');
   if (world.railway && world.railway.speed > 0.5 && player.jumpY < 1.1 && trainNear(p.x, p.z)) return knockout('train');
 }
+
+// ---------------- Death effects ----------------
+const fxMat = (color, opacity = 1) => new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false });
+function runParticles(parts, dur, onFrame) {
+  const t0 = performance.now();
+  let last = t0;
+  const step = () => {
+    const now = performance.now(), dt = Math.min(0.05, (now - last) / 1000); last = now;
+    const k = (now - t0) / dur;
+    for (const q of parts) {
+      q.v.y -= (q.g ?? 14) * dt;
+      q.m.position.addScaledVector(q.v, dt);
+      if (q.floor !== undefined && q.m.position.y < q.floor) { q.m.position.y = q.floor; q.v.set(0, 0, 0); }
+      q.m.rotation.x += dt * 6; q.m.rotation.y += dt * 4;
+      q.m.material.opacity = Math.max(0, 1 - k);
+    }
+    onFrame?.(k);
+    if (k < 1) requestAnimationFrame(step); else parts.forEach((q) => scene.remove(q.m));
+  };
+  requestAnimationFrame(step);
+}
+function deathSplash(at) {
+  const parts = [];
+  for (let i = 0; i < 26; i++) {
+    const a = Math.random() * Math.PI * 2, sp = 1.2 + Math.random() * 2.4;
+    const m = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.12), fxMat(i % 3 ? 0xe9fbff : 0x9fe3f5));
+    m.position.set(at.x, at.y + 0.2, at.z); scene.add(m);
+    parts.push({ m, v: new THREE.Vector3(Math.cos(a) * sp, 4 + Math.random() * 3, Math.sin(a) * sp), g: 16 });
+  }
+  // rising bubbles
+  for (let i = 0; i < 10; i++) {
+    const m = new THREE.Mesh(new THREE.IcosahedronGeometry(0.07 + Math.random() * 0.05, 0), fxMat(0xe9fbff, 0.9));
+    m.position.set(at.x + (Math.random() - 0.5) * 0.6, at.y - 0.4 - Math.random() * 0.6, at.z + (Math.random() - 0.5) * 0.6); scene.add(m);
+    parts.push({ m, v: new THREE.Vector3(0, 0.9 + Math.random() * 0.8, 0), g: 0 });
+  }
+  runParticles(parts, 1500);
+  // expanding ripples
+  const rings = [0, 1, 2].map((i) => {
+    const r = new THREE.Mesh(new THREE.RingGeometry(0.3, 0.42, 24), fxMat(0xe9fbff, 0.9));
+    r.rotation.x = -Math.PI / 2; r.position.set(at.x, 0.05, at.z); r.userData.delay = i * 0.18; scene.add(r); return r;
+  });
+  runParticles([], 1700, (k) => rings.forEach((r) => {
+    const q = Math.max(0, k * 1.2 - r.userData.delay);
+    r.scale.setScalar(1 + q * 6); r.material.opacity = Math.max(0, 0.9 - q);
+    if (k >= 1) scene.remove(r);
+  }));
+}
+function deathBlood(at, dir) {
+  const parts = [];
+  const reds = [0xb3122a, 0x8a0e20, 0xd6233a];
+  for (let i = 0; i < 34; i++) {
+    const a = Math.random() * Math.PI * 2, sp = 1 + Math.random() * 3;
+    const s = 0.07 + Math.random() * 0.1;
+    const m = new THREE.Mesh(new THREE.BoxGeometry(s, s, s), fxMat(reds[i % 3]));
+    m.position.set(at.x, at.y + 0.9, at.z); scene.add(m);
+    parts.push({ m, v: new THREE.Vector3(Math.cos(a) * sp + dir.x * 2, 2.5 + Math.random() * 3.5, Math.sin(a) * sp + dir.z * 2), g: 15, floor: 0.06 });
+  }
+  runParticles(parts, 1400);
+  // splatter decals on the ground that linger, then fade
+  const decals = [];
+  for (let i = 0; i < 7; i++) {
+    const r = 0.25 + Math.random() * 0.55;
+    const d = new THREE.Mesh(new THREE.CircleGeometry(r, 7), fxMat(i % 2 ? 0x8a0e20 : 0xb3122a, 0.9));
+    d.rotation.x = -Math.PI / 2; d.rotation.z = Math.random() * 6;
+    d.scale.set(1 + Math.random() * 0.8, 1, 1);
+    d.position.set(at.x + dir.x * (0.2 + Math.random() * 0.8) + (Math.random() - 0.5) * 1.2, 0.07 + i * 0.002, at.z + dir.z * (0.2 + Math.random() * 0.8) + (Math.random() - 0.5) * 1.2);
+    d.renderOrder = 2; scene.add(d); decals.push(d);
+  }
+  setTimeout(() => runParticles([], 2500, (k) => decals.forEach((d) => { d.material.opacity = 0.9 * (1 - k); if (k >= 1) scene.remove(d); })), 6000);
+}
+
 function knockout(kind) {
   state.ko = kind;
   state.path = []; state.pendingOpen = null; marker.visible = false;
@@ -1177,12 +1248,32 @@ function knockout(kind) {
   sfx.miss();
   const el = $('#ko');
   el.innerHTML = `<div class="ko-card"><b>${msg[0]}</b><span>${msg[1]}</span></div>`;
-  el.classList.remove('hidden');
+  setTimeout(() => el.classList.remove('hidden'), reducedMotion ? 0 : 450);
   const t0 = performance.now();
+  const start = p.clone();
+  // fling direction: away from the train's travel direction (or straight down for water)
+  let fling = new THREE.Vector3();
+  if (kind === 'train' && world.railway) {
+    const car = world.railway.train.reduce((a, b) => (a.position.distanceTo(p) < b.position.distanceTo(p) ? a : b));
+    fling.set(Math.sin(car.rotation.y), 0, Math.cos(car.rotation.y));
+    const side = new THREE.Vector3(-fling.z, 0, fling.x);
+    if (side.dot(new THREE.Vector3().subVectors(p, car.position)) < 0) side.negate();
+    fling.multiplyScalar(1.6).add(side.multiplyScalar(1.4));
+    player.heading = Math.atan2(-fling.x, -fling.z);
+  }
+  if (kind === 'water') deathSplash(start); else deathBlood(start, fling);
   const fall = () => {
-    const k = Math.min(1, (performance.now() - t0) / 700);
-    if (kind === 'water') p.y = -0.9 * k;                       // sink
-    else { player.group.rotation.x = -1.4 * k; p.y = 0.2 * Math.sin(k * Math.PI); } // knocked flat
+    const k = Math.min(1, (performance.now() - t0) / (kind === 'water' ? 1300 : 650));
+    if (kind === 'water') {
+      // struggle, then slowly go under
+      p.y = start.y - 1.5 * k * k;
+      player.group.rotation.z = Math.sin(k * 22) * 0.18 * (1 - k);
+    } else {
+      // knocked off the track and flat on the ground
+      p.x = start.x + fling.x * k; p.z = start.z + fling.z * k;
+      p.y = start.y + Math.sin(k * Math.PI) * 0.9;
+      player.group.rotation.x = -1.5 * Math.min(1, k * 1.4);
+    }
     if (k < 1) requestAnimationFrame(fall);
   };
   requestAnimationFrame(fall);
@@ -1195,14 +1286,14 @@ function knockout(kind) {
         spawn = new THREE.Vector3(s.x, 0, s.z);
       }
       p.set(spawn.x, heightAt(spawn.x, spawn.z), spawn.z);
-      player.group.rotation.x = 0;
+      player.group.rotation.x = 0; player.group.rotation.z = 0;
       camTarget.set(p.x, 0, p.z);
       el.classList.remove('dark');
       el.classList.add('hidden');
       state.ko = null;
       persist();
     }, reducedMotion ? 50 : 450);
-  }, reducedMotion ? 400 : 1300);
+  }, reducedMotion ? 400 : 1900);
 }
 const RAIN_SKY = new THREE.Color(0x8fa6bd);
 let rainMix = 0;
@@ -1260,7 +1351,7 @@ if (import.meta.env.DEV) {
   window.__game = {
     state, player, camera, get world() { return world; }, renderer, dialogue,
     step(frames = 60) { for (let i = 0; i < frames; i++) update(1 / 60, clock.elapsedTime + i / 60); retro.render(scene, camera); },
-    tap: handleTap, walkTo, interact,
+    tap: handleTap, walkTo, interact, knockout,
   };
 }
 

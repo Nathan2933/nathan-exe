@@ -143,7 +143,7 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
   // ---------- interactables ----------
   // Checkpoint marker: a glowing ring on the ground, a soft lit disc inside it
   // and a faint column of light so it reads from across the map.
-  const beacon = (x, _y, z, { small = false } = {}) => {
+  const beacon = (x, _y, z, { small = false, pillar: withPillar = true } = {}) => {
     const g = new THREE.Group();
     const R = small ? 0.62 : 0.95;
     const tile = tileAt(map, x, z);
@@ -156,19 +156,21 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
     ring.rotation.x = -Math.PI / 2; ring.position.y = 0.01;
     const pillar = add(new THREE.Mesh(new THREE.CylinderGeometry(R * 0.82, R * 0.9, small ? 1.6 : 2.4, 24, 1, true), glowMat(0.5, pillarTex())));
     pillar.position.y = (small ? 1.6 : 2.4) / 2;
+    pillar.visible = withPillar;
     g.userData.dynamic = true;
     root.add(g);
     let visited = false;
     animated.push((t) => {
       const k = 0.5 + 0.5 * Math.sin(t * 2.6 + x);
       ring.scale.setScalar(1 + k * (visited ? 0.02 : 0.07));
-      disc.material.opacity = visited ? 0.2 : 0.4 + k * 0.3;
+      disc.material.opacity = visited ? 0.32 + k * 0.12 : 0.4 + k * 0.3;
       pillar.material.opacity = visited ? 0 : 0.28 + k * 0.22;
     });
     return {
       group: g, gem: disc, ring,
-      // Visited spots stay interactive (walk up and press E) but lose their marker.
-      setVisited() { visited = true; g.visible = false; },
+      // Visited spots keep their bright circle (you can always press E there);
+      // only the light column goes, so unvisited spots still stand out.
+      setVisited() { visited = true; pillar.visible = false; },
     };
   };
   const sparkle = (x, z) => {
@@ -208,7 +210,8 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
       const memory = (content.memories || []).find((m) => m.id === pr.id);
       if (!memory) continue;
       const it = { ...base, id: `memory:${memory.id}`, kind: 'memory', memoryId: memory.id, district: memory.district, radius: 1.4 };
-      it.beacon = sparkle(o.x, o.z); hitBox(it, 1.4, 2.4, 1.4); interactables.push(it);
+      it.beacon = sparkle(o.x, o.z); it.ground = beacon(o.x, 0, o.z, { small: true, pillar: false });
+      hitBox(it, 1.4, 2.4, 1.4); interactables.push(it);
     } else if (o.type === 'panel') {
       const it = { ...base, id: `panel:${pr.id}`, kind: 'panel', panel: pr.panel, title: pr.title || pr.panel, district: pr.district, radius: 1.8 };
       it.beacon = beacon(o.x, 2.2, o.z, { small: true }); hitBox(it, 2, 3, 2); interactables.push(it);
@@ -229,6 +232,7 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
       root.add(ch.group);
       colliders.push({ cx: o.x, cz: o.z, r: 0.45 });
       const it = { ...base, id: `npc:${def.id}`, kind: 'npc', npcId: def.id, district: def.district, radius: 2.0, character: ch, homeHeading: ch.heading };
+      it.beacon = beacon(o.x, 0, o.z, { pillar: false });
       hitBox(it, 1.2, 2.6, 1.2);
       interactables.push(it); npcs.push(it);
     }
