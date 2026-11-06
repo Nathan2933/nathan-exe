@@ -2701,10 +2701,20 @@ export const KIT = {
     const rs = new THREE.Shape(); rs.moveTo(-hd - 0.4, 0); rs.lineTo(hd + 0.4, 0); rs.lineTo(0, 1.8); rs.closePath();
     const roof = new THREE.Mesh(new THREE.ExtrudeGeometry(rs, { depth: W + 0.6, bevelEnabled: false }), fm(0xc4623a)); roof.position.set(-hw - 0.3, B + H, 0); roof.rotation.y = Math.PI / 2; roof.castShadow = true; shell.add(roof);
     sb(DOOR + 0.3, H - 0.6, 0.12, 0x5a3a26, 0, B, hd + 0.02).scale.set(1, 1, 1);
+    for (const x of [-DOOR / 2 - 0.45, DOOR / 2 + 0.45]) { sb(0.08, 0.3, 0.14, C.ink, x, B + 1.85, hd + 0.08); sb(0.2, 0.26, 0.2, 0xffc46a, x, B + 1.7, hd + 0.24, 0xffb347); }
+    sb(W - 0.6, 0.06, 0.06, 0xffc46a, 0, B + H - 0.12, hd + 0.08, 0xffb347);
+    for (const x of [-3.4, -1.7, 1.7, 3.4]) sb(0.12, 0.08, 0.12, 0xffd08a, x, B + H - 0.2, hd + 0.14, 0xffb347);
     const sign = boardSign('VANDERLINDE GANG', 7.4, 1.05, { fg: '#fff1d6', bg: '#5a3a26', board: 0x5a3a26, trim: C.amber });
     sign.position.set(0, B + H + 0.65, hd + 0.4); sign.userData.dynamic = true; g.add(sign);
+    // the sign is softly lit: a warm glow behind it and two little lamps above
+    const signBits = new THREE.Group(); signBits.userData.dynamic = true; g.add(signBits);
+    const sbk = kit(signBits), warm = mat(0xffc46a, { emissive: 0xffb347, emissiveIntensity: 0.45 });
+    const halo = new THREE.Mesh(new THREE.PlaneGeometry(8.0, 1.5), new THREE.MeshBasicMaterial({ color: 0xffb347, transparent: true, opacity: 0.16, depthWrite: false, blending: THREE.AdditiveBlending }));
+    halo.position.set(0, B + H + 0.65, hd + 0.3); signBits.add(halo);
+    for (const x of [-2.4, 2.4]) { sbk.box(0.05, 0.35, 0.05, C.ink, x, B + H + 1.2, hd + 0.4); sbk.box(0.05, 0.05, 0.3, C.ink, x, B + H + 1.52, hd + 0.52); sbk.box(0.22, 0.1, 0.16, warm, x, B + H + 1.42, hd + 0.66, { shadow: false }); }
     const sub = boardSign('THE HIDEOUT', 2.6, 0.42, { fg: '#2a2440', bg: '#ffd257', board: 0xffd257, trim: 0x5a3a26 });
     sub.position.set(0, B + H + 0.0, hd + 0.42); sub.userData.dynamic = true; g.add(sub);
+    const entryPool = lightPool(3.2, 0xffc46a); entryPool.position.set(0, 0.1, hd + 1.4); g.add(entryPool);
     const v = new THREE.Vector3(); let fade = 1;
     return {
       obj: g,
@@ -2715,12 +2725,13 @@ export const KIT = {
         { x: 5.4, z: 2.9, w: 0.8, d: 0.6 },
       ],
       floors: [{ x: 0, z: 0, w: W - 2 * T, d: D - 2 * T, h: B }, { x: 0, z: hd + 0.15, w: DOOR, d: 0.7, h: B }],
+      nightGlow: [entryPool],
       animate: (t, state) => {
         const p = state.playerPos; let inside = false;
         if (p) { v.set(p.x, 0, p.z); g.worldToLocal(v); inside = Math.abs(v.x) < hw + 0.3 && v.z > -hd && v.z < hd + 1.0; }
         fade += ((inside ? 0.1 : 1) - fade) * 0.12;
         for (const m of fmats.values()) { m.opacity = fade; m.depthWrite = fade > 0.95; }
-        sign.visible = sub.visible = fade > 0.55;
+        sign.visible = sub.visible = signBits.visible = fade > 0.55;
       },
     };
   },
@@ -2813,5 +2824,34 @@ export const KIT = {
     const flames = [0xff6a3d, 0xffc14d, 0xffe08a].map((c, i) => { const f = new THREE.Mesh(new THREE.ConeGeometry(0.2 - i * 0.05, 0.5 - i * 0.1, 6), new THREE.MeshBasicMaterial({ color: c })); f.position.y = 0.35; dyn.add(f); return f; });
     const pool = lightPool(2.4, 0xff9a4a); pool.position.y = 0.08; g.add(pool);
     return { obj: g, colliders: [{ x: 0, z: 0, r: 0.7 }], nightGlow: [pool], animate: (t) => flames.forEach((f, i) => f.scale.set(1, 0.8 + 0.25 * Math.sin(t * 9 + i * 2), 1)) };
+  },
+
+  path_light() {
+    // Low warm bollard for walkways.
+    const g = new THREE.Group(), k = kit(g);
+    k.box(0.16, 0.5, 0.16, 0x3a2a24, 0, 0, 0);
+    k.box(0.2, 0.14, 0.2, mat(0xffd08a, { emissive: 0xffb347, emissiveIntensity: 0.5 }), 0, 0.5, 0, { shadow: false });
+    k.box(0.24, 0.05, 0.24, 0x3a2a24, 0, 0.64, 0);
+    const pool = lightPool(1.4, 0xffc46a); pool.position.y = 0.08; g.add(pool);
+    return { obj: g, colliders: [{ x: 0, z: 0, r: 0.14 }], nightGlow: [pool] };
+  },
+
+  lantern_post() {
+    // Wooden post with a hanging warm lantern (courtyard / villa).
+    const g = new THREE.Group(), k = kit(g);
+    k.box(0.14, 2.3, 0.14, 0x6f4a30, 0, 0, 0);
+    k.box(0.5, 0.08, 0.08, 0x6f4a30, 0.2, 2.2, 0);
+    k.box(0.02, 0.2, 0.02, C.ink, 0.4, 2.0, 0);
+    k.box(0.22, 0.28, 0.22, mat(0xffc46a, { emissive: 0xffb347, emissiveIntensity: 0.55 }), 0.4, 1.72, 0, { shadow: false });
+    const pool = lightPool(2.2, 0xffc46a); pool.position.set(0.3, 0.08, 0); g.add(pool);
+    return { obj: g, colliders: [{ x: 0, z: 0, r: 0.15 }], nightGlow: [pool] };
+  },
+
+  shrub({ scale = 1 } = {}) {
+    // Small tropical shrub: a few broad leaves around a dark core.
+    const g = new THREE.Group(), k = kit(g);
+    k.mesh(new THREE.IcosahedronGeometry(0.4 * scale, 0), 0x3f8f4a, 0, 0.35 * scale, 0);
+    for (let i = 0; i < 5; i++) { const a = (i / 5) * Math.PI * 2; k.box(0.5 * scale, 0.06, 0.18 * scale, 0x5aa85a, Math.cos(a) * 0.3 * scale, 0.45 * scale, Math.sin(a) * 0.3 * scale, { ry: -a, rz: 0.4 }); }
+    return { obj: g, colliders: [{ x: 0, z: 0, r: 0.35 * scale }] };
   },
 };

@@ -19,7 +19,10 @@ const OUT = path.join(ROOT, 'web/public/maps');
 const N = 84, HALF = N / 2, PX = 16, ISLAND_R = 34;
 
 // must match the GROUND order in build-map.mjs (shared ground.tsj)
-const TYPES = ['grass', 'road', 'road_line', 'sidewalk', 'plaza', 'rubber', 'concrete', 'snow', 'path', 'water', 'sand', 'flowerbed', 'lawn', 'terracotta', 'boardwalk'];
+const TYPES = ['grass', 'road', 'road_line', 'sidewalk', 'plaza', 'rubber', 'concrete', 'snow', 'path', 'water', 'sand', 'flowerbed', 'lawn', 'terracotta', 'boardwalk', 'grass_edge'];
+// landscaping parameters
+const PATH_W = 2;          // every walk is 2 tiles wide
+const BORDER = 1;          // darker grass trim, 1 tile, along every paved edge
 const T = Object.fromEntries(TYPES.map((t, i) => [t, i + 1]));
 
 const ground = new Array(N * N).fill(0);
@@ -39,13 +42,36 @@ for (let z = -HALF; z < HALF; z++) for (let x = -HALF; x < HALF; x++) {
 // airstrip (SW): runway west–east, apron in front of the terminal
 rect(-28, 15, -1, 18, T.concrete);
 rect(-21, 9, -2, 14, T.concrete);
-// central plaza + walks to each place
-disc(0, -1, 4.2, T.plaza);
-walk(-2, -4, -13, -5.4);            // to the hideout door
-walk(3, 0, 18.5, 6.5);               // to the villa stairs
-walk(-2, 2, -7, 9.5);                // to the airstrip apron
-rect(-19, -6, -7, -4, T.terracotta); // hideout courtyard
-disc(21, 8.5, 2.4, T.sand);          // little beach below the villa stairs
+// ---- paths: straight 2-tile walks meeting at one square junction ----
+const walkRect = (x0, z0, x1, z1) => rect(Math.min(x0, x1), Math.min(z0, z1), Math.max(x0, x1), Math.max(z0, z1), T.path);
+rect(-3, -3, 2, 2, T.plaza);                // central junction
+walkRect(-7, -4, -4, -3);                    // west: to the hideout courtyard
+walkRect(-2, 3, -1, 8);                      // south: to the airstrip apron
+walkRect(3, 2, 12, 3);                       // east: towards the villa
+walkRect(13, 2, 14, 7); walkRect(13, 6, 19, 7);   // round the villa to its stairs
+rect(-18, -5, -8, -1, T.plaza);              // hideout courtyard (light stone)
+rect(-14, -6, -12, -5, T.plaza);             //   doorstep
+disc(21, 8.8, 2.2, T.sand);                  // little beach below the villa stairs
+
+// ---- cleanup + borders ----
+const paved = new Set([T.path, T.plaza, T.concrete, T.terracotta]);
+const at = (x, z) => (inside(x, z) ? ground[idx(x, z)] : 0);
+const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+// grass slivers mostly surrounded by paving become paving
+for (let pass = 0; pass < 2; pass++) for (let z = -HALF; z < HALF; z++) for (let x = -HALF; x < HALF; x++) {
+  if (at(x, z) !== T.grass) continue;
+  const n = N4.map(([dx, dz]) => at(x + dx, z + dz)).filter((t) => paved.has(t));
+  if (n.length >= 3) ground[idx(x, z)] = n[0];
+}
+// one even row of darker grass wherever grass meets paving (never on sand or paving)
+for (let b = 0; b < BORDER; b++) {
+  const mark = [];
+  for (let z = -HALF; z < HALF; z++) for (let x = -HALF; x < HALF; x++) {
+    if (at(x, z) !== T.grass) continue;
+    if (N4.some(([dx, dz]) => paved.has(at(x + dx, z + dz)) || (b > 0 && at(x + dx, z + dz) === T.grass_edge))) mark.push(idx(x, z));
+  }
+  for (const i of mark) ground[i] = T.grass_edge;
+}
 
 let nextId = 1;
 const toPx = (v) => (v + HALF) * PX;
@@ -73,8 +99,7 @@ route('tahiti_sf2', [[-13.4, -14.6], [-15.6, -12.0]], { idles: 'look,phone', fac
 route('tahiti_sf3', [[-19.25, -13.0]], { idles: 'lean', faces: '90' });                         // against the west wall
 route('tahiti_sf4', [[-7.6, -7.35]], { idles: 'sit', faces: '180' });                           // at the small table
 interact.push(point('group', -13.0, -10.6, { id: 'vanderlinde', title: 'Join the gang' }));
-interact.push(point('panel', -11.2, -5.0, { id: 'place-hideout', panel: 'place', place: 'hideout', title: 'Vanderlinde Gang Hideout' }));
-interact.push(point('panel', 17.4, 7.8, { id: 'place-villa', panel: 'place', place: 'villa', title: "The Outlaws' Villa" }));
+interact.push(point('panel', 17.6, 8.4, { id: 'place-villa', panel: 'place', place: 'villa', title: "The Outlaws' Villa" }));
 
 // ---- The Outlaws' Villa (E) ----
 O('outlaws_villa', 12, -3, { rot: 0 });
@@ -88,19 +113,30 @@ route('tahiti_cf6', [[21.6, 1.4]], { idles: 'phone', faces: '90' });
 route('tahiti_cf7', [[18.2, -1.0], [20.2, 2.4]], { idles: 'look,gaze', faces: '90,90' });
 interact.push(point('group', 21.4, -2.6, { id: 'outlaws', title: 'Join the Outlaws' }));
 
-// ---- centre ----
-O('campfire', 2.6, 4.2);
-O('bench', -3.2, -4.6, { rot: 45 }); O('bench', 3.4, -4.6, { rot: -45 });
-for (const [x, z, sc] of [[-5, 1.5, 1], [5.4, -1.5, 0.9], [0.5, -6.5, 1.05], [-7.5, -3, 0.95], [8, 4, 1], [-3.5, 7, 0.9]]) O('tree_palm', x, z, { scale: sc });
-O('lamp', -4, 3); O('lamp', 4.6, 1.2);
+// ---- centre: kept simple so the junction reads clearly ----
+O('campfire', 5.6, 6.0);
+O('bench', -0.6, -4.6, { rot: 0 }); O('bench', 3.8, -1.2, { rot: -90 });
+for (const [x, z, sc] of [[-5.5, 2.4, 1], [6.2, -2.4, 0.9], [0.5, -7.2, 1.05], [-8.6, -0.4, 0.95], [8.4, 6.2, 1], [-4.2, 7.4, 0.9]]) O('tree_palm', x, z, { scale: sc });
+// path lights along each walk (warm bollards, outside the walking width)
+for (const [x, z] of [[-5.5, -4.9], [-3.2, 5.0], [-3.2, 8.0], [5.5, 1.4], [9.5, 1.4], [12.2, 5.0], [16.5, 8.4]]) O('path_light', x, z);
+
+// ---- hideout courtyard: paved, a bench, plants, warm lantern posts, open middle ----
+O('lantern_post', -17.6, -1.4); O('lantern_post', -8.4, -1.4);
+O('bench', -16.2, -1.6, { rot: 0 });
+O('shrub', -17.6, -4.8); O('shrub', -8.4, -4.8); O('shrub', -10.6, -5.6, { scale: 0.7 }); O('shrub', -15.4, -5.6, { scale: 0.7 });
+interact.push(point('panel', -11.2, -3.0, { id: 'place-hideout', panel: 'place', place: 'hideout', title: 'Vanderlinde Gang Hideout' }));
+
+// ---- villa surroundings ----
+O('lantern_post', 21.4, 7.4); O('lantern_post', 12.4, 1.2);
+O('shrub', 15.6, 7.8); O('shrub', 21.6, 5.2, { scale: 0.8 }); O('shrub', 9.6, 1.2, { scale: 0.8 });
 
 // ---- shoreline dressing: palms and rocks around the rim ----
 for (let a = 0; a < Math.PI * 2; a += 0.21) {
   const r = islandR(a) - 6.2, x = Math.cos(a) * r, z = Math.sin(a) * r;
   const near = (cx, cz, rr) => Math.hypot(x - cx, z - cz) < rr;
-  if (near(-14, 15, 15) || near(-14, 12, 9) || near(20, -2, 9) || near(21, 8, 4) || near(-13, -11, 8)) continue;
+  if (near(-14, 15, 15) || near(-14, 12, 9) || near(20, -2, 9) || near(21, 8, 5) || near(-13, -8, 11)) continue;
   const i = Math.round(a / 0.21);
-  if (i % 3 === 0) O('rock', +x.toFixed(2), +z.toFixed(2), { scale: 0.8 + (i % 4) * 0.15 });
+  if (i % 5 === 0) O('rock', +x.toFixed(2), +z.toFixed(2), { scale: 0.8 + (i % 4) * 0.15 });
   else O('tree_palm', +x.toFixed(2), +z.toFixed(2), { scale: 0.85 + (i % 5) * 0.06 });
 }
 

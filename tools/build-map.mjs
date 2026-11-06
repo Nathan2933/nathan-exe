@@ -37,6 +37,7 @@ export const GROUND = [
   { type: 'lawn', color: '#93c86a' },
   { type: 'terracotta', color: '#d9ccb2' },
   { type: 'boardwalk', color: '#c98b55' },
+  { type: 'grass_edge', color: '#86b85a' },   // darker trim along Tahiti's paths
 ];
 const T = Object.fromEntries(GROUND.map((g, i) => [g.type, i + 1]));
 
