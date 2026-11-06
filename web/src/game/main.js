@@ -81,21 +81,14 @@ async function runBoot(loaded) {
   stopBootHero = bootHero();
   const pre = $('#boot-text');
   const quick = reducedMotion || sessionStorage.getItem('nathan-exe:booted');
-  for (const line of bootLines) {
-    if (quick) { pre.textContent += line + '\n'; continue; }
-    for (const ch of line) { pre.textContent += ch; await wait(8); }
-    pre.textContent += '\n';
-    await wait(60);
-  }
-  pre.textContent = pre.textContent.replace(/\n$/, '');
+  // title screen: no BIOS text, just wait for loading, then "press any key"
+  void quick; void bootLines;
+  pre.textContent = '';
   await loaded;
-  const s = state.save;
-  const fresh = !s.chapters.length && !s.memories.length;
-  pre.textContent += fresh ? 'NEW GAME\n\n> run NATHAN.EXE' : `FOUND (${s.chapters.length} chapters, ${s.memories.length} memories, ${formatTime(s.seconds)})\n\n> continue NATHAN.EXE`;
   try { sessionStorage.setItem('nathan-exe:booted', '1'); } catch { /* ignore */ }
   const btn = $('#boot-start');
   btn.classList.remove('hidden');
-  btn.textContent = isTouch ? 'Tap to start' : 'Press any key or click to start';
+  btn.textContent = isTouch ? 'Tap to continue' : 'Press any key to continue';
   const go = () => {
     window.removeEventListener('keydown', go);
     start();
