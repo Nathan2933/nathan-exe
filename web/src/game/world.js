@@ -122,7 +122,7 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
     root.add(piece.obj);
     if (piece.dynamic) piece.obj.userData.dynamic = true;
     if (piece.animate) animated.push(piece.animate);
-    if (piece.api) apis[type] = piece.api;
+    if (piece.api) apis[props.variant ? `${type}_${props.variant}` : type] = piece.api;
     if (piece.nightGlow) nightGlow.push(...piece.nightGlow);
     if (piece.screen && props.index !== undefined) bayScreens[props.index] = piece.screen;
     for (const c of piece.colliders || []) colliders.push(transformCollider(c, x, z, rot));
@@ -214,13 +214,13 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
       it.beacon = sparkle(o.x, o.z); it.ground = beacon(o.x, 0, o.z, { small: true, pillar: false });
       hitBox(it, 1.4, 2.4, 1.4); interactables.push(it);
     } else if (o.type === 'panel') {
-      const it = { ...base, id: `panel:${pr.id}`, kind: 'panel', panel: pr.panel, title: pr.title || pr.panel, district: pr.district, radius: 1.8 };
+      const it = { ...base, id: `panel:${pr.id}`, kind: 'panel', panel: pr.panel, title: pr.title || pr.panel, district: pr.district, attraction: pr.attraction, interest: pr.interest, radius: 1.8 };
       it.beacon = beacon(o.x, 2.2, o.z, { small: true }); hitBox(it, 2, 3, 2); interactables.push(it);
     } else if (o.type === 'finale') {
       const it = { ...base, id: 'finale', kind: 'finale', district: 'lighthouse', radius: 2.0 };
       it.beacon = beacon(o.x, 2.6, o.z); hitBox(it); interactables.push(it);
     } else if (o.type === 'station') {
-      const it = { ...base, id: `station:${pr.id}`, kind: 'station', stationId: pr.id, name: pr.name || pr.id, district: pr.district, radius: 2.4 };
+      const it = { ...base, id: `station:${pr.id}`, kind: 'station', stationId: pr.id, name: pr.name || pr.id, district: pr.district, order: pr.order || 0, tagline: pr.tagline || '', radius: 2.4 };
       it.beacon = beacon(o.x, 2.3, o.z, { small: true }); hitBox(it, 2.4, 3, 2.4); interactables.push(it);
     } else if (o.type === 'npc') {
       const def = (content.npcs || []).find((n) => n.id === pr.id);

@@ -139,6 +139,31 @@ function nearness(g, r = 4.6) {
   };
 }
 
+/** Chunky retro board sign facing +z: ink board with cream pixel lettering,
+ *  drop shadow, orange trims and a dark backing for depth. */
+function boardSign(text, SW, SH, { size = 0, w = 512, h = 112 } = {}) {
+  const g = new THREE.Group();
+  const back = new THREE.Mesh(new THREE.BoxGeometry(SW + 0.16, SH + 0.16, 0.1), mat(0x14101f)); back.position.z = -0.07; back.castShadow = true;
+  const board = new THREE.Mesh(new THREE.BoxGeometry(SW, SH, 0.06), mat(C.ink));
+  const trimM = mat(C.accent, { keep: true });
+  const t1 = new THREE.Mesh(new THREE.BoxGeometry(SW, 0.05, 0.08), trimM); t1.position.y = SH / 2 - 0.04;
+  const t2 = t1.clone(); t2.position.y = -SH / 2 + 0.04;
+  const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+  const x2 = cv.getContext('2d');
+  x2.fillStyle = '#2a2440'; x2.fillRect(0, 0, w, h);
+  let fs = size || Math.round(h * 0.72); x2.font = `bold ${fs}px Silkscreen, monospace`;
+  while (fs > 10 && x2.measureText(text).width > w * 0.84) { fs -= 2; x2.font = `bold ${fs}px Silkscreen, monospace`; }
+  x2.textAlign = 'center'; x2.textBaseline = 'middle';
+  const off = Math.max(2, Math.round(fs / 14));
+  x2.fillStyle = '#100c1a'; x2.fillText(text, w / 2 + off, h / 2 + 2 + off);
+  x2.fillStyle = '#fff1d6'; x2.fillText(text, w / 2, h / 2 + 2);
+  const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.LinearFilter;
+  const face = new THREE.Mesh(new THREE.PlaneGeometry(SW - 0.06, SH - 0.14), new THREE.MeshBasicMaterial({ map: tex }));
+  face.position.z = 0.035; face.userData.dynamic = true;
+  g.add(back, board, t1, t2, face);
+  return g;
+}
+
 // ---------- pieces ----------
 export const KIT = {
   // ----- street furniture -----
@@ -1646,5 +1671,623 @@ export const KIT = {
         roofMat.opacity = fade; roofMat.depthWrite = fade > 0.95;
       },
     };
+  },
+
+  // ===================== Guild Hall (replaces Signal Tower) =====================
+  guild_hall() {
+    // Timber-framed RPG guild hall facing +z: stone plinth, plaster walls with
+    // dark beams, steep slate gable roof, banners, lanterns and a GUILD HALL board.
+    const g = new THREE.Group(), k = kit(g);
+    const W = 9, D = 5.2, H = 3.2;
+    k.box(W + 0.4, 0.35, D + 0.4, C.plinth, 0, 0, 0);
+    k.box(W, H, D, 0xf1e3c6, 0, 0.35, 0);
+    for (let x = -W / 2; x <= W / 2 + 0.01; x += W / 6) k.box(0.2, H, 0.08, 0x5a3a26, x, 0.35, D / 2 + 0.02, { shadow: false });
+    k.box(W, 0.18, 0.1, 0x5a3a26, 0, 1.6, D / 2 + 0.03, { shadow: false });
+    k.box(W + 0.1, 0.2, D + 0.1, 0x5a3a26, 0, 0.35 + H - 0.1, 0);
+    const rs = new THREE.Shape(); rs.moveTo(-D / 2 - 0.4, 0); rs.lineTo(D / 2 + 0.4, 0); rs.lineTo(0, 2.3); rs.closePath();
+    k.mesh(new THREE.ExtrudeGeometry(rs, { depth: W + 0.6, bevelEnabled: false }), 0x46607e, -W / 2 - 0.3, 0.35 + H, 0, { ry: Math.PI / 2 });
+    k.box(W + 0.7, 0.12, 0.14, 0x22344a, 0, 0.35 + H + 2.25, 0);                  // ridge
+    // chimney + weather vane
+    k.box(0.6, 1.4, 0.6, C.brickDark, W / 2 - 1.4, 0.35 + H + 0.8, -0.8);
+    k.box(0.05, 0.6, 0.05, C.ink, -W / 2 + 1.2, 0.35 + H + 2.3, 0);
+    k.box(0.5, 0.18, 0.04, C.accent, -W / 2 + 1.35, 0.35 + H + 2.7, 0, { shadow: false });
+    // double door with arch
+    k.box(1.7, 2.3, 0.12, 0x5a3a26, 0, 0.35, D / 2 + 0.04);
+    k.box(1.4, 2.1, 0.06, 0x8a5a36, 0, 0.35, D / 2 + 0.1);
+    k.box(0.04, 2.1, 0.08, 0x3a2418, 0, 0.35, D / 2 + 0.12, { shadow: false });
+    for (const x of [-0.25, 0.25]) k.box(0.08, 0.08, 0.06, C.amber, x, 1.3, D / 2 + 0.15, { shadow: false });
+    // windows
+    for (const x of [-3.2, -1.9, 1.9, 3.2]) {
+      k.box(0.8, 0.9, 0.06, 0x5a3a26, x, 0.95, D / 2 + 0.04);
+      k.box(0.62, 0.72, 0.04, glow(0xffd08a), x, 1.04, D / 2 + 0.08, { shadow: false });
+    }
+    // banners
+    for (const [x, c] of [[-1.25, C.accent], [1.25, 0x2bb3a3]]) {
+      k.box(0.5, 1.3, 0.04, c, x, 1.75, D / 2 + 0.14, { shadow: false });
+      k.box(0.18, 0.18, 0.02, C.yellow, x, 2.3, D / 2 + 0.17, { shadow: false });
+    }
+    // lanterns
+    const lamp = glow(C.amber);
+    for (const x of [-1.15, 1.15]) { k.box(0.06, 0.3, 0.3, C.ink, x, 2.55, D / 2 + 0.15); k.box(0.2, 0.26, 0.2, lamp, x, 2.4, D / 2 + 0.35, { shadow: false }); }
+    // sign board under the eave, facing the camera side (+z)
+    const sign = boardSign('GUILD HALL', 3.6, 0.62);
+    sign.position.set(0, 0.35 + H - 0.55, D / 2 + 0.2); g.add(sign);
+    const pool = lightPool(3, 0xffd08a); pool.position.set(0, 0.09, D / 2 + 1.4); g.add(pool);
+    return { obj: g, colliders: [{ x: 0, z: 0, w: W + 0.4, d: D + 0.4 }], nightGlow: [pool] };
+  },
+
+  guild_skill_tree() {
+    // A glowing skill tree: five branches (one per skill group) with node
+    // gems. Nodes breathe when Nathan is near; opening it "levels up" the tree.
+    const g = new THREE.Group(), k = kit(g);
+    k.cyl(1.2, 1.3, 0.25, C.plinth, 0, 0, 0, 10);
+    k.cyl(1.0, 1.0, 0.06, 0x7d6a52, 0, 0.25, 0, 10);
+    k.cyl(0.22, 0.32, 2.0, C.trunk, 0, 0.3, 0, 7);
+    const dyn = new THREE.Group(); dyn.userData.dynamic = true; g.add(dyn);
+    const cols = [C.accent, 0x2bb3a3, 0x6fa8dc, 0xb56fdc, C.yellow];
+    const nodes = [];
+    cols.forEach((c, i) => {
+      const a = (i / cols.length) * Math.PI * 2 + 0.3;
+      const bx = Math.cos(a), bz = Math.sin(a);
+      const br = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.13, 1.3), mat(C.trunk));
+      br.position.set(bx * 0.55, 2.05 + (i % 2) * 0.25, bz * 0.55); br.lookAt(bx * 1.2, 2.45 + (i % 2) * 0.3, bz * 1.2); br.castShadow = true; g.add(br);
+      for (let j = 0; j < 3; j++) {
+        const m = new THREE.MeshLambertMaterial({ color: c, emissive: c, emissiveIntensity: 0.25, flatShading: true });
+        const n = new THREE.Mesh(new THREE.OctahedronGeometry(0.22 - j * 0.035, 0), m);
+        const r = 0.7 + j * 0.4;
+        n.position.set(bx * r, 2.2 + (i % 2) * 0.25 + j * 0.25, bz * r); dyn.add(n); nodes.push({ n, m, base: n.position.y, i: i * 3 + j });
+      }
+    });
+    const crown = new THREE.Mesh(new THREE.OctahedronGeometry(0.34, 0), mat(C.amber, { emissive: C.amber, emissiveIntensity: 0.6 }));
+    crown.position.y = 3.3; dyn.add(crown);
+    const near = nearness(g, 5);
+    let burst = -10;
+    return {
+      obj: g, colliders: [{ x: 0, z: 0, r: 1.3 }],
+      api: { trigger() { burst = performance.now() / 1000; } },
+      animate: (t, state) => {
+        const live = near(state), since = performance.now() / 1000 - burst;
+        nodes.forEach(({ n, m, base, i }) => {
+          const lit = since < 3 ? (since * 6 > i ? 1 : 0.2) : 0.25 + 0.35 * live * (0.5 + 0.5 * Math.sin(t * 2 + i));
+          m.emissiveIntensity = lit;
+          n.position.y = base + Math.sin(t * 1.6 + i) * 0.04 * (0.3 + live);
+          n.rotation.y = t * (0.5 + live);
+        });
+        crown.rotation.y = t; crown.position.y = 3.3 + Math.sin(t * 1.2) * 0.06;
+      },
+    };
+  },
+
+  guild_trophy_stand() {
+    // Three-tier trophy podium: gold cups for wins, silver for runner-up places.
+    const g = new THREE.Group(), k = kit(g);
+    const gold = mat(0xffcf4a, { emissive: 0x6a4a00, emissiveIntensity: 0.4 }), silver = mat(0xd9dde6, { emissive: 0x3a3e48, emissiveIntensity: 0.35 });
+    k.box(2.8, 0.4, 1.4, 0x5a3a26, 0, 0, 0);
+    k.box(2.0, 0.4, 1.0, 0x6f4a30, 0, 0.4, -0.1);
+    k.box(1.1, 0.4, 0.7, 0x845a3a, 0, 0.8, -0.2);
+    k.box(2.82, 0.06, 1.42, C.yellow, 0, 0.38, 0, { shadow: false });
+    const dyn = new THREE.Group(); dyn.userData.dynamic = true; g.add(dyn);
+    const cups = [];
+    const cup = (x, y, z, m, s = 1) => {
+      const c = new THREE.Group(); c.position.set(x, y, z); c.scale.setScalar(s); dyn.add(c);
+      const base = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.06, 0.2), mat(C.ink)); base.position.y = 0.03;
+      const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.05, 0.14, 6), m); stem.position.y = 0.13;
+      const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.05, 0.18, 8), m); bowl.position.y = 0.29;
+      c.add(base, stem, bowl); cups.push(c);
+    };
+    cup(0, 1.2, -0.2, gold, 1.5);
+    [-0.65, -0.22, 0.22, 0.65].forEach((x, i) => cup(x, 0.8, -0.1, i % 2 ? silver : gold, 1.1));
+    [-1.15, -0.7, -0.25, 0.25, 0.7, 1.15].forEach((x, i) => cup(x, 0.4, 0.35, i % 3 === 1 ? gold : silver, 0.95));
+    const near = nearness(g, 5);
+    let burst = -10;
+    return {
+      obj: g, colliders: [{ x: 0, z: 0, w: 2.8, d: 1.4 }],
+      api: { trigger() { burst = performance.now() / 1000; } },
+      animate: (t, state) => {
+        const live = near(state), since = performance.now() / 1000 - burst;
+        cups.forEach((c, i) => {
+          c.rotation.y = since < 2.5 ? since * 6 : Math.sin(t * 0.8 + i) * 0.3 * live;
+          c.position.y += ((since < 2.5 ? 0.12 * Math.abs(Math.sin(since * 4 + i)) : 0) - (c.userData.hop || 0));
+          c.userData.hop = since < 2.5 ? 0.12 * Math.abs(Math.sin(since * 4 + i)) : 0;
+        });
+      },
+    };
+  },
+
+  guild_quest_board() {
+    // Quest board: two big main-quest scrolls with gold seals, two side quests,
+    // a writing desk with a quill. Scrolls flutter when Nathan is near.
+    const g = new THREE.Group(), k = kit(g);
+    for (const x of [-1.0, 1.0]) k.box(0.12, 2.1, 0.12, 0x5a3a26, x, 0, 0);
+    k.box(2.2, 1.3, 0.1, 0x8a5a36, 0, 0.75, 0);
+    k.box(2.4, 0.14, 0.3, 0x5a3a26, 0, 2.05, 0);
+    k.box(2.2, 0.08, 0.14, C.accent, 0, 1.98, 0.06, { shadow: false });
+    const dyn = new THREE.Group(); dyn.userData.dynamic = true; g.add(dyn);
+    const scrolls = [];
+    [[-0.5, 1.45, 0.62, 0.7, true], [0.45, 1.45, 0.62, 0.7, true], [-0.55, 0.95, 0.5, 0.36, false], [0.45, 0.95, 0.5, 0.36, false]].forEach(([x, y, w, h, main]) => {
+      const s = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.02), mat(0xf6e7c4)); s.position.set(x, y, 0.07);
+      s.geometry.translate(0, -h / 2, 0); s.position.y += h / 2; dyn.add(s); scrolls.push(s);
+      for (let i = 0; i < 3; i++) { const l = new THREE.Mesh(new THREE.BoxGeometry(w * 0.7, 0.025, 0.01), mat(0x8a7a5a)); l.position.set(0, -0.12 - i * (h / 4.2), 0.015); s.add(l); }
+      if (main) { const seal = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.03, 8), mat(0xc4402f)); seal.rotation.x = Math.PI / 2; seal.position.set(w * 0.3, -h + 0.1, 0.02); s.add(seal); }
+    });
+    // desk with quill and inkpot
+    k.box(0.9, 0.7, 0.5, 0x6f4a30, 1.7, 0, 0.5);
+    k.box(0.46, 0.03, 0.34, 0xf6e7c4, 1.65, 0.7, 0.5, { shadow: false });
+    k.cyl(0.07, 0.08, 0.12, C.ink, 1.95, 0.7, 0.42, 6);
+    k.box(0.03, 0.4, 0.03, C.white, 1.96, 0.8, 0.42, { rz: 0.3 });
+    const near = nearness(g, 5);
+    return {
+      obj: g, colliders: [{ x: 0, z: 0, w: 2.4, d: 0.4 }, { x: 1.7, z: 0.5, w: 0.9, d: 0.5 }],
+      animate: (t, state) => { const live = near(state); scrolls.forEach((s, i) => { s.rotation.x = Math.sin(t * 3 + i) * 0.12 * live; }); },
+    };
+  },
+
+  guild_profile_stand() {
+    // Character profile: an ornate standing frame with the N. emblem, a small
+    // armour-stand bust in Nathan's colours (checked shirt red, glasses).
+    const g = new THREE.Group(), k = kit(g);
+    k.box(1.6, 0.18, 0.7, C.plinth, 0, 0, 0);
+    for (const x of [-0.7, 0.7]) k.box(0.1, 2.0, 0.1, 0x5a3a26, x, 0.18, 0);
+    k.box(1.5, 0.1, 0.14, C.yellow, 0, 2.18, 0);
+    k.box(1.3, 1.6, 0.06, C.ink, 0, 0.45, 0);
+    const em = boardSign('N.', 0.9, 0.9, { size: 120, w: 128, h: 128 });
+    em.position.set(0, 1.25, 0.06); g.add(em);
+    // bust on a pedestal beside the frame
+    k.box(0.4, 0.8, 0.4, C.plinth, 1.25, 0, 0.1);
+    k.box(0.42, 0.34, 0.24, 0xc4402f, 1.25, 0.8, 0.1);
+    k.box(0.24, 0.26, 0.24, 0xf3d0b0, 1.25, 1.14, 0.1);
+    k.box(0.28, 0.12, 0.28, 0x2a2020, 1.25, 1.38, 0.1);
+    k.box(0.22, 0.05, 0.02, C.ink, 1.25, 1.27, 0.23, { shadow: false });
+    const near = nearness(g, 4.5);
+    const dyn = new THREE.Group(); dyn.userData.dynamic = true; g.add(dyn);
+    const shine = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.4, 0.02), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.0 }));
+    shine.position.set(0, 1.25, 0.1); shine.rotation.z = 0.5; dyn.add(shine);
+    return {
+      obj: g, colliders: [{ x: 0.3, z: 0, w: 2.2, d: 0.7 }],
+      animate: (t, state) => { const live = near(state), u = (t * 0.6) % 1; shine.position.x = -0.6 + u * 1.2; shine.material.opacity = 0.35 * live * Math.sin(u * Math.PI); },
+    };
+  },
+
+  // ===================== Pop Culture Park =====================
+  pop_rooftop({ variant = 'signal' } = {}) {
+    // Small noir rooftop block. variant 'signal': searchlight that sweeps and,
+    // when triggered, throws an original winged emblem onto the sky.
+    // variant 'red': red-lit rooftop with an "echo" sound interaction.
+    const g = new THREE.Group(), k = kit(g);
+    const red = variant === 'red';
+    const W = red ? 2.0 : 2.2, H = red ? 1.9 : 2.4;
+    k.box(W, H, W, red ? 0x6a2c2c : 0x3d4058, 0, 0, 0);
+    for (let y = 0.5; y < H - 0.2; y += 0.6) for (const x of [-W / 4, W / 4]) k.box(0.36, 0.34, 0.04, red ? glow(0xff6a5a) : glow(0xffd08a), x, y, W / 2 + 0.01, { shadow: false });
+    k.box(W + 0.12, 0.14, W + 0.12, 0x2a2440, 0, H, 0);
+    const dyn = new THREE.Group(); dyn.userData.dynamic = true; g.add(dyn);
+    const near = nearness(g, 5);
+    let burst = -10;
+    if (!red) {
+      // rooftop searchlight + magnifying glass (detective easter egg)
+      k.box(0.3, 0.3, 0.3, C.charcoal, 0.4, H + 0.14, -0.3);
+      const head = new THREE.Group(); head.position.set(0.4, H + 0.6, -0.3); dyn.add(head);
+      const can = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.28, 0.45, 10), mat(C.charcoal)); can.rotation.x = Math.PI / 2; head.add(can);
+      const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.02, 10), new THREE.MeshBasicMaterial({ color: 0xfff1c0 })); lens.rotation.x = Math.PI / 2; lens.position.z = 0.24; head.add(lens);
+      const beamGeo = new THREE.CylinderGeometry(0.2, 1.4, 9, 12, 1, true); beamGeo.translate(0, 4.5, 0); beamGeo.rotateX(Math.PI / 2);
+      const beamMat = new THREE.MeshBasicMaterial({ color: 0xfff1c0, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide });
+      const beam = new THREE.Mesh(beamGeo, beamMat); head.add(beam);
+      // original winged emblem (canvas) shown high above when triggered
+      const c = document.createElement('canvas'); c.width = 128; c.height = 64; const x2 = c.getContext('2d');
+      x2.fillStyle = '#fff1c0'; x2.beginPath(); x2.ellipse(64, 32, 60, 28, 0, 0, Math.PI * 2); x2.fill();
+      x2.fillStyle = '#1e1b2e'; x2.beginPath(); x2.moveTo(10, 30); x2.lineTo(40, 18); x2.lineTo(52, 30); x2.lineTo(64, 14); x2.lineTo(76, 30); x2.lineTo(88, 18); x2.lineTo(118, 30); x2.lineTo(92, 40); x2.lineTo(64, 50); x2.lineTo(36, 40); x2.closePath(); x2.fill();
+      const tex = new THREE.CanvasTexture(c); tex.magFilter = THREE.NearestFilter; tex.colorSpace = THREE.SRGBColorSpace;
+      const emblemMat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0, depthWrite: false });
+      const emblem = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 1.6), emblemMat); emblem.position.set(0.4, H + 7, -0.3); emblem.rotation.y = Math.PI / 4; dyn.add(emblem);
+      k.cyl(0.12, 0.12, 0.03, mat(0xbfe6ff), -0.5, H + 0.14, 0.5, 10); k.box(0.04, 0.03, 0.22, C.wood, -0.5, H + 0.15, 0.7);
+      return {
+        obj: g, colliders: [{ x: 0, z: 0, w: W, d: W }],
+        api: { trigger(ctx) { burst = performance.now() / 1000; ctx?.sfx?.whistle?.(); } },
+        animate: (t, state) => {
+          const live = near(state), since = performance.now() / 1000 - burst, on = since < 7;
+          head.rotation.x = on ? -Math.PI / 2 + 0.02 : -0.5 + Math.sin(t * 0.7) * 0.15;
+          head.rotation.y = on ? 0 : Math.sin(t * 0.5) * 0.9;
+          beamMat.opacity = on ? 0.22 : 0.1 * live;
+          emblemMat.opacity = on ? Math.min(1, since * 1.5, (7 - since) * 1.5) : 0;
+        },
+      };
+    }
+    // red rooftop: gargoyle-ish ledge, water tank, neon strip, echo rings
+    k.box(W + 0.2, 0.08, 0.1, glow(0xff3b30), 0, H - 0.25, W / 2 + 0.06, { shadow: false });
+    k.cyl(0.35, 0.35, 0.7, 0x5a3a26, -0.4, H + 0.14, -0.4, 8);
+    k.mesh(new THREE.ConeGeometry(0.4, 0.3, 8), 0x3a2418, -0.4, H + 0.99, -0.4);
+    k.box(0.05, 0.6, 0.05, 0x8a2a2a, 0.55, H + 0.14, 0.45, { rz: 0.5 });            // two batons leaning on the ledge
+    k.box(0.05, 0.6, 0.05, 0x8a2a2a, 0.7, H + 0.14, 0.45, { rz: -0.5 });
+    const rings = [];
+    for (let i = 0; i < 3; i++) {
+      const rm = new THREE.MeshBasicMaterial({ color: 0xff3b30, transparent: true, opacity: 0, depthWrite: false });
+      const r = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.0, 32), rm); r.rotation.x = -Math.PI / 2; r.position.y = 0.05; dyn.add(r); rings.push({ r, rm, i });
+    }
+    return {
+      obj: g, colliders: [{ x: 0, z: 0, w: W, d: W }],
+      api: { trigger(ctx) { burst = performance.now() / 1000; ctx?.sfx?.echo?.(); } },
+      animate: (t, state) => {
+        const live = near(state), since = performance.now() / 1000 - burst;
+        rings.forEach(({ r, rm, i }) => {
+          const u = since < 4 ? ((since - i * 0.45) % 1.4) / 1.4 : ((t * 0.4 + i / 3) % 1);
+          const on = since < 4 ? since > i * 0.45 : live > 0.05;
+          r.scale.setScalar(1 + u * (since < 4 ? 5 : 2));
+          rm.opacity = on ? (1 - u) * (since < 4 ? 0.8 : 0.25 * live) : 0;
+        });
+      },
+    };
+  },
+
+  pop_moon() {
+    // Moonlit mystery corner: a pale crescent on a stone plinth, a dark-blue
+    // reflecting pool and a small hidden glyph that only shows up close.
+    const g = new THREE.Group(), k = kit(g);
+    k.cyl(1.1, 1.2, 0.08, 0x23305a, 0, 0, 0.2, 14);
+    k.box(0.7, 0.5, 0.5, C.plinth, 0, 0, -0.3);
+    const cres = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.16, 6, 20, Math.PI * 1.25), mat(0xeef3ff, { emissive: 0xbfd0ff, emissiveIntensity: 0.35, keep: true }));
+    cres.position.set(0, 1.35, -0.3); cres.rotation.z = Math.PI * 0.55; cres.castShadow = true; g.add(cres);
+    const dyn = new THREE.Group(); dyn.userData.dynamic = true; g.add(dyn);
+    const glyphMat = new THREE.MeshBasicMaterial({ color: 0x9fd8ff, transparent: true, opacity: 0 });
+    const glyph = new THREE.Group(); glyph.position.set(0.55, 0.12, 0.65); dyn.add(glyph);
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.03, 0.22), glyphMat); glyph.add(body);
+    for (const s of [-1, 1]) for (const z of [-0.06, 0.06]) { const l = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.02, 0.02), glyphMat); l.position.set(s * 0.12, 0, z); glyph.add(l); }
+    const orbs = [];
+    for (let i = 0; i < 3; i++) { const o = new THREE.Mesh(new THREE.OctahedronGeometry(0.06, 0), new THREE.MeshBasicMaterial({ color: 0xdfe8ff })); dyn.add(o); orbs.push(o); }
+    const near = nearness(g, 4);
+    let burst = -10;
+    return {
+      obj: g, colliders: [{ x: 0, z: -0.3, w: 0.8, d: 0.6 }],
+      api: { trigger() { burst = performance.now() / 1000; } },
+      animate: (t, state) => {
+        const live = near(state), since = performance.now() / 1000 - burst;
+        cres.material.emissiveIntensity = 0.35 + 0.25 * live + (since < 3 ? 0.6 * (1 - since / 3) : 0);
+        glyphMat.opacity = Math.max(live * 0.9, since < 4 ? 1 : 0);
+        glyph.position.y = 0.12 + (since < 4 ? Math.min(1.4, since) * 0.6 : 0);
+        glyph.rotation.y = t * (since < 4 ? 3 : 0.5);
+        orbs.forEach((o, i) => { const a = t * 0.8 + (i * Math.PI * 2) / 3; o.position.set(Math.cos(a) * 1.0, 1.35 + Math.sin(t + i) * 0.15, -0.3 + Math.sin(a) * 0.5); o.visible = live > 0.1; });
+      },
+    };
+  },
+
+  pop_web() {
+    // Web-inspired climbing frame with red/blue posts. Triggering it starts a
+    // tiny agility challenge: touch the three glowing rings within 15 seconds.
+    const g = new THREE.Group(), k = kit(g);
+    for (const x of [-1.2, 1.2]) { k.box(0.16, 2.6, 0.16, 0xc4402f, x, 0, 0); k.box(0.2, 0.12, 0.2, 0x2f5fb0, x, 2.6, 0); }
+    k.box(2.56, 0.12, 0.12, 0x2f5fb0, 0, 2.5, 0);
+    const webM = mat(0xeef3ff);
+    const cx = 0, cy = 1.4;
+    for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; const s = new THREE.Mesh(new THREE.BoxGeometry(0.03, 1.15, 0.03), webM); s.position.set(cx + Math.sin(a) * 0.55, cy + Math.cos(a) * 0.55, 0); s.rotation.z = -a; g.add(s); }
+    for (const r of [0.3, 0.6, 0.9]) for (let i = 0; i < 8; i++) {
+      const a = ((i + 0.5) / 8) * Math.PI * 2, len = 2 * r * Math.sin(Math.PI / 8);
+      const s = new THREE.Mesh(new THREE.BoxGeometry(len, 0.025, 0.025), webM); s.position.set(cx + Math.sin(a) * r * 0.92, cy + Math.cos(a) * r * 0.92, 0); s.rotation.z = -a + Math.PI / 2; g.add(s);
+    }
+    k.box(2.8, 0.06, 1.4, 0x2a2440, 0, 0, 0.3, { shadow: false });              // safety mat
+    const dyn = new THREE.Group(); dyn.userData.dynamic = true; g.add(dyn);
+    const RING = [[-1.6, 3.2], [1.9, 2.4], [0.2, 4.6]];
+    const rings = RING.map(([x, z]) => {
+      const m = new THREE.MeshBasicMaterial({ color: 0xff3b30, transparent: true, opacity: 0, depthWrite: false });
+      const r = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.06, 6, 20), m); r.rotation.x = -Math.PI / 2; r.position.set(x, 0.15, z); dyn.add(r);
+      return { r, m, x, z, got: false };
+    });
+    const flash = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, depthWrite: false });
+    const glowPlane = new THREE.Mesh(new THREE.CircleGeometry(1.0, 20), flash); glowPlane.position.set(cx, cy, 0.04); dyn.add(glowPlane);
+    let run = null, done = -10, ctx = null;
+    const v = new THREE.Vector3();
+    return {
+      obj: g, colliders: [{ x: -1.2, z: 0, r: 0.2 }, { x: 1.2, z: 0, r: 0.2 }, { x: 0, z: 0, w: 2.4, d: 0.2 }],
+      api: { trigger(c) { ctx = c; run = { t0: performance.now() / 1000 }; rings.forEach((r) => { r.got = false; }); ctx?.toast?.('Web challenge: touch the 3 red rings in 15 s'); } },
+      animate: (t, state) => {
+        const now = performance.now() / 1000;
+        if (run) {
+          const left = 15 - (now - run.t0);
+          const p = state.playerPos;
+          rings.forEach((r) => {
+            if (!r.got && p) { v.set(r.x, 0, r.z); g.localToWorld(v); if (Math.hypot(p.x - v.x, p.z - v.z) < 0.8) { r.got = true; ctx?.sfx?.open?.(); } }
+            r.m.opacity = r.got ? 0.15 : 0.85; r.r.position.y = 0.15 + Math.abs(Math.sin(t * 4 + r.x)) * 0.15; r.m.color.setHex(r.got ? 0x2f5fb0 : 0xff3b30);
+          });
+          if (rings.every((r) => r.got)) { run = null; done = now; ctx?.sfx?.memory?.(); ctx?.toast?.('Challenge cleared. Nice moves.'); }
+          else if (left <= 0) { run = null; ctx?.sfx?.miss?.(); ctx?.toast?.('Out of time. Try the web again.'); }
+        } else rings.forEach((r) => { r.m.opacity = 0; });
+        flash.opacity = now - done < 1.5 ? 0.7 * (1 - (now - done) / 1.5) : 0;
+      },
+    };
+  },
+
+  pop_camp() {
+    // Peaceful western camp: canvas tent, campfire, lantern post and a horse.
+    const g = new THREE.Group(), k = kit(g);
+    const ts = new THREE.Shape(); ts.moveTo(-0.9, 0); ts.lineTo(0.9, 0); ts.lineTo(0, 1.3); ts.closePath();
+    k.mesh(new THREE.ExtrudeGeometry(ts, { depth: 1.8, bevelEnabled: false }), 0xe6d6b0, 0.4, 0, -1.9);
+    k.box(0.5, 0.9, 0.02, 0x5a3a26, 0.4, 0, -0.08, { shadow: false });
+    // fire ring + logs
+    for (let i = 0; i < 7; i++) { const a = (i / 7) * Math.PI * 2; k.box(0.16, 0.12, 0.16, C.plinth, -0.4 + Math.cos(a) * 0.4, 0, 0.9 + Math.sin(a) * 0.4); }
+    k.box(0.5, 0.08, 0.1, C.trunk, -0.4, 0.05, 0.9, { ry: 0.6 }); k.box(0.5, 0.08, 0.1, C.trunk, -0.4, 0.05, 0.9, { ry: -0.6 });
+    for (const [x, z] of [[-1.3, 0.6], [0.5, 1.5]]) k.box(0.7, 0.3, 0.3, C.trunk, x, 0, z);   // log seats
+    const dyn = new THREE.Group(); dyn.userData.dynamic = true; g.add(dyn);
+    const flames = [0xff6a3d, 0xffc14d, 0xffe08a].map((c, i) => { const f = new THREE.Mesh(new THREE.ConeGeometry(0.16 - i * 0.04, 0.4 - i * 0.08, 6), new THREE.MeshBasicMaterial({ color: c })); f.position.set(-0.4, 0.3, 0.9); dyn.add(f); return f; });
+    const fire = lightPool(1.8, 0xff9a4a); fire.position.set(-0.4, 0.08, 0.9); g.add(fire);
+    // lantern post
+    k.box(0.08, 1.5, 0.08, C.trunk, 1.4, 0, 0.6); k.box(0.4, 0.06, 0.06, C.trunk, 1.25, 1.45, 0.6);
+    const lantern = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.2, 0.14), mat(C.amber, { emissive: C.amber, emissiveIntensity: 0.7 })); lantern.position.set(1.1, 1.22, 0.6); dyn.add(lantern);
+    // horse
+    const horse = new THREE.Group(); horse.position.set(1.6, 0, -0.8); horse.rotation.y = Math.PI / 2 + 0.3; g.add(horse);
+    const hk = kit(horse), coat = 0x7a4a2a, mane = 0x2a1a12;
+    hk.box(1.1, 0.5, 0.42, coat, 0, 0.75, 0);
+    for (const [x, z] of [[-0.4, -0.15], [-0.4, 0.15], [0.4, -0.15], [0.4, 0.15]]) hk.box(0.12, 0.75, 0.12, coat, x, 0, z);
+    hk.box(0.5, 0.06, 0.46, 0x5a2a1a, -0.05, 1.25, 0);                           // saddle
+    const head = new THREE.Group(); head.position.set(0.55, 1.15, 0); horse.add(head); head.userData.dynamic = true;
+    const hh = kit(head);
+    hh.box(0.22, 0.5, 0.26, coat, 0.05, 0, 0, { rz: -0.5 });
+    hh.box(0.42, 0.22, 0.22, coat, 0.32, 0.32, 0);
+    hh.box(0.1, 0.3, 0.06, mane, -0.05, 0.1, 0, { rz: -0.5 });
+    const tail = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.5, 0.08), mat(mane)); tail.geometry.translate(0, -0.25, 0); tail.position.set(-0.58, 1.15, 0); horse.add(tail); tail.userData.dynamic = true;
+    k.box(0.06, 0.9, 0.06, C.trunk, 2.4, 0, -0.2); k.box(0.06, 0.06, 1.0, C.trunk, 2.4, 0.85, -0.6);   // hitching post
+    const near = nearness(g, 5);
+    let burst = -10;
+    return {
+      obj: g, colliders: [{ x: 0.4, z: -1.0, w: 1.9, d: 1.9 }, { x: -0.4, z: 0.9, r: 0.55 }, { x: 1.6, z: -0.8, w: 1.0, d: 1.3 }, { x: -1.3, z: 0.6, w: 0.7, d: 0.3 }, { x: 0.5, z: 1.5, w: 0.7, d: 0.3 }],
+      nightGlow: [fire],
+      api: { trigger(ctx) { burst = performance.now() / 1000; ctx?.sfx?.whinny?.(); } },
+      animate: (t, state) => {
+        const live = near(state), since = performance.now() / 1000 - burst, flare = since < 2 ? 1.8 - since * 0.4 : 1;
+        flames.forEach((f, i) => { f.scale.set(1, (0.8 + 0.25 * Math.sin(t * 9 + i * 2)) * flare, 1); f.position.y = 0.3 + 0.03 * Math.sin(t * 7 + i); });
+        lantern.material.emissiveIntensity = 0.6 + 0.15 * Math.sin(t * 5);
+        head.rotation.z = (since < 2 ? 0.4 * Math.sin(since * 8) : Math.sin(t * 1.3) * 0.08) * (0.4 + live);
+        tail.rotation.x = Math.sin(t * 2.4) * 0.35 * (0.3 + live);
+      },
+    };
+  },
+
+  pop_startup() {
+    // Startup corner: a desk with a beige retro computer, whiteboard of boxes,
+    // a beanbag. Triggering runs a build: compiling, fails, then it works.
+    const g = new THREE.Group(), k = kit(g);
+    k.box(1.6, 0.72, 0.8, C.woodLight, 0, 0, 0);
+    k.box(0.7, 0.55, 0.55, 0xe8d8b8, 0, 0.72, -0.05);
+    k.box(0.6, 0.06, 0.3, 0xe8d8b8, 0, 0.72, 0.3);
+    const c = document.createElement('canvas'); c.width = 64; c.height = 48; const x2 = c.getContext('2d');
+    const tex = new THREE.CanvasTexture(c); tex.magFilter = THREE.NearestFilter; tex.colorSpace = THREE.SRGBColorSpace;
+    const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.38), new THREE.MeshBasicMaterial({ map: tex })); screen.position.set(0, 1.0, 0.23); screen.userData.dynamic = true; g.add(screen);
+    // whiteboard
+    for (const x of [-0.6, 0.6]) k.box(0.06, 1.7, 0.06, C.steelDark, x - 1.6, 0, -0.5);
+    k.box(1.4, 0.9, 0.05, C.white, -1.6, 0.8, -0.5);
+    for (const [x, y, cc] of [[-1.95, 1.4, C.accent], [-1.55, 1.15, 0x2bb3a3], [-1.2, 1.4, 0x6fa8dc], [-1.6, 0.95, C.yellow]]) k.box(0.24, 0.14, 0.02, cc, x, y, -0.47, { shadow: false });
+    k.mesh(new THREE.IcosahedronGeometry(0.4, 0), 0x2bb3a3, 1.3, 0.3, 0.5).scale.set(1.2, 0.7, 1.2);
+    const draw = (mode, u) => {
+      x2.fillStyle = '#10241a'; x2.fillRect(0, 0, 64, 48);
+      x2.fillStyle = mode === 'fail' ? '#ff5a4a' : '#5fe08a';
+      if (mode === 'idle') { for (let i = 0; i < 5; i++) x2.fillRect(4, 6 + i * 7, 10 + ((i * 17) % 40), 3); if (u > 0.5) x2.fillRect(4 + 52, 38, 4, 5); }
+      else if (mode === 'build') { x2.fillRect(4, 18, 56, 2); x2.fillRect(4, 28, 56 * u, 6); for (let i = 0; i < 3; i++) x2.fillRect(4, 4 + i * 4, 20 + i * 10, 2); }
+      else if (mode === 'fail') { x2.fillRect(18, 12, 28, 4); x2.fillRect(18, 12, 4, 24); x2.fillRect(42, 12, 4, 24); x2.fillRect(28, 26, 8, 4); }
+      else { x2.fillRect(14, 26, 8, 6); x2.fillRect(20, 30, 8, 6); x2.fillRect(26, 22, 6, 8); x2.fillRect(30, 16, 6, 8); x2.fillRect(36, 10, 6, 8); }
+      tex.needsUpdate = true;
+    };
+    let burst = -10, lastKey = '';
+    return {
+      obj: g, colliders: [{ x: 0, z: 0, w: 1.6, d: 0.8 }, { x: -1.6, z: -0.5, w: 1.4, d: 0.2 }, { x: 1.3, z: 0.5, r: 0.45 }],
+      api: { trigger(ctx) { burst = performance.now() / 1000; ctx?.sfx?.open?.(); setTimeout(() => ctx?.sfx?.miss?.(), 2200); setTimeout(() => ctx?.sfx?.memory?.(), 3600); } },
+      animate: (t) => {
+        const since = performance.now() / 1000 - burst;
+        let mode = 'idle', u = (t * 1.5) % 1;
+        if (since < 2.2) { mode = 'build'; u = since / 2.2; } else if (since < 3.6) mode = 'fail'; else if (since < 6) mode = 'ok';
+        const key = mode + Math.floor(u * 12);
+        if (key !== lastKey) { draw(mode, u); lastKey = key; }
+      },
+    };
+  },
+
+  pop_boxing() {
+    // A quiet basement corner: a heavy bag on a frame, a bare bulb, a battered
+    // door and a single pink soap bar on a crate. Triggering throws a punch.
+    const g = new THREE.Group(), k = kit(g);
+    k.box(2.4, 0.04, 1.6, 0x4a4250, 0, 0, 0, { shadow: false });
+    for (const x of [-0.9, 0.9]) k.box(0.1, 2.3, 0.1, C.charcoal, x, 0, -0.5);
+    k.box(1.9, 0.1, 0.1, C.charcoal, 0, 2.3, -0.5);
+    const dyn = new THREE.Group(); dyn.userData.dynamic = true; g.add(dyn);
+    const bag = new THREE.Group(); bag.position.set(0, 2.3, -0.5); dyn.add(bag);
+    const chain = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.4, 0.03), mat(C.steelDark)); chain.position.y = -0.2; bag.add(chain);
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 1.0, 10), mat(0x8a2a2a)); body.position.y = -0.9; body.castShadow = true; bag.add(body);
+    // door in a low wall
+    k.box(1.4, 2.2, 0.16, 0x6a6070, -1.85, 0, -1.0);
+    k.box(0.8, 1.8, 0.06, 0x5a3a26, -1.85, 0, -0.9);
+    k.box(0.06, 0.06, 0.06, C.amber, -1.6, 0.9, -0.85, { shadow: false });
+    k.box(0.5, 0.4, 0.4, C.wood, 1.4, 0, 0.3);
+    k.box(0.16, 0.08, 0.1, 0xff8fb1, 1.4, 0.4, 0.3);
+    const bulbMat = new THREE.MeshBasicMaterial({ color: 0xffe08a });
+    const bulb = new THREE.Group(); bulb.position.set(0.9, 2.3, 0.2); dyn.add(bulb);
+    const wire = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.5, 0.02), mat(C.ink)); wire.position.y = -0.25; bulb.add(wire);
+    const b = new THREE.Mesh(new THREE.IcosahedronGeometry(0.07, 0), bulbMat); b.position.y = -0.55; bulb.add(b);
+    let burst = -10;
+    return {
+      obj: g, colliders: [{ x: 0, z: -0.5, w: 2.0, d: 0.5 }, { x: -1.85, z: -1.0, w: 1.4, d: 0.2 }, { x: 1.4, z: 0.3, w: 0.5, d: 0.4 }],
+      api: { trigger(ctx) { burst = performance.now() / 1000; ctx?.sfx?.punch?.(); } },
+      animate: (t) => {
+        const since = performance.now() / 1000 - burst;
+        bag.rotation.x = since < 3 ? Math.sin(since * 6) * 0.45 * Math.exp(-since * 1.2) : Math.sin(t * 0.9) * 0.02;
+        bulb.rotation.z = Math.sin(t * 1.1) * 0.08 + (since < 3 ? Math.sin(since * 7) * 0.15 * Math.exp(-since) : 0);
+        bulbMat.color.setHex(since < 1.2 && Math.sin(since * 40) > 0 ? 0x5a4a2a : 0xffe08a);
+      },
+    };
+  },
+
+  pop_cinema() {
+    // Little outdoor cinema: a screen with flickering film light and two rows
+    // of folding seats. Decorative, animates while Nathan is near.
+    const g = new THREE.Group(), k = kit(g);
+    for (const x of [-1.5, 1.5]) k.box(0.12, 2.4, 0.12, C.ink, x, 0, 0);
+    k.box(3.2, 1.6, 0.08, C.ink, 0, 0.75, -0.02);
+    const sm = new THREE.MeshBasicMaterial({ color: 0xdfe8ff });
+    const scr = new THREE.Mesh(new THREE.PlaneGeometry(2.9, 1.4), sm); scr.position.set(0, 1.55, 0.03); scr.userData.dynamic = true; g.add(scr);
+    for (const r of [0, 1]) for (let i = 0; i < 4; i++) { k.box(0.4, 0.4, 0.36, C.accent, -1.05 + i * 0.7, 0, 1.4 + r * 0.7); k.box(0.4, 0.4, 0.06, 0xa83a22, -1.05 + i * 0.7, 0.4, 1.58 + r * 0.7); }
+    const near = nearness(g, 5);
+    const cols = [0xdfe8ff, 0xffe8c8, 0xc8dcff, 0xf0f0f0];
+    return {
+      obj: g, colliders: [{ x: 0, z: 0, w: 3.2, d: 0.2 }, { x: 0, z: 1.75, w: 2.9, d: 1.2 }],
+      animate: (t, state) => { const live = near(state); const f = Math.floor(t * 6) % 4; sm.color.setHex(live > 0.1 ? cols[f] : 0x9aa6bf); },
+    };
+  },
+
+  pop_arcade() {
+    // Small central arcade kiosk: striped awning, three cabinets with
+    // flickering screens and a marquee.
+    const g = new THREE.Group(), k = kit(g);
+    k.box(2.2, 0.12, 2.2, 0x3a3150, 0, 0, 0);
+    for (const [x, z] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) k.box(0.1, 2.4, 0.1, C.ink, x, 0.12, z);
+    for (let i = 0; i < 6; i++) k.box(2.4 / 6, 0.12, 2.4, i % 2 ? C.cream : C.accent, -1.2 + (i + 0.5) * 0.4, 2.52, 0);
+    const sign = boardSign('ARCADE', 1.6, 0.4); sign.position.set(0, 2.62, 1.22); g.add(sign);
+    const dyn = new THREE.Group(); dyn.userData.dynamic = true; g.add(dyn);
+    const screens = [];
+    [[0, -0.6, 0, C.accent], [-0.6, 0.1, Math.PI / 2, 0x2bb3a3], [0.6, 0.1, -Math.PI / 2, 0x6fa8dc]].forEach(([x, z, ry, c]) => {
+      const cab = new THREE.Group(); cab.position.set(x, 0.12, z); cab.rotation.y = ry; g.add(cab);
+      const ck = kit(cab);
+      ck.box(0.5, 1.45, 0.45, c, 0, 0, 0); ck.box(0.5, 0.12, 0.3, C.ink, 0, 0.8, 0.3);
+      const m = new THREE.MeshBasicMaterial({ color: 0x5fe08a });
+      const s = new THREE.Mesh(new THREE.PlaneGeometry(0.36, 0.3), m); s.position.set(0, 1.12, 0.231); cab.add(s); s.userData.dynamic = true;
+      screens.push(m);
+    });
+    const near = nearness(g, 5);
+    const pal = [0x5fe08a, 0xffd257, 0xff6a5a, 0x6fc3ff];
+    return {
+      obj: g, colliders: [{ x: 0, z: 0, w: 2.2, d: 2.2 }],
+      animate: (t, state) => { const live = near(state); screens.forEach((m, i) => m.color.setHex(pal[(Math.floor(t * (live > 0.1 ? 4 : 1)) + i) % 4])); },
+    };
+  },
+
+  // ===================== Montfort (replaces Lake Park) =====================
+  school_building({ text = 'ST. MONTFORT' } = {}) {
+    // Compact two-storey school facing +z: cream walls, blue window bands,
+    // red-tile roof, clock above the entrance and a sign board.
+    const g = new THREE.Group(), k = kit(g);
+    const W = 8.6, D = 3.4, H = 4.2;
+    k.box(W + 0.3, 0.3, D + 0.3, C.plinth, 0, 0, 0);
+    k.box(W, H, D, 0xf3e6c8, 0, 0.3, 0);
+    k.box(W + 0.1, 0.14, D + 0.1, 0x3a6fa8, 0, 0.3 + H / 2, 0);
+    for (const y of [0.9, 0.9 + H / 2]) for (let x = -W / 2 + 0.8; x < W / 2 - 0.5; x += 1.15) {
+      if (Math.abs(x) < 0.7 && y < 1) continue;
+      k.box(0.7, 0.85, 0.06, 0x3a6fa8, x, y, D / 2 + 0.02, { shadow: false });
+      k.box(0.56, 0.7, 0.04, glow(0xcfe8ff), x, y + 0.07, D / 2 + 0.05, { shadow: false });
+    }
+    k.box(1.3, 1.9, 0.1, 0x5a3a26, 0, 0.3, D / 2 + 0.03);                        // entrance
+    k.box(W + 0.5, 0.25, D + 0.6, 0xc4623a, 0, 0.3 + H, 0);                        // roof slab
+    k.box(2.0, 1.1, 0.4, 0xf3e6c8, 0, 0.3 + H + 0.25, D / 2 - 0.3);                  // front gable block
+    k.cyl(0.36, 0.36, 0.06, C.white, 0, 0.3 + H + 0.75, D / 2 - 0.05, 16, { rx: Math.PI / 2 });
+    k.box(0.04, 0.24, 0.03, C.ink, 0, 0.3 + H + 0.7, D / 2 + 0.0, { shadow: false });
+    k.box(0.18, 0.04, 0.03, C.ink, 0.07, 0.3 + H + 0.8, D / 2 + 0.0, { shadow: false });
+    const sign = boardSign(text, 3.4, 0.5); sign.position.set(0, 0.3 + 2.0, D / 2 + 0.12); g.add(sign);
+    // flag pole
+    k.box(0.06, 4.2, 0.06, C.steel, W / 2 + 0.8, 0, D / 2 + 0.6);
+    const flag = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.4, 0.02), mat(0x3a6fa8)); flag.geometry.translate(0.3, 0, 0); flag.position.set(W / 2 + 0.83, 3.9, D / 2 + 0.6); flag.userData.dynamic = true; g.add(flag);
+    return {
+      obj: g, colliders: [{ x: 0, z: 0, w: W + 0.3, d: D + 0.3 }, { x: W / 2 + 0.8, z: D / 2 + 0.6, r: 0.15 }],
+      animate: (t) => { flag.rotation.y = Math.sin(t * 2) * 0.25; },
+    };
+  },
+
+  hangout_corner() {
+    // Childhood hangout: a low wall to sit on, a parked cycle, a cricket bat and
+    // stumps chalked on the wall, under a shady tree.
+    const g = new THREE.Group(), k = kit(g);
+    k.box(3.0, 0.55, 0.4, 0xd8c3a0, 0, 0, -0.6);
+    k.box(3.1, 0.08, 0.5, 0xc9b48f, 0, 0.55, -0.6);
+    for (const x of [-0.25, 0, 0.25]) k.box(0.05, 0.5, 0.02, C.white, x - 0.9, 0.6, -0.39, { shadow: false });
+    k.box(0.12, 0.7, 0.06, C.woodLight, 1.0, 0.55, -0.35, { rz: 0.25 });
+    // cycle
+    for (const x of [-0.4, 0.4]) k.cyl(0.28, 0.28, 0.04, C.ink, 0.9 + x, 0, 0.5, 12, { rx: Math.PI / 2 }).position.y = 0.3;
+    k.box(0.8, 0.05, 0.05, 0x3a6fa8, 0.9, 0.5, 0.5); k.box(0.05, 0.4, 0.05, 0x3a6fa8, 0.7, 0.3, 0.5); k.box(0.24, 0.05, 0.12, C.ink, 0.7, 0.72, 0.5);
+    // tree
+    k.cyl(0.18, 0.24, 1.6, C.trunk, -1.8, 0, 0.4, 7);
+    k.mesh(new THREE.IcosahedronGeometry(1.1, 0), C.leafDark, -1.8, 2.2, 0.4);
+    return { obj: g, colliders: [{ x: 0, z: -0.6, w: 3.0, d: 0.4 }, { x: 0.9, z: 0.5, w: 1.3, d: 0.3 }, { x: -1.8, z: 0.4, r: 0.3 }] };
+  },
+
+  // ===================== Airport (replaces Lighthouse) =====================
+  airport_terminal() {
+    const g = new THREE.Group(), k = kit(g);
+    const W = 5.4, D = 3.0, H = 2.6;
+    k.box(W + 0.2, 0.2, D + 0.2, C.plinth, 0, 0, 0);
+    k.box(W, H, D, 0xe8eef5, 0, 0.2, 0);
+    k.box(W - 0.6, H - 0.7, 0.06, glow(0xa8d8f0), 0, 0.4, D / 2 + 0.02, { shadow: false });
+    for (let x = -W / 2 + 0.6; x <= W / 2 - 0.5; x += 0.9) k.box(0.06, H - 0.7, 0.08, C.steelDark, x, 0.4, D / 2 + 0.04, { shadow: false });
+    k.box(W + 0.8, 0.18, D + 1.2, 0x3d4058, 0, 0.2 + H, 0.3);                   // flat canopy roof
+    k.box(1.2, 1.9, 0.1, C.ink, 0, 0.2, D / 2 + 0.06);
+    const sign = boardSign('AIRPORT', 3.0, 0.55); sign.position.set(0, 0.2 + H + 0.2, D / 2 + 0.95); g.add(sign);
+    // departures board (no text, just blinking rows)
+    const dyn = new THREE.Group(); dyn.userData.dynamic = true; g.add(dyn);
+    k.box(1.2, 0.7, 0.06, C.ink, -1.9, 1.3, D / 2 + 0.08);
+    const rows = [];
+    for (let i = 0; i < 3; i++) { const m = new THREE.MeshBasicMaterial({ color: 0xffc14d }); const r = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.08, 0.01), m); r.position.set(-1.9, 1.85 - i * 0.18, D / 2 + 0.12); dyn.add(r); rows.push(m); }
+    return {
+      obj: g, colliders: [{ x: 0, z: 0, w: W + 0.2, d: D + 0.2 }],
+      animate: (t) => rows.forEach((m, i) => m.color.setHex(Math.sin(t * 2 + i * 1.7) > 0.6 ? 0x5fe08a : 0xffc14d)),
+    };
+  },
+
+  control_tower() {
+    const g = new THREE.Group(), k = kit(g);
+    k.cyl(0.7, 0.8, 0.3, C.plinth, 0, 0, 0, 8);
+    k.cyl(0.4, 0.5, 4.2, 0xe8eef5, 0, 0.3, 0, 8);
+    k.cyl(0.95, 0.75, 0.9, glow(0xa8d8f0), 0, 4.5, 0, 8);
+    k.cyl(1.05, 1.05, 0.15, 0x3d4058, 0, 5.4, 0, 8);
+    k.box(0.05, 0.8, 0.05, C.ink, 0, 5.55, 0);
+    const bm = new THREE.MeshBasicMaterial({ color: 0xff3b30 });
+    const beacon = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.14, 0.14), bm); beacon.position.y = 6.4; beacon.userData.dynamic = true; g.add(beacon);
+    return { obj: g, colliders: [{ x: 0, z: 0, r: 0.75 }], animate: (t) => bm.color.setHex(Math.sin(t * 3) > 0.3 ? 0xff3b30 : 0x5a1a1a) };
+  },
+
+  private_jet() {
+    // Parked private jet, nose toward +x, boarding stairs on the +z side.
+    const g = new THREE.Group(), k = kit(g);
+    const body = 0xf4f6fa, stripe = C.accent;
+    k.cyl(0.45, 0.45, 4.0, body, 0, 0.6, 0, 12, { rz: Math.PI / 2 }).position.set(0.2, 1.05, 0);
+    k.mesh(new THREE.ConeGeometry(0.45, 1.0, 12), body, 2.7, 1.05, 0, { rz: -Math.PI / 2 });
+    k.mesh(new THREE.ConeGeometry(0.45, 1.2, 12), body, -2.4, 1.15, 0, { rz: Math.PI / 2 });
+    k.box(4.4, 0.08, 0.02, stripe, 0.2, 1.02, 0.46, { shadow: false });
+    k.box(4.4, 0.08, 0.02, stripe, 0.2, 1.02, -0.46, { shadow: false });
+    for (let i = 0; i < 6; i++) for (const s of [-1, 1]) k.box(0.18, 0.14, 0.02, 0x2a3a5a, -1.4 + i * 0.5, 1.18, s * 0.455, { shadow: false });
+    k.box(0.5, 0.2, 0.02, 0x2a3a5a, 2.55, 1.2, 0.3, { ry: 0.6, shadow: false });
+    // wings + tail
+    k.box(1.2, 0.08, 4.0, body, -0.1, 0.8, 0);
+    for (const s of [-1, 1]) k.box(0.3, 0.3, 0.06, stripe, -0.5, 0.88, s * 1.98);
+    k.box(0.8, 1.2, 0.08, body, -2.3, 1.4, 0, { rz: 0.3 });
+    k.box(0.5, 0.06, 1.6, body, -2.55, 2.5, 0);
+    for (const s of [-1, 1]) k.cyl(0.18, 0.18, 0.8, 0xc6d2e0, -1.6, 1.25, s * 0.62, 10, { rz: Math.PI / 2 });
+    // landing gear
+    for (const [x, z] of [[2.0, 0], [-0.4, -0.5], [-0.4, 0.5]]) { k.box(0.06, 0.55, 0.06, C.ink, x, 0, z); k.cyl(0.14, 0.14, 0.1, C.ink, x, 0, z, 8, { rx: Math.PI / 2 }).position.y = 0.14; }
+    // door + stairs
+    k.box(0.5, 0.75, 0.02, 0xd8dee8, 1.6, 0.85, 0.47, { shadow: false });
+    for (let i = 0; i < 5; i++) k.box(0.55, 0.06, 0.22, C.steelDark, 1.6, 0.8 - i * 0.17, 0.62 + i * 0.2);
+    k.box(0.04, 0.9, 1.1, C.ink, 1.88, 0.2, 0.95, { rx: -0.7, shadow: false });
+    const dyn = new THREE.Group(); dyn.userData.dynamic = true; g.add(dyn);
+    const navR = new THREE.MeshBasicMaterial({ color: 0xff3b30 }), navG = new THREE.MeshBasicMaterial({ color: 0x5fe08a });
+    const nr = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.1), navR); nr.position.set(-0.1, 0.9, -2.0);
+    const ng = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.1), navG); ng.position.set(-0.1, 0.9, 2.0);
+    dyn.add(nr, ng);
+    // chocks
+    for (const z of [-0.5, 0.5]) k.box(0.2, 0.12, 0.12, C.yellow, -0.15, 0, z);
+    return {
+      obj: g,
+      colliders: [{ x: 0.2, z: 0, w: 5.6, d: 1.0 }, { x: -0.1, z: 0, w: 1.2, d: 4.0 }, { x: 1.6, z: 1.0, w: 0.6, d: 0.9 }],
+      animate: (t) => { const on = Math.sin(t * 4) > 0.5; navR.color.setHex(on ? 0xff3b30 : 0x5a1a1a); navG.color.setHex(on ? 0x5fe08a : 0x1a4a2a); },
+    };
+  },
+
+  runway({ len = 16, w = 2.6 } = {}) {
+    // Flat markings on concrete: centre dashes, threshold bars, edge lights.
+    const g = new THREE.Group(), k = kit(g);
+    k.box(len, 0.02, w, 0x55586a, 0, 0.02, 0, { shadow: false });
+    for (let x = -len / 2 + 1.5; x < len / 2 - 1.2; x += 1.2) k.box(0.6, 0.01, 0.08, C.white, x, 0.04, 0, { shadow: false });
+    for (const s of [-1, 1]) for (let i = 0; i < 4; i++) k.box(0.7, 0.01, 0.14, C.white, s * (len / 2 - 0.6), 0.04, -0.75 + i * 0.5, { shadow: false });
+    const dyn = new THREE.Group(); dyn.userData.dynamic = true; g.add(dyn);
+    const lights = [];
+    for (let x = -len / 2; x <= len / 2 + 0.01; x += 2) for (const s of [-1, 1]) { const m = new THREE.MeshBasicMaterial({ color: 0xffc14d }); const l = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.08, 0.1), m); l.position.set(x, 0.06, s * (w / 2 + 0.1)); dyn.add(l); lights.push({ m, x }); }
+    return { obj: g, colliders: [], animate: (t) => lights.forEach(({ m, x }) => m.color.setHex(((t * 4 - x * 0.5) % 4 + 4) % 4 < 0.6 ? 0xffffff : 0xffc14d)) };
+  },
+
+  windsock() {
+    const g = new THREE.Group(), k = kit(g);
+    k.box(0.08, 2.2, 0.08, C.steelDark, 0, 0, 0);
+    const sock = new THREE.Group(); sock.position.set(0, 2.1, 0); sock.userData.dynamic = true; g.add(sock);
+    [C.accent, C.white, C.accent].forEach((c, i) => { const s = new THREE.Mesh(new THREE.CylinderGeometry(0.16 - i * 0.03, 0.13 - i * 0.03, 0.3, 8), mat(c)); s.rotation.z = Math.PI / 2; s.position.x = 0.2 + i * 0.3; sock.add(s); });
+    return { obj: g, colliders: [{ x: 0, z: 0, r: 0.15 }], animate: (t) => { sock.rotation.y = Math.sin(t * 0.6) * 0.4; sock.rotation.z = -0.1 + Math.sin(t * 2.3) * 0.06; } };
   },
 };

@@ -643,3 +643,35 @@ body.game .pd-arch li::before { content: counter(arch); font-family: var(--font-
 body.game .pd-links { display: flex; flex-wrap: wrap; gap: 10px; }
 body.game .pd-link { font-family: var(--font-mono); font-size: 13px; font-weight: 600; text-decoration: none; color: #261e3a; background: #ffb347; padding: 7px 12px; }
 body.game .pd-link:hover, body.game .pd-link:focus-visible { background: #ffd08a; outline: 2px solid var(--ink); outline-offset: 2px; }
+
+/* Guild Hall + Pop Culture Park panels */
+body.game .gh-tree { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin: 10px 0; }
+body.game .gh-branch { display: flex; align-items: center; gap: 8px; padding: 10px; background: var(--cream); border: 2px solid var(--ink-3); color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+body.game .gh-branch em { margin-left: auto; font-style: normal; font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); }
+body.game .gh-branch[aria-expanded="true"], body.game .gh-branch:hover { border-color: #ffb347; }
+body.game .gh-gem { width: 12px; height: 12px; transform: rotate(45deg); flex: none; }
+body.game .gh-gem.b0 { background: #ff6a3d; } body.game .gh-gem.b1 { background: #2bb3a3; } body.game .gh-gem.b2 { background: #6fa8dc; } body.game .gh-gem.b3 { background: #b56fdc; } body.game .gh-gem.b4 { background: #ffd257; }
+body.game .gh-node-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+body.game .gh-node-list li { padding: 5px 10px; background: var(--cream-2); border: 2px solid #ffb347; animation: ghpop .3s steps(3) both; }
+@keyframes ghpop { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+body.game .gh-trophies { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; margin: 10px 0; }
+body.game .gh-trophy { display: grid; justify-items: center; gap: 6px; padding: 10px 8px; background: var(--cream); border: 2px solid var(--ink-3); color: var(--ink); font: inherit; font-size: 12px; cursor: pointer; text-align: center; }
+body.game .gh-trophy b { font-weight: 600; line-height: 1.3; }
+body.game .gh-trophy.on, body.game .gh-trophy:hover { border-color: #ffb347; }
+body.game .gh-trophy .cup { width: 22px; height: 18px; clip-path: polygon(0 0, 100% 0, 80% 60%, 60% 70%, 60% 85%, 80% 85%, 80% 100%, 20% 100%, 20% 85%, 40% 85%, 40% 70%, 20% 60%); background: #ffcf4a; }
+body.game .gh-trophy.silver .cup { background: #d9dde6; } body.game .gh-trophy.bronze .cup { background: #c98a4a; }
+body.game .gh-plaque { padding: 10px 12px; background: var(--cream); border: 2px dashed var(--ink-3); }
+body.game .gh-plaque:empty { display: none; }
+body.game .gh-plaque p { margin: 6px 0 0; }
+body.game .gh-quest { background: var(--cream); border: 2px solid var(--ink-3); margin: 8px 0; padding: 0 12px; }
+body.game .gh-quest.main { border-color: #ffb347; }
+body.game .gh-quest summary { display: grid; gap: 2px; padding: 10px 0; cursor: pointer; list-style: none; }
+body.game .gh-quest summary::-webkit-details-marker { display: none; }
+body.game .gh-quest .tag { font-family: var(--font-mono); font-size: 10px; letter-spacing: .1em; color: #ffb347; }
+body.game .gh-quest.side .tag { color: var(--ink-3); }
+body.game .gh-quest p { margin: 0 0 12px; }
+body.game .gh-profile { display: flex; gap: 14px; align-items: center; }
+body.game .gh-profile h2 { margin: 0; }
+body.game .gh-edu { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+body.game .pop-card { margin: 12px 0; padding: 12px 14px; border-left: 4px solid #ffb347; background: var(--cream); font-size: 1.05rem; }
+body.game .pop-note { margin-top: 14px; font-size: 12px; color: var(--ink-3); }

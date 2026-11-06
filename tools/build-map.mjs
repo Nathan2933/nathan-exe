@@ -113,10 +113,10 @@ rect(-21, -19, -4, -4, T.lawn);           // Iron Yard lot
 rect(-20, -19, -9, -13, T.concrete);      //   gym slab
 rect(-12, -11, -5, -6, T.rubber);         //   outdoor training floor (smaller, calmer)
 rect(-9, -4, -8, -4, T.path);             //   gate
-rect(4, -19, 16, -4, T.lawn);             // City Park
-rect(9, -19, 10, -4, T.path); rect(4, -12, 16, -11, T.path);
+rect(4, -21, 17, -4, T.lawn);             // Pop Culture Park (was City Park; grown 2 m north, ring road untouched)
+rect(9, -20, 10, -4, T.path); rect(4, -12, 16, -11, T.path); rect(8, -14, 11, -9, T.path); // walks + arcade square
 disc(9.5, -11.5, 3.2, T.plaza);
-rect(-21, 4, -4, 18, T.lawn);             // Signal Tower lot
+rect(-21, 4, -4, 18, T.lawn);             // Guild Hall lot (was Signal Tower)
 rect(3, 3, 17, 24, T.concrete);           // Garage: big open lot
 rect(-14, -43, 13, -29, T.snow);          // Winter Campus
 rect(-2, -33, 2, -29, T.concrete);        //   cleared entrance walk
@@ -126,12 +126,13 @@ rect(26, -1, 40, 1, T.terracotta);        //   main red-earth walk from the arch
 rect(29, -5, 41, -3, T.terracotta);       //   veranda forecourt
 disc(34, 3.6, 3.3, T.terracotta);         //   small paved court
 rect(29, 1, 31, 8, T.terracotta);         //   path to the tea stall
-disc(-35.5, -2, 6, T.water, 7);             // Lake
 for (let a = 0; a < Math.PI * 2; a += 0.05) set(Math.round(-35 + Math.cos(a) * 7.4), Math.round(-2 + Math.sin(a) * 8.4), T.path);
 rect(-30, -1, -28, 1, T.path);
-rect(-1, 30, 1, 36, T.path);              // Lighthouse path + pier
-rect(0, 35, 1, 44, T.boardwalk);
-rect(1, 39, 5, 41, T.path);              //   path to the lighthouse door
+rect(-1, 30, 1, 34, T.path);              // path down to the airport
+rect(-12, 34, 10, 39, T.concrete);        // airport apron
+rect(-8, 39, 8, 42, T.concrete);          // runway strip
+rect(-35, -11, -31, 0, T.concrete);       // Montfort schoolyard
+rect(-34, -15, -32, -11, T.path);         //   path from the station
 disc(0, 0, 8.5, T.plaza);                 // Central plaza (paints over the avenue ends)
 disc(0, 0, 9.5, T.plaza);
 
@@ -211,33 +212,55 @@ interact.push(point('memory', -18.6, -10.6, { id: 'starting-line' }));
 interact.push(point('memory', -11.8, -12.6, { id: 'checkpoint-60' }));
 interact.push(point('memory', -5.6, -5.2, { id: 'fitness-chapter' }));
 
-// --- City Park (placeholder pass: layout only) ---
-hedge(3, -20, 17, -19); hedge(17, -19, 18, -4); hedge(3, -19, 4, -13); hedge(3, -10, 4, -4);
+// --- Pop Culture Park (was City Park) ---
+// Four zones around a small central arcade: noir corner (NW), adventure corner
+// (NE), cinema + startup corner (south). Each attraction has its own small
+// animation and an E interaction. Original homages, no official artwork.
+hedge(3, -21.8, 18, -21); hedge(17, -21, 18, -4); hedge(3, -21, 4, -13); hedge(3, -10, 4, -4);
 hedge(3, -4, 8, -3); hedge(11, -4, 18, -3);
-O('fountain', 9.5, -11.5);
-for (const [x, z] of [[5.5, -17.5], [13.5, -17.5], [15.8, -14.5], [15.8, -7], [5.5, -6.2], [13.5, -6.2]]) O('tree_blossom', x, z);
-O('bench', 7, -11.5, { rot: 90 }); O('bench', 12, -11.5, { rot: -90 });
-O('food_cart', 14.4, -8.2, { rot: 0 });
-O('picnic_blanket', 6.4, -15.8);
-O('bench', 12.6, -16.6, { rot: 0 });
-O('lamp', 7.2, -8.4); O('lamp', 12.0, -14.8);
-labels.push(point('label', 9.5, -11.5, { text: 'CITY PARK', color: '#3b6d11', height: 5 }));
+O('pop_arcade', 9.5, -11.5);
+// noir corner
+O('pop_rooftop', 5.4, -19.4, { variant: 'signal' });
+O('pop_rooftop', 7.75, -19.5, { variant: 'red' });
+O('pop_moon', 5.3, -15.4);
+// adventure corner
+O('pop_web', 12.2, -19.4);
+O('pop_camp', 14.8, -17.2);
+// cinema + startup corner
+O('pop_cinema', 6.4, -10.4);
+O('pop_boxing', 13.4, -7.6);
+O('pop_startup', 15.2, -9.8);
+O('tree_blossom', 16.2, -13.4); O('lamp', 10.8, -14.6); O('lamp', 8.4, -9.2);
+const POP = [
+  // [interest id, attraction piece, x, z, title]
+  ['batman', 'pop_rooftop_signal', 5.3, -17.4, 'Rooftop signal'],
+  ['daredevil', 'pop_rooftop_red', 7.8, -17.4, 'Red rooftop'],
+  ['moon-knight', 'pop_moon', 7.2, -14.6, 'Moonlit corner'],
+  ['spider-man', 'pop_web', 11.6, -17.4, 'Web frame'],
+  ['rdr2', 'pop_camp', 14.2, -14.8, 'Western camp'],
+  ['fight-club', 'pop_boxing', 12.6, -5.8, 'Basement corner'],
+  ['silicon-valley', 'pop_startup', 15.6, -8.2, 'Startup desk'],
+];
+for (const [interest, attraction, x, z, title] of POP) interact.push(point('panel', x, z, { id: `pop-${interest}`, district: 'city-park', panel: 'pop', interest, attraction, title }));
+labels.push(point('label', 9.5, -11.5, { text: 'POP CULTURE PARK', color: '#3b6d11', height: 5 }));
 
-// --- Signal Tower (skills, achievements, experience) ---
+// --- Guild Hall (was Signal Tower): skills, trophies, quests, profile ---
 hedge(-22, 3, -3, 4); hedge(-22, 4, -21, 19); hedge(-4, 7, -3, 19); hedge(-22, 19, -3, 20);
-O('lattice_tower', -16, 13.4);
-O('radio_shack', -9.8, 14.2, { rot: -90, text: 'RADIO' });
-O('trophy_case', -12.6, 8.2, { rot: 0 });
-O('bench', -17.4, 7.6, { rot: 0 });
+O('guild_hall', -15, 7.4, { rot: 0 });
+O('guild_quest_board', -19.0, 12.6, { rot: 0 });
+O('guild_skill_tree', -14.6, 14.2);
+O('guild_trophy_stand', -10.2, 13.0, { rot: 0 });
+O('guild_profile_stand', -6.6, 15.4, { rot: 0 });
 O('lamp', -6.4, 9.6); O('lamp', -18.6, 16.8);
-for (const z of [6.2, 10.4]) O('tree_round', -20, z, { scale: 0.9 });
-labels.push(point('label', -16, 13.4, { text: 'SIGNAL TOWER', color: '#2a2440', height: 15.2 }));
+labels.push(point('label', -15, 7.4, { text: 'GUILD HALL', color: '#2a2440', height: 8.6 }));
 interact.push(point('chapter', -6.8, 5.6, { id: 'signal-tower', district: 'signal-tower' }));
-interact.push(point('panel', -12.6, 9.6, { id: 'achievements', district: 'signal-tower', panel: 'achievements', title: 'Trophy case' }));
-interact.push(point('panel', -7.2, 15.1, { id: 'experience', district: 'signal-tower', panel: 'experience', title: 'Radio log' }));
-interact.push(point('memory', -14.6, 9.6, { id: 'the-pitch' }));
-interact.push(point('memory', -7.4, 12.0, { id: 'bug-report' }));
-interact.push(point('memory', -18.0, 9.6, { id: 'cluster-alert' }));
+interact.push(point('panel', -14.6, 16.2, { id: 'skilltree', district: 'signal-tower', panel: 'skilltree', title: 'Skill tree' }));
+interact.push(point('panel', -10.2, 15.0, { id: 'trophies', district: 'signal-tower', panel: 'trophies', title: 'Trophy collection' }));
+interact.push(point('panel', -18.6, 14.2, { id: 'quests', district: 'signal-tower', panel: 'quests', title: 'Quest log' }));
+interact.push(point('panel', -6.6, 17.0, { id: 'profile', district: 'signal-tower', panel: 'profile', title: 'Character profile' }));
+interact.push(point('memory', -12.4, 11.2, { id: 'the-pitch' }));
+interact.push(point('memory', -11.8, 17.6, { id: 'bug-report' }));
+interact.push(point('memory', -20.0, 17.4, { id: 'cluster-alert' }));
 
 // --- The Garage (projects + tech stack) ---
 // An open inventor's workshop: two lean-to roofs run along the back (north and
@@ -300,26 +323,24 @@ interact.push(point('memory', 28.6, 2.9, { id: 'madurai-checkpoint' }));
 interact.push(point('memory', 32.6, 7.4, { id: 'montfort' }));
 interact.push(point('memory', 31, -1.6, { id: 'association-badge' }));
 interact.push(point('memory', 34, 3.6, { id: 'ecell-crowd' }));
-// --- Lake Park (reflection) ---
-O('jetty', -35.5, 6.4, { rot: 0, length: 5 });
-O('rowboat', -38, -3);
-O('ducks', -34, -4, { r: 2.4 });
-for (const [x, z, sc] of [[-40.6, 2.6, 1], [-41.2, -4.2, 0.9], [-33.2, -8.8, 1.1], [-38.6, -8.2, 0.8], [-31.4, 3.4, 0.9]]) O('reeds', x, z, { scale: sc });
-O('willow', -40.6, 8.2, { scale: 1.05 }); O('willow', -39.6, -11.6, { scale: 0.95 });
-O('lamp', -32.6, 7.8); O('lamp', -38.6, 7.6);
-O('bench', -31.6, 9.6, { rot: 180 });
-labels.push(point('label', -35.5, -2, { text: 'LAKE PARK', color: '#2f5f9a', height: 4 }));
-interact.push(point('chapter', -35.5, 2.6, { id: 'lake-park', district: 'lake-park' }));
+// --- Montfort (was Lake Park): St. Montfort school + a childhood hangout ---
+O('school_building', -36.6, -5.5, { rot: -90, text: 'ST. MONTFORT' });
+O('hangout_corner', -35.2, 4.4, { rot: -90 });
+O('lamp', -32.4, -1.0); O('lamp', -32.4, 8.4);
+labels.push(point('label', -36.6, -5.5, { text: 'MONTFORT', color: '#2f5f9a', height: 7 }));
+interact.push(point('chapter', -33.6, -5.5, { id: 'lake-park', district: 'lake-park' }));
+interact.push(point('memory', -33.2, -2.2, { id: 'montfort' }));
 
-// --- Lighthouse (the ending) ---
-O('lighthouse', 6, 40.4, { rot: 90 });
-O('cottage', -4.6, 37, { rot: 0 });
-O('lamp', -2.6, 35.8);
-O('bench', -2.0, 41.0, { rot: 90 });
-labels.push(point('label', 6, 40.4, { text: 'LIGHTHOUSE', color: '#c4402f', height: 13.2 }));
-interact.push(point('chapter', 1.2, 37.2, { id: 'lighthouse', district: 'lighthouse' }));
-interact.push(point('finale', 3.2, 40.4, { id: 'finale', district: 'lighthouse' }));
-interact.push(point('memory', -0.8, 40.4, { id: 'new-save-file' }));
+// --- Airport (was Lighthouse): The Departure. The jet stays parked; Island 02 comes later. ---
+O('airport_terminal', -5.5, 35.9, { rot: 0 });
+O('control_tower', -10.6, 36.2);
+O('private_jet', 2.4, 36.8, { rot: 0 });
+O('runway', 0, 40.6, { len: 15, w: 2.6 });
+O('windsock', 9.4, 38.4);
+labels.push(point('label', -5.5, 35.9, { text: 'AIRPORT', color: '#c4402f', height: 6 }));
+interact.push(point('chapter', -7.4, 38.6, { id: 'lighthouse', district: 'lighthouse' }));
+interact.push(point('finale', -3.4, 38.6, { id: 'finale', district: 'lighthouse' }));
+interact.push(point('memory', -10.6, 38.4, { id: 'new-save-file' }));
 
 // --- Memory Line: a loop railway between the ring road and the outer districts.
 // It stands for moving between chapters of life; boarding is fast travel.
@@ -345,15 +366,15 @@ const distToRail = (x, z) => {
 };
 // Stations: [id, district, name, x, z, rot] — the rail runs along each platform's front edge.
 const STATIONS = [
-  ['winter', 'winter-campus', 'Winter Campus', -16, -30, 0],
-  ['monsoon', 'monsoon-campus', 'Monsoon', 27, -8.4, 90],
-  ['lake', 'lake-park', 'Lake Park', -32, -16, -90],
-  ['lighthouse', 'lighthouse', 'Lighthouse', 7, 34.8, 180],
+  ['lake', 'lake-park', 'Montfort', -32, -16, -90, 1, 'The Beginning'],
+  ['winter', 'winter-campus', 'Tomsk', -16, -30, 0, 2, 'The Detour'],
+  ['monsoon', 'monsoon-campus', 'TCE', 27, -8.4, 90, 3, 'The Restart'],
+  ['lighthouse', 'lighthouse', 'Airport', 7, 34.8, 180, 4, 'The Departure'],
 ];
-for (const [id, district, name, x, z, rot] of STATIONS) {
+for (const [id, district, name, x, z, rot, order, tagline] of STATIONS) {
   O('station', x, z, { rot, name: `${name} STN` });
   const a = (-rot * Math.PI) / 180, lx = 1.2, lz = 0.25;   // stand point on the platform
-  interact.push(point('station', +(x + lx * Math.cos(a) + lz * Math.sin(a)).toFixed(2), +(z - lx * Math.sin(a) + lz * Math.cos(a)).toFixed(2), { id, district, name }));
+  interact.push(point('station', +(x + lx * Math.cos(a) + lz * Math.sin(a)).toFixed(2), +(z - lx * Math.sin(a) + lz * Math.cos(a)).toFixed(2), { id, district, name, order, tagline }));
 }
 
 // Forest belt: an intentional ring of trees just inside the beach, left open
@@ -380,8 +401,9 @@ for (let a = 0; a < Math.PI * 2; a += 0.085) {
 const route = (npc, pts, loop = false) => paths.push(line('npc_route', pts, { npc, loop }));
 route('thianesh', [[-17, -9.0], [-11.5, -8.0], [-10.5, -5.5], [-16.5, -5.5]], true);     // Iron Yard
 route('guru', [[-3.4, -32.2], [-8.6, -32.4], [-7.8, -30.0]]);                              // Winter Campus (west)
-route('shabeer', [[9.5, -7.0], [14.4, -11.5], [9.5, -16.0], [4.6, -11.5]], true);         // City Park, around the fountain
+route('shabeer', [[-33.4, 2.6], [-33.0, 5.6], [-33.8, 7.6]]);                              // Montfort, the childhood hangout
 route('anu', [[33.2, -1.4], [36.4, -1.6], [39, 2.4], [35.8, 2.6]], true);                  // TCE forecourt
+route('harris', [[-4.6, 38.6], [1.0, 38.8], [4.0, 38.9], [5.8, 37.8]]);                     // Airport, terminal to the jet
 route('akshai', [[10.3, 5.8], [10.3, 12.2], [10.3, 17.9]]);                                // Garage, centre aisle past the exhibits
 route('naveen', [[4.8, 23.3], [7.6, 23.3], [7.6, 18.6]]);                                  // Garage, tool wall to the centre bench
 route('shabesh', [[16.2, 23.3], [13.0, 23.3], [16.2, 18.6]], true);                        // Garage, east side by the exhibits

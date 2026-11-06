@@ -116,13 +116,15 @@
     {
       "id": "reflection",
       "district": "lake-park",
-      "title": "The Quiet Save",
-      "subtitle": "A little space to think",
+      "title": "The Beginning",
+      "subtitle": "St. Montfort Higher Secondary School, Trichy",
       "period": "",
       "body": [
-        "Some memories aren't awards or milestones. They're the ordinary moments between big chapters. This part of the map is a pause, not a test."
+        "Before the projects, the competitions, and the unexpected journeys, there was Montfort. Classrooms, familiar faces, and the ordinary days that quietly became the beginning of everything."
       ],
-      "highlights": []
+      "highlights": [
+        "Class XII, 2021"
+      ]
     }
   ],
   "projects": [
@@ -454,7 +456,7 @@
     },
     {
       "id": "montfort",
-      "district": "monsoon-campus",
+      "district": "lake-park",
       "title": "Montfort",
       "year": "2021",
       "text": "Before the university chapters, there was St. Montfort in Trichy. I finished Class XII in 2021. It's a small marker for where this academic timeline began.",
@@ -612,8 +614,8 @@
     {
       "id": "shabeer",
       "name": "Shabeer",
-      "role": "Friend · City Park",
-      "district": "city-park",
+      "role": "Childhood friend · Montfort",
+      "district": "lake-park",
       "color": "#3f9a72",
       "skin": "fair",
       "build": 1,
@@ -632,11 +634,11 @@
       "accessory": null,
       "scarfColor": "#e2574a",
       "lines": [
-        "Taking the long way around? City Park is where this town slows down."
+        "Some people have been around since the first chapter."
       ],
       "topics": [
-        "What's this park for? :: No quest here. Just somewhere to pause between chapters.",
-        "Where should I go next? :: Check the save file, bottom left, or press M for the map."
+        "How far back do you go? :: Before all the projects and university stories.",
+        "What's different now? :: Different places. Same old stories."
       ],
       "scripted": true,
       "beardColor": "#6b3f2a"
@@ -753,6 +755,90 @@
         "Where's his resume? :: Top right, any time. You don't need to finish the game."
       ],
       "scripted": true
+    },
+    {
+      "id": "harris",
+      "name": "Harris",
+      "role": "Pilot · Airport",
+      "district": "lighthouse",
+      "color": "#7a4a2a",
+      "skin": "brown",
+      "build": 1,
+      "height": 1.02,
+      "hair": "short",
+      "hairColor": "#1e1612",
+      "hatColor": "#1e1612",
+      "top": "coat",
+      "topColor": "#7a4a2a",
+      "pants": "trousers",
+      "pantsColor": "#23222e",
+      "shoes": "#1a1418",
+      "glasses": false,
+      "beard": "none",
+      "beardColor": "#1e1612",
+      "species": "human",
+      "accessory": null,
+      "scarfColor": "#e8dcc0",
+      "lines": [
+        "Oi, Nathan. Flight's ready. Destination's another story."
+      ],
+      "topics": [
+        "Where does this jet go? :: Somewhere off the map. Not everyone gets a boarding pass.",
+        "Can we go now? :: Not yet. The next island's still under construction.",
+        "Who gets to board? :: Only the ones on the list. You'll know when it's time."
+      ],
+      "scripted": true
+    }
+  ],
+  "interests": [
+    {
+      "id": "moon-knight",
+      "title": "Moon Knight",
+      "zone": "Noir corner",
+      "card": "Some stories are about the different sides of who we are.",
+      "action": "The crescent brightens and a small hidden glyph rises from the pool."
+    },
+    {
+      "id": "daredevil",
+      "title": "Daredevil",
+      "zone": "Noir corner",
+      "card": "Not every kind of strength needs to be seen.",
+      "action": "Listen: an echo ripples out across the rooftop."
+    },
+    {
+      "id": "batman",
+      "title": "Batman",
+      "zone": "Noir corner",
+      "card": "Preparation, persistence, and finding a way forward.",
+      "action": "The searchlight swings up and throws a winged signal onto the sky."
+    },
+    {
+      "id": "spider-man",
+      "title": "Spider-Man",
+      "zone": "Adventure corner",
+      "card": "Sometimes responsibility is the hardest part of growing up.",
+      "action": "Agility challenge: touch the three red rings around the web within 15 seconds."
+    },
+    {
+      "id": "rdr2",
+      "title": "Red Dead Redemption 2",
+      "zone": "Adventure corner",
+      "card": "Some of the best stories are about people, choices, and the roads between them.",
+      "action": "The campfire flares and the horse looks up."
+    },
+    {
+      "id": "fight-club",
+      "title": "Fight Club",
+      "zone": "Cinema and startup corner",
+      "card": "A story that makes you question identity and the things we attach ourselves to.",
+      "action": "One punch. The bag swings and the bulb flickers."
+    },
+    {
+      "id": "silicon-valley",
+      "title": "Silicon Valley",
+      "zone": "Cinema and startup corner",
+      "card": "Building something is one thing. Getting it to work is another.",
+      "action": "Watch the build: compiling, failing, then finally working."
     }
   ]
 }

@@ -473,10 +473,69 @@ function openInfoPanel(it) {
     html = `<p class="eyebrow">SIGNAL TOWER · RADIO LOG</p><h2 id="panel-title">Experience</h2>
       ${(c.experience || []).length ? `<ul class="highlights">${c.experience.map((e) => `<li><b>${esc(e.role)}</b> · ${esc(e.org)} <span class="muted">${esc(e.period || '')}</span><br>${esc(e.summary || '')}</li>`).join('')}</ul>` : '<p>Add experience in the admin.</p>'}
       ${c.profile?.resumeUrl ? `<div class="transmit"><a class="btn" href="${esc(safeUrl(c.profile.resumeUrl))}" target="_blank" rel="noopener">Full resume ↗</a></div>` : ''}`;
+  } else if (it.panel === 'skilltree') {
+    const groups = c.skills || [];
+    html = `<p class="eyebrow">GUILD HALL · SKILL TREE</p><h2 id="panel-title">Skill tree</h2>
+      <p class="subtitle">Pick a branch to see what's on it.</p>
+      <div class="gh-tree">${groups.map((g, i) => `<button type="button" class="gh-branch" data-branch="${i}" aria-expanded="false"><span class="gh-gem b${i % 5}"></span>${esc(g.group)}<em>${(g.items || []).length}</em></button>`).join('')}</div>
+      <div class="gh-nodes" id="gh-nodes" aria-live="polite"><p class="muted">No branch selected.</p></div>`;
+  } else if (it.panel === 'trophies') {
+    const tier = (a) => /winner|first/i.test(a.title) ? 'gold' : /runner|second|third/i.test(a.title) ? 'silver' : 'bronze';
+    html = `<p class="eyebrow">GUILD HALL · TROPHY COLLECTION</p><h2 id="panel-title">Trophies</h2>
+      <p class="subtitle">${(c.achievements || []).length} trophies. Select one to read the plaque.</p>
+      <div class="gh-trophies">${(c.achievements || []).map((a, i) => `<button type="button" class="gh-trophy ${tier(a)}" data-trophy="${i}"><span class="cup"></span><b>${esc(a.title)}</b></button>`).join('')}</div>
+      <div class="gh-plaque" id="gh-plaque" aria-live="polite"></div>`;
+  } else if (it.panel === 'quests') {
+    const exp = c.experience || [];
+    const main = exp.filter((e) => /hewlett|hpe|sez/i.test(e.org)), side = exp.filter((e) => !main.includes(e));
+    const q = (e, kind) => `<details class="gh-quest ${kind}"${kind === 'main' ? ' open' : ''}><summary><span class="tag">${kind === 'main' ? 'MAIN QUEST' : 'SIDE QUEST'}</span><b>${esc(e.org)}</b><span class="muted">${esc(e.role)}${e.period ? ' · ' + esc(e.period) : ''}</span></summary><p>${esc(e.summary || '')}</p></details>`;
+    html = `<p class="eyebrow">GUILD HALL · QUEST LOG</p><h2 id="panel-title">Quest log</h2>
+      ${main.map((e) => q(e, 'main')).join('')}${side.map((e) => q(e, 'side')).join('')}`;
+  } else if (it.panel === 'profile') {
+    const p = c.profile || {};
+    const edu = ['lake-park', 'winter-campus', 'monsoon-campus'].map((d) => chapterFor(c, d)).filter(Boolean);
+    html = `<p class="eyebrow">GUILD HALL · CHARACTER PROFILE</p>
+      <div class="gh-profile"><img class="mini-portrait" src="${portraitURL()}" alt=""><div><h2 id="panel-title">${esc(p.name || 'Nathan')}</h2><p class="subtitle">${esc(p.role || '')}${p.location ? ' · ' + esc(p.location) : ''}</p></div></div>
+      ${p.summary ? `<p>${esc(p.summary)}</p>` : ''}
+      <p class="eyebrow" style="margin-top:14px">EDUCATION</p>
+      <ol class="gh-edu">${edu.map((ch) => `<li><b>${esc(ch.subtitle || ch.title)}</b>${ch.period ? `<span class="muted"> · ${esc(ch.period)}</span>` : ''}${(ch.highlights || [])[0] ? `<br><span class="muted">${esc(ch.highlights[0])}</span>` : ''}</li>`).join('')}</ol>
+      <div class="transmit">${p.resumeUrl ? `<a class="btn primary" href="${esc(safeUrl(p.resumeUrl))}" target="_blank" rel="noopener">Resume ↗</a>` : ''}${(c.links || []).filter((l) => !l.url.startsWith('mailto:')).map((l) => `<a class="btn" href="${esc(safeUrl(l.url))}" target="_blank" rel="noopener">${esc(l.label)} ↗</a>`).join('')}</div>`;
+  } else if (it.panel === 'pop') {
+    const card = (c.interests || []).find((x) => x.id === it.interest) || {};
+    html = `<p class="eyebrow">POP CULTURE PARK · ${esc((card.zone || '').toUpperCase())}</p><h2 id="panel-title">${esc(card.title || it.title)}</h2>
+      ${card.card ? `<blockquote class="pop-card">${esc(card.card)}</blockquote>` : ''}
+      ${card.action ? `<p class="muted">${esc(card.action)}</p>` : ''}
+      ${it.interest === 'spider-man' ? '<div class="transmit"><button type="button" class="btn primary" id="pop-go">Start the challenge</button></div>' : ''}
+      <p class="pop-note">An original homage made for this game. Not official artwork.</p>`;
   }
   showPanel(`${it.district}/${it.panel}.txt`, html, it);
   if (!it.visited) { markVisited(it); }
+  const body = $('#panel-body');
+  if (it.panel === 'skilltree') {
+    const groups = c.skills || [];
+    world.apis.guild_skill_tree?.trigger();
+    body.querySelectorAll('[data-branch]').forEach((b) => b.addEventListener('click', () => {
+      body.querySelectorAll('[data-branch]').forEach((x) => x.setAttribute('aria-expanded', String(x === b)));
+      const g = groups[+b.dataset.branch];
+      $('#gh-nodes').innerHTML = `<p class="eyebrow">${esc(g.group)}</p><ul class="gh-node-list">${(g.items || []).map((x, i) => `<li style="animation-delay:${i * 60}ms">${esc(x)}</li>`).join('')}</ul>`;
+      sfx.open();
+    }));
+  } else if (it.panel === 'trophies') {
+    world.apis.guild_trophy_stand?.trigger();
+    body.querySelectorAll('[data-trophy]').forEach((b) => b.addEventListener('click', () => {
+      const a = c.achievements[+b.dataset.trophy];
+      body.querySelectorAll('[data-trophy]').forEach((x) => x.classList.toggle('on', x === b));
+      $('#gh-plaque').innerHTML = `<b>${esc(a.title)}</b>${a.org ? `<span class="muted"> · ${esc(a.org)}</span>` : ''}${a.year ? `<span class="muted"> · ${esc(a.year)}</span>` : ''}${a.detail ? `<p>${esc(a.detail)}</p>` : ''}`;
+      sfx.open();
+    }));
+  } else if (it.panel === 'pop') {
+    const ctx = { toast, sfx };
+    const api = world.apis[it.attraction];
+    if (it.interest === 'spider-man') $('#pop-go')?.addEventListener('click', () => { closePanel(); api?.trigger(ctx); });
+    else api?.trigger(ctx);
+  }
 }
+
 
 // ---------------- Lighthouse finale ----------------
 function runFinale(it) {
@@ -514,7 +573,7 @@ function runFinale(it) {
         <div class="window-bar"><span class="title">nathan.exe — process complete</span></div>
         <div class="finale-body">
           <img class="mini-portrait" src="${portraitURL()}" alt="">
-          <p class="eyebrow">THE LIGHT IS ON</p>
+          <p class="eyebrow">END OF ISLAND 01</p>
           <h2 id="finale-title">Thanks for playing my story.</h2>
           <p>${esc(chapterFor(c, 'lighthouse')?.body?.[0] || "If you'd like to build something together, I'd love to hear from you.")}</p>
           <div class="finale-stats"><span>◆ ${main}/${MAIN_DISTRICTS.length} chapters</span><span>✦ ${s.memories.length}/${mems} memories</span><span>⏱ ${formatTime(s.seconds)}</span></div>
@@ -543,11 +602,13 @@ function runFinale(it) {
 function openStations(here) {
   face(here);
   const c = state.content;
-  const rows = world.stations.map((st) => {
+  // Stops are listed in story order (Montfort → Tomsk → TCE → Airport), not track order
+  const rows = [...world.stations].sort((a, b) => (a.order || 0) - (b.order || 0)).map((st) => {
     const ch = chapterFor(c, st.district);
     const cur = st === here;
+    const sub = st.tagline || (ch ? `${ch.title}${ch.period ? ' · ' + ch.period : ''}` : '');
     return `<li class="${cur ? 'current' : ''}">
-      <div><b>${esc(st.name)}</b><span>${esc(ch ? `${ch.title}${ch.period ? ' · ' + ch.period : ''}` : '')}</span></div>
+      <div><b>${st.order ? String(st.order).padStart(2, '0') + ' · ' : ''}${esc(st.name)}</b><span>${esc(sub)}</span></div>
       ${cur ? '<em>You are here</em>' : `<button class="btn primary" data-board="${esc(st.stationId)}">Board →</button>`}</li>`;
   }).join('');
   showPanel('memory-line/timetable.txt', `
@@ -1319,7 +1380,7 @@ function updatePrompt() {
     memory: ['Memory', mem ? 'Pick up ✦' : ''],
     station: ['Memory Line', best.name ? `${best.name} station` : 'Station'],
     panel: ['Look', best.title],
-    finale: ['The ending', state.save.finale ? 'Watch the light again' : 'Light the lamp'],
+    finale: ['Departures', state.save.finale ? 'Replay the ending' : 'End of Island 01'],
     chapter: ['Open chapter', chapterFor(c, best.district)?.title],
   }[best.kind] || ['Open', best.id];
   $('#prompt-kind').textContent = kind;

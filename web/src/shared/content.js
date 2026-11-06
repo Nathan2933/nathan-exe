@@ -2,13 +2,13 @@
 
 // Story order. `optional` districts don't count towards completing the save file.
 export const DISTRICTS = [
+  { id: 'lake-park', name: 'Montfort' },              // id kept from Lake Park so saves stay valid
   { id: 'iron-yard', name: 'Iron Yard' },
   { id: 'winter-campus', name: 'Winter Campus' },
   { id: 'monsoon-campus', name: 'Monsoon Campus' },
   { id: 'garage', name: 'The Garage' },
-  { id: 'signal-tower', name: 'Signal Tower' },
-  { id: 'lighthouse', name: 'Lighthouse' },
-  { id: 'lake-park', name: 'Lake Park', optional: true },
+  { id: 'signal-tower', name: 'Guild Hall' },         // id kept from Signal Tower
+  { id: 'lighthouse', name: 'Airport' },              // id kept from Lighthouse
 ];
 export const MAIN_DISTRICTS = DISTRICTS.filter((d) => !d.optional);
 

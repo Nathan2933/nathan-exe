@@ -46,6 +46,9 @@ export const sfx = {
   rep: () => tone(220, 0.12, { type: 'sawtooth', vol: 0.08, slide: 220 }),
   miss: () => tone(180, 0.18, { type: 'sawtooth', vol: 0.06, slide: -80 }),
   whistle: () => { tone(880, 0.35, { type: 'sine', vol: 0.09 }); tone(1175, 0.35, { type: 'sine', vol: 0.06 }); },
+  echo: () => [880, 660, 494, 370].forEach((f, i) => tone(f, 0.22, { type: 'sine', vol: 0.09 - i * 0.015, delay: i * 0.45 })),
+  whinny: () => [740, 880, 660, 820, 560].forEach((f, i) => tone(f, 0.09, { type: 'sawtooth', vol: 0.05, delay: i * 0.07 })),
+  punch: () => tone(90, 0.16, { type: 'square', vol: 0.12, slide: -40 }),
   finale: () => [392, 523, 659, 784, 1047].forEach((f, i) => tone(f, 0.4, { type: 'triangle', vol: 0.09, delay: i * 0.18 })),
 };
 
