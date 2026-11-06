@@ -171,14 +171,13 @@ const hedge = (x0, z0, x1, z1) => objects.push(area('hedge', x0, z0, x1, z1));
 O('crt_monument', 0, 0);
 for (let i = 0; i < 4; i++) {
   const a = Math.PI / 4 + i * Math.PI / 2, cx = Math.cos(a), sz = Math.sin(a);
+  if (i === 0) continue; // south-east diagonal belongs to the Garage lot
   O('bench', +(cx * 5.6).toFixed(2), +(sz * 5.6).toFixed(2), { rot: Math.round((a * 180) / Math.PI + 90) });
   if (i !== 1) O('planter', +(cx * 7.2).toFixed(2), +(sz * 7.2).toFixed(2));
   O('lamp', +(cx * 8.7).toFixed(2), +(sz * 8.7).toFixed(2));
 }
-O('notice_board', 6.4, 2.7, { rot: 0 });
-O('bin', 3.4, 8.6);
 spawn.push(point('spawn', 1.2, 6.2));
-interact.push(point('about', 6.4, 4.1, { id: 'about' }));
+interact.push(point('about', -2.8, 2.8, { id: 'about' }));   // read-me beside the CRT monument
 labels.push(point('label', 0, 0, { text: 'NATHAN.EXE', color: '#ff6a3d', height: 7.4 }));
 
 // --- Street furniture along avenues and the ring (regular rhythm, both sides staggered) ---
@@ -246,30 +245,30 @@ interact.push(point('memory', -18.0, 9.6, { id: 'cluster-alert' }));
 // exhibits around a central aisle. Exhibits wake up as Nathan approaches.
 // Project index = order in content.json projects.
 hedge(17, 3, 18, 25.2); hedge(3, 24.4, 17, 25.2);
-O('workshop_canopy', 10, 13.6, { w: 13.6, d: 20.4 });
+O('workshop_canopy', 10, 14.1, { w: 13.6, d: 19.4 });   // low roof, set back from the plaza CRT
 O('lot_sign', 10.3, 3.4, { text: 'THE GARAGE', color: '#ffb347', rot: 0 });
 O('skills_board', 13.6, 4.4, { rot: 0 });
-O('server_rack', 16.3, 4.4);
+O('server_rack', 15.4, 4.2);
 O('tool_wall', 3.6, 18.6, { len: 8, rot: -90 });
 const EXHIBITS = [
   // [piece, x, z, interact x, interact z]
   ['exhibit_aratro', 6.6, 8.6, 6.6, 11.0],            // 0 Aratro
-  ['exhibit_covered', 14.0, 8.6, 14.0, 10.8],         // 1 Microservices Security
-  ['exhibit_covered', 6.6, 15.4, 6.6, 17.6],          // 2 TCE Event Scheduler
-  ['exhibit_covered', 14.0, 15.4, 14.0, 17.6],        // 3 CauverySite
-  ['exhibit_covered', 10.3, 21.0, 13.3, 21.0],        // 4 NATHAN.EXE (centre workbench)
+  ['exhibit_microservices', 14.0, 8.6, 14.0, 10.9],   // 1 Microservices Security
+  ['exhibit_scheduler', 6.6, 15.4, 6.6, 17.7],        // 2 TCE Event Scheduler
+  ['exhibit_cauverysite', 14.0, 15.4, 14.0, 17.7],    // 3 CauverySite
+  ['exhibit_nathanexe', 10.3, 21.0, 13.0, 21.0],      // 4 NATHAN.EXE (centre workbench)
 ];
 EXHIBITS.forEach(([piece, x, z, ix, iz], i) => {
   O(piece, x, z, { index: i });
   interact.push(point('project', ix, iz, { index: i }));
 });
 labels.push(point('label', 10.3, 13.0, { text: 'THE GARAGE', color: '#2a2440', height: 7.4 }));
-interact.push(point('chapter', 7.8, 4.8, { id: 'garage', district: 'garage' }));
+// (The Builder chapter unlocks when the first Garage exhibit is opened.)
 interact.push(point('panel', 13.6, 5.6, { id: 'skills', district: 'garage', panel: 'skills', title: 'Tech stack' }));
 interact.push(point('memory', 9.6, 6.8, { id: 'hack-odyssey' }));      // by the Aratro trophy
 interact.push(point('memory', 3.9, 11.8, { id: 'warehouse-node' }));   // by the Aratro warehouse
 interact.push(point('memory', 9.4, 15.4, { id: 'six-hours' }));        // by the Event Scheduler
-interact.push(point('memory', 16.3, 15.4, { id: 'property-dashboard' })); // by CauverySite
+interact.push(point('memory', 11.6, 12.4, { id: 'property-dashboard' })); // by CauverySite
 // --- Winter Campus (Russia chapter) ---
 O('faculty_building', 0, -37.6, { text: 'TOMSK STATE UNIVERSITY' });
 labels.push(point('label', 0, -37.6, { text: 'WINTER CAMPUS', color: '#2f5f9a', height: 9.6 }));

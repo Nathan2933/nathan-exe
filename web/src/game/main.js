@@ -285,7 +285,8 @@ function renderJourney() {
     return `<li class="${done ? 'done' : ''}${d.optional ? ' optional' : ''}"><button type="button" data-goto="${d.id}">${esc(ch?.title || d.name)}</button></li>`;
   }).join('');
   list.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
-    const it = world.interactables.find((i) => i.kind === 'chapter' && i.district === b.dataset.goto);
+    const it = world.interactables.find((i) => i.kind === 'chapter' && i.district === b.dataset.goto)
+      || (b.dataset.goto === 'garage' && world.interactables.find((i) => i.kind === 'project'));
     if (it) walkToInteractable(it);
   }));
   const main = MAIN_DISTRICTS.filter((d) => s.chapters.includes(d.id)).length;
@@ -362,11 +363,13 @@ function openInteractable(it) {
   }
   showPanel(bar, html, it);
 
-  if (it.kind === 'chapter' && addUnique(state.save.chapters, it.district)) {
-    markVisited(it);
+  // Garage exhibits open The Builder chapter (the Garage has no separate chapter spot)
+  const chapterId = it.kind === 'chapter' ? it.district : it.kind === 'project' ? 'garage' : null;
+  if (chapterId && addUnique(state.save.chapters, chapterId)) {
+    if (it.kind === 'chapter') markVisited(it);
     persist();
-    if (it.district === 'iron-yard') { player.setBuff(true); toast('CHAPTER 1 UNLOCKED · Discipline +1'); }
-    else toast(`CHAPTER UNLOCKED · ${chapterFor(c, it.district)?.title || it.district}`);
+    if (chapterId === 'iron-yard') { player.setBuff(true); toast('CHAPTER 1 UNLOCKED · Discipline +1'); }
+    else toast(`CHAPTER UNLOCKED · ${chapterFor(c, chapterId)?.title || chapterId}`);
     sfx.chapter();
     renderJourney();
     const was = state.complete;
