@@ -41,10 +41,10 @@ rect(-28, 15, -1, 18, T.concrete);
 rect(-21, 9, -2, 14, T.concrete);
 // central plaza + walks to each place
 disc(0, -1, 4.2, T.plaza);
-walk(-2, -4, -13, -6.4);            // to the hideout door
+walk(-2, -4, -13, -5.4);            // to the hideout door
 walk(3, 0, 18.5, 6.5);               // to the villa stairs
 walk(-2, 2, -7, 9.5);                // to the airstrip apron
-rect(-18, -7, -8, -5, T.terracotta); // hideout courtyard
+rect(-19, -6, -7, -4, T.terracotta); // hideout courtyard
 disc(21, 8.5, 2.4, T.sand);          // little beach below the villa stairs
 
 let nextId = 1;
@@ -68,11 +68,13 @@ route('harris', [[-10.5, 14.2], [-8.4, 14.5]], { idles: 'look,check', faces: '0,
 O('hideout_house', -13, -11, { rot: 0 });
 labels.push(point('label', -13, -11, { text: 'VANDERLINDE GANG HIDEOUT', color: '#5a3a26', height: 7.4 }));
 // school friends hang out inside the bedroom (seat/stand/lean, little roaming)
-route('tahiti_sf1', [[-12.25, -13.2]], { idles: 'sit', faces: '-90' });                        // on the bed
-route('tahiti_sf2', [[-15.4, -13.5], [-14.4, -11.2]], { idles: 'look,phone', faces: '0,90' });  // by the wardrobe
-route('tahiti_sf3', [[-17.25, -12.7]], { idles: 'lean', faces: '90' });                         // against the west wall
-route('tahiti_sf4', [[-10.4, -8.35]], { idles: 'sit', faces: '180' });                          // at the small table
-interact.push(point('group', -13.6, -10.0, { id: 'vanderlinde', title: 'Join the gang' }));
+route('tahiti_sf1', [[-10.45, -14.6]], { idles: 'sit', faces: '-90' });                        // on the bed
+route('tahiti_sf2', [[-13.4, -14.6], [-15.6, -12.0]], { idles: 'look,phone', faces: '0,90' });  // by the wardrobe
+route('tahiti_sf3', [[-19.25, -13.0]], { idles: 'lean', faces: '90' });                         // against the west wall
+route('tahiti_sf4', [[-7.6, -7.35]], { idles: 'sit', faces: '180' });                           // at the small table
+interact.push(point('group', -13.0, -10.6, { id: 'vanderlinde', title: 'Join the gang' }));
+interact.push(point('panel', -11.2, -5.0, { id: 'place-hideout', panel: 'place', place: 'hideout', title: 'Vanderlinde Gang Hideout' }));
+interact.push(point('panel', 17.4, 7.8, { id: 'place-villa', panel: 'place', place: 'villa', title: "The Outlaws' Villa" }));
 
 // ---- The Outlaws' Villa (E) ----
 O('outlaws_villa', 12, -3, { rot: 0 });

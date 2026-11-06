@@ -224,7 +224,7 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
       it.beacon = sparkle(o.x, o.z); it.ground = beacon(o.x, 0, o.z, { small: true, pillar: false });
       hitBox(it, 1.4, 2.4, 1.4); interactables.push(it);
     } else if (o.type === 'panel') {
-      const it = { ...base, id: `panel:${pr.id}`, kind: 'panel', panel: pr.panel, title: pr.title || pr.panel, district: pr.district, attraction: pr.attraction, interest: pr.interest, radius: 1.8 };
+      const it = { ...base, id: `panel:${pr.id}`, kind: 'panel', panel: pr.panel, title: pr.title || pr.panel, district: pr.district, attraction: pr.attraction, interest: pr.interest, place: pr.place, radius: 1.8 };
       it.beacon = beacon(o.x, 2.2, o.z, { small: true }); hitBox(it, 2, 3, 2); interactables.push(it);
     } else if (o.type === 'finale') {
       const it = { ...base, id: 'finale', kind: 'finale', district: 'lighthouse', radius: 2.0 };
@@ -408,6 +408,7 @@ const NPC_SPEED = 1.1, STOP_DIST = 2.4;
 const _v = new THREE.Vector3(), _ahead = new THREE.Vector3();
 export function updateNpcs(npcs, dt, t, heightAt, player, talkingTo) {
   for (const it of npcs) {
+    if (it.frozen) continue; // driven by a cinematic
     const ch = it.character, gp = ch.group.position, r = it.route;
     _v.set(0, 0, 0);
     const dP = player ? Math.hypot(player.x - gp.x, player.z - gp.z) : 99;

@@ -527,6 +527,13 @@ function openInfoPanel(it) {
       <p class="eyebrow" style="margin-top:14px">EDUCATION</p>
       <ol class="gh-edu">${edu.map((ch) => `<li><b>${esc(ch.subtitle || ch.title)}</b>${ch.period ? `<span class="muted"> · ${esc(ch.period)}</span>` : ''}${(ch.highlights || [])[0] ? `<br><span class="muted">${esc(ch.highlights[0])}</span>` : ''}</li>`).join('')}</ol>
       <div class="transmit">${p.resumeUrl ? `<a class="btn primary" href="${esc(safeUrl(p.resumeUrl))}" target="_blank" rel="noopener">Resume ↗</a>` : ''}${(c.links || []).filter((l) => !l.url.startsWith('mailto:')).map((l) => `<a class="btn" href="${esc(safeUrl(l.url))}" target="_blank" rel="noopener">${esc(l.label)} ↗</a>`).join('')}</div>`;
+  } else if (it.panel === 'place') {
+    const pl = state.tahiti?.places?.[it.place] || {};
+    const gang = state.tahiti?.gangs?.[pl.gang];
+    html = `<p class="eyebrow">TAHITI</p><h2 id="panel-title">${esc(pl.title || it.title)}</h2>
+      ${pl.text ? `<blockquote class="pop-card">${esc(pl.text)}</blockquote>` : ''}
+      ${gang ? `<p class="eyebrow" style="margin-top:14px">${esc(gang.name)} · ${esc(gang.tagline || '')}</p><p>${esc(gang.text || '')}</p>
+      <ul class="highlights">${gang.members.map((m) => `<li><b>${esc(m.name)}</b> · ${esc(m.role)}<br><span class="muted">${esc(m.text)}</span></li>`).join('')}</ul>` : ''}`;
   } else if (it.panel === 'pop') {
     const card = (c.interests || []).find((x) => x.id === it.interest) || {};
     html = `<p class="eyebrow">POP CULTURE PARK · ${esc((card.zone || '').toUpperCase())}</p><h2 id="panel-title">${esc(card.title || it.title)}</h2>
@@ -794,7 +801,14 @@ async function loadTahitiData() {
   if (state.tahiti) return state.tahiti;
   const data = await fetch(`${BASE}data/tahiti.json`, { cache: 'no-cache' }).then((r) => r.json());
   const have = new Set((state.content.npcs || []).map((n) => n.id));
-  for (const n of data.npcs || []) if (!have.has(n.id)) state.content.npcs.push(n);
+  const SKIP = new Set(['id', 'name', 'role', 'district', 'lines', 'topics', 'theme', 'companion', 'horseColor', 'scripted', 'sameAs']);
+  for (const n of data.npcs || []) {
+    if (have.has(n.id)) continue;
+    // same person as on Island 01: same model (appearance), Tahiti name and lines
+    const src = n.sameAs && state.content.npcs.find((x) => x.id === n.sameAs);
+    const look = src ? Object.fromEntries(Object.entries(src).filter(([k]) => !SKIP.has(k))) : {};
+    state.content.npcs.push({ ...look, ...n });
+  }
   state.tahiti = data;
   return data;
 }
@@ -818,15 +832,15 @@ async function switchLevel(name) {
 const FLIGHT = {
   island1: {
     out: [[2.4, 0, 36.8], [-2, 0, 38.6], [-6.5, 0, 40.6], [-6.5, 0, 40.6, 0], [8, 0, 40.6], [24, 3.5, 41.5], [62, 15, 47]],
-    outT: [0, 1.6, 3.0, 4.0, 6.6, 8.6, 12],
+    outT: [0, 0.8, 1.5, 2.0, 3.3, 4.3, 6.0],
     in: [[-95, 16, 40.6], [-40, 7, 40.6], [-7, 0, 40.6], [5, 0, 40.6], [5, 0, 38.6], [2.4, 0, 36.8, 0]],
-    inT: [0, 4.5, 7.0, 9.4, 10.6, 12.0],
+    inT: [0, 2.2, 3.5, 4.7, 5.3, 6.0],
   },
   tahiti: {
     out: [[-6, 0, 11.8], [-2.5, 0, 13.5], [-1.5, 0, 16.5], [-1.5, 0, 16.5, Math.PI], [-18, 0, 16.5], [-32, 4, 16.2], [-82, 15, 12]],
-    outT: [0, 1.4, 2.6, 3.6, 6.4, 8.4, 12],
+    outT: [0, 0.7, 1.3, 1.8, 3.2, 4.2, 6.0],
     in: [[-95, 16, 16.5], [-45, 7, 16.5], [-26, 0, 16.5], [-10, 0, 16.5], [-9, 0, 14.2], [-6, 0, 11.8, 0]],
-    inT: [0, 4.5, 7.0, 9.4, 10.6, 12.0],
+    inT: [0, 2.2, 3.5, 4.7, 5.3, 6.0],
   },
 };
 const ease = (t) => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2);
@@ -893,7 +907,10 @@ async function cineSwap(c) {
   c.swapping = true;
   await switchLevel(c.to);
   const jet = world.apis.private_jet;
-  jet.setStairs(false); jet.setDoor(false);
+  jet.setStairs(false); jet.setDoor(false); jet.setPilot(true);
+  c.pilot = world.npcs.find((n) => n.npcId === 'harris');
+  if (c.pilot) { c.pilot.frozen = true; c.pilot.character.group.visible = false; c.pilot.beacon.group.visible = false; }
+  if (state.level === 'tahiti') cineCaption(state.tahiti?.places?.tahiti || 'Tahiti');
   const k = FLIGHT[c.to].in[0];
   jet.group.position.set(k[0], jet.home.y + k[1], k[2]); jet.group.rotation.y = 0;
   c.prev = { x: k[0], y: k[1], z: k[2] };
@@ -906,13 +923,25 @@ function runCine(dt) {
   c.vel.set(0, 0, 0);
   if (c.phase === 'board') {
     // Nathan walks to the stairs, the door opens, he climbs aboard
-    if (!c.door) { c.door = jet.doorPoint(); c.start = p.clone(); jet.setDoor(true); jet.setStairs(true); }
-    const u = Math.min(1, c.t / 1.6);
+    if (!c.door) {
+      c.door = jet.doorPoint(); c.start = p.clone(); jet.setDoor(true); jet.setStairs(true);
+      c.pilot = world.npcs.find((n) => n.npcId === 'harris');
+      if (c.pilot) { c.pilot.frozen = true; c.pilotStart = c.pilot.character.group.position.clone(); }
+    }
+    // Harris boards first (0 – 0.7 s) and takes the controls
+    if (c.pilot) {
+      const hu = Math.min(1, c.t / 0.7), hp = c.pilot.character.group.position;
+      hp.set(c.pilotStart.x + (c.door.x - c.pilotStart.x) * hu, heightAt(hp.x, hp.z) + hu * 0.7, c.pilotStart.z + (c.door.z - c.pilotStart.z) * hu);
+      c.pilot.character.update(dt, hu < 1 ? new THREE.Vector3(c.door.x - c.pilotStart.x, 0, c.door.z - c.pilotStart.z).divideScalar(0.7) : new THREE.Vector3(), c.t);
+      if (hu >= 1) { c.pilot.character.group.visible = false; c.pilot.beacon.group.visible = false; jet.setPilot(true); }
+    }
+    // then Nathan (0.3 – 1.2 s)
+    const u = Math.max(0, Math.min(1, (c.t - 0.3) / 0.9));
     const tx = c.start.x + (c.door.x - c.start.x) * u, tz = c.start.z + (c.door.z - c.start.z) * u;
-    if (u < 1) { c.vel.set(c.door.x - c.start.x, 0, c.door.z - c.start.z).divideScalar(1.6); p.set(tx, heightAt(tx, tz) + u * 0.7, tz); }
-    cineCamera(p.x, p.z, state.zoom + (1.15 - state.zoom) * 0.05);
-    if (c.t > 2.0) { player.group.visible = false; jet.setDoor(false); }
-    if (c.t > 2.6) { jet.setStairs(false); c.phase = 'out'; c.t = 0; c.prev = { x: jet.home.x, y: 0, z: jet.home.z }; }
+    if (u > 0 && u < 1) { c.vel.set(c.door.x - c.start.x, 0, c.door.z - c.start.z).divideScalar(0.9); p.set(tx, heightAt(tx, tz) + u * 0.7, tz); }
+    cineCamera(p.x, p.z, state.zoom + (1.15 - state.zoom) * 0.08);
+    if (c.t > 1.25) { player.group.visible = false; jet.setDoor(false); jet.setPilot(true); }
+    if (c.t > 1.5) { jet.setStairs(false); c.phase = 'out'; c.t = 0; c.prev = { x: jet.home.x, y: 0, z: jet.home.z }; }
     return;
   }
   if (c.phase === 'out') {
@@ -923,14 +952,14 @@ function runCine(dt) {
     const climb = Math.max(0, Math.min(1, (c.t - F.outT[3]) / (end - F.outT[3])));
     cineCamera(s.x, s.z, 1.15 - 0.85 * ease(climb));
     p.set(s.x, jet.home.y + s.y, s.z);
-    if (c.t > end - 1.2) cineClouds(Math.min(1, (c.t - (end - 1.2)) / 1.0));
+    if (c.t > end - 0.7) cineClouds(Math.min(1, (c.t - (end - 0.7)) / 0.6));
     if (c.t >= end) cineSwap(c);
     return;
   }
   if (c.phase === 'in') {
     // wide view of the island, the approach, touchdown, then the camera closes in
     const F = FLIGHT[c.to], end = F.inT[F.inT.length - 1];
-    if (c.t < 1.2) cineClouds(1 - c.t / 1.2); else cineClouds(0);
+    if (c.t < 0.7) cineClouds(1 - c.t / 0.7); else cineClouds(0);
     const s = samplePath(F.in, F.inT, c.t);
     poseJet(jet, s, c.prev); c.prev = s;
     const land = Math.max(0, Math.min(1, (c.t - F.inT[1]) / (end - F.inT[1])));
@@ -946,18 +975,25 @@ function runCine(dt) {
   }
   if (c.phase === 'off') {
     // stairs down, door open, Nathan steps out and walks clear of the jet
-    if (!c.door) { jet.setStairs(true); jet.setDoor(true); }
     jet.setStairs(true); jet.setDoor(true);
     const door = jet.doorPoint(), spot = map.spawn && state.level === 'tahiti' ? map.spawn : { x: door.x, z: door.z + 1.4 };
-    if (c.t > 0.6) {
+    if (c.pilot) {
+      // Harris climbs out first and heads back to his spot by the jet
+      if (!c.pilotGoal) { const r = c.pilot.route, a = r.pts[r.seg]; c.pilotGoal = a.clone(); jet.setPilot(false); }
+      const hu = Math.min(1, c.t / 1.1), hp = c.pilot.character.group.position;
+      c.pilot.character.group.visible = true;
+      hp.set(door.x + (c.pilotGoal.x - door.x) * hu, 0, door.z + (c.pilotGoal.z - door.z) * hu); hp.y = heightAt(hp.x, hp.z) + (1 - hu) * 0.7;
+      c.pilot.character.update(dt, hu < 1 ? new THREE.Vector3(c.pilotGoal.x - door.x, 0, c.pilotGoal.z - door.z).divideScalar(1.1) : new THREE.Vector3(), c.t);
+    }
+    if (c.t > 0.4) {
       player.group.visible = true;
-      const u = Math.min(1, (c.t - 0.6) / 1.4);
+      const u = Math.min(1, (c.t - 0.4) / 1.0);
       const tx = door.x + (spot.x - door.x) * u, tz = door.z + (spot.z - door.z) * u;
       p.set(tx, heightAt(tx, tz) + (1 - u) * 0.7, tz);
-      if (u < 1) c.vel.set(spot.x - door.x, 0, spot.z - door.z).divideScalar(1.4);
+      if (u < 1) c.vel.set(spot.x - door.x, 0, spot.z - door.z).divideScalar(1.0);
     }
-    cineCamera(p.x, p.z, state.zoom + (1 - state.zoom) * 0.06);
-    if (c.t > 2.4) endCine();
+    cineCamera(p.x, p.z, state.zoom + (1 - state.zoom) * 0.1);
+    if (c.t > 1.6) endCine();
   }
 }
 async function skipCine() {
@@ -974,7 +1010,13 @@ async function skipCine() {
 }
 function endCine() {
   const jet = world.apis.private_jet;
-  jet?.setDoor(false); jet?.setStairs(true);
+  jet?.setDoor(false); jet?.setStairs(true); jet?.setPilot(false);
+  const pilot = world.npcs.find((n) => n.npcId === 'harris');
+  if (pilot) {
+    const r = pilot.route, a = r.pts[r.seg], hp = pilot.character.group.position;
+    if (!state.cine?.pilotGoal) hp.set(a.x, heightAt(a.x, a.z), a.z);
+    pilot.frozen = false; pilot.character.group.visible = true; pilot.beacon.group.visible = true;
+  }
   player.group.visible = true;
   const p = player.group.position; p.y = heightAt(p.x, p.z);
   state.cine = null; state.minigame = null; state.camOverride = null;

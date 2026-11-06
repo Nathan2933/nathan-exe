@@ -1,43 +1,35 @@
 {
-  "note": "Tahiti prototype content. Every name, line and group script here is a placeholder: replace it with the real friends and stories once private access (docs/TAHITI.md) is switched on, because this file is public until then.",
+  "note": "Tahiti content. This file is public until the private-access server in docs/TAHITI.md exists, so keep it to what Nathan is happy to show; stories, photos and videos wait for real access.",
   "npcs": [
     {
       "id": "tahiti_sf1",
-      "name": "Gang member",
-      "role": "Gang member · Developer",
+      "name": "Guru",
+      "role": "Vanderlinde Gang · The Developer",
       "district": "tahiti",
-      "placeholder": true,
-      "species": "human",
-      "skin": "brown",
-      "hair": "short",
-      "hairColor": "#1b1716",
-      "top": "tee",
-      "topColor": "#3a8ad6",
-      "pants": "jeans",
-      "pantsColor": "#2a2730",
-      "shoes": "#1a1418",
-      "beard": "none",
-      "beardColor": "#1b1716",
-      "glasses": false,
-      "extras": "",
-      "color": "#3a8ad6",
-      "build": 1,
-      "height": 1,
       "scripted": true,
       "lines": [
         "Took you long enough."
       ],
       "topics": [
-        "What are you doing? :: Guarding the bed. Somebody has to. (Placeholder)",
-        "Any plans tonight? :: Same as always: no plan. (Placeholder)"
-      ]
+        "Who are you? :: A developer who always has something to build, fix, or figure out.",
+        "What's the plan today? :: Same as always. Hang out, talk, lose track of time."
+      ],
+      "sameAs": "guru",
+      "extras": ""
     },
     {
       "id": "tahiti_sf2",
-      "name": "Gang member",
-      "role": "Gang member · Developer",
+      "name": "Prince",
+      "role": "Vanderlinde Gang · The Developer",
       "district": "tahiti",
-      "placeholder": true,
+      "scripted": true,
+      "lines": [
+        "Oh hey, you made it."
+      ],
+      "topics": [
+        "Who are you? :: One of the original crew. Code, conversations, and the usual chaos.",
+        "What's the plan today? :: Same as always. Hang out, talk, lose track of time."
+      ],
       "species": "human",
       "skin": "tan",
       "hair": "curly",
@@ -50,25 +42,24 @@
       "beard": "none",
       "beardColor": "#1b1716",
       "glasses": false,
-      "extras": "",
-      "color": "#4a5a7a",
       "build": 1,
       "height": 1,
-      "scripted": true,
-      "lines": [
-        "Oh hey, you made it."
-      ],
-      "topics": [
-        "Working on something? :: Always. Ask me again in a week. (Placeholder)",
-        "Seen the others? :: They never left the room. (Placeholder)"
-      ]
+      "color": "#4a5a7a",
+      "extras": ""
     },
     {
       "id": "tahiti_sf3",
-      "name": "Gang member",
-      "role": "Gang member · Architect",
+      "name": "Jeswin",
+      "role": "Vanderlinde Gang · The Architect",
       "district": "tahiti",
-      "placeholder": true,
+      "scripted": true,
+      "lines": [
+        "Careful, I just worked out where everything goes."
+      ],
+      "topics": [
+        "Who are you? :: The architect of the gang. While everyone else talks about ideas, he's thinking about how to build them.",
+        "What's the plan today? :: Same as always. Hang out, talk, lose track of time."
+      ],
       "species": "human",
       "skin": "fair",
       "hair": "medium",
@@ -81,25 +72,24 @@
       "beard": "none",
       "beardColor": "#1b1716",
       "glasses": true,
-      "extras": "",
-      "color": "#6b4a32",
       "build": 1,
       "height": 1,
-      "scripted": true,
-      "lines": [
-        "Don't move the furniture. I just figured out the layout."
-      ],
-      "topics": [
-        "What would you change in here? :: The wardrobe. Always the wardrobe. (Placeholder)",
-        "Designing anything? :: A bigger room, apparently. (Placeholder)"
-      ]
+      "color": "#6b4a32",
+      "extras": ""
     },
     {
       "id": "tahiti_sf4",
-      "name": "Gang member",
-      "role": "Gang member · Developer",
+      "name": "Arok",
+      "role": "Vanderlinde Gang · The Developer",
       "district": "tahiti",
-      "placeholder": true,
+      "scripted": true,
+      "lines": [
+        "Pull up a stool."
+      ],
+      "topics": [
+        "Who are you? :: Another developer in the crew. A familiar face whenever the gang gets together.",
+        "What's the plan today? :: Same as always. Hang out, talk, lose track of time."
+      ],
       "species": "human",
       "skin": "brown",
       "hair": "buzz",
@@ -112,211 +102,120 @@
       "beard": "none",
       "beardColor": "#1b1716",
       "glasses": false,
-      "extras": "",
-      "color": "#2bb3a3",
       "build": 1,
       "height": 1,
-      "scripted": true,
-      "lines": [
-        "Pull up a stool."
-      ],
-      "topics": [
-        "Who's winning today? :: Depends who you ask. (Placeholder)",
-        "Need anything? :: Snacks. Always snacks. (Placeholder)"
-      ]
+      "color": "#2bb3a3",
+      "extras": ""
     },
     {
       "id": "tahiti_cf1",
-      "name": "Outlaw",
-      "role": "Outlaw · College friend",
+      "name": "Anu",
+      "role": "The Outlaws · The Close Companion",
       "district": "tahiti",
-      "placeholder": true,
-      "species": "human",
-      "skin": "fair",
-      "hair": "medium",
-      "hairColor": "#1b1716",
-      "top": "tee",
-      "topColor": "#e07a8f",
-      "pants": "jeans",
-      "pantsColor": "#2a2730",
-      "shoes": "#1a1418",
-      "beard": "none",
-      "beardColor": "#1b1716",
-      "glasses": false,
-      "extras": "",
-      "color": "#e07a8f",
-      "build": 1,
-      "height": 1,
       "scripted": true,
       "lines": [
         "You found the good spot."
       ],
       "topics": [
-        "Nice view, right? :: Best one on the island. (Placeholder)",
-        "How was the flight? :: Harris didn't crash, so: great. (Placeholder)"
-      ]
+        "Who are you? :: A familiar presence in the college chapter. Usually somewhere close to Nathan when the crew gets together.",
+        "What's the plan today? :: Same as always. Hang out, talk, lose track of time."
+      ],
+      "sameAs": "anu",
+      "extras": ""
     },
     {
       "id": "tahiti_cf2",
-      "name": "Outlaw",
-      "role": "Outlaw · College friend",
+      "name": "Shabesh",
+      "role": "The Outlaws · The Teammate",
       "district": "tahiti",
-      "placeholder": true,
-      "species": "human",
-      "skin": "tan",
-      "hair": "short",
-      "hairColor": "#1b1716",
-      "top": "tee",
-      "topColor": "#c4302b",
-      "pants": "jeans",
-      "pantsColor": "#2a2730",
-      "shoes": "#1a1418",
-      "beard": "none",
-      "beardColor": "#1b1716",
-      "glasses": false,
-      "extras": "",
-      "color": "#c4302b",
-      "build": 1,
-      "height": 1,
       "scripted": true,
       "lines": [
         "Grab a chair."
       ],
       "topics": [
-        "What's the plan? :: Sitting. Possibly more sitting. (Placeholder)",
-        "Did you eat? :: Define eat. (Placeholder)"
-      ]
+        "Who are you? :: A familiar face from the project days. Part of the crew that made college interesting.",
+        "What's the plan today? :: Same as always. Hang out, talk, lose track of time."
+      ],
+      "sameAs": "shabesh",
+      "extras": ""
     },
     {
       "id": "tahiti_cf3",
-      "name": "Outlaw",
-      "role": "Outlaw · College friend",
+      "name": "Logesh",
+      "role": "The Outlaws · The Crew Member",
       "district": "tahiti",
-      "placeholder": true,
-      "species": "human",
-      "skin": "brown",
-      "hair": "short",
-      "hairColor": "#1b1716",
-      "top": "jacket",
-      "topColor": "#4a5a7a",
-      "pants": "jeans",
-      "pantsColor": "#2a2730",
-      "shoes": "#1a1418",
-      "beard": "none",
-      "beardColor": "#1b1716",
-      "glasses": false,
-      "extras": "",
-      "color": "#4a5a7a",
-      "build": 1,
-      "height": 1,
       "scripted": true,
       "lines": [
         "The sunset is right on schedule."
       ],
       "topics": [
-        "Remember college? :: (Real memories go here later.) (Placeholder)",
-        "Any news? :: Nothing I can say before the coffee. (Placeholder)"
-      ]
+        "Who are you? :: One of the Outlaws. Always part of the conversations that make the balcony feel alive.",
+        "What's the plan today? :: Same as always. Hang out, talk, lose track of time."
+      ],
+      "sameAs": "logeshwaran",
+      "extras": ""
     },
     {
       "id": "tahiti_cf4",
-      "name": "Outlaw",
-      "role": "Outlaw · College friend",
+      "name": "Thianish",
+      "role": "The Outlaws · The Gym Bro",
       "district": "tahiti",
-      "placeholder": true,
-      "species": "human",
-      "skin": "tan",
-      "hair": "buzz",
-      "hairColor": "#1b1716",
-      "top": "tee",
-      "topColor": "#2f6fc6",
-      "pants": "jeans",
-      "pantsColor": "#2a2730",
-      "shoes": "#1a1418",
-      "beard": "none",
-      "beardColor": "#1b1716",
-      "glasses": false,
-      "extras": "",
-      "color": "#2f6fc6",
-      "build": 1,
-      "height": 1,
       "scripted": true,
       "lines": [
         "Took the stairs? Respect."
       ],
       "topics": [
-        "Gym later? :: Only if there's food after. (Placeholder)",
-        "What's up? :: The sun, mostly. (Placeholder)"
-      ]
+        "Who are you? :: The gym connection of the crew. Training, college life, and plenty of conversations.",
+        "What's the plan today? :: Same as always. Hang out, talk, lose track of time."
+      ],
+      "sameAs": "thianesh",
+      "extras": ""
     },
     {
       "id": "tahiti_cf5",
-      "name": "Outlaw",
-      "role": "Outlaw · College friend",
+      "name": "Akshay",
+      "role": "The Outlaws · The Techie",
       "district": "tahiti",
-      "placeholder": true,
-      "species": "human",
-      "skin": "fair",
-      "hair": "short",
-      "hairColor": "#1b1716",
-      "top": "coat",
-      "topColor": "#f4f4f0",
-      "pants": "trousers",
-      "pantsColor": "#2a2730",
-      "shoes": "#1a1418",
-      "beard": "none",
-      "beardColor": "#1b1716",
-      "glasses": false,
-      "extras": "",
-      "color": "#7d8fa8",
-      "build": 1,
-      "height": 1,
       "scripted": true,
       "lines": [
         "Careful, the railing's mine."
       ],
       "topics": [
-        "Working on anything? :: My tan. (Placeholder)",
-        "Thoughts? :: Too many, not now. (Placeholder)"
-      ]
+        "Who are you? :: Another technical mind in the gang. From projects to random discussions, he's part of the action.",
+        "What's the plan today? :: Same as always. Hang out, talk, lose track of time."
+      ],
+      "sameAs": "akshai",
+      "extras": ""
     },
     {
       "id": "tahiti_cf6",
-      "name": "Outlaw",
-      "role": "Outlaw · College friend",
+      "name": "Pranav",
+      "role": "The Outlaws · The Crew Member",
       "district": "tahiti",
-      "placeholder": true,
-      "species": "human",
-      "skin": "brown",
-      "hair": "medium",
-      "hairColor": "#1b1716",
-      "top": "hoodie",
-      "topColor": "#6b7280",
-      "pants": "jeans",
-      "pantsColor": "#2a2730",
-      "shoes": "#1a1418",
-      "beard": "none",
-      "beardColor": "#1b1716",
-      "glasses": false,
-      "extras": "",
-      "color": "#6b7280",
-      "build": 1,
-      "height": 1,
       "scripted": true,
       "lines": [
         "One sec, replying to the group chat."
       ],
       "topics": [
-        "Who are you texting? :: Everyone who isn't here yet. (Placeholder)",
-        "Photo? :: Already posted. (Placeholder)"
-      ]
+        "Who are you? :: One of the familiar faces who helped turn the college years into a shared adventure.",
+        "What's the plan today? :: Same as always. Hang out, talk, lose track of time."
+      ],
+      "sameAs": "piranav",
+      "extras": ""
     },
     {
       "id": "tahiti_cf7",
-      "name": "Outlaw",
-      "role": "Outlaw · College friend",
+      "name": "Sathesh Kumar",
+      "role": "The Outlaws · The Outlaw",
       "district": "tahiti",
-      "placeholder": true,
+      "scripted": true,
+      "lines": [
+        "Hey, good timing."
+      ],
+      "topics": [
+        "Who are you? :: Brown-skinned, bearded, and usually seen in a sleeved shirt. Another member of the balcony crew.",
+        "What's the plan today? :: Same as always. Hang out, talk, lose track of time."
+      ],
       "species": "human",
       "skin": "brown",
       "hair": "short",
@@ -329,18 +228,10 @@
       "beard": "full",
       "beardColor": "#1b1716",
       "glasses": false,
-      "extras": "",
-      "color": "#8a6a4a",
       "build": 1,
       "height": 1,
-      "scripted": true,
-      "lines": [
-        "Hey, good timing."
-      ],
-      "topics": [
-        "How's the villa? :: Better than the hostel. (Placeholder)",
-        "What's next? :: Probably food. (Placeholder)"
-      ]
+      "color": "#8a6a4a",
+      "extras": ""
     }
   ],
   "overrides": {
@@ -384,12 +275,12 @@
           "gesture": "wave"
         },
         {
-          "who": "tahiti_sf4",
-          "text": "Somebody turn the AC up."
+          "who": "tahiti_sf3",
+          "text": "Whoever moved the cupboard, I saw that."
         },
         {
-          "who": "tahiti_sf3",
-          "text": "(Placeholder: the gang's real banter goes in data/tahiti.json.)"
+          "who": "tahiti_sf4",
+          "text": "Somebody turn the AC up."
         }
       ]
     },
@@ -429,14 +320,113 @@
           "gesture": "wave"
         },
         {
-          "who": "tahiti_cf7",
-          "text": "Who's ordering food?"
+          "who": "tahiti_cf4",
+          "text": "After this, gym. No excuses."
         },
         {
-          "who": "tahiti_cf5",
-          "text": "(Placeholder: real college stories go in data/tahiti.json.)"
+          "who": "tahiti_cf7",
+          "text": "After this, food. Also no excuses."
         }
       ]
+    }
+  },
+  "gangs": {
+    "vanderlinde": {
+      "name": "VANDERLINDE GANG",
+      "tagline": "The Original Crew",
+      "text": "Before the projects, deadlines, and different paths, there was this crew. Old friends, endless conversations, and a room full of memories.",
+      "members": [
+        {
+          "name": "Nathan",
+          "role": "The Protagonist",
+          "text": "The guy who turned his life into a game. Somehow, the gang is still part of the main story."
+        },
+        {
+          "name": "Harris",
+          "role": "The Pilot",
+          "text": "The man behind the controls. If there's somewhere to go, he's probably already planning the flight."
+        },
+        {
+          "name": "Guru",
+          "role": "The Developer",
+          "text": "A developer who always has something to build, fix, or figure out."
+        },
+        {
+          "name": "Prince",
+          "role": "The Developer",
+          "text": "One of the original crew. Code, conversations, and the usual chaos."
+        },
+        {
+          "name": "Jeswin",
+          "role": "The Architect",
+          "text": "The architect of the gang. While everyone else talks about ideas, he's thinking about how to build them."
+        },
+        {
+          "name": "Arok",
+          "role": "The Developer",
+          "text": "Another developer in the crew. A familiar face whenever the gang gets together."
+        }
+      ]
+    },
+    "outlaws": {
+      "name": "THE OUTLAWS",
+      "tagline": "The College Crew",
+      "text": "Different people, one unforgettable chapter. Between classes, projects, deadlines, and random conversations, this crew made college more than just a degree.",
+      "members": [
+        {
+          "name": "Nathan",
+          "role": "The Protagonist",
+          "text": "The player who found another crew along the way. Different chapter, same story."
+        },
+        {
+          "name": "Anu",
+          "role": "The Close Companion",
+          "text": "A familiar presence in the college chapter. Usually somewhere close to Nathan when the crew gets together."
+        },
+        {
+          "name": "Shabesh",
+          "role": "The Teammate",
+          "text": "A familiar face from the project days. Part of the crew that made college interesting."
+        },
+        {
+          "name": "Logesh",
+          "role": "The Crew Member",
+          "text": "One of the Outlaws. Always part of the conversations that make the balcony feel alive."
+        },
+        {
+          "name": "Thianish",
+          "role": "The Gym Bro",
+          "text": "The gym connection of the crew. Training, college life, and plenty of conversations."
+        },
+        {
+          "name": "Akshay",
+          "role": "The Techie",
+          "text": "Another technical mind in the gang. From projects to random discussions, he's part of the action."
+        },
+        {
+          "name": "Pranav",
+          "role": "The Crew Member",
+          "text": "One of the familiar faces who helped turn the college years into a shared adventure."
+        },
+        {
+          "name": "Sathesh Kumar",
+          "role": "The Outlaw",
+          "text": "Brown-skinned, bearded, and usually seen in a sleeved shirt. Another member of the balcony crew."
+        }
+      ]
+    }
+  },
+  "places": {
+    "tahiti": "Far from the main island. Away from the noise. Just the people who made the journey worth remembering.",
+    "hideout": {
+      "title": "Vanderlinde Gang Hideout",
+      "text": "The original headquarters. One room, six friends, and conversations that never really end.",
+      "gang": "vanderlinde"
+    },
+    "villa": {
+      "title": "The Outlaws' Villa",
+      "text": "Where the college crew gathers. Ocean views, balcony conversations, and no deadlines for once.",
+      "gang": "outlaws"
     }
   }
 }

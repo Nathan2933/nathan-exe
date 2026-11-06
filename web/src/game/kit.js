@@ -2390,6 +2390,10 @@ export const KIT = {
     dyn.add(nr, ng);
     // chocks
     for (const z of [-0.5, 0.5]) sk.box(0.2, 0.12, 0.12, C.yellow, -0.15, 0, z);
+    // pilot in the cockpit: shown while Harris is flying
+    const pilot = new THREE.Group(); pilot.position.set(2.15, 1.2, 0.18); pilot.visible = false; g.add(pilot);
+    const ph = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.22, 0.2), mat(0x7a4a2a)); pilot.add(ph);
+    const pc = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.07, 0.24), mat(0x1e1612)); pc.position.y = 0.13; pilot.add(pc);
     let doorT = 0, doorOpen = false;
     return {
       obj: g,
@@ -2399,6 +2403,7 @@ export const KIT = {
         group: g,
         setDoor(open) { doorOpen = open; },
         setStairs(on) { stairs.visible = on; },
+        setPilot(on) { pilot.visible = on; },
         doorPoint() { return new THREE.Vector3(1.6, 0, 1.55).applyMatrix4(g.matrixWorld); },
       },
       animate: (t) => {
@@ -2615,7 +2620,7 @@ export const KIT = {
   },
 
   // ===================== Island 02: Tahiti =====================
-  hideout_house({ w = 10, d = 8 } = {}) {
+  hideout_house({ w = 14, d = 10 } = {}) {
     // The Vanderlinde Gang hideout: a modest house whose interior is Nathan's
     // bedroom (pale blue walls, curved wooden bed with a blue/turquoise check
     // cover, red-brown wardrobe + overhead cabinet, dark cupboard, split AC,
@@ -2635,29 +2640,31 @@ export const KIT = {
     k.box(W, 0.12, T + 0.02, 0x9fc2d8, 0, B, -hd + T / 2, { shadow: false });   // skirting
     const iz = -hd + T, ix = -hw + T;                                            // inner faces
     // north window above the bed, blue curtains
-    k.box(1.5, 1.4, 0.04, 0x8a6a4a, 1.6, B + 1.0, iz + 0.02); k.box(1.3, 1.2, 0.03, 0xcfe8ff, 1.6, B + 1.1, iz + 0.04, { shadow: false });
-    k.box(0.75, 1.75, 0.06, curtain, 1.1, B + 0.75, iz + 0.12); k.box(0.75, 1.75, 0.06, curtain, 2.1, B + 0.75, iz + 0.12);
-    k.box(1.9, 0.05, 0.05, C.steelDark, 1.6, B + 2.55, iz + 0.12);
+    const WX = 3.6;   // north window, above the bed
+    k.box(1.5, 1.4, 0.04, 0x8a6a4a, WX, B + 1.0, iz + 0.02); k.box(1.3, 1.2, 0.03, 0xcfe8ff, WX, B + 1.1, iz + 0.04, { shadow: false });
+    k.box(0.75, 1.75, 0.06, curtain, WX - 0.5, B + 0.75, iz + 0.12); k.box(0.75, 1.75, 0.06, curtain, WX + 0.5, B + 0.75, iz + 0.12);
+    k.box(1.9, 0.05, 0.05, C.steelDark, WX, B + 2.55, iz + 0.12);
     // west window with curtain behind the dark cupboard
-    k.box(0.04, 1.2, 1.3, 0x8a6a4a, ix + 0.02, B + 1.0, 0.8); k.box(0.06, 1.7, 1.2, curtain, ix + 0.1, B + 0.7, 0.8);
+    k.box(0.04, 1.2, 1.3, 0x8a6a4a, ix + 0.02, B + 1.0, 1.2); k.box(0.06, 1.7, 1.2, curtain, ix + 0.1, B + 0.7, 1.2);
     // tall red-brown wardrobe (north-west) + overhead cabinet across the top of the wall
-    k.box(1.3, 2.3, 0.62, red, -2.4, B, iz + 0.31);
-    k.box(0.02, 2.2, 0.64, 0x4a1014, -2.4, B + 0.05, iz + 0.32, { shadow: false });
-    for (const x of [-2.5, -2.3]) k.box(0.04, 0.22, 0.04, 0xd8dee8, x, B + 1.2, iz + 0.64, { shadow: false });
-    k.box(5.4, 0.75, 0.6, redHi, -0.2, B + 2.25, iz + 0.3);
-    k.box(5.4, 0.04, 0.62, 0x4a1014, -0.2, B + 2.25, iz + 0.31, { shadow: false });
-    for (const x of [-2.8, -1.4, 0, 1.4]) k.box(0.02, 0.7, 0.62, 0x5a1418, x, B + 2.27, iz + 0.31, { shadow: false });
+    const WRX = -0.4;  // wardrobe
+    k.box(1.3, 2.3, 0.62, red, WRX, B, iz + 0.31);
+    k.box(0.02, 2.2, 0.64, 0x4a1014, WRX, B + 0.05, iz + 0.32, { shadow: false });
+    for (const x of [WRX - 0.1, WRX + 0.1]) k.box(0.04, 0.22, 0.04, 0xd8dee8, x, B + 1.2, iz + 0.64, { shadow: false });
+    k.box(6.6, 0.75, 0.6, redHi, 1.8, B + 2.25, iz + 0.3);
+    k.box(6.6, 0.04, 0.62, 0x4a1014, 1.8, B + 2.25, iz + 0.31, { shadow: false });
+    for (const x of [-0.6, 0.8, 2.2, 3.6]) k.box(0.02, 0.7, 0.62, 0x5a1418, x, B + 2.27, iz + 0.31, { shadow: false });
     // dark two-door cupboard against the west wall
-    k.box(0.6, 1.75, 1.15, 0x3a2a24, ix + 0.3, B, 0.8);
-    k.box(0.62, 0.04, 1.17, 0x8a7a6a, ix + 0.3, B + 1.75, 0.8);
-    k.box(0.62, 1.6, 0.02, 0x241a16, ix + 0.3, B + 0.08, 0.8, { shadow: false });
-    k.box(0.3, 0.12, 0.4, 0xe8907a, ix + 0.35, B + 1.79, 0.75);                    // clothes on top
+    k.box(0.6, 1.75, 1.15, 0x3a2a24, ix + 0.3, B, 1.2);
+    k.box(0.62, 0.04, 1.17, 0x8a7a6a, ix + 0.3, B + 1.75, 1.2);
+    k.box(0.62, 1.6, 0.02, 0x241a16, ix + 0.3, B + 0.08, 1.2, { shadow: false });
+    k.box(0.3, 0.12, 0.4, 0xe8907a, ix + 0.35, B + 1.79, 1.15);                    // clothes on top
     // split AC high on the west wall, coat hooks
-    k.box(0.22, 0.32, 1.05, 0xf2efe6, ix + 0.11, B + 2.45, -2.4); k.box(0.02, 0.04, 0.9, 0xc9c3b6, ix + 0.23, B + 2.5, -2.4, { shadow: false });
-    k.box(0.04, 0.05, 0.8, 0x2a2440, ix + 0.04, B + 1.9, -0.6, { shadow: false });
+    k.box(0.22, 0.32, 1.05, 0xf2efe6, ix + 0.11, B + 2.45, -3.2); k.box(0.02, 0.04, 0.9, 0xc9c3b6, ix + 0.23, B + 2.5, -3.2, { shadow: false });
+    k.box(0.04, 0.05, 0.8, 0x2a2440, ix + 0.04, B + 1.9, -1.2, { shadow: false });
     // the bed: curved wooden headboard against the north wall, footboard, posts,
     // blue/turquoise diamond-check cover, pillows
-    const bx = 1.6, bw = 2.0, bl = 2.4, bz = iz + 0.1 + bl / 2;
+    const bx = WX, bw = 2.0, bl = 2.4, bz = iz + 0.1 + bl / 2;
     k.box(bw, 0.35, bl, wood, bx, B + 0.12, bz);
     const hb = new THREE.Shape(); hb.moveTo(-bw / 2, 0); hb.lineTo(bw / 2, 0); hb.lineTo(bw / 2, 0.75); hb.quadraticCurveTo(0, 1.15, -bw / 2, 0.75); hb.closePath();
     k.mesh(new THREE.ExtrudeGeometry(hb, { depth: 0.08, bevelEnabled: false }), wood, bx, B, iz + 0.06);
@@ -2675,8 +2682,8 @@ export const KIT = {
     for (const [dx, c] of [[-0.5, 0x7a3a5a], [0.0, 0xf0d6e0], [0.5, 0x2f86d6]]) k.box(0.48, 0.14, 0.3, c, bx + dx, B + 0.58, iz + 0.42);
     k.box(0.5, 0.08, 0.35, 0x8a1f2a, bx - 0.55, B + 0.6, iz + 0.75);
     // small table + stool (south-east corner of the room)
-    k.box(0.8, 0.65, 0.6, wood, 2.6, B, 1.9); k.box(0.86, 0.04, 0.66, 0x8a5428, 2.6, B + 0.65, 1.9);
-    k.cyl(0.2, 0.18, 0.42, 0x3d4058, 2.6, B, 2.65, 10);
+    k.box(0.8, 0.65, 0.6, wood, 5.4, B, 2.9); k.box(0.86, 0.04, 0.66, 0x8a5428, 5.4, B + 0.65, 2.9);
+    k.cyl(0.2, 0.18, 0.42, 0x3d4058, 5.4, B, 3.65, 10);
     const lampM = mat(0xfff1c0, { emissive: 0xfff1c0, emissiveIntensity: 0.6 });
     k.box(0.5, 0.06, 0.18, lampM, 0, B + H - 0.08, 0, { shadow: false });              // tube light
     // ---- fading shell: south wall (door), east wall, roof, exterior trim + sign ----
@@ -2689,12 +2696,12 @@ export const KIT = {
     sb(DOOR, 0.8, T, ext, 0, B + H - 0.8, hd - T / 2);
     sb(T, H, D, ext, hw - T / 2, B, 0);
     sb(W + 0.1, 0.3, D + 0.1, 0xb5523b, 0, B, 0);
-    for (const x of [-3, 3]) { sb(1.0, 1.0, 0.06, 0x6a4a32, x, B + 1.0, hd + 0.01); sb(0.85, 0.85, 0.05, 0x2f86d6, x, B + 1.07, hd + 0.04); }
-    for (const z of [-1.8, 1.8]) { sb(0.06, 1.0, 1.0, 0x6a4a32, hw + 0.01, B + 1.0, z); sb(0.05, 0.85, 0.85, 0x2f86d6, hw + 0.04, B + 1.07, z); }
+    for (const x of [-4.6, -2.4, 2.4, 4.6]) { sb(1.0, 1.0, 0.06, 0x6a4a32, x, B + 1.0, hd + 0.01); sb(0.85, 0.85, 0.05, 0x2f86d6, x, B + 1.07, hd + 0.04); }
+    for (const z of [-2.6, 0, 2.6]) { sb(0.06, 1.0, 1.0, 0x6a4a32, hw + 0.01, B + 1.0, z); sb(0.05, 0.85, 0.85, 0x2f86d6, hw + 0.04, B + 1.07, z); }
     const rs = new THREE.Shape(); rs.moveTo(-hd - 0.4, 0); rs.lineTo(hd + 0.4, 0); rs.lineTo(0, 1.8); rs.closePath();
     const roof = new THREE.Mesh(new THREE.ExtrudeGeometry(rs, { depth: W + 0.6, bevelEnabled: false }), fm(0xc4623a)); roof.position.set(-hw - 0.3, B + H, 0); roof.rotation.y = Math.PI / 2; roof.castShadow = true; shell.add(roof);
     sb(DOOR + 0.3, H - 0.6, 0.12, 0x5a3a26, 0, B, hd + 0.02).scale.set(1, 1, 1);
-    const sign = boardSign('VANDERLINDE GANG', 6.2, 0.95, { fg: '#fff1d6', bg: '#5a3a26', board: 0x5a3a26, trim: C.amber });
+    const sign = boardSign('VANDERLINDE GANG', 7.4, 1.05, { fg: '#fff1d6', bg: '#5a3a26', board: 0x5a3a26, trim: C.amber });
     sign.position.set(0, B + H + 0.65, hd + 0.4); sign.userData.dynamic = true; g.add(sign);
     const sub = boardSign('THE HIDEOUT', 2.6, 0.42, { fg: '#2a2440', bg: '#ffd257', board: 0xffd257, trim: 0x5a3a26 });
     sub.position.set(0, B + H + 0.0, hd + 0.42); sub.userData.dynamic = true; g.add(sub);
@@ -2704,8 +2711,8 @@ export const KIT = {
       colliders: [
         { x: 0, z: -hd + T / 2, w: W, d: T + 0.2 }, { x: -hw + T / 2, z: 0, w: T + 0.2, d: D }, { x: hw - T / 2, z: 0, w: T + 0.2, d: D },
         { x: -(DOOR / 2 + sideW / 2), z: hd - T / 2, w: sideW, d: T + 0.2 }, { x: DOOR / 2 + sideW / 2, z: hd - T / 2, w: sideW, d: T + 0.2 },
-        { x: bx, z: bz, w: bw + 0.1, d: bl + 0.1 }, { x: -2.4, z: iz + 0.31, w: 1.3, d: 0.62 }, { x: ix + 0.3, z: 0.8, w: 0.6, d: 1.15 },
-        { x: 2.6, z: 1.9, w: 0.8, d: 0.6 },
+        { x: bx, z: bz, w: bw + 0.1, d: bl + 0.1 }, { x: WRX, z: iz + 0.31, w: 1.3, d: 0.62 }, { x: ix + 0.3, z: 1.2, w: 0.6, d: 1.15 },
+        { x: 5.4, z: 2.9, w: 0.8, d: 0.6 },
       ],
       floors: [{ x: 0, z: 0, w: W - 2 * T, d: D - 2 * T, h: B }, { x: 0, z: hd + 0.15, w: DOOR, d: 0.7, h: B }],
       animate: (t, state) => {
