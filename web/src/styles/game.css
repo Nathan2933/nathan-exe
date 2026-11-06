@@ -482,3 +482,137 @@ body.started .help-btn { opacity: 1; }
 .hint kbd { background: transparent; color: var(--hud-key); border: 1.5px solid var(--hud-key); border-bottom-width: 1.5px; border-radius: 0; font-family: var(--font-pixel); font-size: 10px; }
 .prompt-tail { display: none; }
 .world-label { box-shadow: inset 5px 0 0 var(--c, var(--hud-key)) !important; padding-left: 14px; }
+
+/* =====================================================================
+   HUD theme for every game window. The shared components (windows,
+   buttons, chips, project cards…) read these tokens, so remapping them on
+   the game page switches the whole UI to the dark pixel HUD at once. The
+   portfolio and admin pages keep the light theme.
+   ===================================================================== */
+body.game {
+  --paper: #261e3a;      /* window background */
+  --cream: #332a4c;      /* inner cards, chips, inputs */
+  --cream-2: #3d335a;
+  --ink: #f3e3c3;        /* frames + primary text */
+  --ink-2: #cfc3e6;
+  --ink-3: #9d91bd;
+  --accent-ink: #ffb347;
+  --ok: #8fe0a6;
+  --border: 2px solid #f3e3c3;
+  --shadow: none;
+  --radius: 0;
+}
+body.game .window,
+body.game .journey,
+body.game .dialogue,
+body.game .logo,
+body.game .btn,
+body.game .look button,
+body.game .dlg-topics button,
+body.game .timetable li,
+body.game .project-card,
+body.game .mem-hint {
+  --step: 4px;
+  clip-path: polygon(
+    0 var(--step), var(--step) var(--step), var(--step) 0,
+    calc(100% - var(--step)) 0, calc(100% - var(--step)) var(--step), 100% var(--step),
+    100% calc(100% - var(--step)), calc(100% - var(--step)) calc(100% - var(--step)), calc(100% - var(--step)) 100%,
+    var(--step) 100%, var(--step) calc(100% - var(--step)), 0 calc(100% - var(--step)));
+  border-radius: 0;
+  box-shadow: none;
+}
+body.game .btn, body.game .look button, body.game .dlg-topics button { --step: 3px; }
+body.game .window, body.game .journey, body.game .dialogue { background: rgba(38, 30, 58, 0.96); }
+
+/* window title bars: darker strip with a cream rule */
+body.game .window-bar { background: #1b1429; color: var(--ink-2); border-bottom: 2px solid var(--ink); font-family: var(--font-pixel); font-size: 10px; letter-spacing: .06em; }
+body.game .window-bar .dots i { background: #6a5d8c; opacity: 1; }
+body.game .window-bar .dots i:first-child { background: var(--hud-key, #ffb347); }
+body.game .panel-close { color: var(--ink-2); }
+body.game .panel-close:hover { color: #ffb347; }
+
+/* text inside windows */
+body.game .panel-body, body.game .mg-body, body.game .finale-body, body.game .dlg-body, body.game .controls-list { color: var(--ink); }
+body.game .panel-body h2, body.game .mg-body h2, body.game .finale-body h2 { color: #fff6e6; }
+body.game .eyebrow, body.game .panel-body .eyebrow { color: #ffb347; font-family: var(--font-pixel); font-size: 10px; letter-spacing: .08em; }
+body.game .subtitle, body.game .mg-intro { color: var(--ink-2) !important; }
+body.game .muted { color: var(--ink-3); }
+
+/* buttons: outlined cream; primary = solid amber */
+body.game .btn { background: var(--cream); color: var(--ink); border: 2px solid var(--ink); font-family: var(--font-pixel); font-weight: 400; font-size: 11px; letter-spacing: .04em; }
+body.game .btn:hover { background: #4a3d6e; transform: none; box-shadow: none; }
+body.game .btn:active { transform: translateY(1px); }
+body.game .btn.primary { background: #ffb347; color: #261e3a; border-color: #ffb347; }
+body.game .btn.primary:hover { background: #ffc86e; }
+body.game .btn.dark { background: #ff6a3d; color: #261e3a; border-color: #ff6a3d; }
+
+/* top bar */
+body.game .logo { background: rgba(38, 30, 58, 0.96); border: 2px solid var(--ink); }
+body.game .logo-mark { background: #ff6a3d; color: #261e3a; }
+body.game .logo-text { color: #fff6e6; }
+body.game .logo-text b { color: #ffb347; }
+
+/* chips, cards, lists */
+body.game .chips li { background: var(--cream); border-color: var(--ink-3); color: var(--ink); border-radius: 0; }
+body.game .project-card { background: var(--cream); border: 2px solid var(--ink-3); }
+body.game .project-card.is-featured { border-color: #ffb347; }
+body.game .project-links a, body.game .link-list a, body.game .album button, body.game .save-stats button { border-bottom-color: #ffb347; color: var(--ink); }
+body.game .highlights li::before { color: #ffb347; }
+body.game .mem-hint { border: 0; background: var(--cream); }
+body.game .timetable li { background: var(--cream); border: 0; }
+body.game .timetable li.current { background: #2b2342; }
+body.game .timetable em { color: #ffb347; }
+
+/* save card */
+body.game .player-card { border-bottom-color: var(--ink-3); }
+body.game #portrait, body.game .mini-portrait { border-color: var(--ink); background: #fff1d6; box-shadow: none; }
+body.game .journey li button:hover, body.game .journey li button:focus-visible { background: var(--cream); }
+body.game .journey li button::before { border-color: var(--ink); }
+body.game .journey li.done button { color: var(--ink-3); }
+body.game .journey-toggle { border-color: var(--ink-2); color: var(--ink); }
+body.game .look { border-top-color: var(--ink-3); color: var(--ink-3); }
+body.game .look button { background: var(--cream); color: var(--ink); border: 1.5px solid var(--ink-3); font-family: var(--font-pixel); font-size: 10px; font-weight: 400; }
+body.game .look button:hover { background: #ff6a3d; color: #261e3a; }
+
+/* dialogue */
+body.game .dlg-name { color: #fff6e6; }
+body.game .dlg-name span { color: var(--ink-3); }
+body.game .dlg-more { color: #ffb347; }
+body.game .dlg-topics button { background: var(--cream); color: var(--ink); border: 1.5px solid var(--ink-3); font-family: var(--font-pixel); font-size: 10px; font-weight: 400; }
+body.game .dlg-topics button:hover { background: #ffb347; color: #261e3a; }
+body.game .dlg-topics button.asked { color: var(--ink-3); }
+
+/* minigame */
+body.game .mg-bar { background: #1b1429; border-color: var(--ink); border-radius: 0; }
+body.game .mg-zone { background: #ffb347; }
+body.game .mg-needle { background: #fff6e6; }
+body.game .mg-reps i { border-color: var(--ink); }
+body.game .mg-reps i.ok { background: #ffb347; }
+body.game .mg-msg kbd, body.game .controls-list kbd { background: transparent; color: #ffb347; border: 1.5px solid #ffb347; border-radius: 0; font-family: var(--font-pixel); font-size: 10px; }
+
+/* small round HUD buttons */
+body.game .help-btn, body.game .map-btn { background: rgba(38, 30, 58, 0.96); color: #ffb347; border-color: var(--ink); box-shadow: none; font-family: var(--font-pixel); font-weight: 400; }
+body.game .minimap-wrap { border-color: var(--ink); box-shadow: 0 0 0 3px rgba(38, 30, 58, 0.96); }
+body.game .bigmap-legend { color: var(--ink); border-top-color: var(--ink); }
+
+/* finale */
+body.game .finale { background: rgba(20, 16, 32, .45); }
+body.game .finale-credits { color: var(--ink-3); }
+body.game .finale-stats { color: var(--ink-2); }
+
+/* recruiter bar on mobile (dropdown) */
+body.game .recruiter-bar.open { background: rgba(38, 30, 58, 0.96); border-color: var(--ink); box-shadow: none; }
+body.game .look > span { display: none; }
+body.game .look { gap: 4px; justify-content: space-between; }
+body.game .look button { font-size: 9px; padding: 3px 6px; flex: 1; text-align: center; }
+body.game .panel-body, body.game .finale-card, body.game .controls { scrollbar-color: #6a5d8c #1b1429; scrollbar-width: thin; }
+body.game .panel-body::-webkit-scrollbar { width: 8px; }
+body.game .panel-body::-webkit-scrollbar-track { background: #1b1429; }
+body.game .panel-body::-webkit-scrollbar-thumb { background: #6a5d8c; }
+/* keep the dialogue clear of the save card (left) and minimap (right) */
+@media (min-width: 761px) and (max-width: 1240px) {
+  body.game .dialogue {
+    left: calc(var(--gutter) + 236px); right: calc(var(--gutter) + 166px);
+    width: auto; max-width: none; transform: none; animation: none;
+  }
+}
