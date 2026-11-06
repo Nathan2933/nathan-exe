@@ -220,8 +220,8 @@ interact.push(point('memory', -5.6, -5.2, { id: 'fitness-chapter' }));
 // Six themed areas around a central arcade, one character each:
 //   NW Hell's Kitchen alley (Daredevil) · N rooftop (Spider-Man) · NE camp + paddock (Arthur Morgan)
 //   SW basement (Tyler Durden) · S moonlit court (Moon Knight) · SE Pied Piper (Richard Hendricks)
-hedge(2.2, -27.8, 24.9, -27); hedge(24.2, -27, 24.9, -2.1); hedge(2.2, -27, 2.9, -16.5); hedge(2.2, -13, 2.9, -2.1);
-hedge(2.2, -2.9, 8, -2.1); hedge(11, -2.9, 24.9, -2.1);
+hedge(2.2, -27.8, 24.9, -27); hedge(24.2, -27, 24.9, -2.1); hedge(2.2, -27, 2.9, -16.5); hedge(2.2, -13, 2.9, -5.2);
+hedge(5.2, -2.9, 8, -2.1);   // corner cut back: a clear walk around the CRT plinth hedge(11, -2.9, 24.9, -2.1);
 O('pop_arcade', 9.5, -15.5);
 // Hell's Kitchen alley + rooftop signal
 O('pop_rooftop', 5.0, -25.4, { variant: 'signal' });

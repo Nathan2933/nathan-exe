@@ -105,6 +105,7 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
   }
 
   // ---------- kit pieces ----------
+  const seats = []; // benches become seats once the E-spot helpers exist
   const place = (type, x, z, props) => {
     const rot = props.rot || 0;
     let piece;
@@ -122,6 +123,11 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
     root.add(piece.obj);
     if (piece.dynamic) piece.obj.userData.dynamic = true;
     if (piece.animate) animated.push(piece.animate);
+    if (type === 'bench') {
+      // every bench is a seat: E to sit, E again (or walk) to stand
+      const a = (-rot * Math.PI) / 180, sx = x + 0.06 * Math.sin(a), sz = z + 0.06 * Math.cos(a);
+      seats.push({ x: x + 0.85 * Math.sin(a), z: z + 0.85 * Math.cos(a), id: `seat:${x.toFixed(1)},${z.toFixed(1)}`, kind: 'seat', seat: { x: sx, z: sz, heading: a }, radius: 1.3, visited: false, district: 'plaza' });
+    }
     if (piece.api) apis[props.variant ? `${type}_${props.variant}` : type] = piece.api;
     if (piece.nightGlow) nightGlow.push(...piece.nightGlow);
     if (piece.screen && props.index !== undefined) bayScreens[props.index] = piece.screen;
@@ -196,6 +202,7 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
     root.add(hit); it.hit = hit;
   };
 
+  for (const it of seats) { it.beacon = beacon(it.x, 1.2, it.z, { small: true }); hitBox(it, 1.4, 1.6, 1.4); interactables.push(it); }
   for (const o of map.interact) {
     const pr = o.props;
     const base = { x: o.x, z: o.z, visited: false };

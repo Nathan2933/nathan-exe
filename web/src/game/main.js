@@ -310,7 +310,9 @@ function renderJourney() {
 // ---------------- Interactions ----------------
 function interact(it) {
   if (state.mount) return dismount();
+  if (state.seated) return standUp();
   if (it.kind === 'vehicle') return mount(it);
+  if (it.kind === 'seat') return sitDown(it);
   if (it.kind === 'npc') return talkTo(it);
   if (it.kind === 'minigame') return startMinigame(it);
   if (it.kind === 'memory') return collectMemory(it);
@@ -607,6 +609,19 @@ function openEducation(readId = null) {
     const from = world.stations.reduce((a, st) => (Math.hypot(st.x - p.x, st.z - p.z) < Math.hypot(a.x - p.x, a.z - p.z) ? st : a), world.stations[0]);
     travel(from, dest);
   }));
+}
+
+// ---------------- Benches ----------------
+function sitDown(it) {
+  if (dialogue.open || state.panelOpen || state.minigame || state.ko) return;
+  state.path = []; marker.visible = false;
+  state.seated = it; state.nearby = null;
+  player.pose = 'sit'; sfx.close();
+}
+function standUp() {
+  const it = state.seated; if (!it) return;
+  state.seated = null; state.nearby = null; player.pose = null;
+  player.group.position.set(it.x, heightAt(it.x, it.z), it.z);   // step off to the front of the bench
 }
 
 // ---------------- Mounts: one controller for bicycles and the horse ----------------
@@ -1122,6 +1137,7 @@ function update(dt, t) {
   const pos = player.group.position;
   const frozen = !!state.minigame;
 
+  if (state.seated && (kx || kz || state.path.length)) standUp();
   const keyboardMove = !state.mount && state.started && !frozen && !state.ko && !!(kx || kz);
   if (state.mount) {
     rideUpdate(dt, t, kx, kz, running);
@@ -1172,7 +1188,8 @@ function update(dt, t) {
     const score = it.kind === 'npc' ? d - 0.8 : d; // people take priority when you're beside them
     if (d < it.radius && score < bestD) { best = it; bestD = score; }
   }
-  if (state.mount) best = state.mount.it; // while riding, the only action is getting off
+  if (state.mount) best = state.mount.it;
+  if (state.seated) { best = state.seated; player.group.position.set(state.seated.seat.x, heightAt(state.seated.seat.x, state.seated.seat.z), state.seated.seat.z); player.heading = state.seated.seat.heading; player.pose = 'sit'; } // while riding, the only action is getting off
   if (best && !dialogue.open) player.lookAt(lookV.set(best.x, 0, best.z)); else if (!dialogue.open) player.lookAt(null);
   if (dialogue.open && state.talkingTo) player.lookAt(lookV.set(state.talkingTo.x, 0, state.talkingTo.z));
   if (best !== state.nearby) {
@@ -1604,6 +1621,7 @@ function updatePrompt() {
     memory: ['Memory', mem ? 'Pick up ✦' : ''],
     station: ['Memory Line', best.name ? `${best.name} station` : 'Station'],
     panel: ['Look', best.title],
+    seat: ['Bench', state.seated ? 'Stand up' : 'Sit down'],
     vehicle: [best.vtype === 'horse' ? 'Horse' : 'Bicycle', state.mount ? 'Dismount' : best.vtype === 'horse' ? 'Ride horse' : 'Ride bicycle'],
     finale: ['Departures', state.save.finale ? 'Replay the ending' : 'End of Island 01'],
     chapter: ['Open chapter', chapterFor(c, best.district)?.title],
