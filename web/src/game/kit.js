@@ -21,11 +21,30 @@ export const C = {
 };
 
 const mats = new Map();
+// Every glowing material, so night mode can turn the glow up.
+const glowMats = [];
+export function setGlowBoost(k) { for (const g of glowMats) g.m.emissiveIntensity = g.base * k; }
+let _pool = null;
+function poolTex() {
+  if (_pool) return _pool;
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.4, 'rgba(255,255,255,.5)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+  return (_pool = new THREE.CanvasTexture(c));
+}
+/** Warm pool of lamplight on the ground, only visible at night. */
+export function lightPool(radius = 2.6, color = 0xffc46a) {
+  const m = new THREE.Mesh(new THREE.CircleGeometry(radius, 24), new THREE.MeshBasicMaterial({ color, map: poolTex(), transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
+  m.rotation.x = -Math.PI / 2; m.position.y = 0.06; m.visible = false; m.userData.dynamic = true; m.renderOrder = 1;
+  return m;
+}
 export function mat(color, { emissive = 0, emissiveIntensity = 1, keep = false } = {}) {
   const key = `${color}|${emissive}|${emissiveIntensity}|${keep}`;
   if (!mats.has(key)) {
     const m = new THREE.MeshLambertMaterial({ color, emissive, emissiveIntensity, flatShading: true });
     if (!keep) registerMaterial(m); // `keep` = brand/interaction colours that never change with the palette
+    if (emissive) glowMats.push({ m, base: emissiveIntensity });
     mats.set(key, m);
   }
   return mats.get(key);
@@ -100,7 +119,8 @@ export const KIT = {
     k.box(0.32, 0.08, 0.32, C.ink, 0.42, 2.72, 0);
     k.box(0.24, 0.3, 0.24, glow(C.amber), 0.42, 2.42, 0);
     k.box(0.32, 0.05, 0.32, C.ink, 0.42, 2.37, 0);
-    return { obj: g, colliders: [{ x: 0, z: 0, r: 0.2 }] };
+    const pool = lightPool(2.6); pool.position.x = 0.42; g.add(pool);
+    return { obj: g, colliders: [{ x: 0, z: 0, r: 0.2 }], nightGlow: [pool] };
   },
   bench({ snow = false } = {}) {
     const g = new THREE.Group(), k = kit(g);

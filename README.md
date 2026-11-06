@@ -54,6 +54,7 @@ Security model: saving only works from `localhost` in dev mode, and `admin.html`
 | Jump | Space | — |
 | Interact / talk / next line | E (or click the ◆) | Tap the ◆ or the prompt |
 | Full map | M (or the M button on the minimap) | M button |
+| Day / night / auto (local time) | N or the ◐ Look button | ◐ Look button |
 | Controls help | H or the ? button | ? button |
 | Close a window | Esc | ✕ |
 | Zoom | Scroll | Pinch |

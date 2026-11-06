@@ -616,3 +616,11 @@ body.game .panel-body::-webkit-scrollbar-thumb { background: #6a5d8c; }
     width: auto; max-width: none; transform: none; animation: none;
   }
 }
+
+/* chapter list + map legend: circles to match the in-world checkpoints */
+.journey li button::before { border-radius: 50%; transform: none; }
+.lg-ch, .lg-done { border-radius: 50%; transform: none !important; }
+
+/* Look row: 2 × 2 grid now that it has four switches */
+body.game .look { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+body.game .look button { flex: none; }

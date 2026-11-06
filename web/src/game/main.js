@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { RetroRenderer } from './retro.js';
 import { applyPalette, SKY } from './palette.js';
+import { setGlowBoost } from './kit.js';
 import { sfx, setSound, setRain } from './audio.js';
 import { buildWorld, loadKitOverrides, updateWalkers, groundHeight } from './world.js';
 import { loadTiledMap, tileAt } from './tiled.js';
@@ -89,10 +90,11 @@ renderer.outputColorSpace = THREE.SRGBColorSpace;
 const retro = new RetroRenderer(renderer);
 // "Look" preferences: palette (bright | pastel) and pixels (smooth | retro), remembered per browser.
 const LOOK_KEY = 'nathan-exe:look';
-const look = (() => { try { return { palette: 'bright', pixels: 'smooth', ...JSON.parse(localStorage.getItem(LOOK_KEY) || '{}') }; } catch { return { palette: 'bright', pixels: 'smooth' }; } })();
+const look = (() => { try { return { palette: 'bright', pixels: 'smooth', time: 'auto', ...JSON.parse(localStorage.getItem(LOOK_KEY) || '{}') }; } catch { return { palette: 'bright', pixels: 'smooth', time: 'auto' }; } })();
 const qs = new URLSearchParams(location.search);
 if (qs.get('palette')) look.palette = qs.get('palette');
 if (qs.get('pixels')) look.pixels = qs.get('pixels');
+if (qs.get('time')) look.time = qs.get('time');
 function applyLook() {
   retro.setMode(look);
   applyPalette(look.palette);
@@ -102,6 +104,8 @@ function applyLook() {
   const pb = document.getElementById('look-palette'), xb = document.getElementById('look-pixels');
   if (pb) pb.textContent = look.palette === 'pastel' ? 'Pastel' : 'Bright';
   if (xb) xb.textContent = look.pixels === 'retro' ? 'Pixel' : 'Smooth';
+  const tb = document.getElementById('look-time');
+  if (tb) tb.textContent = { auto: '◐ Auto', day: '☀ Day', night: '☾ Night' }[look.time] || '◐ Auto';
   const sb = document.getElementById('look-sound');
   if (sb) { sb.textContent = look.sound ? '♪ On' : '♪ Off'; sb.setAttribute('aria-pressed', String(!!look.sound)); }
   if (look.sound && !state.started) { /* audio may only start after a user gesture */ } else setSound(!!look.sound);
@@ -236,6 +240,7 @@ function setupUI() {
   $('#album-btn').addEventListener('click', openAlbum);
   $('#look-palette').addEventListener('click', () => { look.palette = look.palette === 'pastel' ? 'bright' : 'pastel'; applyLook(); resize(); });
   $('#look-pixels').addEventListener('click', () => { look.pixels = look.pixels === 'retro' ? 'smooth' : 'retro'; applyLook(); resize(); });
+  $('#look-time').addEventListener('click', cycleTime);
   $('#look-sound').addEventListener('click', () => { look.sound = !look.sound; applyLook(); if (look.sound) sfx.open(); });
   applyLook();
   $('#journey-toggle').addEventListener('click', () => $('.journey').classList.toggle(innerWidth <= 760 ? 'open-m' : 'collapsed'));
@@ -244,6 +249,7 @@ function setupUI() {
     if (e.target.closest?.('input, textarea')) return;
     if (e.key === 'm' || e.key === 'M') { e.preventDefault(); toggleBigMap(); return; }
     if (e.key === 'h' || e.key === 'H') { e.preventDefault(); toggleControls(); return; }
+    if (e.key === 'n' || e.key === 'N') { e.preventDefault(); cycleTime(); return; }
     if (e.key === 'Escape') {
       if (!$('#bigmap').classList.contains('hidden')) return toggleBigMap(false);
       if (!$('#controls').classList.contains('hidden')) return toggleControls(false);
@@ -631,11 +637,7 @@ function markVisited(it, silent) {
   it.visited = true;
   if (!it.beacon) return;
   if (it.kind === 'memory') { it.beacon.group.visible = false; return; }
-  it.beacon.gem.material = it.beacon.gem.material.clone();
-  it.beacon.gem.material.color.set(0x7b7590);
-  it.beacon.gem.material.emissive.set(0x000000);
-  it.beacon.ring.material = it.beacon.ring.material.clone();
-  it.beacon.ring.material.color.set(0x7b7590);
+  if (it.beacon.setVisited) it.beacon.setVisited();
   if (!silent) it.beacon.gem.scale.setScalar(1.6);
 }
 
@@ -703,7 +705,7 @@ function drawMinimap(t) {
     const [x, y] = MM.toPx(it.x, it.z);
     g.fillStyle = it.visited ? '#7b7590' : '#ff6a3d';
     g.strokeStyle = '#1e1b2e'; g.lineWidth = 1.5;
-    g.beginPath(); g.moveTo(x, y - 4); g.lineTo(x + 4, y); g.lineTo(x, y + 4); g.lineTo(x - 4, y); g.closePath(); g.fill(); g.stroke();
+    g.beginPath(); g.arc(x, y, 3.6, 0, Math.PI * 2); g.fill(); g.stroke();
   }
   const p = player.group.position;
   const [px, py] = MM.toPx(p.x, p.z);
@@ -960,9 +962,47 @@ function update(dt, t) {
   if (rainMix > 0.01) scene.background.lerp(RAIN_SKY, rainMix * 0.55);
   setRain(rainMix);
   sun.color.setHSL(0.11, 0.7 + progress * 0.25, 0.9 - progress * 0.08);
+  applyDayNight(dt);
   if (DEBUG) updateDebug(dt);
 }
 const ZERO = new THREE.Vector3();
+
+// ---------------- Day / night ----------------
+// 'auto' follows the visitor's local clock: day 07–17, dusk to 20:00, night
+// until 05:00, dawn back to day by 07:00. The change eases in smoothly.
+function nightTarget() {
+  if (look.time === 'day') return 0;
+  if (look.time === 'night') return 1;
+  const d = new Date(), h = d.getHours() + d.getMinutes() / 60;
+  if (h >= 20 || h < 5) return 1;
+  if (h >= 17) return (h - 17) / 3;   // dusk
+  if (h < 7) return 1 - (h - 5) / 2;  // dawn
+  return 0;
+}
+function cycleTime() {
+  look.time = { auto: 'day', day: 'night', night: 'auto' }[look.time] || 'auto';
+  applyLook();
+  toast(look.time === 'auto' ? 'Time follows your clock' : look.time === 'night' ? 'Night mode: street lights on' : 'Day mode');
+}
+let night = -1;
+const NIGHT_SKY = new THREE.Color(0x1c2246), MOON = new THREE.Color(0xa9b8ff), SUNC = new THREE.Color();
+const HEMI_SKY_DAY = new THREE.Color(0xfff6e6), HEMI_SKY_NIGHT = new THREE.Color(0x9aa6ee);
+const HEMI_GND_DAY = new THREE.Color(0x9aa6c8), HEMI_GND_NIGHT = new THREE.Color(0x2a2440);
+function applyDayNight(dt) {
+  const target = nightTarget();
+  night = night < 0 ? target : night + (target - night) * Math.min(1, dt * 1.5);
+  const n = night;
+  scene.background.lerp(NIGHT_SKY, n * 0.88);
+  hemi.intensity = 1.7 - n * 0.95;
+  hemi.color.copy(HEMI_SKY_DAY).lerp(HEMI_SKY_NIGHT, n);
+  hemi.groundColor.copy(HEMI_GND_DAY).lerp(HEMI_GND_NIGHT, n);
+  SUNC.copy(sun.color).lerp(MOON, n);
+  sun.color.copy(SUNC);
+  sun.intensity = 2.5 - n * 1.6;
+  setGlowBoost(1 + n * 1.8);
+  for (const p of world.nightGlow) { p.visible = n > 0.03; p.material.opacity = 0.62 * n; }
+  document.body.classList.toggle('is-night', n > 0.5);
+}
 let hintHidden = false;
 
 // The interaction prompt floats above the thing you can interact with (desktop);
@@ -1029,7 +1069,7 @@ function drawBigMap() {
     const [px, py] = bigMapPx(x, z);
     g.fillStyle = fill; g.strokeStyle = '#2a2440'; g.lineWidth = 2 * dpr;
     g.beginPath();
-    if (shape === 'diamond') { g.moveTo(px, py - r); g.lineTo(px + r, py); g.lineTo(px, py + r); g.lineTo(px - r, py); g.closePath(); }
+    if (shape === 'diamond') g.arc(px, py, r * 0.85, 0, Math.PI * 2);
     else g.rect(px - r, py - r, r * 2, r * 2);
     g.fill(); g.stroke();
   };

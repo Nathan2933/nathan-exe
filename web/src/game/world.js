@@ -44,6 +44,7 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
   const walkers = [];
   const weather = []; // rain zones
   const apis = {};    // pieces that expose controls (e.g. lighthouse.setLit)
+  const nightGlow = []; // light pools etc. faded in at night
   const floors = []; // raised walkable surfaces (station platforms…): {minX,maxX,minZ,maxZ,h}
   const R = map.props.islandRadius || 44;
 
@@ -121,6 +122,7 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
     if (piece.dynamic) piece.obj.userData.dynamic = true;
     if (piece.animate) animated.push(piece.animate);
     if (piece.api) apis[type] = piece.api;
+    if (piece.nightGlow) nightGlow.push(...piece.nightGlow);
     for (const c of piece.colliders || []) colliders.push(transformCollider(c, x, z, rot));
     for (const f of piece.floors || []) {
       const r = transformCollider(f, x, z, rot);
@@ -139,16 +141,39 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
   }
 
   // ---------- interactables ----------
-  const beacon = (x, y, z, { small = false } = {}) => {
+  // Checkpoint marker: a glowing ring on the ground, a soft lit disc inside it
+  // and a faint column of light so it reads from across the map.
+  const beacon = (x, _y, z, { small = false } = {}) => {
     const g = new THREE.Group();
-    const gem = new THREE.Mesh(new THREE.OctahedronGeometry(small ? 0.24 : 0.34, 0), mat(C.accent, { emissive: 0x7a2a10, keep: true }));
-    gem.castShadow = true; g.add(gem);
-    const ring = new THREE.Mesh(new THREE.RingGeometry(small ? 0.5 : 0.75, small ? 0.62 : 0.95, 20), new THREE.MeshBasicMaterial({ color: C.accent, side: THREE.DoubleSide, transparent: true, opacity: 0.9 }));
-    ring.rotation.x = -Math.PI / 2; ring.position.y = -y + 0.18; g.add(ring);
-    g.position.set(x, y, z); g.userData.dynamic = true;
+    const R = small ? 0.62 : 0.95;
+    const tile = tileAt(map, x, z);
+    g.position.set(x, (tile ? Math.max(0, groundHeight(tile.type)) : 0) + 0.04, z);
+    const add = (m) => { m.renderOrder = 2; g.add(m); return m; };
+    const glowMat = (opacity, map2 = null, additive = true) => new THREE.MeshBasicMaterial({ color: 0xffa040, map: map2, transparent: true, opacity, depthWrite: false, blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending, side: THREE.DoubleSide });
+    const disc = add(new THREE.Mesh(new THREE.CircleGeometry(R * 1.25, 32), glowMat(0.75, radialTex(), false)));
+    disc.rotation.x = -Math.PI / 2;
+    const ring = add(new THREE.Mesh(new THREE.RingGeometry(R * 0.86, R, 40), new THREE.MeshBasicMaterial({ color: 0xff7a35, transparent: true, opacity: 1, depthWrite: false, side: THREE.DoubleSide })));
+    ring.rotation.x = -Math.PI / 2; ring.position.y = 0.01;
+    const pillar = add(new THREE.Mesh(new THREE.CylinderGeometry(R * 0.82, R * 0.9, small ? 1.6 : 2.4, 24, 1, true), glowMat(0.5, pillarTex())));
+    pillar.position.y = (small ? 1.6 : 2.4) / 2;
+    g.userData.dynamic = true;
     root.add(g);
-    animated.push((t) => { gem.rotation.y = t * 1.6; gem.position.y = Math.sin(t * 2.2 + x) * 0.12; ring.scale.setScalar(1 + Math.sin(t * 3 + z) * 0.06); });
-    return { group: g, gem, ring };
+    let visited = false;
+    animated.push((t) => {
+      const k = 0.5 + 0.5 * Math.sin(t * 2.6 + x);
+      ring.scale.setScalar(1 + k * (visited ? 0.02 : 0.07));
+      disc.material.opacity = visited ? 0.2 : 0.4 + k * 0.3;
+      pillar.material.opacity = visited ? 0 : 0.28 + k * 0.22;
+    });
+    return {
+      group: g, gem: disc, ring,
+      setVisited() {
+        visited = true;
+        ring.material = ring.material.clone(); ring.material.color.set(0xb7a9dc); ring.material.opacity = 0.7;
+        disc.material = disc.material.clone(); disc.material.color.set(0x8f80c0);
+        pillar.visible = false;
+      },
+    };
   };
   const sparkle = (x, z) => {
     const g = new THREE.Group();
@@ -232,7 +257,25 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
   const railway = buildRailway(root, map, stations, animated);
 
   mergeStatic(root);
-  return { root, colliders, interactables, animated, labels, npcs, walkers, map, floors, railway, stations, weather, apis };
+  return { root, colliders, interactables, animated, labels, npcs, walkers, map, floors, railway, stations, weather, apis, nightGlow };
+}
+
+let _radial = null, _pillar = null;
+function radialTex() {
+  if (_radial) return _radial;
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.55, 'rgba(255,255,255,.55)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+  return (_radial = new THREE.CanvasTexture(c));
+}
+function pillarTex() {
+  if (_pillar) return _pillar;
+  const c = document.createElement('canvas'); c.width = 4; c.height = 64;
+  const g = c.getContext('2d'), gr = g.createLinearGradient(0, 64, 0, 0);
+  gr.addColorStop(0, 'rgba(255,255,255,.9)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, 4, 64);
+  return (_pillar = new THREE.CanvasTexture(c));
 }
 
 function tileType(map, x, z) { return tileAt(map, x + 0.5, z + 0.5)?.type; }
