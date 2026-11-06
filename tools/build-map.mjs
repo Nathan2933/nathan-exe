@@ -120,7 +120,7 @@ rect(-21, 4, -4, 18, T.lawn);             // Signal Tower lot
 rect(4, 4, 17, 20, T.concrete);           // Garage lot (bigger)
 rect(-14, -43, 13, -29, T.snow);          // Winter Campus
 rect(-2, -33, 2, -29, T.concrete);        //   cleared entrance walk
-rect(-13, -31, -4, -29, T.concrete);      //   station forecourt
+rect(-21, -31, -11, -29, T.concrete);     //   station forecourt (west of the university, with open ground between)
 rect(26, -13, 42, 13, T.lawn);            // Monsoon Campus grounds
 rect(26, -1, 40, 1, T.terracotta);        //   main red-earth walk from the arch
 rect(29, -5, 41, -3, T.terracotta);       //   veranda forecourt
@@ -330,7 +330,7 @@ const distToRail = (x, z) => {
 };
 // Stations: [id, district, name, x, z, rot] — the rail runs along each platform's front edge.
 const STATIONS = [
-  ['winter', 'winter-campus', 'Winter Campus', -8.5, -30, 0],
+  ['winter', 'winter-campus', 'Winter Campus', -16, -30, 0],
   ['monsoon', 'monsoon-campus', 'Monsoon', 27, -8.4, 90],
   ['lake', 'lake-park', 'Lake Park', -32, -16, -90],
   ['lighthouse', 'lighthouse', 'Lighthouse', 7, 31.8, 180],
