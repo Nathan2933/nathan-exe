@@ -333,6 +333,8 @@ export class Character {
     if (ex.has('cane')) { part(0.04, 1.0, 0.04, 0xf4f4f4, 0, -0.74, 0.06, right.elbow); part(0.045, 0.12, 0.045, 0xc4402f, 0, -1.22, 0.06, right.elbow); }
     if (ex.has('wraps')) for (const a of this.arms) part(0.17, 0.12, 0.19, 0xf2efe6, 0, -0.27, 0, a.elbow);
     if (ex.has('coffee')) { part(0.09, 0.13, 0.09, 0xffffff, 0, -0.34, 0.1, right.elbow); part(0.095, 0.04, 0.095, 0x8a5a36, 0, -0.29, 0.1, right.elbow); }
+    if (ex.has('camera')) { part(0.2, 0.16, 0.26, 0x1e1b2e, 0, -0.33, 0.12, right.elbow); part(0.1, 0.1, 0.08, 0x4a5a7a, 0, -0.33, 0.28, right.elbow); part(0.05, 0.05, 0.02, 0xff3b30, 0.06, -0.24, 0.12, right.elbow); }
+    if (ex.has('tie')) { part(0.1, 0.36, 0.02, 0x2a3a6a, 0, 0.32, 0.175, S); part(0.14, 0.06, 0.03, 0x2a3a6a, 0, 0.52, 0.176, S); }
     if (ex.has('laptop')) part(0.04, 0.3, 0.4, 0x8a93a6, 0.13, -0.2, 0, left.shoulder);
     if (ex.has('cowboy')) later.push(() => { part(0.98, 0.05, 0.86, c, 0, 0.64, 0.02, H()); part(0.6, 0.24, 0.52, c, 0, 0.78, 0, H()); part(0.61, 0.06, 0.53, 0x2a1a12, 0, 0.69, 0, H()); });
     if (ex.has('hood')) later.push(() => {
@@ -450,6 +452,11 @@ export class Character {
         pm('sx1', -0.4 - 1.2 * k); pm('el1', -1.7 + 1.5 * k); pm('sx0', -1.05); pm('el0', -1.85); pm('spineY', 0.22 * k); pm('th0', -0.2); pm('kn0', 0.25);
       } else if (P === 'type') {
         pm('sx0', -0.95); pm('sx1', -0.95); pm('el0', -0.75 + 0.12 * Math.sin(t * 14)); pm('el1', -0.75 + 0.12 * Math.sin(t * 15 + 1)); pm('headX', 0.22); pm('spineX', 0.12);
+      } else if (P === 'sittype') {
+        pm('hipY', -0.32); pm('th0', -1.45); pm('th1', -1.45); pm('kn0', 1.45); pm('kn1', 1.45); pm('spineX', 0.12); pm('headX', 0.28);
+        pm('sx0', -1.0); pm('sx1', -1.0); pm('el0', -0.75 + 0.12 * Math.sin(t * 14)); pm('el1', -0.75 + 0.12 * Math.sin(t * 15 + 1));
+      } else if (P === 'film') {
+        pm('sx1', -1.35); pm('el1', -0.55); pm('sx0', -1.15); pm('el0', -0.9); pm('headX', 0.06); pm('spineY', Math.sin(t * 0.5) * 0.35);
       } else if (P === 'cycle') {
         const ph = this.pedal || 0;
         pm('hipY', -0.16); pm('spineX', 0.32); pm('headX', -0.2);

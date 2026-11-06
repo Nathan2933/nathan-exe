@@ -314,7 +314,7 @@ interact.push(point('memory', 9.4, 15.4, { id: 'six-hours' }));        // by the
 interact.push(point('memory', 11.6, 12.4, { id: 'property-dashboard' })); // by CauverySite
 // --- Winter Campus (Russia chapter) ---
 O('faculty_building', 0, -43.6, { text: 'TOMSK STATE UNIVERSITY' });
-labels.push(point('label', 0, -43.6, { text: 'WINTER CAMPUS', color: '#2f5f9a', height: 9.6 }));
+labels.push(point('label', 0, -43.6, { text: 'TOMSK STATE UNIVERSITY', color: '#2f5f9a', height: 9.6 }));
 interact.push(point('chapter', 0, -37, { id: 'winter-campus', district: 'winter-campus' }));
 for (const z of [-46, -42.8, -39.6]) { O('birch', -10.2, z, { scale: 1.05 }); O('birch', 10.4, z + 0.4, { scale: 0.95 }); }
 O('birch', -12.4, -41.2, { scale: 0.9 }); O('birch', 12.3, -44.4, { scale: 1.1 });
@@ -330,15 +330,14 @@ interact.push(point('vehicle', 4.6, -36.2, { id: 'bike-tomsk', vtype: 'bike', ro
 interact.push(point('vehicle', 46.4, -0.2, { id: 'bike-tce', vtype: 'bike', rot: 180, color: '#b5523b', district: 'monsoon-campus' }));
 // --- Monsoon Campus (India chapter, Tamil Nadu college) ---
 O('college_building', 41.5, -9.2, { text: 'TCE Madurai', subtitle: 'Thiagarajar College of Engineering', logo: 'assets/logos/tce.png' });
-objects.push(area('rain_zone', 31.5, -14, 49, 14));   // monsoon showers fall inside this rectangle
 O('gate_arch', 33.4, 0, { text: 'TCE Madurai' });
 O('tea_stall', 36, 9.2, { rot: -90 });
 O('cycle_stand', 45.4, -1.8, { rot: 0 });
 O('notice_board', 37, -2.6, { rot: 0, text: 'FEST' });
 O('lamp', 37.6, 1.6); O('lamp', 43.6, 1.6);
-for (const [x, z] of [[46.6, 4.5], [45.8, 9.2], [42.6, 11.4], [32.8, 11.2], [32.6, 5.4], [47.2, -6.2]]) O('tree_palm', x, z, { scale: 0.95 + (((x - 6) * 3) % 1) * 0.2 });
+O('laptop_table', 43.6, 6.4);
 O('puddle', 38.6, 0.4); O('puddle', 43.2, -0.3, { scale: 0.7 }); O('puddle', 36, 4.6, { scale: 0.8 });
-labels.push(point('label', 41.5, -9.2, { text: 'MONSOON CAMPUS', color: '#b5523b', height: 9.2 }));
+labels.push(point('label', 41.5, -9.2, { text: 'THIAGARAJAR COLLEGE OF ENGINEERING', color: '#b5523b', height: 9.2 }));
 interact.push(point('chapter', 35.6, 1.8, { id: 'monsoon-campus', district: 'monsoon-campus' }));
 interact.push(point('memory', 34.2, 4.4, { id: 'madurai-checkpoint' }));
 interact.push(point('memory', 37, -1.6, { id: 'association-badge' }));
@@ -422,7 +421,7 @@ const route = (npc, pts, loop = false, extra = {}) => paths.push(line('npc_route
 route('thianesh', [[-17, -9.0], [-11.5, -8.0], [-10.5, -5.5], [-16.5, -5.5]], true);     // Iron Yard
 route('guru', [[-3.4, -38.2], [-8.6, -38.4], [-7.8, -36.0]]);                              // Winter Campus (west)
 route('shabeer', [[-33.4, 2.6], [-33.0, 5.6], [-33.8, 7.6]]);                              // Montfort, the childhood hangout
-route('anu', [[39.2, -1.4], [42.4, -1.6], [45, 2.4], [41.8, 2.6]], true);                  // TCE forecourt
+route('anu', [[39.0, 7.6], [39.0, 10.2]], false, { idles: 'look,look', faces: '-90,-90' });   // by the tea stall                  // TCE forecourt
 route('harris', [[-4.6, 38.6], [0.8, 39.3], [4.0, 39.3], [5.8, 37.8]], false, { idles: ',look,check,check', faces: ',,0,-90' });                     // Airport, terminal to the jet
 route('soap', [[6.2, -10.4], [5.0, -8.8], [5.6, -6.6]], false, { idles: 'punch,lean,look', faces: '180,90,125' });                 // boxing basement
 route('cal', [[22.35, -19.6], [22.12, -18.73], [21.48, -18.08], [20.6, -17.85], [19.73, -18.08], [19.08, -18.73], [18.85, -19.6], [19.08, -20.48], [19.73, -21.12], [20.6, -21.35], [21.48, -21.12], [22.12, -20.48]], true, { ride: 1 });   // rides circles in the paddock             // western camp
@@ -432,7 +431,10 @@ route('hale', [[5.4, -23.0], [7.6, -23.0], [6.4, -19.4]], false, { idles: 'lean,
 route('ollie', [[20.6, -6.6], [18.4, -6.0], [18.4, -9.0]], false, { idles: 'type,look,gaze', faces: '180,,90' });               // startup desk
 route('akshai', [[10.3, 5.8], [10.3, 12.2], [10.3, 17.9]]);                                // Garage, centre aisle past the exhibits
 route('naveen', [[4.8, 23.3], [7.6, 23.3], [7.6, 18.6]]);                                  // Garage, tool wall to the centre bench
-route('shabesh', [[16.2, 23.3], [13.0, 23.3], [16.2, 18.6]], true);                        // Garage, east side by the exhibits
+route('shabesh', [[38.4, -2.4], [42.8, -2.4]], false, { idles: 'film,film', faces: '180,180' });   // TCE, filming the college
+route('logeshwaran', [[11.6, 12.3], [16.4, 12.3]], false, { idles: 'look,check', faces: ',180' });   // Garage, between the exhibit rows
+route('piranav', [[43.6, 7.15], [43.62, 7.16]], false, { idles: 'sittype,sittype', faces: '180,180' });   // seated at the laptop table           // TCE, laptop table
+// (Shabesh moved from the Garage)                        // Garage, east side by the exhibits
 
 // ---------------- Write map ----------------
 const layer = (name, objs) => ({ id: nextId++, name, type: 'objectgroup', draworder: 'topdown', opacity: 1, visible: true, x: 0, y: 0, objects: objs });

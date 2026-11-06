@@ -141,7 +141,10 @@ function nearness(g, r = 4.6) {
 
 /** Chunky retro board sign facing +z: ink board with cream pixel lettering,
  *  drop shadow, orange trims and a dark backing for depth. */
-function boardSign(text, SW, SH, { size = 0, w = 512, h = 112, fg = '#fff1d6', bg = '#2a2440', board: boardColor = C.ink, trim = C.accent } = {}) {
+function boardSign(text, SW, SH, { size = 0, w = 0, h = 0, fg = '#fff1d6', bg = '#2a2440', board: boardColor = C.ink, trim = C.accent } = {}) {
+  // canvas matches the board's proportions (no stretching) at a crisp resolution
+  if (!w) w = String(text).length > 14 ? 2048 : 1024;
+  if (!h) h = Math.max(64, Math.round((w * (SH - 0.14)) / (SW - 0.06)));
   const g = new THREE.Group();
   const back = new THREE.Mesh(new THREE.BoxGeometry(SW + 0.16, SH + 0.16, 0.1), mat(0x14101f)); back.position.z = -0.07; back.castShadow = true;
   const board = new THREE.Mesh(new THREE.BoxGeometry(SW, SH, 0.06), mat(boardColor));
@@ -723,18 +726,20 @@ export const KIT = {
     // roof details: water tank and a lab exhaust, kept low and back
     k.box(1.2, 0.9, 1.0, 0x8a93a6, -4.4, 0.4 + HW + 0.35, -1.6); k.cyl(0.18, 0.18, 0.8, C.steelDark, 4.6, 0.4 + HW + 0.35, -1.8, 8);
     // name board: emblem + THIAGARAJAR COLLEGE OF ENGINEERING / TCE · MADURAI
-    const BW = 9.4, BH = 1.35, by = 0.4 + HC - 1.05, bz = D / 2 + CF + 0.2;
+    const BW = 9.4, BH = 1.9, by = 0.4 + HC - 1.35, bz = D / 2 + CF + 0.2;
     k.box(BW + 0.2, BH + 0.2, 0.16, 0x14101f, 0, by - 0.1, bz - 0.04);
     k.box(BW, BH, 0.1, 0x7a2c22, 0, by, bz);
-    const cv = document.createElement('canvas'); cv.width = 768; cv.height = 112;
+    const CWpx = 1792, CHpx = Math.round((CWpx * (BH - 0.15)) / (BW - BH - 0.2));
+    const cv = document.createElement('canvas'); cv.width = CWpx; cv.height = CHpx;
     const x2 = cv.getContext('2d');
-    x2.fillStyle = '#7a2c22'; x2.fillRect(0, 0, 768, 112);
+    x2.fillStyle = '#7a2c22'; x2.fillRect(0, 0, CWpx, CHpx);
     x2.textAlign = 'center'; x2.textBaseline = 'middle';
-    let fs = 40; x2.font = `bold ${fs}px Silkscreen, monospace`;
-    const main = 'THIAGARAJAR COLLEGE OF ENGINEERING';
-    while (fs > 14 && x2.measureText(main).width > 640) { fs -= 1; x2.font = `bold ${fs}px Silkscreen, monospace`; }
-    x2.fillStyle = '#3a120e'; x2.fillText(main, 438, 42); x2.fillStyle = '#fff1d6'; x2.fillText(main, 436, 40);
-    x2.font = 'bold 22px Silkscreen, monospace'; x2.fillStyle = '#ffd257'; x2.fillText(String(subtitle ? 'TCE · MADURAI' : text).toUpperCase(), 436, 84);
+    const lines = ['THIAGARAJAR COLLEGE', 'OF ENGINEERING'];
+    let fs = Math.round(CHpx * 0.34); x2.font = `bold ${fs}px Silkscreen, monospace`;
+    while (fs > 20 && x2.measureText(lines[0]).width > CWpx * 0.92) { fs -= 2; x2.font = `bold ${fs}px Silkscreen, monospace`; }
+    const off = Math.max(3, Math.round(fs / 14));
+    lines.forEach((ln, i) => { const y = CHpx * (0.24 + i * 0.36); x2.fillStyle = '#3a120e'; x2.fillText(ln, CWpx / 2 + off, y + off); x2.fillStyle = '#fff1d6'; x2.fillText(ln, CWpx / 2, y); });
+    x2.font = `bold ${Math.round(fs * 0.45)}px Silkscreen, monospace`; x2.fillStyle = '#ffd257'; x2.fillText('TCE · MADURAI', CWpx / 2, CHpx * 0.88);
     const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.LinearFilter;
     const face = new THREE.Mesh(new THREE.PlaneGeometry(BW - BH - 0.2, BH - 0.15), new THREE.MeshBasicMaterial({ map: tex }));
     face.position.set((BH + 0.1) / 2, by + BH / 2, bz + 0.06); face.userData.dynamic = true; g.add(face);
@@ -2521,6 +2526,18 @@ export const KIT = {
     k.box(0.5, 0.6, 0.06, C.white, -1.15, 0.9, D / 2 + 0.06);                       // whiteboard by the door
     for (const [x, y, c] of [[-1.25, 1.3, C.accent], [-1.05, 1.1, 0x2bb3a3]]) k.box(0.14, 0.08, 0.02, c, x, y, D / 2 + 0.1, { shadow: false });
     return { obj: g, colliders: [{ x: 0, z: 0, w: W + 0.2, d: D + 0.2 }] };
+  },
+
+  laptop_table() {
+    // Small work table with an open laptop, notebook and a coffee.
+    const g = new THREE.Group(), k = kit(g);
+    const T = 0.62;
+    k.box(1.2, T, 0.6, 0x6f4a30, 0, 0, 0); k.box(1.28, 0.06, 0.68, C.woodLight, 0, T, 0);
+    k.box(0.5, 0.03, 0.34, C.charcoal, 0.0, T + 0.06, 0.08); k.box(0.5, 0.34, 0.03, C.charcoal, 0.0, T + 0.09, -0.09, { rx: -0.25 });
+    k.box(0.44, 0.28, 0.02, glow(0x6fa8dc), 0.0, T + 0.13, -0.07, { rx: -0.25, shadow: false });
+    k.box(0.22, 0.02, 0.28, 0xf6e7c4, -0.42, T + 0.06, 0.1); k.cyl(0.05, 0.045, 0.11, C.white, 0.45, T + 0.06, 0.15, 8);
+    k.cyl(0.24, 0.22, 0.42, 0x3d4058, 0, 0, 0.78, 10); k.cyl(0.26, 0.26, 0.05, 0x2a2440, 0, 0.42, 0.78, 10);   // stool
+    return { obj: g, colliders: [{ x: 0, z: 0, w: 1.2, d: 0.6 }] };
   },
 
   training_dummy() {

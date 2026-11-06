@@ -731,8 +731,8 @@
     {
       "id": "shabesh",
       "name": "Shabesh",
-      "role": "Garage crew",
-      "district": "garage",
+      "role": "Filming the college · TCE",
+      "district": "monsoon-campus",
       "color": "#ffb347",
       "skin": "fair",
       "build": 1,
@@ -754,7 +754,8 @@
         "Is NATHAN.EXE finished? :: Not yet. It's still being built, one district at a time.",
         "Where's his resume? :: Top right, any time. You don't need to finish the game."
       ],
-      "scripted": true
+      "scripted": true,
+      "extras": "camera"
     },
     {
       "id": "harris",
@@ -996,6 +997,62 @@
         "Is building a startup worth it? :: Statistically? Probably not. // Personally? You learn more in six months than in six comfortable years. Also there are snacks.",
         "What do you think about Nathan's projects? :: Supply chains on a blockchain, security dashboards, a scheduler built in six hours... // He ships things. Do you know how rare that is? My pitch deck is older than most of his repos.",
         "Help me debug this build? :: Okay, watch the screen. Compiling... [action:pop_startup] // Red. Classic. One missing bracket later... // Green! Don't touch anything."
+      ]
+    },
+    {
+      "species": "human",
+      "build": 1,
+      "height": 1,
+      "accessory": null,
+      "scripted": true,
+      "beard": "none",
+      "glasses": false,
+      "id": "logeshwaran",
+      "name": "Logeshwaran",
+      "role": "Builder · The Garage",
+      "district": "garage",
+      "color": "#c9d8e6",
+      "skin": "brown",
+      "hair": "short",
+      "hairColor": "#1b1716",
+      "top": "tee",
+      "topColor": "#dfe8f0",
+      "pants": "jeans",
+      "shoes": "#f6f3ec",
+      "lines": [
+        "Hey Nathan. Just walking the exhibits."
+      ],
+      "topics": [
+        "Which one is your favourite? :: Hard to pick. Every table here started as an idea somebody almost didn't try."
+      ]
+    },
+    {
+      "species": "human",
+      "build": 1,
+      "height": 1,
+      "accessory": null,
+      "scripted": true,
+      "beard": "none",
+      "glasses": false,
+      "id": "piranav",
+      "name": "Piranav",
+      "role": "Working on his laptop · TCE",
+      "district": "monsoon-campus",
+      "color": "#2a3a6a",
+      "skin": "fair",
+      "hair": "short",
+      "hairColor": "#2a1a12",
+      "top": "tee",
+      "topColor": "#f4f4f0",
+      "pants": "trousers",
+      "pantsColor": "#2a2730",
+      "shoes": "#1a1418",
+      "extras": "tie",
+      "lines": [
+        "One sec, just finishing this."
+      ],
+      "topics": [
+        "What are you working on? :: A bit of everything. Deadlines, mostly."
       ]
     }
   ],

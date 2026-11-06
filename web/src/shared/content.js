@@ -4,8 +4,8 @@
 export const DISTRICTS = [
   { id: 'lake-park', name: 'Montfort' },              // id kept from Lake Park so saves stay valid
   { id: 'iron-yard', name: 'Iron Yard' },
-  { id: 'winter-campus', name: 'Winter Campus' },
-  { id: 'monsoon-campus', name: 'Monsoon Campus' },
+  { id: 'winter-campus', name: 'Tomsk State University' },
+  { id: 'monsoon-campus', name: 'Thiagarajar College of Engineering' },
   { id: 'garage', name: 'The Garage' },
   { id: 'signal-tower', name: 'Guild Hall' },         // id kept from Signal Tower
   { id: 'lighthouse', name: 'Airport' },              // id kept from Lighthouse

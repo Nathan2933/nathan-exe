@@ -613,7 +613,7 @@ function openEducation(readId = null) {
 // Each vehicle type is just a config; on foot movement is untouched and comes
 // back as soon as Nathan gets off.
 const VEHICLES = {
-  bike: { speed: 5.2, boost: 7.0, accel: 5, brake: 9, turn: 4.2, seatY: 0.3, pose: 'cycle', r: 0.42, yaw: 0, avoid: ['sand', 'water', 'snow_deep'], label: 'bicycle' },
+  bike: { speed: 5.2, boost: 7.0, accel: 5, brake: 9, turn: 4.2, seatY: 0.3, pose: 'cycle', r: 0.42, yaw: 0, avoid: ['water'], label: 'bicycle' },
   horse: { speed: 4.0, boost: 6.6, accel: 3.5, brake: 7, turn: 3.0, seatY: 0.7, pose: 'ride', r: 0.6, yaw: -Math.PI / 2, avoid: ['water'], label: 'horse' },
 };
 let railPts = null;
@@ -629,10 +629,9 @@ function vehicleFree(x, z, cfg) {
   if (Math.hypot(x, z) > (map.props.islandRadius || 44) - 3) return false;
   for (const n of world.npcs) { const p = n.character.group.position; if (Math.hypot(p.x - x, p.z - z) < r + 0.45) return false; }
   for (const it of world.interactables) if (it.kind === 'vehicle' && it !== state.mount?.it && Math.hypot(it.x - x, it.z - z) < r + 0.6) return false;
-  // the railway: only cross where a road crosses it
+  // the railway is just ground to roll over, but never through a train
   if (world.railway) {
     if (!railPts) railPts = world.railway.curve.getSpacedPoints(500);
-    if (tile.type !== 'road' && tile.type !== 'road_line') for (const q of railPts) if (Math.abs(q.x - x) < 1.6 && Math.abs(q.z - z) < 1.6 && Math.hypot(q.x - x, q.z - z) < 1.4) return false;
     if (trainNear(x, z, 0.6)) return false;
   }
   return true;
