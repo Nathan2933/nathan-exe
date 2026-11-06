@@ -74,13 +74,11 @@ Also: the real **university name in Russia** for the building sign (currently "U
 
 Optional: a photo for any memory.
 
-## 9. People in the town (8 named NPCs)
+## 9. People in the town (7 named NPCs)
 These lines are **scripted game dialogue** (labelled "scripted" in the game), written only from facts elsewhere in this checklist. Replace any line with your own words in the admin (NPCs section). Appearance fields are editable there too; where each person walks is their route in Tiled (see docs/WORKFLOW.md).
 
-Appearance placeholders to confirm: **Anu**, **Guru** and **Shabeer** had no visual description, so they use neutral outfits (TCE: tee and backpack; Winter Campus: winter coat, beanie, scarf). Send a short description to change them.
-
 ### Thianesh · Gymmate · roams: iron-yard
-- Look: brown skin, tall, muscular, tank
+- Look: fair skin, tall, muscular, buzz hair, tank
 - Greeting: Back for another session? The Iron Yard keeps score in reps, not words.
 - Q: How did Nathan's journey go?
   - A: Roughly 100 kg, then about 60, then around 75. Three checkpoints, one habit: showing up.
@@ -88,31 +86,23 @@ Appearance placeholders to confirm: **Anu**, **Guru** and **Shabeer** had no vis
   - A: Small, repeated efforts. Goals change; the habit stays.
 
 ### Guru · Best friend · Winter Campus · roams: winter-campus
-- Look: tan skin, coat
+- Look: fair skin, short hair, hoodie
 - Greeting: Welcome to Winter Campus. This chapter begins at Tomsk State University.
 - Q: Where did Nathan study here?
   - A: Tomsk State University, in Russia.
 - Q: How long was this chapter?
   - A: Two semesters. A short chapter, but a complete one.
 
-### Shabeer · Friend · Winter Campus · roams: winter-campus
-- Look: tan skin, coat
-- Greeting: Cold out here, isn't it? Every district in this town keeps one chapter.
-- Q: What is this place to Nathan?
-  - A: His first university chapter, abroad. It gets its own place on the map.
-- Q: Is there more to find here?
-  - A: Look around campus for the glowing memories.
-
-### Bubu · TCE campus mascot · roams: monsoon-campus
-- Look: girl panda mascot, pink bow
-- Greeting: Hi! I'm Bubu, the campus panda. Welcome to TCE Madurai!
-- Q: What does Nathan study?
-  - A: B.Tech in Information Technology at Thiagarajar College of Engineering, 2023 to 2027.
+### Shabeer · Friend · City Park · roams: city-park
+- Look: fair skin, full beard, short hair, hoodie
+- Greeting: Taking the long way around? City Park is where this town slows down.
+- Q: What's this park for?
+  - A: No quest here. Just somewhere to pause between chapters.
 - Q: Where should I go next?
-  - A: The Garage has his projects. Signal Tower has his skills and awards.
+  - A: Check the save file, bottom left, or press M for the map.
 
 ### Anu · Friend · TCE · roams: monsoon-campus
-- Look: tan skin, tee
+- Look: fair skin, medium hair, tee
 - Greeting: You found TCE! There's always a project or an event happening somewhere here.
 - Q: What has Nathan built here?
   - A: Aratro, an event scheduler, cloud security monitoring and more. The Garage has the full list.
@@ -120,7 +110,7 @@ Appearance placeholders to confirm: **Anu**, **Guru** and **Shabeer** had no vis
   - A: Aratro took first place at Hack Odyssey 2025, and the TCE Event Scheduler was runner-up at HackFest 2025.
 
 ### Akshai · Garage crew · roams: garage
-- Look: deep skin, tall, glasses, full beard, tee
+- Look: brown skin, tall, glasses, full beard, short hair, tee
 - Greeting: Welcome to the Garage. Ideas in, projects out.
 - Q: What's on these benches?
   - A: Each bench is a project: the problem, the build, and what it taught him.
@@ -128,7 +118,7 @@ Appearance placeholders to confirm: **Anu**, **Guru** and **Shabeer** had no vis
   - A: Try Aratro. It won first place at Hack Odyssey 2025.
 
 ### Naveen · Garage crew · roams: garage
-- Look: tan skin, full beard, hoodie
+- Look: fair skin, full beard, short hair, hoodie
 - Greeting: Mind the cables. Something's always compiling in here.
 - Q: What kind of things does Nathan build?
   - A: Full-stack apps, cloud security monitoring, blockchain workflows and a post-quantum messaging prototype.
@@ -136,7 +126,7 @@ Appearance placeholders to confirm: **Anu**, **Guru** and **Shabeer** had no vis
   - A: His tech stack, grouped by how he uses each tool.
 
 ### Shabesh · Garage crew · roams: garage
-- Look: fair skin, stubble beard, tee
+- Look: fair skin, stubble beard, short hair, tee
 - Greeting: Hey. This whole town is one of his projects too.
 - Q: Is NATHAN.EXE finished?
   - A: Not yet. It's still being built, one district at a time.

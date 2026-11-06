@@ -405,7 +405,7 @@
       "role": "Gymmate",
       "district": "iron-yard",
       "color": "#c8553d",
-      "skin": "brown",
+      "skin": "fair",
       "build": 1.3,
       "height": 1.1,
       "hair": "buzz",
@@ -433,7 +433,7 @@
       "role": "Best friend · Winter Campus",
       "district": "winter-campus",
       "color": "#2f5f9a",
-      "skin": "brown",
+      "skin": "fair",
       "build": 1,
       "height": 1,
       "hair": "short",
@@ -461,53 +461,34 @@
     {
       "id": "shabeer",
       "name": "Shabeer",
-      "role": "Friend · Winter Campus",
-      "district": "winter-campus",
+      "role": "Friend · City Park",
+      "district": "city-park",
       "color": "#3f9a72",
-      "skin": "tan",
+      "skin": "fair",
       "build": 1,
       "height": 1,
-      "hair": "beanie",
-      "hairColor": "#1b1716",
+      "hair": "short",
+      "hairColor": "#3a2418",
       "hatColor": "#3f9a72",
-      "top": "coat",
-      "topColor": "#6b3f2a",
+      "top": "hoodie",
+      "topColor": "#3f9a72",
       "pants": "trousers",
       "pantsColor": "#2a2730",
       "shoes": "#3a2a22",
       "glasses": false,
       "beard": "full",
       "species": "human",
-      "accessory": "scarf",
+      "accessory": null,
       "scarfColor": "#e2574a",
       "lines": [
-        "Cold out here, isn't it? Every district in this town keeps one chapter."
+        "Taking the long way around? City Park is where this town slows down."
       ],
       "topics": [
-        "What is this place to Nathan? :: His first university chapter, abroad. It gets its own place on the map.",
-        "Is there more to find here? :: Look around campus for the glowing memories."
+        "What's this park for? :: No quest here. Just somewhere to pause between chapters.",
+        "Where should I go next? :: Check the save file, bottom left, or press M for the map."
       ],
       "scripted": true,
       "beardColor": "#6b3f2a"
-    },
-    {
-      "id": "bubu",
-      "name": "Bubu",
-      "role": "TCE campus mascot",
-      "district": "monsoon-campus",
-      "color": "#e8648e",
-      "species": "panda",
-      "build": 1.1,
-      "height": 0.95,
-      "bowColor": "#e8648e",
-      "lines": [
-        "Hi! I'm Bubu, the campus panda. Welcome to TCE Madurai!"
-      ],
-      "topics": [
-        "What does Nathan study? :: B.Tech in Information Technology at Thiagarajar College of Engineering, 2023 to 2027.",
-        "Where should I go next? :: The Garage has his projects. Signal Tower has his skills and awards."
-      ],
-      "scripted": true
     },
     {
       "id": "anu",
@@ -543,7 +524,7 @@
       "role": "Garage crew",
       "district": "garage",
       "color": "#2bb3a3",
-      "skin": "deep",
+      "skin": "brown",
       "build": 1.05,
       "height": 1.12,
       "hair": "short",
@@ -571,7 +552,7 @@
       "role": "Garage crew",
       "district": "garage",
       "color": "#a0673f",
-      "skin": "tan",
+      "skin": "fair",
       "build": 1.05,
       "height": 1,
       "hair": "short",

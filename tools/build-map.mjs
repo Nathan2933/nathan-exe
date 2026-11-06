@@ -98,10 +98,10 @@ for (let z = -HALF; z < HALF; z++) {
 const ROADS = [
   [-2, -30, 2, 30],    // north–south avenue (5 m)
   [-30, -2, 25, 2],    // east–west avenue (ends at the Memory Line crossing)
-  [-27, -25, -24, 22], // ring: west
+  [-27, -25, -24, 25], // ring: west
   [-27, -25, 21, -22], // ring: north
-  [19, -25, 22, 24],   // ring: east
-  [-27, 21, 22, 24],   // ring: south
+  [19, -25, 22, 26],   // ring: east
+  [-27, 23, 22, 26],   // ring: south (moved south to give the Garage room)
 ];
 for (const [x0, z0, x1, z1] of ROADS) rect(x0, z0, x1, z1, T.road);
 // Centre dashes on the avenues
@@ -117,7 +117,7 @@ rect(4, -19, 16, -4, T.lawn);             // City Park
 rect(9, -19, 10, -4, T.path); rect(4, -12, 16, -11, T.path);
 disc(9.5, -11.5, 3.2, T.plaza);
 rect(-21, 4, -4, 18, T.lawn);             // Signal Tower lot
-rect(4, 4, 16, 18, T.concrete);           // Garage lot
+rect(4, 4, 17, 20, T.concrete);           // Garage lot (bigger)
 rect(-14, -43, 13, -29, T.snow);          // Winter Campus
 rect(-2, -33, 2, -29, T.concrete);        //   cleared entrance walk
 rect(-13, -31, -4, -29, T.concrete);      //   station forecourt
@@ -183,7 +183,7 @@ for (let d = 12, i = 0; d <= 28; d += 8, i++) {
   O('lamp', 3.4 * s, -d); O('lamp', -3.4 * s, d);
   O('lamp', -d, 3.4 * s); O('lamp', d, -3.4 * s);
 }
-for (const [x, z] of [[-23, -21], [18, -21], [18, 20], [-23, 20]]) O('lamp', x, z);
+for (const [x, z] of [[-23, -21], [18, -21], [18, 22], [-23, 22]]) O('lamp', x, z);
 
 // --- Iron Yard (vertical slice district) ---
 hedge(-22, -20, -3, -19);                // north
@@ -236,21 +236,23 @@ interact.push(point('memory', -14.6, 9.6, { id: 'first-award' }));
 interact.push(point('memory', -7.4, 12.0, { id: 'first-internship' }));
 
 // --- The Garage (projects + tech stack) ---
-hedge(17, 3, 18, 19); hedge(10, 18, 18, 19);
-O('workshop', 7.4, 12.6, { rot: -90, text: 'THE GARAGE' });
-O('skills_board', 11.6, 5.4, { rot: 0 });
+// Workshop along the west side, a front yard with the tech-stack board, and
+// two columns of project benches with a wide aisle between them.
+hedge(17, 3, 18, 21); hedge(10.8, 20, 18, 21);
+O('workshop', 7.4, 15.2, { rot: -90, text: 'THE GARAGE' });
+O('skills_board', 4.8, 7.2, { rot: -90 });
 O('server_rack', 16.2, 5.0);
-O('lamp', 16.2, 9.4); O('bin', 16.2, 17.0);
+O('lamp', 4.6, 4.6); O('bin', 16.4, 19.5);
 [0, 1, 2, 3, 4, 5].forEach((i) => {
-  const x = i < 3 ? 11.8 : 14.6, z = 7.8 + (i % 3) * 3.4;
+  const x = i < 3 ? 11.8 : 14.6, z = 7.2 + (i % 3) * 4.2;
   O('project_bench', x, z, { rot: -90 });
   interact.push(point('project', x + 1.25, z, { index: i }));
 });
-labels.push(point('label', 7.4, 12.6, { text: 'THE GARAGE', color: '#2a2440', height: 6.4 }));
-interact.push(point('chapter', 13.8, 4.9, { id: 'garage', district: 'garage' }));
-interact.push(point('panel', 11.6, 6.7, { id: 'skills', district: 'garage', panel: 'skills', title: 'Tech stack' }));
-interact.push(point('memory', 15.4, 6.3, { id: 'first-commit' }));
-interact.push(point('memory', 16.0, 15.8, { id: 'late-night-debug' }));
+labels.push(point('label', 7.4, 15.2, { text: 'THE GARAGE', color: '#2a2440', height: 6.4 }));
+interact.push(point('chapter', 13.4, 4.9, { id: 'garage', district: 'garage' }));
+interact.push(point('panel', 6.2, 7.2, { id: 'skills', district: 'garage', panel: 'skills', title: 'Tech stack' }));
+interact.push(point('memory', 16.0, 9.2, { id: 'first-commit' }));
+interact.push(point('memory', 13.4, 18.8, { id: 'late-night-debug' }));
 // --- Winter Campus (Russia chapter) ---
 O('faculty_building', 0, -37.6, { text: 'UNIVERSITY' });
 labels.push(point('label', 0, -37.6, { text: 'WINTER CAMPUS', color: '#2f5f9a', height: 9.6 }));
@@ -297,7 +299,7 @@ interact.push(point('memory', -32.2, 6.2, { id: 'people-who-helped' }));
 // --- Lighthouse (the ending) ---
 O('lighthouse', 5, 38.6, { rot: 90 });
 O('cottage', -4.6, 37, { rot: 0 });
-O('lamp', 2.6, 31); O('lamp', -2.6, 33.4);
+O('lamp', -2.6, 33.4);
 O('bench', 2.8, 35.2, { rot: 180 });
 labels.push(point('label', 5, 38.6, { text: 'LIGHTHOUSE', color: '#c4402f', height: 13.2 }));
 interact.push(point('chapter', 1.8, 32, { id: 'lighthouse', district: 'lighthouse' }));
@@ -306,7 +308,7 @@ interact.push(point('memory', 1.6, 36.8, { id: 'next-goal' }));
 
 // --- Memory Line: a loop railway between the ring road and the outer districts.
 // It stands for moving between chapters of life; boarding is fast travel.
-const RAIL = { x0: -30, x1: 25, z0: -28, z1: 27, r: 7 };
+const RAIL = { x0: -30, x1: 25, z0: -28, z1: 29.5, r: 7 };
 const railPts = [];
 {
   const { x0, x1, z0, z1, r } = RAIL;
@@ -331,7 +333,7 @@ const STATIONS = [
   ['winter', 'winter-campus', 'Winter Campus', -8.5, -30, 0],
   ['monsoon', 'monsoon-campus', 'Monsoon', 27, -8.4, 90],
   ['lake', 'lake-park', 'Lake Park', -32, -16, -90],
-  ['lighthouse', 'lighthouse', 'Lighthouse', 7, 29, 180],
+  ['lighthouse', 'lighthouse', 'Lighthouse', 7, 31.8, 180],
 ];
 for (const [id, district, name, x, z, rot] of STATIONS) {
   O('station', x, z, { rot, name: `${name} STN` });
@@ -363,12 +365,11 @@ for (let a = 0; a < Math.PI * 2; a += 0.085) {
 const route = (npc, pts, loop = false) => paths.push(line('npc_route', pts, { npc, loop }));
 route('thianesh', [[-17, -9.0], [-11.5, -8.0], [-10.5, -5.5], [-16.5, -5.5]], true);     // Iron Yard
 route('guru', [[-3.4, -32.2], [-8.6, -32.4], [-7.8, -30.0]]);                              // Winter Campus (west)
-route('shabeer', [[3.6, -32.0], [8.2, -31.7], [11.4, -31.4]]);                             // Winter Campus (east)
-route('bubu', [[33, 1.4], [36, 4.5], [33.5, 6.5], [31.2, 4.0]], true);                     // TCE court
+route('shabeer', [[9.5, -7.0], [14.4, -11.5], [9.5, -16.0], [4.6, -11.5]], true);         // City Park, around the fountain
 route('anu', [[33.2, -1.4], [36.4, -1.6], [39, 2.4], [35.8, 2.6]], true);                  // TCE forecourt
-route('akshai', [[13.2, 6.8], [13.2, 11.2], [13.2, 16.4]]);                                // Garage, centre aisle
-route('naveen', [[11.6, 16.8], [13.4, 16.8], [15.2, 16.8]]);                               // Garage, back strip
-route('shabesh', [[13.8, 4.8], [15.2, 4.8], [14.4, 6.3]], true);                           // Garage, front
+route('akshai', [[13.2, 6.2], [13.2, 12.4], [13.2, 18.6]]);                                // Garage, centre aisle
+route('naveen', [[6.6, 5.0], [10.0, 5.0], [10.0, 8.8], [7.2, 8.8]], true);                // Garage, front yard
+route('shabesh', [[16.0, 6.2], [16.0, 12.4], [16.0, 18.6]]);                                // Garage, east aisle
 
 // ---------------- Write map ----------------
 const layer = (name, objs) => ({ id: nextId++, name, type: 'objectgroup', draworder: 'topdown', opacity: 1, visible: true, x: 0, y: 0, objects: objs });

@@ -113,7 +113,7 @@ const SCHEMA = [
     fields: [
       { key: 'name', label: 'Name', type: 'text' },
       { key: 'role', label: 'Role (shown under the name)', type: 'text' },
-      { key: 'district', label: 'District', type: 'select', options: DISTRICTS.map((d) => [d.id, d.name]) },
+      { key: 'district', label: 'District', type: 'select', options: [...DISTRICTS.map((d) => [d.id, d.name]), ['city-park', 'City Park']] },
       { key: 'lines', label: 'Greeting', type: 'lines', hint: 'One speech bubble per line. Use // to split a line into two bubbles.' },
       { key: 'topics', label: 'Conversations (questions visitors can ask)', type: 'lines', hint: 'One per line: Question :: Answer. Split long answers with //. End an answer with [memory:ID] to unlock that memory.' },
       { key: 'species', label: 'Species', type: 'select', options: [['human', 'Human'], ['panda', 'Panda (mascot)']] },
