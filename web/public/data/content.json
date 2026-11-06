@@ -1,0 +1,476 @@
+{
+  "meta": {
+    "siteTitle": "NATHAN.EXE",
+    "tagline": "A playable portfolio",
+    "version": "1.0"
+  },
+  "profile": {
+    "name": "Nathan",
+    "role": "Software Developer · IT Undergraduate",
+    "location": "India",
+    "availability": "Open to internships and full-time roles",
+    "summary": "I build full-stack products and explore cybersecurity, post-quantum cryptography and AI. My path went from a university in Russia, interrupted by war, to finishing my degree in India — and the discipline I learned rebuilding my body is the same discipline I bring to code.",
+    "about": [
+      "Replace this with your own about text. Write it in first person, keep each paragraph short.",
+      "Second paragraph: what you care about, what you are looking for next."
+    ],
+    "photo": "",
+    "resumeUrl": "/resume.pdf"
+  },
+  "links": [
+    {
+      "label": "Email",
+      "url": "mailto:you@example.com"
+    },
+    {
+      "label": "GitHub",
+      "url": "https://github.com/your-username"
+    },
+    {
+      "label": "LinkedIn",
+      "url": "https://www.linkedin.com/in/your-username"
+    }
+  ],
+  "chapters": [
+    {
+      "id": "fitness",
+      "district": "iron-yard",
+      "title": "The Grind",
+      "subtitle": "Discipline before talent",
+      "period": "20XX – Present",
+      "body": [
+        "Describe your fitness transformation here: where you started, what changed, and how long it took.",
+        "Connect it to how you work: consistency, tracking progress, showing up on bad days."
+      ],
+      "highlights": [
+        "Example: lost/gained X kg over Y months",
+        "Example: trained 5x a week for 2 years",
+        "Example: what it taught you"
+      ]
+    },
+    {
+      "id": "russia",
+      "district": "winter-campus",
+      "title": "The Detour",
+      "subtitle": "Russia, and an interrupted plan",
+      "period": "20XX – 20XX",
+      "body": [
+        "Where you studied, what you were studying, what life there was like.",
+        "When the Russia–Ukraine war began, you had to discontinue. Keep this short and factual."
+      ],
+      "highlights": [
+        "University name and programme",
+        "What you learned about adapting",
+        "The decision to start again"
+      ]
+    },
+    {
+      "id": "india",
+      "district": "monsoon-campus",
+      "title": "The Restart",
+      "subtitle": "Continuing in India",
+      "period": "20XX – Present",
+      "body": [
+        "Where you continued your education and what you focused on.",
+        "The communities, clubs and hackathons that shaped you."
+      ],
+      "highlights": [
+        "B.Tech / B.Sc IT at University Name",
+        "Hackathons and clubs",
+        "Key coursework"
+      ]
+    },
+    {
+      "id": "projects",
+      "district": "garage",
+      "title": "The Garage",
+      "subtitle": "Things I've built",
+      "period": "",
+      "body": [
+        "Every object in this workshop is a project. Open one to see what it does, how it was built, and where to try it."
+      ],
+      "highlights": []
+    },
+    {
+      "id": "career",
+      "district": "lighthouse",
+      "title": "Next Mission",
+      "subtitle": "Where I'm heading",
+      "period": "",
+      "body": [
+        "What kind of role and team you want next, and what you would bring to it."
+      ],
+      "highlights": [
+        "Roles you are looking for",
+        "Locations / remote preference",
+        "Earliest start date"
+      ]
+    },
+    {
+      "id": "skills",
+      "district": "signal-tower",
+      "title": "Signal Tower",
+      "subtitle": "Skills, achievements and experience",
+      "period": "",
+      "body": [
+        "What I can do, what I've won, and where I've worked. Tune in to each frequency for details."
+      ],
+      "highlights": []
+    },
+    {
+      "id": "reflection",
+      "district": "lake-park",
+      "title": "Still Water",
+      "subtitle": "A quiet place to look back",
+      "period": "",
+      "body": [
+        "Write something personal here: what the last few years taught you, what you'd tell your younger self, or who helped you along the way.",
+        "This is the one place in the town that isn't about work."
+      ],
+      "highlights": []
+    }
+  ],
+  "projects": [
+    {
+      "id": "pqc-vault",
+      "title": "Post-Quantum Vault",
+      "pitch": "File encryption using lattice-based (Kyber/ML-KEM) key exchange.",
+      "description": "Explain the problem, your approach, and the result. Mention anything measurable.",
+      "stack": [
+        "Python",
+        "liboqs",
+        "FastAPI"
+      ],
+      "tags": [
+        "cybersecurity",
+        "cryptography"
+      ],
+      "year": "2025",
+      "github": "",
+      "demo": "",
+      "image": "",
+      "featured": true
+    },
+    {
+      "id": "fullstack-app",
+      "title": "Full-Stack Project",
+      "pitch": "One sentence on what it does and who it is for.",
+      "description": "What you built, the hardest problem you solved, and what you would do next.",
+      "stack": [
+        "React",
+        "Node.js",
+        "PostgreSQL"
+      ],
+      "tags": [
+        "full-stack"
+      ],
+      "year": "2025",
+      "github": "",
+      "demo": "",
+      "image": "",
+      "featured": true
+    },
+    {
+      "id": "hackathon-ai",
+      "title": "Hackathon AI Build",
+      "pitch": "Built in 36 hours at Hackathon Name.",
+      "description": "Team size, your role, what it did, and the result (placement / award).",
+      "stack": [
+        "Python",
+        "LLM API",
+        "Next.js"
+      ],
+      "tags": [
+        "ai",
+        "hackathon"
+      ],
+      "year": "2024",
+      "github": "",
+      "demo": "",
+      "image": "",
+      "featured": false
+    }
+  ],
+  "skills": [
+    {
+      "group": "Languages",
+      "items": [
+        "JavaScript / TypeScript",
+        "Python",
+        "Java",
+        "SQL"
+      ]
+    },
+    {
+      "group": "Web",
+      "items": [
+        "React",
+        "Node.js",
+        "Express",
+        "Three.js"
+      ]
+    },
+    {
+      "group": "Security",
+      "items": [
+        "Post-quantum cryptography",
+        "Network security",
+        "OWASP"
+      ]
+    },
+    {
+      "group": "Tools",
+      "items": [
+        "Git",
+        "Docker",
+        "Linux",
+        "Blender"
+      ]
+    }
+  ],
+  "experience": [
+    {
+      "role": "Role title",
+      "org": "Company / Organisation",
+      "period": "Month 20XX – Month 20XX",
+      "summary": "One or two lines on what you did and the impact."
+    }
+  ],
+  "achievements": [
+    {
+      "title": "Award or placement",
+      "org": "Hackathon / Event",
+      "year": "2025",
+      "detail": "Short detail."
+    }
+  ],
+  "memories": [
+    {
+      "id": "before-photo",
+      "district": "iron-yard",
+      "title": "The 'before' photo",
+      "year": "20XX",
+      "text": "Describe the photo you took on day one: how you felt, what you weighed, why you decided to start. (Optional: add the image in the admin.)",
+      "image": ""
+    },
+    {
+      "id": "first-logbook",
+      "district": "iron-yard",
+      "title": "Logbook #1",
+      "year": "20XX",
+      "text": "Your first training log. What did the first week look like? What did you write on the first page?",
+      "image": ""
+    },
+    {
+      "id": "running-shoes",
+      "district": "iron-yard",
+      "title": "Worn-out running shoes",
+      "year": "20XX",
+      "text": "The pair you wore through. How many kilometres, which route, what kept you going on bad days?",
+      "image": ""
+    },
+    {
+      "id": "transformation",
+      "district": "iron-yard",
+      "title": "The transformation",
+      "year": "20XX – 20XX",
+      "text": "Unlocked by finishing the lift. Put your real numbers here: start and current weight / lifts, timeline, and the habit that made the difference.",
+      "image": ""
+    },
+    {
+      "id": "coach-advice",
+      "district": "iron-yard",
+      "title": "Advice that stuck",
+      "year": "",
+      "text": "The one piece of advice that changed how you train (and maybe how you work).",
+      "image": ""
+    },
+    {
+      "id": "student-id",
+      "district": "winter-campus",
+      "title": "Student ID card",
+      "year": "20XX",
+      "text": "Your first student card in Russia. Which university and faculty, what you were studying, and how it felt to arrive.",
+      "image": ""
+    },
+    {
+      "id": "exam-results",
+      "district": "winter-campus",
+      "title": "First exam results",
+      "year": "20XX",
+      "text": "The subject, the grade, and what it took: a new language, a new system, long nights in the library.",
+      "image": ""
+    },
+    {
+      "id": "first-snow",
+      "district": "winter-campus",
+      "title": "First real snow",
+      "year": "20XX",
+      "text": "A small personal moment: the first winter, the cold, the friends you made, a place you loved walking to.",
+      "image": ""
+    },
+    {
+      "id": "last-lecture",
+      "district": "winter-campus",
+      "title": "The last lecture",
+      "year": "2022",
+      "text": "The day you understood you would have to leave. Keep it factual and personal: what you decided, what you took with you, who helped.",
+      "image": ""
+    },
+    {
+      "id": "admission-letter",
+      "district": "monsoon-campus",
+      "title": "The admission letter",
+      "year": "20XX",
+      "text": "The day you were accepted to continue your degree in India. Which college, which programme, and what starting again felt like.",
+      "image": ""
+    },
+    {
+      "id": "chai-break",
+      "district": "monsoon-campus",
+      "title": "Chai between classes",
+      "year": "",
+      "text": "A small everyday ritual: the tea stall, the friends you sat with, the conversations that turned into projects.",
+      "image": ""
+    },
+    {
+      "id": "first-hackathon",
+      "district": "monsoon-campus",
+      "title": "First hackathon",
+      "year": "20XX",
+      "text": "The event, the team, what you built in those hours, and the result. Link the project in the Garage if it's there.",
+      "image": ""
+    },
+    {
+      "id": "monsoon-day",
+      "district": "monsoon-campus",
+      "title": "Rain day under the banyan",
+      "year": "",
+      "text": "A personal moment from campus life: a monsoon afternoon, a lesson learned, someone who helped you settle in.",
+      "image": ""
+    },
+    {
+      "id": "first-commit",
+      "district": "garage",
+      "title": "First commit",
+      "year": "20XX",
+      "text": "The first project you pushed to GitHub. What it was, what you got wrong, and what it taught you.",
+      "image": ""
+    },
+    {
+      "id": "late-night-debug",
+      "district": "garage",
+      "title": "The 3 a.m. bug",
+      "year": "",
+      "text": "A bug you'll never forget: what broke, how you found it, and how you fixed it.",
+      "image": ""
+    },
+    {
+      "id": "first-award",
+      "district": "signal-tower",
+      "title": "First award",
+      "year": "20XX",
+      "text": "Your first win or recognition. The event, the team, and why it mattered to you.",
+      "image": ""
+    },
+    {
+      "id": "first-internship",
+      "district": "signal-tower",
+      "title": "First day at work",
+      "year": "20XX",
+      "text": "Your first internship or job: the team, the first task you shipped, what surprised you.",
+      "image": ""
+    },
+    {
+      "id": "letter-to-self",
+      "district": "lake-park",
+      "title": "Letter to my younger self",
+      "year": "",
+      "text": "What you'd tell yourself on the first day at the gym, or the day you left Russia.",
+      "image": ""
+    },
+    {
+      "id": "people-who-helped",
+      "district": "lake-park",
+      "title": "The people who helped",
+      "year": "",
+      "text": "Family, friends, mentors: the people who made the restart possible. Thank them here.",
+      "image": ""
+    },
+    {
+      "id": "next-goal",
+      "district": "lighthouse",
+      "title": "The next goal",
+      "year": "",
+      "text": "The concrete next step you're working towards: a role, a skill, a project.",
+      "image": ""
+    }
+  ],
+  "npcs": [
+    {
+      "id": "coach",
+      "name": "Coach Arjun",
+      "role": "Iron Yard",
+      "district": "iron-yard",
+      "outfit": "coach",
+      "color": "#ff6a3d",
+      "lines": [
+        "Nathan! Back for another session? // Visitors keep asking me how you changed so much.",
+        "I tell them the same thing every time: it wasn't one big moment."
+      ],
+      "topics": [
+        "How did he start? :: Write the real story here: when you walked in the first time, what you could and couldn't do. // Keep it short and honest.",
+        "What changed? :: Your numbers and habits: training days per week, food, sleep. // What the hardest month was. [memory:coach-advice]",
+        "Can I try a lift? :: Step up to the rack. Three clean reps, the zone gets smaller every time. Like real progress."
+      ]
+    },
+    {
+      "id": "classmate",
+      "name": "Classmate",
+      "role": "Winter Campus",
+      "district": "winter-campus",
+      "outfit": "classmate",
+      "color": "#2f5f9a",
+      "lines": [
+        "Nathan! You came back to see the old campus? // It still looks the same under all this snow."
+      ],
+      "topics": [
+        "What was he like here? :: Write how a classmate would describe you: the subjects you were good at, the study group, the late nights. // One honest, specific detail.",
+        "What was it like studying here? :: The language, the lectures, the cold, the people. // Something that surprised you. [memory:first-snow]",
+        "Why did he leave? :: Keep this short and factual: the war began, studies were interrupted, and you chose to continue in India. // What you learned from starting over."
+      ]
+    },
+    {
+      "id": "batchmate",
+      "name": "Batchmate",
+      "role": "Monsoon Campus",
+      "district": "monsoon-campus",
+      "outfit": "batchmate",
+      "color": "#3f9a72",
+      "lines": [
+        "Hey Nathan! Rain's coming again, good thing the banyan is right here. // People keep asking what you were like when you joined."
+      ],
+      "topics": [
+        "What was it like when he joined? :: Describe arriving mid-way through your studies: the new city, the new syllabus, how quickly you found your people. // One specific memory.",
+        "What did you build together? :: Your college projects, clubs and hackathons. Mention one result you're proud of. [memory:first-hackathon]",
+        "What's he like as a teammate? :: How classmates would describe working with you: the role you usually take, how you handle deadlines. // Keep it honest and specific."
+      ]
+    },
+    {
+      "id": "guide",
+      "name": "Town Guide",
+      "role": "City Park",
+      "district": "plaza",
+      "outfit": "pink",
+      "color": "#e8648e",
+      "lines": [
+        "Welcome to NATHAN.EXE! This whole town is Nathan's story. // Every ◆ opens a chapter, every ✦ is a memory."
+      ],
+      "topics": [
+        "Where should I start? :: Start at the Iron Yard next to the plaza, then follow the chapters in your save file, bottom left. // The Memory Line train gets you between campuses fast.",
+        "I'm short on time. :: No problem: the Resume, Projects and Contact buttons at the top work anytime. // Or press Skip game for the classic portfolio.",
+        "What's at the lighthouse? :: The ending. Light the lamp when you're ready. // You can keep exploring afterwards."
+      ]
+    }
+  ]
+}

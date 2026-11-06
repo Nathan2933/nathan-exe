@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>NATHAN.EXE Admin</title>
+    <link rel="stylesheet" href="/src/styles/base.css" />
+    <link rel="stylesheet" href="/src/styles/admin.css" />
+  </head>
+  <body class="admin">
+    <header class="admin-head">
+      <div class="brand"><span>N.</span> NATHAN.EXE <b>/ admin</b></div>
+      <div class="admin-actions">
+        <span class="status" id="status" role="status"></span>
+        <a class="btn" href="./" target="_blank">Game ↗</a>
+        <a class="btn" href="portfolio.html" target="_blank">Portfolio ↗</a>
+        <label class="btn">Import<input type="file" id="import" accept="application/json" hidden></label>
+        <button class="btn" id="download">Download JSON</button>
+        <button class="btn primary" id="save" disabled>Save</button>
+      </div>
+    </header>
+    <div class="admin-wrap">
+      <nav class="tabs" id="tabs" aria-label="Content sections"></nav>
+      <main id="editor" class="editor"></main>
+    </div>
+    <script type="module" src="/src/admin.js"></script>
+  </body>
+</html>

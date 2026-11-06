@@ -1,0 +1,2 @@
+This directory receives nathan_town.glb after you run tools/build_world.py in Blender.
+The website is still playable without this file, using its built-in greybox preview.

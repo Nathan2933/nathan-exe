@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#1e1b2e" />
+    <title>NATHAN.EXE</title>
+    <meta name="description" content="NATHAN.EXE — the playable portfolio of Nathan, software developer. Explore the island, or skip straight to projects, resume and contact." />
+    <meta property="og:title" content="NATHAN.EXE — a playable portfolio" />
+    <meta property="og:description" content="Walk through my story: discipline, an interrupted chapter in Russia, a restart in India, and the things I've built." />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="uploads/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="uploads/og-image.png" />
+    <link rel="stylesheet" href="/src/styles/base.css" />
+    <link rel="stylesheet" href="/src/styles/game.css" />
+    <noscript><meta http-equiv="refresh" content="0; url=portfolio.html" /></noscript>
+  </head>
+  <body class="game">
+    <canvas id="world" aria-label="Interactive island. Click or tap the ground to walk. Use the menu at the top to skip the game."></canvas>
+
+    <header class="hud-top">
+      <a class="logo" href="./" aria-label="NATHAN.EXE home">
+        <span class="logo-mark">N.</span>
+        <span class="logo-text">NATHAN<b>.EXE</b></span>
+      </a>
+      <nav class="recruiter-bar" id="recruiter-bar" aria-label="Quick links">
+        <a class="btn" id="nav-resume" href="#" target="_blank" rel="noopener">Resume</a>
+        <a class="btn" href="portfolio.html#projects">Projects</a>
+        <a class="btn" href="portfolio.html#contact">Contact</a>
+        <a class="btn dark" href="portfolio.html">Skip game →</a>
+      </nav>
+      <button class="btn menu-toggle" id="menu-toggle" aria-expanded="false" aria-controls="recruiter-bar">Menu</button>
+    </header>
+
+    <aside class="journey" aria-label="Save file">
+      <div class="player-card">
+        <canvas id="portrait" width="32" height="32" aria-hidden="true"></canvas>
+        <div class="save-meta">
+          <small>Save file · <span id="play-time">00:00:00</span></small>
+          <strong id="player-name">NATHAN</strong>
+          <div class="save-stats"><span title="Chapters">◆ <b id="journey-count">0/6</b></span><button type="button" id="album-btn" title="Memory album">✦ <b id="mem-count">0/0</b></button></div>
+        </div>
+        <button type="button" class="journey-toggle" id="journey-toggle" aria-label="Show or hide chapters">▾</button>
+      </div>
+      <ol id="journey-list"></ol>
+      <div class="look" role="group" aria-label="Look">
+        <span>Look</span>
+        <button type="button" data-look="palette" id="look-palette">Bright</button>
+        <button type="button" data-look="pixels" id="look-pixels">Smooth</button>
+        <button type="button" data-look="sound" id="look-sound" aria-pressed="false" aria-label="Sound">♪ Off</button>
+      </div>
+    </aside>
+
+    <div class="minimap-wrap" title="Map — click to travel">
+      <canvas id="minimap" aria-label="Island map. Click a spot to walk there."></canvas>
+    </div>
+
+    <div class="hint" id="hint"></div>
+
+    <button class="prompt hidden" id="prompt" type="button">
+      <kbd>E</kbd><span><small id="prompt-kind">Open</small><strong id="prompt-title">Chapter</strong></span>
+    </button>
+
+    <section class="panel window hidden" id="panel" role="dialog" aria-modal="false" aria-labelledby="panel-title">
+      <div class="window-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title" id="panel-bar">chapter.txt</span>
+        <button class="panel-close" id="panel-close" aria-label="Close">✕</button></div>
+      <div class="panel-body" id="panel-body"></div>
+    </section>
+
+    <section class="dialogue hidden" id="dialogue" role="dialog" aria-label="Conversation"></section>
+    <section class="minigame window hidden" id="minigame" role="dialog" aria-label="Minigame"></section>
+    <div class="travel hidden" id="travel" role="dialog" aria-label="Travelling on the Memory Line"></div>
+    <div class="finale hidden" id="finale"></div>
+
+    <div class="toast hidden" id="toast" role="status"></div>
+
+    <div class="boot" id="boot" aria-live="polite">
+      <pre id="boot-text"></pre>
+      <button class="boot-start hidden" id="boot-start">Press any key or tap to start</button>
+      <a class="boot-skip" href="portfolio.html">Skip to portfolio</a>
+    </div>
+
+    <script type="module" src="/src/game/main.js"></script>
+  </body>
+</html>

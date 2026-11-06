@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#111b23" />
+    <meta name="description" content="NATHAN.EXE — a playable, low-poly interactive portfolio." />
+    <title>NATHAN.EXE — The Four Chapters</title>
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="world" aria-label="Interactive 3D town. Use WASD to move, drag to rotate the camera, and E to interact."></canvas>
+      <div class="vignette" aria-hidden="true"></div>
+      <header class="topbar">
+        <div class="logo-block" aria-label="NATHAN dot EXE">
+          <span class="logo-glyph">N<span class="square">.</span></span>
+          <div class="logo-copy"><strong>NATHAN<span class="accent">.EXE</span></strong><small>PLAYABLE PORTFOLIO / V1.0</small></div>
+        </div>
+        <div class="world-tag"><span class="pulse-dot"></span> OPEN WORLD <span class="world-tag-index">/ 04 CHAPTERS</span></div>
+      </header>
+      <div class="left-panel">
+        <span class="eyebrow">CURRENT OBJECTIVE</span>
+        <strong id="objective">Explore the town</strong>
+        <div class="objective-caption" id="objective-caption">Follow the paths to discover my story.</div>
+        <div class="keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span>MOVE</span><kbd>SHIFT</kbd><span>SPRINT</span></div>
+      </div>
+      <div class="map-panel">
+        <canvas id="minimap" width="196" height="196" aria-label="World minimap"></canvas>
+        <div class="map-footer"><span>YOUR WORLD</span><span id="coords">000 / 000</span></div>
+      </div>
+      <div class="center-crosshair" aria-hidden="true"><span></span><span></span></div>
+      <div class="runtime-label" id="runtime-label">SCENE STARTING</div>
+      <div class="help-line"><span class="keycap">DRAG</span> LOOK AROUND <i></i> <span class="keycap">E</span> INTERACT <i></i> <span class="keycap">ESC</span> CLOSE</div>
+      <div class="interaction-prompt hidden" id="interaction-prompt"><span class="prompt-key">E</span><div><strong id="prompt-title">INTERACT</strong><small id="prompt-subtitle">Explore chapter</small></div><span class="prompt-arrow">↗</span></div>
+      <div class="mission-count" id="mission-count"><span>CHAPTERS DISCOVERED</span><strong>00 / 04</strong></div>
+      <div class="mobile-controls" id="mobile-controls">
+        <div id="stick" class="stick" aria-label="Move joystick"><div class="stick-knob" id="stick-knob"></div></div>
+        <button id="mobile-interact" class="mobile-interact" aria-label="Interact with nearby chapter">INTERACT <span>↗</span></button>
+      </div>
+      <div class="modal hidden" id="chapter-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal-backdrop" id="modal-backdrop"></div>
+        <div class="modal-card">
+          <button class="close-modal" id="close-modal" aria-label="Close chapter">×</button>
+          <div class="modal-top"><span id="modal-chapter">CHAPTER 01</span><span>PERSONAL ARCHIVE</span></div>
+          <div class="modal-rule"></div>
+          <span class="modal-eyebrow">MISSION UNLOCKED</span>
+          <h1 id="modal-title">THE GRIND</h1>
+          <p id="modal-subtitle">Story placeholder</p>
+          <div class="modal-section-title">THIS CHAPTER</div>
+          <ul id="modal-highlights"></ul>
+          <div class="modal-foot"><span id="modal-progress">01 / 04</span><button id="continue-button">KEEP EXPLORING ↗</button></div>
+        </div>
+      </div>
+      <div class="loading" id="loading">
+        <div class="loading-inner"><div class="loading-star">N<span>.</span></div><span class="loading-line">ENTERING THE WORLD OF</span><h2>NATHAN<span>.EXE</span></h2><div class="loading-bar"><div id="loading-bar"></div></div><p id="loading-text">Loading low-poly town…</p></div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

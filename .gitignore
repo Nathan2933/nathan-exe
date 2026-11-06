@@ -1,0 +1,8 @@
+web/node_modules/
+web/dist/
+web/.vite/
+source/*.blend1
+source/*.blend2
+tools/__pycache__/
+.DS_Store
+web/content-backups/

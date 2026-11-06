@@ -1,0 +1,156 @@
+{
+  "version": "1.0.0",
+  "name": "NATHAN.EXE / The Four Chapters",
+  "coordinateSystem": "threejs-y-up; Blender(X,Y,Z) -> Web(X,Z,-Y)",
+  "worldBounds": {
+    "minX": -84,
+    "maxX": 84,
+    "minZ": -84,
+    "maxZ": 84
+  },
+  "spawn": {
+    "x": 0,
+    "y": 0.13,
+    "z": 8,
+    "yaw": 0
+  },
+  "roads": {
+    "width": 12,
+    "halfLength": 83
+  },
+  "buildings": [
+    {
+      "id": "fitness",
+      "x": -50,
+      "z": -48,
+      "width": 30,
+      "depth": 23,
+      "height": 11.5
+    },
+    {
+      "id": "russia",
+      "x": 50,
+      "z": -48,
+      "width": 36,
+      "depth": 24,
+      "height": 13
+    },
+    {
+      "id": "projects",
+      "x": -50,
+      "z": 48,
+      "width": 33,
+      "depth": 24,
+      "height": 10.5
+    },
+    {
+      "id": "future",
+      "x": 50,
+      "z": 48,
+      "width": 32,
+      "depth": 23,
+      "height": 14
+    }
+  ],
+  "colliders": [
+    {
+      "id": "center_monument",
+      "x": 0,
+      "z": -4,
+      "halfX": 1.85,
+      "halfZ": 1.85
+    },
+    {
+      "id": "fitness_building",
+      "x": -50,
+      "z": -48,
+      "halfX": 15.2,
+      "halfZ": 11.7
+    },
+    {
+      "id": "russia_building",
+      "x": 50,
+      "z": -48,
+      "halfX": 18.2,
+      "halfZ": 12.2
+    },
+    {
+      "id": "projects_building",
+      "x": -50,
+      "z": 48,
+      "halfX": 16.7,
+      "halfZ": 12.2
+    },
+    {
+      "id": "future_building",
+      "x": 50,
+      "z": 48,
+      "halfX": 16.2,
+      "halfZ": 11.7
+    }
+  ],
+  "interactions": [
+    {
+      "id": "fitness",
+      "title": "THE GRIND",
+      "chapter": "CHAPTER 01 / DISCIPLINE",
+      "subtitle": "My fitness story, persistence, and building a stronger version of myself.",
+      "highlights": [
+        "The beginning of my transformation",
+        "Routines, habits and resilience",
+        "Progress is earned one day at a time"
+      ],
+      "x": -50,
+      "z": -30.3,
+      "radius": 5.2
+    },
+    {
+      "id": "russia",
+      "title": "THE DETOUR",
+      "chapter": "CHAPTER 02 / RESTART",
+      "subtitle": "From studying in Russia to rebuilding my path back in India.",
+      "highlights": [
+        "An unfamiliar country and a bold first step",
+        "A sudden change of plans",
+        "Continuing forward with a new perspective"
+      ],
+      "x": 50,
+      "z": -29.8,
+      "radius": 5.2
+    },
+    {
+      "id": "projects",
+      "title": "BUILD LAB",
+      "chapter": "CHAPTER 03 / MAKE THINGS",
+      "subtitle": "Projects across cybersecurity, AI, embedded systems and full-stack engineering.",
+      "highlights": [
+        "Post-quantum hybrid secure messaging",
+        "EEG-based smart-home interfaces",
+        "AgriGuard AI and agentic systems",
+        "Security monitoring and developer tools"
+      ],
+      "x": -50,
+      "z": 29.8,
+      "radius": 5.2
+    },
+    {
+      "id": "future",
+      "title": "NEXT MISSION",
+      "chapter": "CHAPTER 04 / WHAT'S NEXT",
+      "subtitle": "The next level: work, collaborations, learning and what I want to build.",
+      "highlights": [
+        "Explore my background and resume",
+        "Find ways to collaborate",
+        "See what comes after this chapter"
+      ],
+      "x": 50,
+      "z": 30.3,
+      "radius": 5.2
+    }
+  ],
+  "notes": [
+    "Collision is a 2D footprint approximation for a ground-level walking game.",
+    "Building interiors and elevated rooftop traversal are not implemented.",
+    "Rebuild level.json from Blender after moving or resizing districts."
+  ]
+}

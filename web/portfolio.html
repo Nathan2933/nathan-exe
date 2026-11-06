@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#efe6d2" />
+    <title>Nathan — Portfolio</title>
+    <meta name="description" content="Nathan — software developer. Projects, skills, experience, resume and contact." />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="uploads/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="uploads/og-image.png" />
+    <meta property="og:title" content="Nathan: Portfolio" />
+    <meta property="og:description" content="Projects, skills, experience, resume and contact." />
+    <link rel="stylesheet" href="/src/styles/base.css" />
+    <link rel="stylesheet" href="/src/styles/portfolio.css" />
+  </head>
+  <body class="portfolio">
+    <header class="site-head">
+      <a class="logo-small" href="./"><span>N.</span>NATHAN<b>.EXE</b></a>
+      <nav aria-label="Sections">
+        <a href="#about">About</a><a href="#projects">Projects</a><a href="#skills">Skills</a><a href="#contact">Contact</a>
+        <a class="btn primary play" href="./">▶ Play</a>
+      </nav>
+    </header>
+    <div class="notice hidden" id="notice"></div>
+    <main id="main" aria-busy="true">
+      <p class="loading">Loading…</p>
+    </main>
+    <footer class="site-foot">
+      <span id="foot-name">NATHAN.EXE</span> · <a href="./">Play the interactive version</a>
+    </footer>
+    <script type="module" src="/src/portfolio.js"></script>
+  </body>
+</html>
