@@ -524,7 +524,7 @@ function openInfoPanel(it) {
       ${card.card ? `<blockquote class="pop-card">${esc(card.card)}</blockquote>` : ''}
       ${card.action ? `<p class="muted">${esc(card.action)}</p>` : ''}
       ${it.interest === 'spider-man' ? '<div class="transmit"><button type="button" class="btn primary" id="pop-go">Start the challenge</button></div>' : ''}
-      <p class="pop-note">An original homage made for this game. Not official artwork.</p>`;
+      <p class="pop-note">A fan tribute made for this game. Not affiliated with or endorsed by the rights holders.</p>`;
   }
   showPanel(`${it.district}/${it.panel}.txt`, html, it);
   if (!it.visited) { markVisited(it); }

@@ -117,7 +117,8 @@ rect(3, -21, 18, -3, T.lawn);             // Pop Culture Park: fills its block u
 rect(9, -20, 10, -3, T.path); rect(3, -12, 18, -11, T.path); rect(8, -14, 11, -9, T.path); // walks + arcade square
 rect(3, -18, 9, -13, T.rubber);           //   red alley floor (noir corner)
 disc(9.5, -11.5, 3.2, T.plaza);
-rect(-21, 4, -4, 18, T.lawn);             // Guild Hall lot (was Signal Tower)
+rect(-21, 4, -4, 25, T.lawn);             // Guild Hall lot (was Signal Tower), down to the south ring road
+rect(-6, 4, -4, 14, T.path); rect(-14, 12, -4, 14, T.path); rect(-14, 14, -12, 24, T.path); // entrance walk, front walk, courtyard walk
 rect(3, 3, 17, 24, T.concrete);           // Garage: big open lot
 rect(-14, -43, 13, -29, T.snow);          // Winter Campus
 rect(-2, -33, 2, -29, T.concrete);        //   cleared entrance walk
@@ -163,6 +164,7 @@ const objects = [], interact = [], collision = [], labels = [], paths = [], spaw
 const O = (piece, x, z, p = {}) => {
   // street furniture never lands on a road tile
   if (piece === 'lamp') { const t = get(Math.floor(x), Math.floor(z)); if (t === T.road || t === T.road_line) return; }
+  if (piece === 'lamp' && x === -3.4 && z === 20) return; // sits in the Guild Hall's east hedge line
   objects.push(point(piece, x, z, p));
 };
 const hedge = (x0, z0, x1, z1) => objects.push(area('hedge', x0, z0, x1, z1));
@@ -226,11 +228,12 @@ O('pop_arcade', 9.5, -11.5);
 O('pop_rooftop', 5.0, -19.4, { variant: 'signal' });
 O('pop_rooftop', 7.4, -19.5, { variant: 'red' });
 O('alley_props', 4.2, -15.4);
+O('neon_sign', 6.15, -18.2, { text: "HELL'S KITCHEN", w: 3.8 });
 // rooftop + web agility frame
 O('pop_web', 12.0, -19.6);
 O('rooftop_props', 12.0, -19.6);
 // western camp
-O('pop_camp', 15.8, -17.6);
+O('pop_camp', 15.8, -17.6, { horse: false });   // Arthur's horse walks with him
 // boxing basement
 O('pop_boxing', 6.4, -8.4);
 O('bench', 4.2, -6.8, { rot: 90 });
@@ -238,31 +241,35 @@ O('bench', 4.2, -6.8, { rot: 90 });
 O('moon_court', 12.4, -6.6);
 O('pop_moon', 12.4, -8.6);
 // startup desk
-O('pop_startup', 16.4, -8.4);
+O('pied_piper', 16.6, -9.4, { rot: 0 });
+O('pop_startup', 16.6, -6.8, { board: false });
 O('lamp', 10.6, -14.6); O('lamp', 8.6, -6.4); O('tree_blossom', 17.4, -11.8, { scale: 0.85 });
 interact.push(point('panel', 3.7, -17.4, { id: 'pop-batman', district: 'city-park', panel: 'pop', interest: 'batman', attraction: 'pop_rooftop_signal', title: 'Rooftop signal' }));
 labels.push(point('label', 9.5, -11.5, { text: 'POP CULTURE PARK', color: '#3b6d11', height: 5 }));
 
 // --- Guild Hall (was Signal Tower): skills, trophies, quests, profile ---
-// The hall fills the back of its fenced lot; the four stations sit where they
-// belong: quest board and trophy podium flank the door, the skill tree grows in
-// the courtyard, the character profile greets you by the east entrance.
-hedge(-22, 3, -3, 4); hedge(-22, 4, -21, 19); hedge(-4, 7, -3, 19); hedge(-22, 19, -3, 20);
-O('guild_hall', -13.5, 7.6, { rot: 0, w: 12, d: 6 });
-O('guild_quest_board', -17.2, 12.4, { rot: 0 });
-O('guild_trophy_stand', -9.8, 12.4, { rot: 0 });
-O('guild_skill_tree', -13.5, 15.2);
-O('guild_profile_stand', -5.8, 14.0, { rot: 0 });
-O('lamp', -6.4, 9.6); O('lamp', -18.6, 16.8);
-labels.push(point('label', -13.5, 7.6, { text: 'GUILD HALL', color: '#2a2440', height: 9.2 }));
-interact.push(point('chapter', -5.6, 5.6, { id: 'signal-tower', district: 'signal-tower' }));
-interact.push(point('panel', -13.5, 17.3, { id: 'skilltree', district: 'signal-tower', panel: 'skilltree', title: 'Skill tree' }));
-interact.push(point('panel', -9.8, 14.2, { id: 'trophies', district: 'signal-tower', panel: 'trophies', title: 'Trophy collection' }));
-interact.push(point('panel', -17.6, 13.9, { id: 'quests', district: 'signal-tower', panel: 'quests', title: 'Quest log' }));
-interact.push(point('panel', -6.0, 15.6, { id: 'profile', district: 'signal-tower', panel: 'profile', title: 'Character profile' }));
-interact.push(point('memory', -19.6, 15.4, { id: 'the-pitch' }));
-interact.push(point('memory', -9.6, 17.4, { id: 'bug-report' }));
-interact.push(point('memory', -16.2, 17.8, { id: 'cluster-alert' }));
+// The lot runs from the plaza road down to the south ring road. The walk-in hall
+// fills the north end; the Toolbox (chapter) is inside it. The courtyard holds
+// the quest board, trophy podium, skill tree, character profile and a small
+// training yard, joined by stone walks.
+hedge(-22, 3, -3, 4); hedge(-22, 4, -21, 24.6); hedge(-4, 7, -3, 24.6); hedge(-22, 24.6, -3, 25.4);
+O('guild_hall', -13.0, 8.2, { rot: 0, w: 12.4, d: 7 });
+O('guild_quest_board', -17.8, 14.8, { rot: 0 });
+O('guild_trophy_stand', -8.2, 14.8, { rot: 0 });
+O('guild_skill_tree', -13.0, 18.4);
+O('guild_profile_stand', -17.8, 21.2, { rot: 0 });
+O('training_dummy', -8.0, 21.0); O('training_dummy', -6.2, 22.6);
+O('bench', -10.0, 23.6, { rot: 0 });
+O('lamp', -5.2, 16.0); O('lamp', -20.2, 13.0); O('lamp', -15.4, 23.6);
+labels.push(point('label', -13.0, 8.2, { text: 'GUILD HALL', color: '#2a2440', height: 9.6 }));
+interact.push(point('chapter', -14.6, 8.9, { id: 'signal-tower', district: 'signal-tower' }));   // the Toolbox, inside the hall
+interact.push(point('panel', -13.0, 20.8, { id: 'skilltree', district: 'signal-tower', panel: 'skilltree', title: 'Skill tree' }));
+interact.push(point('panel', -8.2, 16.6, { id: 'trophies', district: 'signal-tower', panel: 'trophies', title: 'Trophy collection' }));
+interact.push(point('panel', -17.8, 16.4, { id: 'quests', district: 'signal-tower', panel: 'quests', title: 'Quest log' }));
+interact.push(point('panel', -17.8, 22.8, { id: 'profile', district: 'signal-tower', panel: 'profile', title: 'Character profile' }));
+interact.push(point('memory', -20.0, 19.0, { id: 'the-pitch' }));
+interact.push(point('memory', -5.6, 19.4, { id: 'bug-report' }));
+interact.push(point('memory', -10.4, 9.0, { id: 'cluster-alert' }));   // inside the hall, by the map table
 
 // --- The Garage (projects + tech stack) ---
 // An open inventor's workshop: two lean-to roofs run along the back (north and
@@ -407,11 +414,11 @@ route('shabeer', [[-33.4, 2.6], [-33.0, 5.6], [-33.8, 7.6]]);                   
 route('anu', [[33.2, -1.4], [36.4, -1.6], [39, 2.4], [35.8, 2.6]], true);                  // TCE forecourt
 route('harris', [[-4.6, 38.6], [0.8, 39.3], [4.0, 39.3], [5.8, 37.8]], false, { idles: ',look,check,check', faces: ',,0,-90' });                     // Airport, terminal to the jet
 route('soap', [[6.4, -7.9], [5.0, -7.0], [7.8, -7.0]], false, { idles: 'punch,lean,look', faces: '180,90,' });                 // boxing basement
-route('cal', [[16.4, -15.9], [17.4, -17.0], [14.4, -14.8]], false, { idles: 'sit,check,look', faces: '-128,180,' });             // western camp
+route('cal', [[16.4, -15.9], [17.7, -16.8], [14.4, -14.8]], false, { idles: 'sit,look,look', faces: '-128,,' });             // western camp
 route('vesper', [[12.4, -6.9], [12.4, -4.0], [10.3, -4.0]], false, { idles: 'gaze,look,look', faces: '180,,' });                  // moonlit court
 route('skip', [[11.0, -16.2], [13.2, -15.0], [12.2, -13.4]], false, { idles: 'look,check,look', faces: '0,180,' });               // rooftop
 route('hale', [[5.4, -17.0], [7.6, -17.0], [6.4, -14.0]], false, { idles: 'lean,look,gaze', faces: '0,45,' });                     // red alley
-route('ollie', [[16.4, -7.3], [15.0, -7.4], [16.6, -5.2]], false, { idles: 'type,check,look', faces: '180,180,' });               // startup desk
+route('ollie', [[16.6, -5.8], [14.6, -5.2], [14.6, -8.0]], false, { idles: 'type,look,gaze', faces: '180,,90' });               // startup desk
 route('akshai', [[10.3, 5.8], [10.3, 12.2], [10.3, 17.9]]);                                // Garage, centre aisle past the exhibits
 route('naveen', [[4.8, 23.3], [7.6, 23.3], [7.6, 18.6]]);                                  // Garage, tool wall to the centre bench
 route('shabesh', [[16.2, 23.3], [13.0, 23.3], [16.2, 18.6]], true);                        // Garage, east side by the exhibits

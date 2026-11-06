@@ -141,27 +141,51 @@ function nearness(g, r = 4.6) {
 
 /** Chunky retro board sign facing +z: ink board with cream pixel lettering,
  *  drop shadow, orange trims and a dark backing for depth. */
-function boardSign(text, SW, SH, { size = 0, w = 512, h = 112 } = {}) {
+function boardSign(text, SW, SH, { size = 0, w = 512, h = 112, fg = '#fff1d6', bg = '#2a2440', board: boardColor = C.ink, trim = C.accent } = {}) {
   const g = new THREE.Group();
   const back = new THREE.Mesh(new THREE.BoxGeometry(SW + 0.16, SH + 0.16, 0.1), mat(0x14101f)); back.position.z = -0.07; back.castShadow = true;
-  const board = new THREE.Mesh(new THREE.BoxGeometry(SW, SH, 0.06), mat(C.ink));
-  const trimM = mat(C.accent, { keep: true });
+  const board = new THREE.Mesh(new THREE.BoxGeometry(SW, SH, 0.06), mat(boardColor));
+  const trimM = mat(trim, { keep: true });
   const t1 = new THREE.Mesh(new THREE.BoxGeometry(SW, 0.05, 0.08), trimM); t1.position.y = SH / 2 - 0.04;
   const t2 = t1.clone(); t2.position.y = -SH / 2 + 0.04;
   const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
   const x2 = cv.getContext('2d');
-  x2.fillStyle = '#2a2440'; x2.fillRect(0, 0, w, h);
+  x2.fillStyle = bg; x2.fillRect(0, 0, w, h);
   let fs = size || Math.round(h * 0.72); x2.font = `bold ${fs}px Silkscreen, monospace`;
   while (fs > 10 && x2.measureText(text).width > w * 0.84) { fs -= 2; x2.font = `bold ${fs}px Silkscreen, monospace`; }
   x2.textAlign = 'center'; x2.textBaseline = 'middle';
   const off = Math.max(2, Math.round(fs / 14));
   x2.fillStyle = '#100c1a'; x2.fillText(text, w / 2 + off, h / 2 + 2 + off);
-  x2.fillStyle = '#fff1d6'; x2.fillText(text, w / 2, h / 2 + 2);
+  x2.fillStyle = fg; x2.fillText(text, w / 2, h / 2 + 2);
   const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.LinearFilter;
   const face = new THREE.Mesh(new THREE.PlaneGeometry(SW - 0.06, SH - 0.14), new THREE.MeshBasicMaterial({ map: tex }));
   face.position.z = 0.035; face.userData.dynamic = true;
   g.add(back, board, t1, t2, face);
   return g;
+}
+
+/** Boxy horse used as a walking companion (Arthur's horse). */
+export function buildHorse(coat = 0x7a4a2a, mane = 0x2a1a12) {
+  const g = new THREE.Group(), k = kit(g);
+  k.box(1.1, 0.5, 0.42, coat, 0, 0.75, 0);
+  const legs = [];
+  for (const [x, z] of [[-0.4, -0.15], [-0.4, 0.15], [0.4, -0.15], [0.4, 0.15]]) {
+    const p = new THREE.Group(); p.position.set(x, 0.75, z); g.add(p);
+    const l = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.75, 0.12), mat(coat)); l.position.y = -0.375; l.castShadow = true; p.add(l);
+    const hoof = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.08, 0.13), mat(0x2a1a12)); hoof.position.y = -0.71; p.add(hoof);
+    legs.push(p);
+  }
+  k.box(0.5, 0.06, 0.46, 0x5a2a1a, -0.05, 1.25, 0);
+  k.box(0.06, 0.14, 0.48, 0xc9a24a, -0.05, 1.1, 0, { shadow: false });
+  const head = new THREE.Group(); head.position.set(0.55, 1.15, 0); g.add(head);
+  const hk = kit(head);
+  hk.box(0.22, 0.5, 0.26, coat, 0.05, 0, 0, { rz: -0.5 });
+  hk.box(0.42, 0.22, 0.22, coat, 0.32, 0.32, 0);
+  hk.box(0.1, 0.3, 0.06, mane, -0.05, 0.1, 0, { rz: -0.5 });
+  hk.box(0.06, 0.1, 0.06, mane, 0.12, 0.5, 0.07); hk.box(0.06, 0.1, 0.06, mane, 0.12, 0.5, -0.07);
+  const tail = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.5, 0.08), mat(mane)); tail.geometry.translate(0, -0.25, 0); tail.position.set(-0.58, 1.15, 0); g.add(tail);
+  g.userData.dynamic = true;
+  return { group: g, legs, head, tail };
 }
 
 // ---------- pieces ----------
@@ -1674,48 +1698,102 @@ export const KIT = {
   },
 
   // ===================== Guild Hall (replaces Signal Tower) =====================
-  guild_hall({ w = 9, d = 5.2 } = {}) {
-    // Timber-framed RPG guild hall facing +z: stone plinth, plaster walls with
-    // dark beams, steep slate gable roof, banners, lanterns and a GUILD HALL board.
+  guild_hall({ w = 12.4, d = 7 } = {}) {
+    // Walk-in timber guild hall facing +z. Stone plinth, plaster walls with dark
+    // beams, slate gable roof and a big GUILD HALL board. Inside: the Toolbox, a
+    // workshop corner with tool chest, workbench and tool racks. When Nathan
+    // steps in, the roof, front wall and east wall fade so the camera sees in.
     const g = new THREE.Group(), k = kit(g);
-    const W = w, D = d, H = 3.2;
-    k.box(W + 0.4, 0.35, D + 0.4, C.plinth, 0, 0, 0);
-    k.box(W, H, D, 0xf1e3c6, 0, 0.35, 0);
-    for (let x = -W / 2; x <= W / 2 + 0.01; x += W / 6) k.box(0.2, H, 0.08, 0x5a3a26, x, 0.35, D / 2 + 0.02, { shadow: false });
-    k.box(W, 0.18, 0.1, 0x5a3a26, 0, 1.6, D / 2 + 0.03, { shadow: false });
-    k.box(W + 0.1, 0.2, D + 0.1, 0x5a3a26, 0, 0.35 + H - 0.1, 0);
-    const rs = new THREE.Shape(); rs.moveTo(-D / 2 - 0.4, 0); rs.lineTo(D / 2 + 0.4, 0); rs.lineTo(0, 2.3); rs.closePath();
-    k.mesh(new THREE.ExtrudeGeometry(rs, { depth: W + 0.6, bevelEnabled: false }), 0x46607e, -W / 2 - 0.3, 0.35 + H, 0, { ry: Math.PI / 2 });
-    k.box(W + 0.7, 0.12, 0.14, 0x22344a, 0, 0.35 + H + 2.25, 0);                  // ridge
-    // chimney + weather vane
-    k.box(0.6, 1.4, 0.6, C.brickDark, W / 2 - 1.4, 0.35 + H + 0.8, -0.8);
-    k.box(0.05, 0.6, 0.05, C.ink, -W / 2 + 1.2, 0.35 + H + 2.3, 0);
-    k.box(0.5, 0.18, 0.04, C.accent, -W / 2 + 1.35, 0.35 + H + 2.7, 0, { shadow: false });
-    // double door with arch
-    k.box(1.7, 2.3, 0.12, 0x5a3a26, 0, 0.35, D / 2 + 0.04);
-    k.box(1.4, 2.1, 0.06, 0x8a5a36, 0, 0.35, D / 2 + 0.1);
-    k.box(0.04, 2.1, 0.08, 0x3a2418, 0, 0.35, D / 2 + 0.12, { shadow: false });
-    for (const x of [-0.25, 0.25]) k.box(0.08, 0.08, 0.06, C.amber, x, 1.3, D / 2 + 0.15, { shadow: false });
-    // windows
-    for (const x of [-W / 2 + 1.0, -W / 2 + 2.3, -2.0, 2.0, W / 2 - 2.3, W / 2 - 1.0].filter((v, i, a) => a.indexOf(v) === i && Math.abs(v) > 1.2)) {
-      k.box(0.8, 0.9, 0.06, 0x5a3a26, x, 0.95, D / 2 + 0.04);
-      k.box(0.62, 0.72, 0.04, glow(0xffd08a), x, 1.04, D / 2 + 0.08, { shadow: false });
-    }
-    // banners
-    for (const [x, c] of [[-1.25, C.accent], [1.25, 0x2bb3a3]]) {
-      k.box(0.5, 1.3, 0.04, c, x, 1.75, D / 2 + 0.14, { shadow: false });
-      k.box(0.18, 0.18, 0.02, C.yellow, x, 2.3, D / 2 + 0.17, { shadow: false });
-    }
-    // lanterns
-    const lamp = glow(C.amber);
-    for (const x of [-1.15, 1.15]) { k.box(0.06, 0.3, 0.3, C.ink, x, 2.55, D / 2 + 0.15); k.box(0.2, 0.26, 0.2, lamp, x, 2.4, D / 2 + 0.35, { shadow: false }); }
-    // big GUILD HALL board standing on the front eave, facing the gameplay camera
-    const sign = boardSign('GUILD HALL', Math.min(W - 2, 6.4), 1.1);
-    sign.position.set(0, 0.35 + H + 0.75, D / 2 + 0.55); g.add(sign);
-    for (const x of [-2.2, 2.2]) k.box(0.12, 0.9, 0.12, 0x3a2418, x, 0.35 + H - 0.1, D / 2 + 0.45);
-    for (const x of [-1.6, 0, 1.6]) { k.box(0.05, 0.3, 0.05, C.ink, x, 0.35 + H + 1.35, D / 2 + 0.5); k.box(0.2, 0.1, 0.16, glow(C.amber), x, 0.35 + H + 1.6, D / 2 + 0.7, { shadow: false }); }
-    const pool = lightPool(3, 0xffd08a); pool.position.set(0, 0.09, D / 2 + 1.4); g.add(pool);
-    return { obj: g, colliders: [{ x: 0, z: 0, w: W + 0.4, d: D + 0.4 }], nightGlow: [pool] };
+    const W = w, D = d, H = 3.2, T = 0.3, DOOR = 1.8, B = 0.35; // B = plinth height
+    const hw = W / 2, hd = D / 2;
+    k.box(W + 0.4, B, D + 0.4, C.plinth, 0, 0, 0);
+    k.box(W - 2 * T, 0.03, D - 2 * T, 0x8a5a36, 0, B, 0, { shadow: false });            // plank floor
+    for (let x = -hw + 1; x < hw - 0.5; x += 1.0) k.box(0.03, 0.035, D - 2 * T, 0x6f4a30, x, B, 0, { shadow: false });
+    k.box(W, H, T, 0xf1e3c6, 0, B, -hd + T / 2);                                         // back wall (always visible)
+    k.box(T, H, D, 0xf1e3c6, -hw + T / 2, B, 0);                                         // west wall (always visible)
+    for (let x = -hw + 1.2; x < hw; x += 2.0) k.box(0.18, H, 0.06, 0x5a3a26, x, B, -hd + T + 0.03, { shadow: false });
+    // ---- the Toolbox: interior workshop along the back wall ----
+    const bz = -hd + T;
+    k.box(3.2, 1.0, 0.05, 0xd9a066, -3.2, B + 1.1, bz + 0.03);                           // pegboard
+    for (const [x, y, c, h2] of [[-4.4, 1.6, C.steelDark, 0.5], [-3.9, 1.5, C.accent, 0.3], [-3.4, 1.6, C.yellow, 0.45], [-2.9, 1.55, C.steelDark, 0.35], [-2.4, 1.6, 0x2bb3a3, 0.4], [-2.0, 1.5, C.accent, 0.3]]) k.box(0.08, h2, 0.05, c, x, B + y - h2 / 2, bz + 0.08, { shadow: false });
+    k.box(0.9, 0.08, 0.05, C.steelDark, -3.2, B + 1.95, bz + 0.08, { shadow: false });
+    k.box(2.2, 0.85, 0.7, 0x6f4a30, -3.2, B, bz + 0.45);                                 // workbench
+    k.box(2.3, 0.08, 0.8, 0x8a5a36, -3.2, B + 0.85, bz + 0.45);
+    k.box(0.3, 0.2, 0.2, C.steel, -3.8, B + 0.93, bz + 0.4); k.box(0.5, 0.06, 0.1, C.steelDark, -2.7, B + 0.93, bz + 0.5);
+    k.box(1.2, 0.6, 0.7, 0xb8393a, -0.6, B, bz + 0.5);                                   // iron-banded tool chest
+    k.box(1.24, 0.14, 0.74, 0x7a2424, -0.6, B + 0.6, bz + 0.5);
+    for (const x of [-1.0, -0.2]) k.box(0.07, 0.62, 0.76, C.steelDark, x, B, bz + 0.5, { shadow: false });
+    k.box(0.22, 0.1, 0.06, C.yellow, -0.6, B + 0.45, bz + 0.88, { shadow: false });
+    k.box(0.05, 0.4, 0.05, C.steelDark, -0.35, B + 0.74, bz + 0.45, { rz: 0.4 });
+    k.box(0.3, 0.06, 0.3, C.wood, -0.85, B + 0.74, bz + 0.5);
+    k.cyl(0.32, 0.32, 0.18, C.wood, -hw + T + 0.5, B, -0.8, 10, { rx: Math.PI / 2 }).position.y = B + 0.32;   // cable reel
+    // the rest of the hall: map table, bookshelf, banners on the back wall
+    k.box(2.0, 0.8, 1.1, 0x6f4a30, 2.6, B, -0.6); k.box(1.8, 0.02, 0.9, 0xf6e7c4, 2.6, B + 0.8, -0.6, { shadow: false });
+    for (const [x, z] of [[2.0, -0.8], [3.0, -0.4]]) k.box(0.2, 0.04, 0.2, C.accent, x, B + 0.82, z, { shadow: false });
+    k.box(1.6, 2.2, 0.45, 0x5a3a26, 4.6, B, bz + 0.25);
+    for (let r = 0; r < 4; r++) for (let i = 0; i < 6; i++) k.box(0.16, 0.36, 0.3, [C.accent, 0x2bb3a3, C.yellow, 0x6fa8dc, C.pink, C.cream][(i + r) % 6], 4.0 + i * 0.22, B + 0.15 + r * 0.52, bz + 0.3, { shadow: false });
+    for (const [x, c] of [[1.2, C.accent], [2.6, 0x2bb3a3]]) k.box(0.6, 1.4, 0.04, c, x, B + 1.4, bz + 0.05, { shadow: false });
+    k.box(2.4, 0.04, 1.6, 0x8a2a2a, -1.6, B + 0.02, 0.6, { shadow: false });              // rug under the Toolbox spot
+    const lampM = mat(C.amber, { emissive: C.amber, emissiveIntensity: 0.8 });
+    for (const x of [-3.0, 0.4, 3.6]) { k.box(0.03, 0.6, 0.03, C.ink, x, B + H - 0.6, -0.4); k.box(0.2, 0.16, 0.2, lampM, x, B + H - 0.76, -0.4, { shadow: false }); }
+    const pools = [];
+    for (const x of [-2.6, 2.4]) { const p = lightPool(2.4, 0xffd08a); p.position.set(x, B + 0.06, 0); g.add(p); pools.push(p); }
+
+    // ---- fading shell: roof, front wall, east wall and their decoration ----
+    const shell = new THREE.Group(); shell.userData.dynamic = true; g.add(shell);
+    const fmats = new Map();
+    const fm = (color, emissive = 0) => { const key = `${color}|${emissive}`; if (!fmats.has(key)) fmats.set(key, new THREE.MeshLambertMaterial({ color, emissive, emissiveIntensity: emissive ? 0.6 : 0, flatShading: true, transparent: true, opacity: 1 })); return fmats.get(key); };
+    const sb = (w2, h2, d2, color, x, y, z, emissive = 0) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w2, h2, d2), fm(color, emissive)); m.position.set(x, y + h2 / 2, z); m.castShadow = true; shell.add(m); return m; };
+    const sideW = (W - DOOR) / 2;
+    sb(sideW, H, T, 0xf1e3c6, -(DOOR / 2 + sideW / 2), B, hd - T / 2);                  // front wall, left of door
+    sb(sideW, H, T, 0xf1e3c6, DOOR / 2 + sideW / 2, B, hd - T / 2);                     // front wall, right of door
+    sb(DOOR, 0.7, T, 0xf1e3c6, 0, B + H - 0.7, hd - T / 2);                              // over the door
+    sb(T, H, D, 0xf1e3c6, hw - T / 2, B, 0);                                             // east wall
+    for (let x = -hw; x <= hw + 0.01; x += W / 8) if (Math.abs(x) > DOOR / 2 + 0.1) sb(0.2, H, 0.08, 0x5a3a26, x, B, hd + 0.02);
+    sb(W, 0.18, 0.1, 0x5a3a26, 0, B + 1.6, hd + 0.03);
+    sb(W + 0.1, 0.2, D + 0.1, 0x5a3a26, 0, B + H - 0.1, 0);
+    for (const x of [-DOOR / 2 - 0.1, DOOR / 2 + 0.1]) sb(0.2, H - 0.7, 0.16, 0x5a3a26, x, B, hd + 0.02);
+    for (const x of [-hw + 1.0, -hw + 2.4, -2.6, 2.6, hw - 2.4, hw - 1.0]) { sb(0.8, 0.9, 0.06, 0x5a3a26, x, B + 0.6, hd + 0.04); sb(0.62, 0.72, 0.04, 0xffd08a, x, B + 0.69, hd + 0.08, 0xffd08a); }
+    for (const [x, c] of [[-DOOR / 2 - 0.6, C.accent], [DOOR / 2 + 0.6, 0x2bb3a3]]) sb(0.5, 1.3, 0.04, c, x, B + 1.4, hd + 0.14);
+    for (const x of [-DOOR / 2 - 0.25, DOOR / 2 + 0.25]) sb(0.2, 0.26, 0.2, C.amber, x, B + 2.1, hd + 0.35, C.amber);
+    const rs = new THREE.Shape(); rs.moveTo(-hd - 0.4, 0); rs.lineTo(hd + 0.4, 0); rs.lineTo(0, 2.5); rs.closePath();
+    const roof = new THREE.Mesh(new THREE.ExtrudeGeometry(rs, { depth: W + 0.6, bevelEnabled: false }), fm(0x46607e));
+    roof.position.set(-hw - 0.3, B + H, 0); roof.rotation.y = Math.PI / 2; roof.castShadow = true; shell.add(roof);
+    sb(W + 0.7, 0.12, 0.14, 0x22344a, 0, B + H + 2.45, 0);
+    sb(0.6, 1.4, 0.6, C.brickDark, hw - 1.4, B + H + 0.8, -0.8);
+    // big GUILD HALL board on the front eave (stays visible)
+    const sign = boardSign('GUILD HALL', Math.min(W - 3, 6.4), 1.1);
+    sign.position.set(0, B + H + 0.75, hd + 0.55); sign.userData.dynamic = true; g.add(sign);
+    const signBits = new THREE.Group(); signBits.userData.dynamic = true; g.add(signBits);
+    const sbk = kit(signBits);
+    for (const x of [-2.2, 2.2]) sbk.box(0.12, 0.9, 0.12, 0x3a2418, x, B + H - 0.1, hd + 0.45);
+    for (const x of [-1.6, 0, 1.6]) { sbk.box(0.05, 0.3, 0.05, C.ink, x, B + H + 1.35, hd + 0.5); sbk.box(0.2, 0.1, 0.16, glow(C.amber), x, B + H + 1.6, hd + 0.7, { shadow: false }); }
+    const porch = lightPool(3, 0xffd08a); porch.position.set(0, 0.09, hd + 1.4); g.add(porch); pools.push(porch);
+
+    const v = new THREE.Vector3();
+    let fade = 1;
+    return {
+      obj: g,
+      colliders: [
+        { x: 0, z: -hd + T / 2, w: W, d: T + 0.2 },                                  // back wall
+        { x: -hw + T / 2, z: 0, w: T + 0.2, d: D },                                  // west wall
+        { x: hw - T / 2, z: 0, w: T + 0.2, d: D },                                   // east wall
+        { x: -(DOOR / 2 + sideW / 2), z: hd - T / 2, w: sideW, d: T + 0.2 },         // front wall either side of the door
+        { x: DOOR / 2 + sideW / 2, z: hd - T / 2, w: sideW, d: T + 0.2 },
+        { x: -3.2, z: bz + 0.45, w: 2.3, d: 0.8 }, { x: -0.6, z: bz + 0.5, w: 1.24, d: 0.74 },   // workbench, tool chest
+        { x: -hw + T + 0.5, z: -0.8, r: 0.35 }, { x: 2.6, z: -0.6, w: 2.0, d: 1.1 }, { x: 4.6, z: bz + 0.25, w: 1.6, d: 0.45 },
+      ],
+      floors: [{ x: 0, z: 0, w: W - 2 * T, d: D - 2 * T, h: B }, { x: 0, z: hd + 0.1, w: DOOR, d: 0.8, h: B }],
+      nightGlow: pools,
+      animate: (t, state) => {
+        const p = state.playerPos;
+        let inside = false;
+        if (p) { v.set(p.x, 0, p.z); g.worldToLocal(v); inside = Math.abs(v.x) < hw + 0.2 && v.z > -hd && v.z < hd + 0.8; }
+        fade += ((inside ? 0.12 : 1) - fade) * 0.12;
+        for (const m of fmats.values()) { m.opacity = fade; m.depthWrite = fade > 0.95; }
+        sign.visible = fade > 0.55; signBits.visible = fade > 0.55;   // the eave board steps aside while you're indoors
+      },
+    };
   },
 
   guild_skill_tree() {
@@ -1995,7 +2073,7 @@ export const KIT = {
     };
   },
 
-  pop_camp() {
+  pop_camp({ horse: withHorse = true } = {}) {
     // Peaceful western camp: canvas tent, campfire, lantern post and a horse.
     const g = new THREE.Group(), k = kit(g);
     const ts = new THREE.Shape(); ts.moveTo(-0.9, 0); ts.lineTo(0.9, 0); ts.lineTo(0, 1.3); ts.closePath();
@@ -2012,7 +2090,7 @@ export const KIT = {
     k.box(0.08, 1.5, 0.08, C.trunk, 1.4, 0, 0.6); k.box(0.4, 0.06, 0.06, C.trunk, 1.25, 1.45, 0.6);
     const lantern = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.2, 0.14), mat(C.amber, { emissive: C.amber, emissiveIntensity: 0.7 })); lantern.position.set(1.1, 1.22, 0.6); dyn.add(lantern);
     // horse
-    const horse = new THREE.Group(); horse.position.set(1.6, 0, -0.8); horse.rotation.y = Math.PI / 2 + 0.3; g.add(horse);
+    const horse = new THREE.Group(); horse.position.set(1.6, 0, -0.8); horse.rotation.y = Math.PI / 2 + 0.3; horse.visible = withHorse; if (withHorse) g.add(horse);
     const hk = kit(horse), coat = 0x7a4a2a, mane = 0x2a1a12;
     hk.box(1.1, 0.5, 0.42, coat, 0, 0.75, 0);
     for (const [x, z] of [[-0.4, -0.15], [-0.4, 0.15], [0.4, -0.15], [0.4, 0.15]]) hk.box(0.12, 0.75, 0.12, coat, x, 0, z);
@@ -2026,20 +2104,20 @@ export const KIT = {
     const near = nearness(g, 5);
     let burst = -10;
     return {
-      obj: g, colliders: [{ x: 0.4, z: -1.0, w: 1.9, d: 1.9 }, { x: -0.4, z: 0.9, r: 0.55 }, { x: 1.6, z: -0.8, w: 1.0, d: 1.3 }],
+      obj: g, colliders: [{ x: 0.4, z: -1.0, w: 1.9, d: 1.9 }, { x: -0.4, z: 0.9, r: 0.55 }, ...(withHorse ? [{ x: 1.6, z: -0.8, w: 1.0, d: 1.3 }] : [])],
       nightGlow: [fire],
       api: { trigger(ctx) { burst = performance.now() / 1000; ctx?.sfx?.whinny?.(); } },
       animate: (t, state) => {
         const live = near(state), since = performance.now() / 1000 - burst, flare = since < 2 ? 1.8 - since * 0.4 : 1;
         flames.forEach((f, i) => { f.scale.set(1, (0.8 + 0.25 * Math.sin(t * 9 + i * 2)) * flare, 1); f.position.y = 0.3 + 0.03 * Math.sin(t * 7 + i); });
         lantern.material.emissiveIntensity = 0.6 + 0.15 * Math.sin(t * 5);
-        head.rotation.z = (since < 2 ? 0.4 * Math.sin(since * 8) : Math.sin(t * 1.3) * 0.08) * (0.4 + live);
-        tail.rotation.x = Math.sin(t * 2.4) * 0.35 * (0.3 + live);
+        if (withHorse) head.rotation.z = (since < 2 ? 0.4 * Math.sin(since * 8) : Math.sin(t * 1.3) * 0.08) * (0.4 + live);
+        if (withHorse) tail.rotation.x = Math.sin(t * 2.4) * 0.35 * (0.3 + live);
       },
     };
   },
 
-  pop_startup() {
+  pop_startup({ board: withBoard = true } = {}) {
     // Startup corner: a desk with a beige retro computer, whiteboard of boxes,
     // a beanbag. Triggering runs a build: compiling, fails, then it works.
     const g = new THREE.Group(), k = kit(g);
@@ -2050,9 +2128,9 @@ export const KIT = {
     const tex = new THREE.CanvasTexture(c); tex.magFilter = THREE.NearestFilter; tex.colorSpace = THREE.SRGBColorSpace;
     const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.38), new THREE.MeshBasicMaterial({ map: tex })); screen.position.set(0, 1.0, 0.23); screen.userData.dynamic = true; g.add(screen);
     // whiteboard
-    for (const x of [-0.6, 0.6]) k.box(0.06, 1.7, 0.06, C.steelDark, x - 1.6, 0, -0.5);
-    k.box(1.4, 0.9, 0.05, C.white, -1.6, 0.8, -0.5);
-    for (const [x, y, cc] of [[-1.95, 1.4, C.accent], [-1.55, 1.15, 0x2bb3a3], [-1.2, 1.4, 0x6fa8dc], [-1.6, 0.95, C.yellow]]) k.box(0.24, 0.14, 0.02, cc, x, y, -0.47, { shadow: false });
+    if (withBoard) for (const x of [-0.6, 0.6]) k.box(0.06, 1.7, 0.06, C.steelDark, x - 1.6, 0, -0.5);
+    if (withBoard) k.box(1.4, 0.9, 0.05, C.white, -1.6, 0.8, -0.5);
+    if (withBoard) for (const [x, y, cc] of [[-1.95, 1.4, C.accent], [-1.55, 1.15, 0x2bb3a3], [-1.2, 1.4, 0x6fa8dc], [-1.6, 0.95, C.yellow]]) k.box(0.24, 0.14, 0.02, cc, x, y, -0.47, { shadow: false });
     k.box(0.42, 0.03, 0.3, C.charcoal, 0.55, 0.72, 0.12); k.box(0.42, 0.28, 0.03, C.charcoal, 0.55, 0.75, -0.03, { rx: -0.3 });   // laptop
     k.box(0.36, 0.22, 0.02, glow(0x6fa8dc), 0.55, 0.79, -0.01, { rx: -0.3, shadow: false });
     for (const [x, z] of [[-0.6, 0.25], [0.15, 0.3]]) { k.cyl(0.05, 0.045, 0.11, C.white, x, 0.72, z, 8); k.box(0.02, 0.05, 0.03, C.white, x + 0.06, 0.75, z); }   // coffee cups
@@ -2069,7 +2147,7 @@ export const KIT = {
     };
     let burst = -10, lastKey = '';
     return {
-      obj: g, colliders: [{ x: 0, z: 0, w: 1.6, d: 0.8 }, { x: -1.6, z: -0.5, w: 1.4, d: 0.2 }],
+      obj: g, colliders: [{ x: 0, z: 0, w: 1.6, d: 0.8 }, ...(withBoard ? [{ x: -1.6, z: -0.5, w: 1.4, d: 0.2 }] : [])],
       api: { trigger(ctx) { burst = performance.now() / 1000; ctx?.sfx?.open?.(); setTimeout(() => ctx?.sfx?.miss?.(), 2200); setTimeout(() => ctx?.sfx?.memory?.(), 3600); } },
       animate: (t) => {
         const since = performance.now() / 1000 - burst;
@@ -2326,6 +2404,21 @@ export const KIT = {
     k.box(0.7, 0.5, 0.5, 0xc6d2e0, 1.6, 0, 1.4); for (let i = 0; i < 3; i++) k.box(0.6, 0.03, 0.02, 0x7d8fa8, 1.6, 0.12 + i * 0.12, 1.66, { shadow: false });
     k.cyl(0.08, 0.08, 0.5, C.steelDark, 0.6, 0, 0.5, 6); k.cyl(0.08, 0.08, 0.4, C.steelDark, -0.3, 0, 0.6, 6);
     k.box(0.04, 2.2, 0.04, C.ink, 2.0, 0, 0.3); k.box(0.5, 0.04, 0.04, C.ink, 2.0, 2.0, 0.3);
+    // webs: a big corner web on the hut, strands to the frame and the antenna
+    const webM = mat(0xf4f6fa);
+    const web = (cx, cy, cz, r, ry) => {
+      const w = new THREE.Group(); w.position.set(cx, cy, cz); w.rotation.y = ry; g.add(w);
+      for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI - Math.PI / 2; const sp = new THREE.Mesh(new THREE.BoxGeometry(0.025, r, 0.025), webM); sp.position.set(Math.sin(a) * r / 2, -Math.cos(a) * r / 2, 0); sp.rotation.z = a; w.add(sp); }
+      for (const f of [0.35, 0.65, 0.95]) for (let i = 0; i < 5; i++) { const a = ((i + 0.5) / 6) * Math.PI - Math.PI / 2, len = 2 * r * f * Math.sin(Math.PI / 12); const st = new THREE.Mesh(new THREE.BoxGeometry(len, 0.02, 0.02), webM); st.position.set(Math.sin(a) * r * f * 0.97, -Math.cos(a) * r * f * 0.97, 0); st.rotation.z = a + Math.PI / 2; w.add(st); }
+    };
+    web(-0.88, 1.66, 2.02, 0.9, 0);          // hut doorway corner
+    web(1.95, 0.5, 1.66, 0.6, 0);            // AC unit
+    web(-1.2, 2.0, 0.05, 1.1, 0);            // between frame post and hut
+    const strand = (a, b) => { const d = new THREE.Vector3().subVectors(b, a), m = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.02, d.length()), webM); m.position.copy(a).addScaledVector(d, 0.5); m.lookAt(b); g.add(m); };
+    strand(new THREE.Vector3(-1.3, 1.75, 1.6), new THREE.Vector3(-1.2, 2.55, 0));
+    strand(new THREE.Vector3(1.2, 2.55, 0), new THREE.Vector3(2.0, 2.15, 0.3));
+    strand(new THREE.Vector3(-0.9, 1.75, 2.0), new THREE.Vector3(1.6, 0.52, 1.4));
+    for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; const sp = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.01, 1.4), webM); sp.position.set(0.3, 0.05, 2.6); sp.rotation.y = a; g.add(sp); }
     const dyn = new THREE.Group(); dyn.userData.dynamic = true; g.add(dyn);
     const blinkM = new THREE.MeshBasicMaterial({ color: 0xff3b30 }); const blink = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.08), blinkM); blink.position.set(2.0, 2.26, 0.3); dyn.add(blink);
     const fan = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.02, 0.06), mat(C.ink)); fan.position.set(1.6, 0.52, 1.4); dyn.add(fan);
@@ -2361,5 +2454,49 @@ export const KIT = {
       nightGlow: pools,
       animate: (t) => flames.forEach((f, i) => { f.scale.set(1, 0.85 + 0.25 * Math.sin(t * 7 + i * 2), 1); }),
     };
+  },
+
+  neon_sign({ text = "HELL'S KITCHEN", w = 3.8, h = 0.62 } = {}) {
+    // Red neon street sign on brackets (Hell's Kitchen alley).
+    const g = new THREE.Group(), k = kit(g);
+    const sign = boardSign(text, w, h, { fg: '#ff4a3a', bg: '#1a0f16', board: 0x1a0f16, trim: 0xff3b30 });
+    sign.position.set(0, 2.0, 0); g.add(sign);
+    for (const x of [-w / 2 + 0.3, w / 2 - 0.3]) k.box(0.06, 0.06, 0.3, C.ink, x, 2.0 + h / 2, -0.15);
+    const pool = lightPool(2.2, 0xff3b30); pool.position.set(0, 0.08, 1.0); g.add(pool);
+    const dyn = new THREE.Group(); dyn.userData.dynamic = true; g.add(dyn);
+    const halo = new THREE.Mesh(new THREE.PlaneGeometry(w + 0.5, h + 0.4), new THREE.MeshBasicMaterial({ color: 0xff3b30, transparent: true, opacity: 0.18, depthWrite: false, blending: THREE.AdditiveBlending }));
+    halo.position.set(0, 2.0, 0.05); dyn.add(halo);
+    return { obj: g, colliders: [], nightGlow: [pool], animate: (t) => { halo.material.opacity = Math.sin(t * 13) > 0.92 ? 0.04 : 0.18 + 0.04 * Math.sin(t * 2); } };
+  },
+
+  pied_piper() {
+    // Small suburban startup house with a bold PIED PIPER board over the garage.
+    const g = new THREE.Group(), k = kit(g);
+    const W = 3.0, D = 2.4, H = 2.3;
+    k.box(W + 0.2, 0.2, D + 0.2, C.plinth, 0, 0, 0);
+    k.box(W, H, D, 0xe9e4d6, 0, 0.2, 0);
+    const rs = new THREE.Shape(); rs.moveTo(-D / 2 - 0.3, 0); rs.lineTo(D / 2 + 0.3, 0); rs.lineTo(0, 1.0); rs.closePath();
+    k.mesh(new THREE.ExtrudeGeometry(rs, { depth: W + 0.4, bevelEnabled: false }), 0x4a5a6a, -W / 2 - 0.2, 0.2 + H, 0, { ry: Math.PI / 2 });
+    k.box(1.6, 1.5, 0.06, 0xc6d2e0, -0.5, 0.2, D / 2 + 0.02);                       // garage door
+    for (let i = 0; i < 4; i++) k.box(1.6, 0.03, 0.04, 0x9aa8bf, -0.5, 0.45 + i * 0.32, D / 2 + 0.06, { shadow: false });
+    k.box(0.6, 1.6, 0.06, 0x2f5a3a, 0.95, 0.2, D / 2 + 0.02);                       // front door
+    k.box(0.5, 0.4, 0.04, glow(0xcfe8ff), 0.95, 1.95, D / 2 + 0.04, { shadow: false });
+    const sign = boardSign('PIED PIPER', 3.6, 0.95, { fg: '#ffffff', bg: '#1f6b3a', board: 0x1f6b3a, trim: 0xf2f0ea, size: 88 });
+    sign.position.set(0, 0.2 + H + 0.55, D / 2 + 0.3); g.add(sign);
+    for (const x of [-1.3, 1.3]) k.box(0.1, 0.7, 0.1, 0x2a2440, x, 0.2 + H - 0.1, D / 2 + 0.2);
+    k.box(0.5, 0.6, 0.06, C.white, -1.15, 0.9, D / 2 + 0.06);                       // whiteboard by the door
+    for (const [x, y, c] of [[-1.25, 1.3, C.accent], [-1.05, 1.1, 0x2bb3a3]]) k.box(0.14, 0.08, 0.02, c, x, y, D / 2 + 0.1, { shadow: false });
+    return { obj: g, colliders: [{ x: 0, z: 0, w: W + 0.2, d: D + 0.2 }] };
+  },
+
+  training_dummy() {
+    const g = new THREE.Group(), k = kit(g);
+    k.box(0.5, 0.1, 0.5, 0x6f4a30, 0, 0, 0);
+    k.box(0.12, 1.5, 0.12, C.trunk, 0, 0.1, 0);
+    k.box(1.0, 0.1, 0.1, C.trunk, 0, 1.2, 0);
+    k.box(0.5, 0.6, 0.36, 0xd8c39a, 0, 0.75, 0);
+    k.box(0.32, 0.32, 0.32, 0xd8c39a, 0, 1.45, 0);
+    k.box(0.52, 0.08, 0.38, 0x8a2a2a, 0, 1.0, 0, { shadow: false });
+    return { obj: g, colliders: [{ x: 0, z: 0, r: 0.3 }] };
   },
 };

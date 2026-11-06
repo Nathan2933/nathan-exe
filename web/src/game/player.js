@@ -210,7 +210,7 @@ export class Character {
       }
       part(0.08, 0.03, 0.03, 0x1e1b2e, 0, 0.4, 0.28, H);
     }
-    this.#hair(o, H);
+    if (!(o.extras || []).includes('mask')) this.#hair(o, H);
     (this.laterExtras || []).forEach((f) => f());
     this.#mergeParts();
 
@@ -318,6 +318,14 @@ export class Character {
       part(0.02, 0.54, 0.01, k, 0, 0.28, -0.172, S);
       for (const y of [0.12, 0.28, 0.44]) part(0.5, 0.02, 0.01, k, 0, y, -0.172, S);
     }
+    if (ex.has('armor')) {
+      // knight plate: pauldrons, chest plate with a crescent, belt and greaves
+      const plate = 0xd8dde6, dark = 0x9aa3b2;
+      for (const sx of [-1, 1]) { part(0.26, 0.14, 0.42, plate, sx * 0.33, 0.6, 0, S); part(0.22, 0.05, 0.38, dark, sx * 0.33, 0.53, 0, S); }
+      part(0.46, 0.4, 0.06, plate, 0, 0.34, 0.2, S); part(0.46, 0.06, 0.07, dark, 0, 0.13, 0.2, S);
+      part(0.6, 0.08, 0.38, dark, 0, 0.05, 0, S);
+      for (const l of this.legs) part(0.24, 0.16, 0.27, plate, 0, -0.16, 0.02, l.knee);
+    }
     if (ex.has('backpack')) part(0.36, 0.42, 0.16, c, 0, 0.3, -0.25, S);
     if (ex.has('bandana')) { part(0.46, 0.1, 0.42, 0xb8393a, 0, 0.57, 0, S); part(0.14, 0.14, 0.05, 0xb8393a, 0, 0.47, 0.2, S); }
     if (ex.has('lanyard')) { part(0.02, 0.3, 0.02, 0x2f5fb0, -0.09, 0.42, 0.18, S); part(0.02, 0.3, 0.02, 0x2f5fb0, 0.09, 0.42, 0.18, S); part(0.12, 0.14, 0.02, 0xffffff, 0, 0.24, 0.19, S); }
@@ -331,6 +339,15 @@ export class Character {
       part(0.72, 0.68, 0.2, c, 0, 0.36, -0.28, H());
       part(0.07, 0.62, 0.56, c, -0.34, 0.34, -0.02, H()); part(0.07, 0.62, 0.56, c, 0.34, 0.34, -0.02, H());
       part(0.7, 0.08, 0.62, c, 0, 0.68, -0.02, H()); part(0.68, 0.07, 0.07, c, 0, 0.64, 0.28, H());
+    });
+    if (ex.has('mask')) later.push(() => {
+      // full-head mask over the hair: red with black web lines and big white eyes
+      const red = 0xc4302b, k2 = 0x1e1b2e;
+      part(0.62, 0.6, 0.56, red, 0, 0.33, 0, H());
+      for (const sx of [-1, 1]) { part(0.17, 0.12, 0.03, 0xffffff, sx * 0.13, 0.38, 0.285, H()); part(0.19, 0.03, 0.035, k2, sx * 0.13, 0.445, 0.285, H()); }
+      part(0.02, 0.58, 0.01, k2, 0, 0.33, 0.283, H());
+      for (const y of [0.16, 0.27, 0.52]) part(0.6, 0.02, 0.01, k2, 0, y, 0.283, H());
+      part(0.62, 0.02, 0.57, k2, 0, 0.45, 0, H());
     });
     if (ex.has('shades')) later.push(() => { for (const x of [-0.13, 0.13]) part(0.2, 0.11, 0.03, 0x14101f, x, 0.37, 0.28, H()); part(0.08, 0.03, 0.03, 0x14101f, 0, 0.4, 0.28, H()); part(0.6, 0.03, 0.03, 0x14101f, 0, 0.41, 0.27, H()); });
     if (ex.has('redshades')) later.push(() => { for (const x of [-0.13, 0.13]) { part(0.17, 0.15, 0.03, 0x8a1f2a, x, 0.37, 0.285, H()); part(0.19, 0.03, 0.03, 0x2a1a1a, x, 0.45, 0.285, H()); } part(0.08, 0.03, 0.03, 0x2a1a1a, 0, 0.42, 0.285, H()); });

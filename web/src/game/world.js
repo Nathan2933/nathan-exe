@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { KIT, mat, C } from './kit.js';
+import { KIT, buildHorse, mat, C } from './kit.js';
 import { tileAt } from './tiled.js';
 import { Character, OUTFITS, appearanceToOutfit } from './player.js';
 import { buildRailway } from './railway.js';
@@ -260,6 +260,13 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
         faces: String(props.faces || '').split(',').map((v) => (v.trim() === '' ? null : (Number(v) * Math.PI) / 180)),
       },
     };
+    if (def.companion === 'horse') {
+      // a horse that ambles along behind its rider and stops beside them
+      const h = buildHorse();
+      h.group.position.set(p0.x - 1.4, ch.group.position.y, p0.z + 0.8);
+      root.add(h.group);
+      it.companion = { ...h, phase: 0 };
+    }
     if (it.route.idles[0]) { ch.pose = it.route.idles[0]; it.route.wait = 3 + Math.random() * 3; }
     if (it.route.faces[0] != null) ch.heading = it.route.faces[0];
     it.beacon = beacon(p0.x, 0, p0.z, { pillar: false });
@@ -428,6 +435,22 @@ export function updateNpcs(npcs, dt, t, heightAt, player, talkingTo) {
     }
     gp.y = heightAt(gp.x, gp.z);
     ch.update(dt, _v, t);
+    if (it.companion) {
+      const c = it.companion, hp = c.group.position;
+      // stand 1.5 m to the rider's left-behind; walk there, then face the same way
+      const side = ch.heading + Math.PI * 0.72;
+      const tx = gp.x + Math.sin(side) * 1.5, tz = gp.z + Math.cos(side) * 1.5;
+      const dx = tx - hp.x, dz = tz - hp.z, dist = Math.hypot(dx, dz);
+      const speed = dist > 0.25 ? Math.min(dist * 1.6, 2.2) : 0;
+      if (speed > 0) { hp.x += (dx / dist) * speed * dt; hp.z += (dz / dist) * speed * dt; }
+      const want = speed > 0.3 ? Math.atan2(dx, dz) - Math.PI / 2 : ch.heading - Math.PI / 2;
+      c.group.rotation.y += Math.atan2(Math.sin(want - c.group.rotation.y), Math.cos(want - c.group.rotation.y)) * Math.min(1, dt * 3);
+      hp.y = heightAt(hp.x, hp.z);
+      c.phase += dt * speed * 5;
+      c.legs.forEach((l, i) => { l.rotation.z = Math.sin(c.phase + (i % 2 ? Math.PI : 0) + (i > 1 ? Math.PI / 2 : 0)) * 0.45 * Math.min(1, speed); });
+      c.head.rotation.z = speed > 0 ? Math.sin(c.phase) * 0.06 : Math.sin(t * 0.9) * 0.1 - 0.15;
+      c.tail.rotation.x = Math.sin(t * 2.2) * 0.3;
+    }
     // keep the interaction spot glued to the character
     it.x = gp.x; it.z = gp.z;
     it.beacon.group.position.set(gp.x, gp.y + 0.04, gp.z);
