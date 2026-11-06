@@ -59,8 +59,7 @@ function bootHero() {
   const cam = new THREE.PerspectiveCamera(30, W / H, 0.1, 50); cam.position.set(0, 1.4, 6.2); cam.lookAt(0, 1.15, 0);
   const hero = new Player();
   sc.add(hero.group);
-  const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 0.06, 24), new THREE.MeshBasicMaterial({ color: 0x2a2440 }));
-  disc.position.y = -0.03; sc.add(disc);
+  hero.pose = 'guard';
   let raf = 0, last = performance.now(), alive = true;
   const zero = new THREE.Vector3();
   const tick = (now) => {
@@ -72,7 +71,6 @@ function bootHero() {
     raf = requestAnimationFrame(tick);
   };
   raf = requestAnimationFrame(tick);
-  if (!reducedMotion) setTimeout(() => alive && hero.play('wave'), 900);
   return () => { alive = false; cancelAnimationFrame(raf); r.dispose(); };
 }
 let stopBootHero = () => {};

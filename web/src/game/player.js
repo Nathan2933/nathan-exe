@@ -452,6 +452,10 @@ export class Character {
         pm('sx1', -0.4 - 1.2 * k); pm('el1', -1.7 + 1.5 * k); pm('sx0', -1.05); pm('el0', -1.85); pm('spineY', 0.22 * k); pm('th0', -0.2); pm('kn0', 0.25);
       } else if (P === 'type') {
         pm('sx0', -0.95); pm('sx1', -0.95); pm('el0', -0.75 + 0.12 * Math.sin(t * 14)); pm('el1', -0.75 + 0.12 * Math.sin(t * 15 + 1)); pm('headX', 0.22); pm('spineX', 0.12);
+      } else if (P === 'guard') {
+        // held fighting stance (fists up), no motion
+        pm('sx0', -1.25); pm('el0', -1.95); pm('sz0', 0.25); pm('sx1', -1.05); pm('el1', -2.05); pm('sz1', -0.2);
+        pm('th0', -0.25); pm('kn0', 0.3); pm('th1', 0.15); pm('spineY', 0.25); pm('spineX', 0.06); pm('headX', 0.05);
       } else if (P === 'phone') {
         pm('sx1', -1.25); pm('el1', -1.55); pm('ez1', -0.3); pm('headX', 0.38); pm('sx0', -0.2);
       } else if (P === 'sittype') {

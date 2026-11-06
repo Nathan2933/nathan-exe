@@ -743,3 +743,22 @@ body.cine-on .journey, body.cine-on .minimap-wrap, body.cine-on #prompt, body.ci
 @keyframes bootblink { 50% { opacity: .25; } }
 .boot .boot-skip { position: fixed; left: 24px; bottom: 20px; }
 .boot .boot-start { align-self: center; text-align: center; font-size: clamp(13px, 2.2vw, 16px); }
+
+/* Title: NATHAN behind the hero, Spider-Verse comic print style */
+.boot .boot-hero { display: grid; place-items: center; }
+.boot .boot-hero > * { grid-area: 1 / 1; }
+.boot #boot-hero { position: relative; z-index: 2; width: min(66vw, 320px); }
+.boot .boot-title { z-index: 1; align-self: center; margin: 0 0 18%;
+  font-size: clamp(84px, 19vw, 190px); color: #ffe14d; -webkit-text-stroke: 5px #0b0b10;
+  background: radial-gradient(circle, rgba(0,0,0,.28) 22%, transparent 24%) 0 0 / 7px 7px, linear-gradient(#fff36b, #ffb31f);
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  text-shadow: none; filter: drop-shadow(-6px 0 0 #ff2d55) drop-shadow(6px 3px 0 #00e5ff) drop-shadow(0 8px 0 #0b0b10);
+  transform: rotate(-6deg) skewX(-8deg); animation: none; }
+@media (prefers-reduced-motion: no-preference) { .boot .boot-title { animation: spiderglitch 2.6s steps(1) infinite; } }
+@keyframes spiderglitch {
+  0%, 86%, 100% { transform: rotate(-6deg) skewX(-8deg); }
+  88% { transform: rotate(-6deg) skewX(-8deg) translate(5px, -2px); filter: drop-shadow(-10px 0 0 #ff2d55) drop-shadow(9px 3px 0 #00e5ff) drop-shadow(0 8px 0 #0b0b10); }
+  92% { transform: rotate(-6deg) skewX(-14deg) translate(-4px, 2px); }
+  95% { transform: rotate(-5deg) skewX(-8deg) translate(2px, 0); }
+}
+.boot .boot-start { grid-area: auto; }
