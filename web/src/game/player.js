@@ -422,5 +422,30 @@ export class Character {
 
 /** Nathan himself. */
 export class Player extends Character {
-  constructor() { super(OUTFITS.nathan); }
+  constructor() {
+    super(OUTFITS.nathan);
+    this.#addXray();
+  }
+
+  /**
+   * X-ray silhouette: a flat amber copy of every body part that only draws
+   * where something (a building, tree, sign…) is in front of Nathan, so the
+   * player never disappears behind scenery.
+   */
+  #addXray() {
+    // Opaque on purpose: ghosts (renderOrder 20) draw after the scenery but
+    // before Nathan's own body (renderOrder 30), so his limbs never trigger
+    // the x-ray on each other, only buildings and props in front of him do.
+    const xray = new THREE.MeshBasicMaterial({ color: 0xffb347, depthFunc: THREE.GreaterDepth, depthWrite: false });
+    const meshes = [];
+    this.group.traverse((o) => { if (o.isMesh) meshes.push(o); });
+    for (const mesh of meshes) {
+      mesh.renderOrder = 30;
+      const ghost = new THREE.Mesh(mesh.geometry, xray);
+      ghost.renderOrder = 20;
+      ghost.castShadow = false;
+      ghost.userData.xray = true;
+      mesh.add(ghost);
+    }
+  }
 }
