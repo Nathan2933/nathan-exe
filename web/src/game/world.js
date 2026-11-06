@@ -167,12 +167,8 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
     });
     return {
       group: g, gem: disc, ring,
-      setVisited() {
-        visited = true;
-        ring.material = ring.material.clone(); ring.material.color.set(0xb7a9dc); ring.material.opacity = 0.7;
-        disc.material = disc.material.clone(); disc.material.color.set(0x8f80c0);
-        pillar.visible = false;
-      },
+      // Visited spots stay interactive (walk up and press E) but lose their marker.
+      setVisited() { visited = true; g.visible = false; },
     };
   };
   const sparkle = (x, z) => {

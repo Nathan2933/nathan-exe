@@ -985,6 +985,20 @@ function cycleTime() {
   toast(look.time === 'auto' ? 'Time follows your clock' : look.time === 'night' ? 'Night mode: street lights on' : 'Day mode');
 }
 let night = -1;
+// Nathan's own warm light: only switched on after dark.
+const heroLight = new THREE.PointLight(0xffcf8f, 0, 10, 1.3);
+heroLight.position.set(0, 2.4, 0);
+player.group.add(heroLight);
+const heroPool = (() => {
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.5, 'rgba(255,255,255,.45)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+  const m = new THREE.Mesh(new THREE.CircleGeometry(3.4, 32), new THREE.MeshBasicMaterial({ color: 0xffc98a, map: new THREE.CanvasTexture(c), transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
+  m.rotation.x = -Math.PI / 2; m.position.y = 0.07; m.renderOrder = 1;
+  scene.add(m);
+  return m;
+})();
 const NIGHT_SKY = new THREE.Color(0x1c2246), MOON = new THREE.Color(0xa9b8ff), SUNC = new THREE.Color();
 const HEMI_SKY_DAY = new THREE.Color(0xfff6e6), HEMI_SKY_NIGHT = new THREE.Color(0x9aa6ee);
 const HEMI_GND_DAY = new THREE.Color(0x9aa6c8), HEMI_GND_NIGHT = new THREE.Color(0x2a2440);
@@ -1001,6 +1015,11 @@ function applyDayNight(dt) {
   sun.intensity = 2.5 - n * 1.6;
   setGlowBoost(1 + n * 1.8);
   for (const p of world.nightGlow) { p.visible = n > 0.03; p.material.opacity = 0.62 * n; }
+  heroLight.intensity = 13 * n * n;
+  heroPool.visible = n > 0.03;
+  heroPool.material.opacity = 0.55 * n;
+  const hp = player.group.position;
+  heroPool.position.set(hp.x, Math.max(0, heroLight.parent ? heightAt(hp.x, hp.z) : 0) + 0.07, hp.z);
   document.body.classList.toggle('is-night', n > 0.5);
 }
 let hintHidden = false;
