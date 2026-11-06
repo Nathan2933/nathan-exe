@@ -14,10 +14,10 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(ROOT, 'web/public/maps');
-const N = 96;            // tiles per side, 1 tile = 1 metre
+const N = 120;           // tiles per side, 1 tile = 1 metre
 const HALF = N / 2;
 const PX = 16;           // Tiled pixels per tile
-const ISLAND_R = 44;
+const ISLAND_R = 54;     // grown so the north and east districts could move outward
 
 // ---------------- Ground tileset ----------------
 // Order = tile id (gid - 1). `walk: false` tiles block movement.
@@ -96,38 +96,38 @@ for (let z = -HALF; z < HALF; z++) {
 
 // Roads: two avenues + a deliberately irregular ring (west/north sit further out).
 const ROADS = [
-  [-2, -30, 2, 30],    // north–south avenue (5 m)
-  [-30, -2, 25, 2],    // east–west avenue (ends at the Memory Line crossing)
-  [-27, -25, -24, 28], // ring: west
-  [-27, -25, 21, -22], // ring: north
-  [19, -25, 22, 29],   // ring: east
-  [-27, 26, 22, 29],   // ring: south (moved south so the Garage lot is big)
+  [-2, -36, 2, 30],    // north–south avenue (5 m)
+  [-30, -2, 31, 2],    // east–west avenue (ends at the Memory Line crossing)
+  [-27, -31, -24, 28], // ring: west
+  [-27, -31, 28, -28], // ring: north (moved 6 m out so the Pop Culture Park block is big)
+  [25, -31, 28, 29],   // ring: east (moved 6 m out)
+  [-27, 26, 28, 29],   // ring: south (moved south so the Garage lot is big)
 ];
 for (const [x0, z0, x1, z1] of ROADS) rect(x0, z0, x1, z1, T.road);
 // Centre dashes on the avenues
-for (let z = -30; z <= 30; z++) if (Math.abs(z) > 9 && z % 3 !== 0) set(0, z, T.road_line);
-for (let x = -30; x <= 25; x++) if (Math.abs(x) > 9 && x % 3 !== 0) set(x, 0, T.road_line);
+for (let z = -36; z <= 30; z++) if (Math.abs(z) > 9 && z % 3 !== 0) set(0, z, T.road_line);
+for (let x = -30; x <= 31; x++) if (Math.abs(x) > 9 && x % 3 !== 0) set(x, 0, T.road_line);
 
 // District grounds (before sidewalks so sidewalks wrap them cleanly)
 rect(-21, -19, -4, -4, T.lawn);           // Iron Yard lot
 rect(-20, -19, -9, -13, T.concrete);      //   gym slab
 rect(-12, -11, -5, -6, T.rubber);         //   outdoor training floor (smaller, calmer)
 rect(-9, -4, -8, -4, T.path);             //   gate
-rect(3, -21, 18, -3, T.lawn);             // Pop Culture Park: fills its block up to the roads on all four sides
-rect(9, -20, 10, -3, T.path); rect(3, -12, 18, -11, T.path); rect(8, -14, 11, -9, T.path); // walks + arcade square
-rect(3, -18, 9, -13, T.rubber);           //   red alley floor (noir corner)
+rect(3, -27, 24, -3, T.lawn);             // Pop Culture Park: the enlarged NE block, up to the roads on all four sides
+rect(9, -26, 10, -3, T.path); rect(3, -16, 24, -15, T.path); rect(8, -18, 11, -13, T.path); // walks + arcade square
+rect(3, -24, 9, -18, T.rubber);           //   Hell's Kitchen alley floor
 disc(9.5, -11.5, 3.2, T.plaza);
 rect(-21, 4, -4, 25, T.lawn);             // Guild Hall lot (was Signal Tower), down to the south ring road
 rect(-6, 4, -4, 14, T.path); rect(-14, 12, -4, 14, T.path); rect(-14, 14, -12, 24, T.path); // entrance walk, front walk, courtyard walk
 rect(3, 3, 17, 24, T.concrete);           // Garage: big open lot
-rect(-14, -43, 13, -29, T.snow);          // Winter Campus
-rect(-2, -33, 2, -29, T.concrete);        //   cleared entrance walk
-rect(-21, -31, -11, -29, T.concrete);     //   station forecourt (west of the university, with open ground between)
-rect(26, -13, 42, 13, T.lawn);            // Monsoon Campus grounds
-rect(26, -1, 40, 1, T.terracotta);        //   main red-earth walk from the arch
-rect(29, -5, 41, -3, T.terracotta);       //   veranda forecourt
-disc(34, 3.6, 3.3, T.terracotta);         //   small paved court
-rect(29, 1, 31, 8, T.terracotta);         //   path to the tea stall
+rect(-14, -49, 13, -35, T.snow);          // Winter Campus
+rect(-2, -39, 2, -35, T.concrete);        //   cleared entrance walk
+rect(-21, -37, -11, -35, T.concrete);     //   station forecourt (west of the university, with open ground between)
+rect(32, -13, 48, 13, T.lawn);            // Monsoon Campus grounds
+rect(32, -1, 46, 1, T.terracotta);        //   main red-earth walk from the arch
+rect(35, -5, 47, -3, T.terracotta);       //   veranda forecourt
+disc(40, 3.6, 3.3, T.terracotta);         //   small paved court
+rect(35, 1, 37, 8, T.terracotta);         //   path to the tea stall
 for (let a = 0; a < Math.PI * 2; a += 0.05) set(Math.round(-35 + Math.cos(a) * 7.4), Math.round(-2 + Math.sin(a) * 8.4), T.path);
 rect(-30, -1, -28, 1, T.path);
 rect(-1, 30, 1, 34, T.path);              // path down to the airport
@@ -190,7 +190,7 @@ for (let d = 12, i = 0; d <= 28; d += 8, i++) {
   O('lamp', 3.4 * s, -d); O('lamp', -3.4 * s, d);
   O('lamp', -d, 3.4 * s); O('lamp', d, -3.4 * s);
 }
-for (const [x, z] of [[-23, -21], [18, -21], [18, 25], [-23, 25]]) O('lamp', x, z);
+for (const [x, z] of [[-23, -27], [24, 25], [-23, 25]]) O('lamp', x, z);   // NE corner is inside the park now
 
 // --- Iron Yard (vertical slice district) ---
 hedge(-22, -20, -3, -19);                // north
@@ -216,36 +216,44 @@ interact.push(point('memory', -11.8, -12.6, { id: 'checkpoint-60' }));
 interact.push(point('memory', -5.6, -5.2, { id: 'fitness-chapter' }));
 
 // --- Pop Culture Park (was City Park) ---
-// A living character district. Roads bound the block on all four sides, so it
-// grows only to its own hedge lines. Six themed areas around a central arcade,
-// each with one roaming homage character (routes + dialogue in content.json):
-//   NW red alley (listener) · N rooftop (web runner) · NE western camp (drifter)
-//   SW boxing basement (philosopher) · S moonlit court (night watcher) · SE startup desk (founder)
-hedge(2.2, -21.8, 17.6, -21); hedge(18.2, -20.4, 18.9, -2.1); hedge(2.2, -21, 2.9, -13); hedge(2.2, -10, 2.9, -2.1);
-hedge(2.2, -2.9, 8, -2.1); hedge(11, -2.9, 18.9, -2.1);
-O('pop_arcade', 9.5, -11.5);
-// red alley + rooftop signal
-O('pop_rooftop', 5.0, -19.4, { variant: 'signal' });
-O('pop_rooftop', 7.4, -19.5, { variant: 'red' });
-O('alley_props', 4.2, -15.4);
-O('neon_sign', 6.15, -18.2, { text: "HELL'S KITCHEN", w: 3.8 });
+// The NE block grew when the north and east ring roads moved out (about 21 x 24 m).
+// Six themed areas around a central arcade, one character each:
+//   NW Hell's Kitchen alley (Daredevil) · N rooftop (Spider-Man) · NE camp + paddock (Arthur Morgan)
+//   SW basement (Tyler Durden) · S moonlit court (Moon Knight) · SE Pied Piper (Richard Hendricks)
+hedge(2.2, -27.8, 24.9, -27); hedge(24.2, -27, 24.9, -2.1); hedge(2.2, -27, 2.9, -16.5); hedge(2.2, -13, 2.9, -2.1);
+hedge(2.2, -2.9, 8, -2.1); hedge(11, -2.9, 24.9, -2.1);
+O('pop_arcade', 9.5, -15.5);
+// Hell's Kitchen alley + rooftop signal
+O('pop_rooftop', 5.0, -25.4, { variant: 'signal' });
+O('pop_rooftop', 7.4, -25.5, { variant: 'red' });
+O('neon_sign', 6.15, -24.2, { text: "HELL'S KITCHEN", w: 3.8 });
+O('alley_props', 4.2, -21.4);
 // rooftop + web agility frame
-O('pop_web', 12.0, -19.6);
-O('rooftop_props', 12.0, -19.6);
-// western camp
-O('pop_camp', 15.8, -17.6, { horse: false });   // Arthur's horse walks with him
-// boxing basement
-O('pop_boxing', 6.4, -8.4);
-O('bench', 4.2, -6.8, { rot: 90 });
+O('pop_web', 13.5, -25.6);
+O('rooftop_props', 13.5, -25.6);
+// western camp + round paddock where Arthur rides
+O('pop_camp', 20.8, -25.0, { horse: false });
+O('paddock', 20.6, -19.6, { r: 2.7 });
+// Tyler's basement + the soap
+O('pop_boxing', 6.2, -11.6);
+O('bench', 4.2, -8.6, { rot: 90 });
+O('giant_soap', 7.6, -8.0, { text: 'FIGHT CLUB' });
 // moonlit court
-O('moon_court', 12.4, -6.6);
-O('pop_moon', 12.4, -8.6);
-// startup desk
-O('pied_piper', 16.6, -9.4, { rot: 0 });
-O('pop_startup', 16.6, -6.8, { board: false });
-O('lamp', 10.6, -14.6); O('lamp', 8.6, -6.4); O('tree_blossom', 17.4, -11.8, { scale: 0.85 });
-interact.push(point('panel', 3.7, -17.4, { id: 'pop-batman', district: 'city-park', panel: 'pop', interest: 'batman', attraction: 'pop_rooftop_signal', title: 'Rooftop signal' }));
-labels.push(point('label', 9.5, -11.5, { text: 'POP CULTURE PARK', color: '#3b6d11', height: 5 }));
+O('moon_court', 13.5, -8.0);
+O('pop_moon', 13.5, -11.0);
+// Pied Piper house + Richard's desk
+O('pied_piper', 21.0, -11.6, { rot: 0, w: 4.4, d: 3.0 });
+O('pop_startup', 20.6, -7.6, { board: false });
+O('lamp', 11.2, -17.8); O('lamp', 8.4, -12.6); O('lamp', 17.0, -13.6);
+for (const [x, z, sc] of [[16.3, -26.0, 0.9], [4.0, -14.2, 0.8], [23.4, -14.0, 0.85], [16.6, -4.0, 0.8]]) O('tree_blossom', x, z, { scale: sc });
+interact.push(point('panel', 3.7, -23.4, { id: 'pop-batman', district: 'city-park', panel: 'pop', interest: 'batman', attraction: 'pop_rooftop_signal', title: 'Rooftop signal' }));
+labels.push(point('label', 9.5, -15.5, { text: 'POP CULTURE PARK', color: '#3b6d11', height: 5 }));
+
+// Freed strips beside the moved roads: tree-lined greenways
+for (let x = -19; x <= -6; x += 4.3) O('tree_round', x, -24.6, { scale: 0.9 });
+O('bench', -12.6, -22.6, { rot: 180 });
+for (let z = 5; z <= 23; z += 4.5) O('tree_round', 21.6, z, { scale: 0.9 });
+O('bench', 20.2, 11.6, { rot: -90 }); O('lamp', 22.8, 9.2); O('lamp', 22.8, 18.2);
 
 // --- Guild Hall (was Signal Tower): skills, trophies, quests, profile ---
 // The lot runs from the plaza road down to the south ring road. The walk-in hall
@@ -304,34 +312,33 @@ interact.push(point('memory', 3.9, 11.8, { id: 'warehouse-node' }));   // by the
 interact.push(point('memory', 9.4, 15.4, { id: 'six-hours' }));        // by the Event Scheduler
 interact.push(point('memory', 11.6, 12.4, { id: 'property-dashboard' })); // by CauverySite
 // --- Winter Campus (Russia chapter) ---
-O('faculty_building', 0, -37.6, { text: 'TOMSK STATE UNIVERSITY' });
-labels.push(point('label', 0, -37.6, { text: 'WINTER CAMPUS', color: '#2f5f9a', height: 9.6 }));
-interact.push(point('chapter', 0, -31, { id: 'winter-campus', district: 'winter-campus' }));
-for (const z of [-40, -36.8, -33.6]) { O('birch', -10.2, z, { scale: 1.05 }); O('birch', 10.4, z + 0.4, { scale: 0.95 }); }
-O('birch', -12.4, -35.2, { scale: 0.9 }); O('birch', 12.3, -38.4, { scale: 1.1 });
-O('lamp', -2.9, -31.6); O('lamp', 2.9, -31.6);
-O('bench', 7, -30.4, { rot: 0, snow: true });
-O('notice_board', 9.8, -33, { rot: 0, text: 'EXAMS' });
-O('snow_pile', -12.6, -32.4); O('snow_pile', 12.4, -30.6, { scale: 0.8 }); O('snow_pile', 5.2, -33.6, { scale: 0.7 });
-interact.push(point('memory', 7.9, -29.8, { id: 'new-campus' }));
-interact.push(point('memory', 9.8, -31.9, { id: 'two-semesters' }));
-interact.push(point('memory', -11.6, -38.2, { id: 'campus-sign' }));
+O('faculty_building', 0, -43.6, { text: 'TOMSK STATE UNIVERSITY' });
+labels.push(point('label', 0, -43.6, { text: 'WINTER CAMPUS', color: '#2f5f9a', height: 9.6 }));
+interact.push(point('chapter', 0, -37, { id: 'winter-campus', district: 'winter-campus' }));
+for (const z of [-46, -42.8, -39.6]) { O('birch', -10.2, z, { scale: 1.05 }); O('birch', 10.4, z + 0.4, { scale: 0.95 }); }
+O('birch', -12.4, -41.2, { scale: 0.9 }); O('birch', 12.3, -44.4, { scale: 1.1 });
+O('lamp', -2.9, -37.6); O('lamp', 2.9, -37.6);
+O('bench', 7, -36.4, { rot: 0, snow: true });
+O('notice_board', 9.8, -39, { rot: 0, text: 'EXAMS' });
+O('snow_pile', -12.6, -38.4); O('snow_pile', 12.4, -36.6, { scale: 0.8 }); O('snow_pile', 5.2, -39.6, { scale: 0.7 });
+interact.push(point('memory', 7.9, -35.8, { id: 'new-campus' }));
+interact.push(point('memory', 9.8, -37.9, { id: 'two-semesters' }));
+interact.push(point('memory', -11.6, -44.2, { id: 'campus-sign' }));
 // --- Monsoon Campus (India chapter, Tamil Nadu college) ---
-O('college_building', 35.5, -9.2, { text: 'TCE Madurai', subtitle: 'Thiagarajar College of Engineering', logo: 'assets/logos/tce.png' });
-objects.push(area('rain_zone', 25.5, -14, 43, 14));   // monsoon showers fall inside this rectangle
-O('gate_arch', 27.4, 0, { text: 'TCE Madurai' });
-O('tea_stall', 30, 9.2, { rot: -90 });
-O('cycle_stand', 39.4, -1.8, { rot: 0 });
-O('notice_board', 31, -2.6, { rot: 0, text: 'FEST' });
-O('lamp', 31.6, 1.6); O('lamp', 37.6, 1.6);
-for (const [x, z] of [[40.6, 4.5], [39.8, 9.2], [36.6, 11.4], [26.8, 11.2], [26.6, 5.4], [41.2, -6.2]]) O('tree_palm', x, z, { scale: 0.95 + ((x * 3) % 1) * 0.2 });
-O('puddle', 32.6, 0.4); O('puddle', 37.2, -0.3, { scale: 0.7 }); O('puddle', 30, 4.6, { scale: 0.8 });
-labels.push(point('label', 35.5, -9.2, { text: 'MONSOON CAMPUS', color: '#b5523b', height: 9.2 }));
-interact.push(point('chapter', 29.6, 1.8, { id: 'monsoon-campus', district: 'monsoon-campus' }));
-interact.push(point('memory', 28.2, 4.4, { id: 'madurai-checkpoint' }));
-interact.push(point('memory', 32.6, 7.4, { id: 'montfort' }));
-interact.push(point('memory', 31, -1.6, { id: 'association-badge' }));
-interact.push(point('memory', 34, 3.6, { id: 'ecell-crowd' }));
+O('college_building', 41.5, -9.2, { text: 'TCE Madurai', subtitle: 'Thiagarajar College of Engineering', logo: 'assets/logos/tce.png' });
+objects.push(area('rain_zone', 31.5, -14, 49, 14));   // monsoon showers fall inside this rectangle
+O('gate_arch', 33.4, 0, { text: 'TCE Madurai' });
+O('tea_stall', 36, 9.2, { rot: -90 });
+O('cycle_stand', 45.4, -1.8, { rot: 0 });
+O('notice_board', 37, -2.6, { rot: 0, text: 'FEST' });
+O('lamp', 37.6, 1.6); O('lamp', 43.6, 1.6);
+for (const [x, z] of [[46.6, 4.5], [45.8, 9.2], [42.6, 11.4], [32.8, 11.2], [32.6, 5.4], [47.2, -6.2]]) O('tree_palm', x, z, { scale: 0.95 + (((x - 6) * 3) % 1) * 0.2 });
+O('puddle', 38.6, 0.4); O('puddle', 43.2, -0.3, { scale: 0.7 }); O('puddle', 36, 4.6, { scale: 0.8 });
+labels.push(point('label', 41.5, -9.2, { text: 'MONSOON CAMPUS', color: '#b5523b', height: 9.2 }));
+interact.push(point('chapter', 35.6, 1.8, { id: 'monsoon-campus', district: 'monsoon-campus' }));
+interact.push(point('memory', 34.2, 4.4, { id: 'madurai-checkpoint' }));
+interact.push(point('memory', 37, -1.6, { id: 'association-badge' }));
+interact.push(point('memory', 40, 3.6, { id: 'ecell-crowd' }));
 // --- Montfort (was Lake Park): St. Montfort school + a childhood hangout ---
 O('school_building', -36.6, -5.5, { rot: -90, text: 'ST. MONTFORT' });
 O('hangout_corner', -35.2, 4.4, { rot: -90 });
@@ -353,7 +360,7 @@ interact.push(point('memory', -10.6, 38.4, { id: 'new-save-file' }));
 
 // --- Memory Line: a loop railway between the ring road and the outer districts.
 // It stands for moving between chapters of life; boarding is fast travel.
-const RAIL = { x0: -30, x1: 25, z0: -28, z1: 32.5, r: 7 };
+const RAIL = { x0: -30, x1: 31, z0: -34, z1: 32.5, r: 7 };
 const railPts = [];
 {
   const { x0, x1, z0, z1, r } = RAIL;
@@ -376,8 +383,8 @@ const distToRail = (x, z) => {
 // Stations: [id, district, name, x, z, rot] — the rail runs along each platform's front edge.
 const STATIONS = [
   ['lake', 'lake-park', 'Montfort', -32, -16, -90, 1, 'The Beginning'],
-  ['winter', 'winter-campus', 'Tomsk', -16, -30, 0, 2, 'The Detour'],
-  ['monsoon', 'monsoon-campus', 'TCE', 27, -8.4, 90, 3, 'The Restart'],
+  ['winter', 'winter-campus', 'Tomsk', -16, -36, 0, 2, 'The Detour'],
+  ['monsoon', 'monsoon-campus', 'TCE', 33, -8.4, 90, 3, 'The Restart'],
   ['lighthouse', 'lighthouse', 'Airport', 7, 34.8, 180, 4, 'The Departure'],
 ];
 for (const [id, district, name, x, z, rot, order, tagline] of STATIONS) {
@@ -409,16 +416,16 @@ for (let a = 0; a < Math.PI * 2; a += 0.085) {
 // loop: true walks the polyline as a circuit, otherwise back and forth.
 const route = (npc, pts, loop = false, extra = {}) => paths.push(line('npc_route', pts, { npc, loop, ...extra }));
 route('thianesh', [[-17, -9.0], [-11.5, -8.0], [-10.5, -5.5], [-16.5, -5.5]], true);     // Iron Yard
-route('guru', [[-3.4, -32.2], [-8.6, -32.4], [-7.8, -30.0]]);                              // Winter Campus (west)
+route('guru', [[-3.4, -38.2], [-8.6, -38.4], [-7.8, -36.0]]);                              // Winter Campus (west)
 route('shabeer', [[-33.4, 2.6], [-33.0, 5.6], [-33.8, 7.6]]);                              // Montfort, the childhood hangout
-route('anu', [[33.2, -1.4], [36.4, -1.6], [39, 2.4], [35.8, 2.6]], true);                  // TCE forecourt
+route('anu', [[39.2, -1.4], [42.4, -1.6], [45, 2.4], [41.8, 2.6]], true);                  // TCE forecourt
 route('harris', [[-4.6, 38.6], [0.8, 39.3], [4.0, 39.3], [5.8, 37.8]], false, { idles: ',look,check,check', faces: ',,0,-90' });                     // Airport, terminal to the jet
-route('soap', [[6.4, -7.9], [5.0, -7.0], [7.8, -7.0]], false, { idles: 'punch,lean,look', faces: '180,90,' });                 // boxing basement
-route('cal', [[16.4, -15.9], [17.7, -16.8], [14.4, -14.8]], false, { idles: 'sit,look,look', faces: '-128,,' });             // western camp
-route('vesper', [[12.4, -6.9], [12.4, -4.0], [10.3, -4.0]], false, { idles: 'gaze,look,look', faces: '180,,' });                  // moonlit court
-route('skip', [[11.0, -16.2], [13.2, -15.0], [12.2, -13.4]], false, { idles: 'look,check,look', faces: '0,180,' });               // rooftop
-route('hale', [[5.4, -17.0], [7.6, -17.0], [6.4, -14.0]], false, { idles: 'lean,look,gaze', faces: '0,45,' });                     // red alley
-route('ollie', [[16.6, -5.8], [14.6, -5.2], [14.6, -8.0]], false, { idles: 'type,look,gaze', faces: '180,,90' });               // startup desk
+route('soap', [[6.2, -10.4], [5.0, -8.8], [5.6, -6.6]], false, { idles: 'punch,lean,look', faces: '180,90,125' });                 // boxing basement
+route('cal', [[22.35, -19.6], [22.12, -18.73], [21.48, -18.08], [20.6, -17.85], [19.73, -18.08], [19.08, -18.73], [18.85, -19.6], [19.08, -20.48], [19.73, -21.12], [20.6, -21.35], [21.48, -21.12], [22.12, -20.48]], true, { ride: 1 });   // rides circles in the paddock             // western camp
+route('vesper', [[13.5, -8.2], [13.5, -5.0], [11.0, -5.0]], false, { idles: 'gaze,look,look', faces: '180,,' });                  // moonlit court
+route('skip', [[12.0, -21.6], [15.6, -20.4], [13.6, -18.2]], false, { idles: 'look,check,look', faces: '0,180,' });               // rooftop
+route('hale', [[5.4, -23.0], [7.6, -23.0], [6.4, -19.4]], false, { idles: 'lean,look,gaze', faces: '0,45,' });                     // red alley
+route('ollie', [[20.6, -6.6], [18.4, -6.0], [18.4, -9.0]], false, { idles: 'type,look,gaze', faces: '180,,90' });               // startup desk
 route('akshai', [[10.3, 5.8], [10.3, 12.2], [10.3, 17.9]]);                                // Garage, centre aisle past the exhibits
 route('naveen', [[4.8, 23.3], [7.6, 23.3], [7.6, 18.6]]);                                  // Garage, tool wall to the centre bench
 route('shabesh', [[16.2, 23.3], [13.0, 23.3], [16.2, 18.6]], true);                        // Garage, east side by the exhibits

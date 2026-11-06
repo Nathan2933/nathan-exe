@@ -262,10 +262,11 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
     };
     if (def.companion === 'horse') {
       // a horse that ambles along behind its rider and stops beside them
-      const h = buildHorse();
+      const h = buildHorse(def.horseColor === 'brown' ? 0x7a4a2a : 0xf2efe8, def.horseColor === 'brown' ? 0x2a1a12 : 0xd6d0c4);
       h.group.position.set(p0.x - 1.4, ch.group.position.y, p0.z + 0.8);
       root.add(h.group);
       it.companion = { ...h, phase: 0 };
+      it.ride = !!props.ride; // rider sits on the horse and they move as one
     }
     if (it.route.idles[0]) { ch.pose = it.route.idles[0]; it.route.wait = 3 + Math.random() * 3; }
     if (it.route.faces[0] != null) ch.heading = it.route.faces[0];
@@ -433,9 +434,21 @@ export function updateNpcs(npcs, dt, t, heightAt, player, talkingTo) {
       ch.lookAt(dP < 5 ? player : null);
       ch.heading += Math.atan2(Math.sin(it.homeHeading - ch.heading), Math.cos(it.homeHeading - ch.heading)) * Math.min(1, dt * 2);
     }
-    gp.y = heightAt(gp.x, gp.z);
+    // mounted riders: face the way the horse moves, sit still in the saddle
+    const rideSp = it.ride ? Math.hypot(_v.x, _v.z) : 0;
+    if (it.ride) { if (rideSp > 0.05) ch.heading = Math.atan2(_v.x, _v.z); _v.set(0, 0, 0); ch.pose = 'ride'; }
+    gp.y = heightAt(gp.x, gp.z) + (it.ride ? 0.7 : 0);
     ch.update(dt, _v, t);
-    if (it.companion) {
+    if (it.ride) {
+      // mounted: the horse carries the rider along the route
+      const c = it.companion, ground = heightAt(gp.x, gp.z), sp = rideSp;
+      c.group.position.set(gp.x, ground, gp.z);
+      c.group.rotation.y = ch.heading - Math.PI / 2;
+      c.phase += dt * sp * 5;
+      c.legs.forEach((l, i) => { l.rotation.z = Math.sin(c.phase + (i % 2 ? Math.PI : 0) + (i > 1 ? Math.PI / 2 : 0)) * 0.5 * Math.min(1, sp); });
+      c.head.rotation.z = sp > 0.05 ? Math.sin(c.phase) * 0.08 : Math.sin(t * 0.9) * 0.1 - 0.12;
+      c.tail.rotation.x = Math.sin(t * 2.2) * 0.3;
+    } else if (it.companion) {
       const c = it.companion, hp = c.group.position;
       // stand 1.5 m to the rider's left-behind; walk there, then face the same way
       const side = ch.heading + Math.PI * 0.72;
@@ -453,7 +466,7 @@ export function updateNpcs(npcs, dt, t, heightAt, player, talkingTo) {
     }
     // keep the interaction spot glued to the character
     it.x = gp.x; it.z = gp.z;
-    it.beacon.group.position.set(gp.x, gp.y + 0.04, gp.z);
+    it.beacon.group.position.set(gp.x, heightAt(gp.x, gp.z) + 0.04, gp.z);
     it.hit.position.set(gp.x, 1.3, gp.z);
   }
 }

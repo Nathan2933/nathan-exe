@@ -797,8 +797,8 @@
       "scripted": true,
       "district": "city-park",
       "id": "soap",
-      "name": "Soap",
-      "role": "Basement philosopher · Boxing corner",
+      "name": "Tyler Durden",
+      "role": "Fight Club · Basement",
       "theme": "fight",
       "color": "#8a2a22",
       "skin": "tan",
@@ -857,7 +857,8 @@
         "Do our choices define us? :: Every one of 'em leaves a track. // You can't always pick the trail you're on. You can pick how you walk it.",
         "What do you think about Nathan's journey? :: Took a few turns most wouldn't. // Way I see it, the detours taught him more than the straight roads ever could."
       ],
-      "companion": "horse"
+      "companion": "horse",
+      "horseColor": "white"
     },
     {
       "species": "human",

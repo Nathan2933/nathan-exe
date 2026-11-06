@@ -450,6 +450,9 @@ export class Character {
         pm('sx1', -0.4 - 1.2 * k); pm('el1', -1.7 + 1.5 * k); pm('sx0', -1.05); pm('el0', -1.85); pm('spineY', 0.22 * k); pm('th0', -0.2); pm('kn0', 0.25);
       } else if (P === 'type') {
         pm('sx0', -0.95); pm('sx1', -0.95); pm('el0', -0.75 + 0.12 * Math.sin(t * 14)); pm('el1', -0.75 + 0.12 * Math.sin(t * 15 + 1)); pm('headX', 0.22); pm('spineX', 0.12);
+      } else if (P === 'ride') {
+        pm('hipY', -0.12); pm('th0', -0.95); pm('th1', -0.95); pm('kn0', 1.0); pm('kn1', 1.0); pm('spineX', 0.08);
+        pm('sx0', -0.7); pm('sx1', -0.7); pm('el0', -0.9); pm('el1', -0.9); pm('hipX', 0);
       } else if (P === 'gaze') {
         pm('headX', -0.38); this.arms.forEach((a, i) => { pm(`sx${i}`, 0.4); pm(`el${i}`, -0.5); pm(`sz${i}`, a.side * 0.05); });
       }

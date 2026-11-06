@@ -2469,10 +2469,10 @@ export const KIT = {
     return { obj: g, colliders: [], nightGlow: [pool], animate: (t) => { halo.material.opacity = Math.sin(t * 13) > 0.92 ? 0.04 : 0.18 + 0.04 * Math.sin(t * 2); } };
   },
 
-  pied_piper() {
-    // Small suburban startup house with a bold PIED PIPER board over the garage.
+  pied_piper({ w = 3.0, d = 2.4 } = {}) {
+    // Suburban startup house with a bold PIED PIPER board over the garage.
     const g = new THREE.Group(), k = kit(g);
-    const W = 3.0, D = 2.4, H = 2.3;
+    const W = w, D = d, H = 2.6;
     k.box(W + 0.2, 0.2, D + 0.2, C.plinth, 0, 0, 0);
     k.box(W, H, D, 0xe9e4d6, 0, 0.2, 0);
     const rs = new THREE.Shape(); rs.moveTo(-D / 2 - 0.3, 0); rs.lineTo(D / 2 + 0.3, 0); rs.lineTo(0, 1.0); rs.closePath();
@@ -2481,7 +2481,7 @@ export const KIT = {
     for (let i = 0; i < 4; i++) k.box(1.6, 0.03, 0.04, 0x9aa8bf, -0.5, 0.45 + i * 0.32, D / 2 + 0.06, { shadow: false });
     k.box(0.6, 1.6, 0.06, 0x2f5a3a, 0.95, 0.2, D / 2 + 0.02);                       // front door
     k.box(0.5, 0.4, 0.04, glow(0xcfe8ff), 0.95, 1.95, D / 2 + 0.04, { shadow: false });
-    const sign = boardSign('PIED PIPER', 3.6, 0.95, { fg: '#ffffff', bg: '#1f6b3a', board: 0x1f6b3a, trim: 0xf2f0ea, size: 88 });
+    const sign = boardSign('PIED PIPER', Math.max(3.6, W - 0.4), 1.15, { fg: '#ffffff', bg: '#1f6b3a', board: 0x1f6b3a, trim: 0xf2f0ea, size: 92 });
     sign.position.set(0, 0.2 + H + 0.55, D / 2 + 0.3); g.add(sign);
     for (const x of [-1.3, 1.3]) k.box(0.1, 0.7, 0.1, 0x2a2440, x, 0.2 + H - 0.1, D / 2 + 0.2);
     k.box(0.5, 0.6, 0.06, C.white, -1.15, 0.9, D / 2 + 0.06);                       // whiteboard by the door
@@ -2498,5 +2498,53 @@ export const KIT = {
     k.box(0.32, 0.32, 0.32, 0xd8c39a, 0, 1.45, 0);
     k.box(0.52, 0.08, 0.38, 0x8a2a2a, 0, 1.0, 0, { shadow: false });
     return { obj: g, colliders: [{ x: 0, z: 0, r: 0.3 }] };
+  },
+
+  paddock({ r = 2.7 } = {}) {
+    // Round riding paddock: packed-dirt ring and a post-and-rail fence with a
+    // gate gap on the west side (local -x).
+    const g = new THREE.Group(), k = kit(g);
+    k.cyl(r, r, 0.03, 0xc9a27a, 0, 0, 0, 28, { shadow: false });
+    k.cyl(r - 0.9, r - 0.9, 0.035, 0xb8916a, 0, 0, 0, 24, { shadow: false });
+    const N = 26, cols = [], gate = (a) => Math.abs(Math.atan2(Math.sin(a - Math.PI), Math.cos(a - Math.PI))) < 0.3;
+    for (let i = 0; i < N; i++) {
+      const a = (i / N) * Math.PI * 2;
+      if (gate(a)) continue;
+      const x = Math.cos(a) * r, z = Math.sin(a) * r;
+      k.box(0.12, 0.95, 0.12, C.wood, x, 0, z);
+      cols.push({ x, z, r: 0.14 });
+      const a2 = ((i + 1) / N) * Math.PI * 2;
+      if (gate(a2)) continue;
+      const x2 = Math.cos(a2) * r, z2 = Math.sin(a2) * r, len = Math.hypot(x2 - x, z2 - z);
+      for (const y of [0.45, 0.82]) { const rail = k.box(len, 0.07, 0.06, C.woodLight, (x + x2) / 2, y, (z + z2) / 2); rail.rotation.y = -Math.atan2(z2 - z, x2 - x); }
+    }
+    k.box(0.5, 0.35, 0.3, C.wood, r + 0.6, 0, -1.2); k.box(0.46, 0.06, 0.26, 0xd9b27a, r + 0.6, 0.35, -1.2);   // hay bale + water trough feel
+    return { obj: g, colliders: cols };
+  },
+
+  giant_soap({ text = 'FIGHT CLUB' } = {}) {
+    // A big pink bar of soap with FIGHT CLUB pressed into it, with bubbles.
+    const g = new THREE.Group(), k = kit(g);
+    const pink = 0xff8fb1, deep = 0xe8648e;
+    k.box(2.3, 0.7, 1.3, pink, 0, 0, 0);
+    k.box(2.1, 0.12, 1.1, 0xffa8c4, 0, 0.7, 0);
+    k.box(2.34, 0.06, 1.34, deep, 0, 0, 0, { shadow: false });
+    const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64;
+    const x2 = cv.getContext('2d');
+    x2.fillStyle = '#ffa8c4'; x2.fillRect(0, 0, 256, 64);
+    x2.font = 'bold 40px Silkscreen, monospace'; x2.textAlign = 'center'; x2.textBaseline = 'middle';
+    x2.fillStyle = '#ffd6e4'; x2.fillText(text, 130, 35);
+    x2.fillStyle = '#c2456e'; x2.fillText(text, 128, 33);
+    const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.magFilter = THREE.NearestFilter;
+    const top = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 0.48), new THREE.MeshBasicMaterial({ map: tex }));
+    top.rotation.x = -Math.PI / 2; top.position.set(0, 0.825, 0.05); top.userData.dynamic = true; g.add(top);
+    const front = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 0.5), new THREE.MeshBasicMaterial({ map: tex }));
+    front.position.set(0, 0.36, 0.655); front.userData.dynamic = true; g.add(front);
+    const dyn = new THREE.Group(); dyn.userData.dynamic = true; g.add(dyn);
+    const bubbles = [0, 1, 2, 3, 4].map((i) => { const b = new THREE.Mesh(new THREE.IcosahedronGeometry(0.08 + (i % 3) * 0.04, 1), new THREE.MeshBasicMaterial({ color: 0xf6f3ff, transparent: true, opacity: 0.7, depthWrite: false })); dyn.add(b); return b; });
+    return {
+      obj: g, colliders: [{ x: 0, z: 0, w: 2.3, d: 1.3 }],
+      animate: (t) => bubbles.forEach((b, i) => { const u = (t * 0.25 + i / 5) % 1; b.position.set(-0.8 + i * 0.4 + Math.sin(t + i) * 0.1, 0.9 + u * 1.6, Math.cos(t * 0.7 + i) * 0.3); b.material.opacity = 0.7 * (1 - u); }),
+    };
   },
 };
