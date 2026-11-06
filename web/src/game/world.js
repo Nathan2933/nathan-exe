@@ -229,6 +229,10 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
     } else if (o.type === 'finale') {
       const it = { ...base, id: 'finale', kind: 'finale', district: 'lighthouse', radius: 2.0 };
       it.beacon = beacon(o.x, 2.6, o.z); hitBox(it); interactables.push(it);
+    } else if (o.type === 'group') {
+      // shared group conversation spot (Join the Gang / Join the Outlaws)
+      const it = { ...base, id: `group:${pr.id}`, kind: 'group', groupId: pr.id, title: pr.title || 'Join in', district: 'tahiti', radius: 1.6 };
+      it.beacon = beacon(o.x, 2.0, o.z, { small: true }); hitBox(it, 1.6, 2.6, 1.6); interactables.push(it);
     } else if (o.type === 'vehicle') {
       // rideable bicycle / horse, parked at its rack or post
       const vt = pr.vtype === 'horse' ? 'horse' : 'bike';
@@ -287,7 +291,7 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
       it.ride = !!props.ride; // rider sits on the horse and they move as one
     }
     if (it.route.idles[0]) { ch.pose = it.route.idles[0]; it.route.wait = 3 + Math.random() * 3; }
-    if (it.route.faces[0] != null) ch.heading = it.route.faces[0];
+    if (it.route.faces[0] != null) { ch.heading = it.route.faces[0]; it.homeHeading = it.route.faces[0]; }
     it.beacon = beacon(p0.x, 0, p0.z, { pillar: false });
     hitBox(it, 1.2, 2.6, 1.2);
     interactables.push(it);
@@ -411,9 +415,15 @@ export function updateNpcs(npcs, dt, t, heightAt, player, talkingTo) {
       const target = Math.atan2(x - gp.x, z - gp.z);
       ch.heading += Math.atan2(Math.sin(target - ch.heading), Math.cos(target - ch.heading)) * Math.min(1, dt * rate);
     };
-    if (it === talkingTo || dP < STOP_DIST) {
-      // Nathan is here: stop, stand up and face him
-      ch.pose = null;
+    if (it.focus) {
+      // in a group scene: stay put (seated people stay seated) and turn to whoever is talking
+      ch.lookAt(it.focus);
+      turnTo(it.focus.x, it.focus.z, 3);
+      if (r) r.wait = Math.max(r.wait, 0.8);
+      if (!ch.pose && r?.idles?.[r.seg] && r.pts.length === 1) ch.pose = r.idles[r.seg];
+    } else if (it === talkingTo || dP < STOP_DIST) {
+      // Nathan is here: stop and face him (people who roam stand up; settled ones stay put)
+      if (it === talkingTo || (r && r.pts.length > 1)) ch.pose = null;
       ch.lookAt(player);
       turnTo(player.x, player.z, it === talkingTo ? 8 : 4);
       if (r) r.wait = Math.max(r.wait, 0.8);
@@ -449,6 +459,7 @@ export function updateNpcs(npcs, dt, t, heightAt, player, talkingTo) {
         }
       }
     } else {
+      if (!ch.pose && r?.idles?.[0]) ch.pose = r.idles[0];   // settled people return to their idle
       ch.lookAt(dP < 5 ? player : null);
       ch.heading += Math.atan2(Math.sin(it.homeHeading - ch.heading), Math.cos(it.homeHeading - ch.heading)) * Math.min(1, dt * 2);
     }

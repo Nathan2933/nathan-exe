@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { RetroRenderer } from './retro.js';
 import { applyPalette, SKY } from './palette.js';
 import { setGlowBoost } from './kit.js';
-import { sfx, setSound, setRain, setMusic, setTheme } from './audio.js';
+import { sfx, setSound, setRain, setMusic, setTheme, setOcean } from './audio.js';
 import { buildWorld, loadKitOverrides, updateWalkers, updateNpcs, groundHeight } from './world.js';
 import { loadTiledMap, tileAt } from './tiled.js';
 import { NavGrid } from './nav.js';
@@ -125,6 +125,7 @@ function applyLook() {
 const scene = new THREE.Scene();
 const SKY_START = new THREE.Color(0x8fdcf0);
 const SKY_END = new THREE.Color(0xffc98f);
+const TAHITI_SKY = new THREE.Color(0xffa58a); // soft sunset over Tahiti
 scene.background = SKY_START.clone();
 applyLook();
 
@@ -185,15 +186,10 @@ async function init() {
     return;
   }
   const overrides = await loadKitOverrides(BASE);
+  kitOverrides = overrides;
+  mapCache.island1 = map; state.level = 'island1';
   world = buildWorld(scene, state.content, map, overrides);
-  nav = new NavGrid({
-    size: map.width, cell: 0.5, islandRadius: (map.props.islandRadius || 44) - 2.5, colliders: world.colliders,
-    blocked: (x, z) => {
-      // raised floors (jetties, platforms) are walkable even over water
-      for (const f of world.floors) if (x >= f.minX && x <= f.maxX && z >= f.minZ && z <= f.maxZ) return false;
-      const t = tileAt(map, x, z); return !t || !t.walkable;
-    },
-  });
+  nav = makeNav();
   const s = state.save;
   const spawn = s.pos && nav.isWalkable(s.pos.x, s.pos.z) ? s.pos : map.spawn || { x: 2, z: 6 };
   player.group.position.set(spawn.x, heightAt(spawn.x, spawn.z), spawn.z);
@@ -265,6 +261,7 @@ function setupUI() {
     if (e.key === 'h' || e.key === 'H') { e.preventDefault(); toggleControls(); return; }
     if (e.key === 'n' || e.key === 'N') { e.preventDefault(); cycleTime(); return; }
     if ((e.key === 'r' || e.key === 'R') && state.mount) { e.preventDefault(); resetMount(); return; }
+    if (e.key === 'Escape' && state.groupScene) { endGroupScene(); return; }
     if (e.key === 'Escape') {
       if (!$('#bigmap').classList.contains('hidden')) return toggleBigMap(false);
       if (!$('#controls').classList.contains('hidden')) return toggleControls(false);
@@ -285,7 +282,11 @@ function setupUI() {
     if (it) { it.character.talking = false; it.character.lookAt(null); player.talking = false; }
   };
   dialogue.onMemory = (id) => unlockMemory(id);
-  dialogue.onAction = (name) => { world.apis[name]?.trigger({ toast, sfx }); state.talkingTo?.character.play('nod'); };
+  dialogue.onAction = (name) => {
+    if (name === 'fly-tahiti') return void setTimeout(() => startFlight('tahiti'), 900);
+    if (name === 'fly-home') return void setTimeout(() => startFlight('island1'), 900);
+    world.apis[name]?.trigger({ toast, sfx }); state.talkingTo?.character.play('nod');
+  };
 }
 
 function renderJourney() {
@@ -311,6 +312,7 @@ function renderJourney() {
 function interact(it) {
   if (state.mount) return dismount();
   if (state.seated) return standUp();
+  if (it.kind === 'group') return runGroupScene(it);
   if (it.kind === 'vehicle') return mount(it);
   if (it.kind === 'seat') return sitDown(it);
   if (it.kind === 'npc') return talkTo(it);
@@ -420,7 +422,9 @@ function closePanel() {
 }
 
 function talkTo(it) {
-  const def = (state.content.npcs || []).find((n) => n.id === it.npcId);
+  const base = (state.content.npcs || []).find((n) => n.id === it.npcId);
+  const over = state.level === 'tahiti' && state.tahiti?.overrides?.[it.npcId];
+  const def = base && over ? { ...base, ...over } : base;
   if (!def) return;
   closePanel();
   state.talkingTo = it;
@@ -757,6 +761,273 @@ function rideUpdate(dt, t, kx, kz, running) {
 }
 const zeroV = new THREE.Vector3();
 
+// ---------------- Islands: Island 01 (public) and Tahiti (Island 02) ----------------
+// Each island is its own Tiled map; switching rebuilds the world in place
+// behind the flight cinematic, so there is no loading screen.
+const LEVELS = { island1: 'maps/town.tmj', tahiti: 'maps/tahiti.tmj' };
+const mapCache = {};
+let kitOverrides = null;
+function makeNav() {
+  return new NavGrid({
+    size: map.width, cell: 0.5, islandRadius: (map.props.islandRadius || 44) - 2.5, colliders: world.colliders,
+    blocked: (x, z) => {
+      for (const f of world.floors) if (x >= f.minX && x <= f.maxX && z >= f.minZ && z <= f.maxZ) return false;
+      const t = tileAt(map, x, z); return !t || !t.walkable;
+    },
+  });
+}
+/**
+ * Private-island gate. Real protection lives on a server (see docs/TAHITI.md):
+ * a Netlify Function answers /.netlify/functions/tahiti-session with
+ * {allowed} for a signed session cookie. Until that exists the prototype
+ * runs open, and ships only placeholder, non-personal Tahiti content.
+ */
+async function checkTahitiAccess() {
+  try {
+    const r = await fetch('/.netlify/functions/tahiti-session', { credentials: 'include', headers: { accept: 'application/json' } });
+    if (r.status === 401 || r.status === 403) return { allowed: false };
+    if (r.ok && (r.headers.get('content-type') || '').includes('json')) { const j = await r.json(); if (typeof j.allowed === 'boolean') return { allowed: j.allowed }; }
+  } catch { /* no access server yet */ }
+  return { allowed: true, prototype: true };
+}
+async function loadTahitiData() {
+  if (state.tahiti) return state.tahiti;
+  const data = await fetch(`${BASE}data/tahiti.json`, { cache: 'no-cache' }).then((r) => r.json());
+  const have = new Set((state.content.npcs || []).map((n) => n.id));
+  for (const n of data.npcs || []) if (!have.has(n.id)) state.content.npcs.push(n);
+  state.tahiti = data;
+  return data;
+}
+async function switchLevel(name) {
+  if (name === 'tahiti') await loadTahitiData();
+  const m = mapCache[name] || (mapCache[name] = await loadTiledMap(`${BASE}${LEVELS[name]}`));
+  scene.remove(world.root);
+  map = m; state.level = name;
+  world = buildWorld(scene, state.content, map, kitOverrides);
+  nav = makeNav();
+  railPts = null;
+  world.interactables.forEach((it) => { if (isDone(it)) markVisited(it, true); });
+  const jet = world.apis.private_jet;
+  if (jet) { jet.home = jet.group.position.clone(); jet.homeRot = jet.group.rotation.y; }
+  setupLabels(); setupMinimap();
+  state.nearby = null; state.talkingTo = null; state.path = [];
+}
+
+// ---------------- Flight cinematic ----------------
+// Keyframed jet paths per island (metres, relative to the parked jet's ground).
+const FLIGHT = {
+  island1: {
+    out: [[2.4, 0, 36.8], [-2, 0, 38.6], [-6.5, 0, 40.6], [-6.5, 0, 40.6, 0], [8, 0, 40.6], [24, 3.5, 41.5], [62, 15, 47]],
+    outT: [0, 1.6, 3.0, 4.0, 6.6, 8.6, 12],
+    in: [[-95, 16, 40.6], [-40, 7, 40.6], [-7, 0, 40.6], [5, 0, 40.6], [5, 0, 38.6], [2.4, 0, 36.8, 0]],
+    inT: [0, 4.5, 7.0, 9.4, 10.6, 12.0],
+  },
+  tahiti: {
+    out: [[-6, 0, 11.8], [-2.5, 0, 13.5], [-1.5, 0, 16.5], [-1.5, 0, 16.5, Math.PI], [-18, 0, 16.5], [-32, 4, 16.2], [-82, 15, 12]],
+    outT: [0, 1.4, 2.6, 3.6, 6.4, 8.4, 12],
+    in: [[-95, 16, 16.5], [-45, 7, 16.5], [-26, 0, 16.5], [-10, 0, 16.5], [-9, 0, 14.2], [-6, 0, 11.8, 0]],
+    inT: [0, 4.5, 7.0, 9.4, 10.6, 12.0],
+  },
+};
+const ease = (t) => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2);
+function samplePath(keys, times, tt) {
+  const end = times[times.length - 1];
+  const t = Math.max(0, Math.min(end, tt));
+  let i = 0; while (i < times.length - 2 && t > times[i + 1]) i++;
+  const u = ease((t - times[i]) / Math.max(1e-6, times[i + 1] - times[i]));
+  const a = keys[i], b = keys[i + 1];
+  return { x: a[0] + (b[0] - a[0]) * u, y: a[1] + (b[1] - a[1]) * u, z: a[2] + (b[2] - a[2]) * u, rot: b[3], u, seg: i };
+}
+function poseJet(jet, s, prev) {
+  const g = jet.group, base = jet.home.y;
+  const dx = s.x - prev.x, dz = s.z - prev.z, dy = s.y - prev.y, h = Math.hypot(dx, dz);
+  g.position.set(s.x, base + s.y, s.z);
+  if (s.rot !== undefined && h < 0.02) {
+    g.rotation.y += Math.atan2(Math.sin(s.rot - g.rotation.y), Math.cos(s.rot - g.rotation.y)) * 0.12;
+  } else if (h > 0.004) {
+    const want = Math.atan2(-dz, dx);
+    g.rotation.y += Math.atan2(Math.sin(want - g.rotation.y), Math.cos(want - g.rotation.y)) * 0.25;
+  }
+  g.rotation.z += ((h > 0.004 ? Math.atan2(dy, h) * 0.8 : 0) - g.rotation.z) * 0.15;
+}
+function cineUI(on, { bars = true } = {}) {
+  let el = $('#cine');
+  if (!el) {
+    el = document.createElement('div'); el.id = 'cine';
+    el.innerHTML = '<div class="cine-bar top"></div><div class="cine-bar bottom"></div><div class="cine-clouds"></div><p class="cine-caption" aria-live="polite"></p><button type="button" class="btn cine-skip">Skip ▸</button>';
+    document.body.append(el);
+    el.querySelector('.cine-skip').addEventListener('click', () => (state.groupScene ? endGroupScene() : skipCine()));
+  }
+  el.classList.toggle('on', on); el.classList.toggle('bars', on && bars);
+  document.body.classList.toggle('cine-on', on && bars); // HUD steps aside during the flight
+  return el;
+}
+function cineCaption(text) { const c = $('#cine .cine-caption'); if (c) c.textContent = text || ''; }
+function cineClouds(v) { const c = $('#cine .cine-clouds'); if (c) c.style.opacity = String(v); }
+
+async function startFlight(to) {
+  if (state.cine || state.groupScene) return;
+  if (dialogue.open) dialogue.close();
+  if (state.mount) dismount(true);
+  if (state.seated) standUp();
+  if (to === 'tahiti') {
+    const access = await checkTahitiAccess();
+    if (!access.allowed) { toast('Tahiti is a private island. Ask Nathan for an invite.'); return; }
+    if (access.prototype) toast('Tahiti prototype: private access is not switched on yet.');
+  }
+  const from = state.level;
+  const jet = world.apis.private_jet;
+  if (!jet) return;
+  if (!jet.home) { jet.home = jet.group.position.clone(); jet.homeRot = jet.group.rotation.y; }
+  closePanel();
+  state.minigame = 'flight';
+  state.cine = { from, to, phase: 'board', t: 0, vel: new THREE.Vector3(), prev: { x: 0, y: 0, z: 0 }, zoom0: state.zoom };
+  state.path = []; marker.visible = false;
+  cineUI(true); cineCaption(to === 'tahiti' ? 'Next stop: Tahiti' : 'Heading home to Island 01');
+}
+function cineCamera(x, z, zoom) {
+  state.camOverride = { x, z };
+  if (Math.abs(state.zoom - zoom) > 0.002) { state.zoom = zoom; resize(); }
+}
+async function cineSwap(c) {
+  c.swapping = true;
+  await switchLevel(c.to);
+  const jet = world.apis.private_jet;
+  jet.setStairs(false); jet.setDoor(false);
+  const k = FLIGHT[c.to].in[0];
+  jet.group.position.set(k[0], jet.home.y + k[1], k[2]); jet.group.rotation.y = 0;
+  c.prev = { x: k[0], y: k[1], z: k[2] };
+  c.phase = 'in'; c.t = 0; c.swapping = false;
+}
+function runCine(dt) {
+  const c = state.cine; if (!c || c.swapping) return;
+  const jet = world.apis.private_jet, p = player.group.position;
+  c.t += dt;
+  c.vel.set(0, 0, 0);
+  if (c.phase === 'board') {
+    // Nathan walks to the stairs, the door opens, he climbs aboard
+    if (!c.door) { c.door = jet.doorPoint(); c.start = p.clone(); jet.setDoor(true); jet.setStairs(true); }
+    const u = Math.min(1, c.t / 1.6);
+    const tx = c.start.x + (c.door.x - c.start.x) * u, tz = c.start.z + (c.door.z - c.start.z) * u;
+    if (u < 1) { c.vel.set(c.door.x - c.start.x, 0, c.door.z - c.start.z).divideScalar(1.6); p.set(tx, heightAt(tx, tz) + u * 0.7, tz); }
+    cineCamera(p.x, p.z, state.zoom + (1.15 - state.zoom) * 0.05);
+    if (c.t > 2.0) { player.group.visible = false; jet.setDoor(false); }
+    if (c.t > 2.6) { jet.setStairs(false); c.phase = 'out'; c.t = 0; c.prev = { x: jet.home.x, y: 0, z: jet.home.z }; }
+    return;
+  }
+  if (c.phase === 'out') {
+    // taxi, take-off and climb out over the ocean while the camera pulls back
+    const F = FLIGHT[c.from], end = F.outT[F.outT.length - 1];
+    const s = samplePath(F.out, F.outT, c.t);
+    poseJet(jet, s, c.prev); c.prev = s;
+    const climb = Math.max(0, Math.min(1, (c.t - F.outT[3]) / (end - F.outT[3])));
+    cineCamera(s.x, s.z, 1.15 - 0.85 * ease(climb));
+    p.set(s.x, jet.home.y + s.y, s.z);
+    if (c.t > end - 1.2) cineClouds(Math.min(1, (c.t - (end - 1.2)) / 1.0));
+    if (c.t >= end) cineSwap(c);
+    return;
+  }
+  if (c.phase === 'in') {
+    // wide view of the island, the approach, touchdown, then the camera closes in
+    const F = FLIGHT[c.to], end = F.inT[F.inT.length - 1];
+    if (c.t < 1.2) cineClouds(1 - c.t / 1.2); else cineClouds(0);
+    const s = samplePath(F.in, F.inT, c.t);
+    poseJet(jet, s, c.prev); c.prev = s;
+    const land = Math.max(0, Math.min(1, (c.t - F.inT[1]) / (end - F.inT[1])));
+    const wide = 1 - Math.min(1, c.t / F.inT[2]);
+    const cx = s.x * (1 - wide * 0.55), cz = s.z * (1 - wide * 0.55);
+    cineCamera(cx, cz, 0.3 + 1.0 * ease(land));
+    p.set(s.x, jet.home.y + s.y, s.z);
+    if (c.t >= end) {
+      jet.group.position.copy(jet.home); jet.group.rotation.set(0, jet.homeRot, 0);
+      c.phase = 'off'; c.t = 0;
+    }
+    return;
+  }
+  if (c.phase === 'off') {
+    // stairs down, door open, Nathan steps out and walks clear of the jet
+    if (!c.door) { jet.setStairs(true); jet.setDoor(true); }
+    jet.setStairs(true); jet.setDoor(true);
+    const door = jet.doorPoint(), spot = map.spawn && state.level === 'tahiti' ? map.spawn : { x: door.x, z: door.z + 1.4 };
+    if (c.t > 0.6) {
+      player.group.visible = true;
+      const u = Math.min(1, (c.t - 0.6) / 1.4);
+      const tx = door.x + (spot.x - door.x) * u, tz = door.z + (spot.z - door.z) * u;
+      p.set(tx, heightAt(tx, tz) + (1 - u) * 0.7, tz);
+      if (u < 1) c.vel.set(spot.x - door.x, 0, spot.z - door.z).divideScalar(1.4);
+    }
+    cineCamera(p.x, p.z, state.zoom + (1 - state.zoom) * 0.06);
+    if (c.t > 2.4) endCine();
+  }
+}
+async function skipCine() {
+  const c = state.cine; if (!c || c.skipping) return;
+  c.skipping = true;
+  cineClouds(1);
+  if (c.phase === 'board' || c.phase === 'out') { if (!c.swapping) await cineSwap(c); else while (c.swapping) await new Promise((r) => setTimeout(r, 50)); }
+  const jet = world.apis.private_jet;
+  jet.group.position.copy(jet.home); jet.group.rotation.set(0, jet.homeRot, 0);
+  jet.setStairs(true); jet.setDoor(false);
+  const door = jet.doorPoint(), spot = map.spawn && state.level === 'tahiti' ? map.spawn : { x: door.x, z: door.z + 1.4 };
+  player.group.position.set(spot.x, heightAt(spot.x, spot.z), spot.z);
+  endCine();
+}
+function endCine() {
+  const jet = world.apis.private_jet;
+  jet?.setDoor(false); jet?.setStairs(true);
+  player.group.visible = true;
+  const p = player.group.position; p.y = heightAt(p.x, p.z);
+  state.cine = null; state.minigame = null; state.camOverride = null;
+  state.zoom = 1; resize();
+  camTarget.copy(p);
+  cineClouds(0); cineCaption(''); cineUI(false);
+  toast(state.level === 'tahiti' ? 'Welcome to Tahiti' : 'Back on Island 01');
+}
+
+// ---------------- Group conversations (Join the Gang / Join the Outlaws) ----------------
+function runGroupScene(it) {
+  const g = state.tahiti?.groups?.[it.groupId];
+  if (!g || state.groupScene || dialogue.open) return;
+  closePanel(); state.path = []; marker.visible = false;
+  if (state.seated) standUp();
+  const members = (g.members || []).map((id) => world.npcs.find((n) => n.npcId === id)).filter(Boolean);
+  const p = player.group.position;
+  p.set(g.slot.x, heightAt(g.slot.x, g.slot.z), g.slot.z);
+  player.heading = g.slot.heading ?? 0;
+  const cx = members.reduce((a, n) => a + n.x, p.x) / (members.length + 1), cz = members.reduce((a, n) => a + n.z, p.z) / (members.length + 1);
+  for (const n of members) n.focus = new THREE.Vector3(cx, 0, cz);
+  state.groupScene = { g, members, i: -1, prevClose: dialogue.onClose, centre: { x: cx, z: cz } };
+  $('#prompt').classList.add('hidden');
+  state.camOverride = { x: cx, z: cz }; state.zoom = g.zoom || 1.35; resize();
+  cineUI(true, { bars: false }); cineCaption('');
+  dialogue.onClose = () => nextGroupLine();
+  nextGroupLine();
+}
+function nextGroupLine() {
+  const s = state.groupScene; if (!s) return;
+  s.i++;
+  const line = s.g.lines[s.i];
+  for (const n of s.members) { n.character.talking = false; n.focus = new THREE.Vector3(s.centre.x, 0, s.centre.z); }
+  player.talking = false;
+  if (!line) return endGroupScene();
+  const who = line.who === 'nathan' ? null : s.members.find((n) => n.npcId === line.who);
+  const def = line.who === 'nathan' ? { name: state.content.profile?.name?.split(' ')[0] || 'Nathan', color: '#ff6a3d' } : (state.content.npcs || []).find((n) => n.id === line.who) || { name: '?' };
+  const sp = who ? who.character.group.position : player.group.position;
+  for (const n of s.members) if (n !== who) n.focus = sp.clone();
+  if (who) { who.character.talking = true; who.character.play(line.gesture || 'nod'); } else { player.talking = true; player.play('wave'); player.lookAt(new THREE.Vector3(s.centre.x, 0, s.centre.z)); }
+  setTimeout(() => { if (state.groupScene === s) dialogue.start({ name: def.name, color: def.color, role: def.role, lines: [line.text], topics: [] }); }, 0);
+}
+function endGroupScene() {
+  const s = state.groupScene; if (!s) return;
+  state.groupScene = null;
+  dialogue.onClose = s.prevClose;
+  if (dialogue.open) dialogue.close();
+  for (const n of s.members) { n.focus = null; n.character.talking = false; }
+  player.talking = false;
+  state.camOverride = null; state.zoom = 1; resize();
+  cineUI(false);
+}
+
 // ---------------- Lighthouse finale ----------------
 function runFinale(it) {
   closePanel();
@@ -943,7 +1214,7 @@ let lastPersist = 0;
 function persist() {
   if (state.resetting) return;
   const p = player.group.position;
-  state.save.pos = { x: +p.x.toFixed(2), z: +p.z.toFixed(2) };
+  if (state.level !== 'tahiti' && !state.cine) state.save.pos = { x: +p.x.toFixed(2), z: +p.z.toFixed(2) };
   writeSave(state.save);
 }
 
@@ -971,7 +1242,7 @@ function setupMinimap() {
   }
   MM.bg = bg;
   MM.toPx = (x, z) => [(x + map.half) * MM.scale, (z + map.half) * MM.scale];
-  cv.addEventListener('click', (e) => {
+  cv.onclick = ((e) => {
     const r = cv.getBoundingClientRect();
     const u = ((e.clientX - r.left) / r.width - 0.5) * map.width;
     const v = ((e.clientY - r.top) / r.height - 0.5) * map.width;
@@ -1007,8 +1278,10 @@ function drawMinimap(t) {
 
 // ---------------- Labels ----------------
 const labelEls = [];
+let labelLayer = null;
 function setupLabels() {
-  const layer = document.createElement('div');
+  labelLayer?.remove(); labelEls.length = 0;
+  const layer = document.createElement('div'); labelLayer = layer;
   layer.className = 'labels';
   layer.setAttribute('aria-hidden', 'true');
   canvas.after(layer);
@@ -1146,7 +1419,8 @@ function update(dt, t) {
   const running = keys.has('shift');
   velocity.set(0, 0, 0);
   const pos = player.group.position;
-  const frozen = !!state.minigame;
+  const frozen = !!state.minigame || !!state.groupScene;
+  if (state.cine) runCine(dt);
 
   if (state.seated && (kx || kz || state.path.length)) standUp();
   const keyboardMove = !state.mount && state.started && !frozen && !state.ko && !!(kx || kz);
@@ -1185,7 +1459,8 @@ function update(dt, t) {
     if (free(pos.x, nz)) pos.z = nz; else velocity.z = 0;
   }
   if (!state.ko) pos.y += (heightAt(pos.x, pos.z) - pos.y) * Math.min(1, dt * 18);
-  checkHazards(dt);
+  if (!state.cine) checkHazards(dt);
+  if (state.cine) velocity.copy(state.cine.vel);
   player.update(dt, velocity, t);
   stepT -= dt * Math.hypot(velocity.x, velocity.z);
   if (stepT < 0) { stepT = 1.55; if (velocity.lengthSq() > 1) sfx.step(); }
@@ -1228,6 +1503,7 @@ function update(dt, t) {
         if (d < bd) { bd = d; theme = def.theme; lvl = Math.min(1, (7.5 - d) / 3.5) * 0.5; }
       }
     }
+    if (!theme && state.level === 'tahiti' && !state.cine) { theme = 'tahiti'; lvl = 0.32; }
     setTheme(state.started && !state.minigame ? theme : null, lvl);
   }
   if (state.panelOpen && Math.hypot(pos.x - state.panelOpen.x, pos.z - state.panelOpen.z) > state.panelOpen.radius + 2.5) closePanel();
@@ -1277,6 +1553,8 @@ function update(dt, t) {
   const rain = world.weather.find((wz) => wz.contains(pos.x, pos.z));
   rainMix += ((rain ? rain.intensity(t) : 0) - rainMix) * Math.min(1, dt * 2);
   if (rainMix > 0.01) scene.background.lerp(RAIN_SKY, rainMix * 0.55);
+  if (state.level === 'tahiti') scene.background.lerp(TAHITI_SKY, 0.55);
+  setOcean(state.level === 'tahiti' ? 0.55 : 0);
   setRain(rainMix);
   sun.color.setHSL(0.11, 0.7 + progress * 0.25, 0.9 - progress * 0.08);
   applyDayNight(dt);
@@ -1620,7 +1898,7 @@ let stepT = 0;
 
 function updatePrompt() {
   const best = state.nearby, pr = $('#prompt');
-  if (!best || state.panelOpen || dialogue.open || state.minigame) { pr.classList.add('hidden'); return; }
+  if (!best || state.panelOpen || dialogue.open || state.minigame || state.groupScene) { pr.classList.add('hidden'); return; }
   const c = state.content;
   const npc = best.kind === 'npc' && (c.npcs || []).find((n) => n.id === best.npcId);
   const mem = best.kind === 'memory' && (c.memories || []).find((m) => m.id === best.memoryId);
@@ -1632,6 +1910,7 @@ function updatePrompt() {
     memory: ['Memory', mem ? 'Pick up ✦' : ''],
     station: ['Memory Line', best.name ? `${best.name} station` : 'Station'],
     panel: ['Look', best.title],
+    group: ['Group', best.title || 'Join in'],
     seat: ['Bench', state.seated ? 'Stand up' : 'Sit down'],
     vehicle: [best.vtype === 'horse' ? 'Horse' : 'Bicycle', state.mount ? 'Dismount' : best.vtype === 'horse' ? 'Ride horse' : 'Ride bicycle'],
     finale: ['Departures', state.save.finale ? 'Replay the ending' : 'End of Island 01'],
@@ -1672,7 +1951,7 @@ if (import.meta.env.DEV) {
   window.__game = {
     state, player, camera, get world() { return world; }, renderer, dialogue,
     step(frames = 60) { for (let i = 0; i < frames; i++) update(1 / 60, clock.elapsedTime + i / 60); retro.render(scene, camera); },
-    tap: handleTap, walkTo, interact, knockout,
+    tap: handleTap, walkTo, interact, knockout, startFlight, skipCine, switchLevel, get map() { return map; },
   };
 }
 

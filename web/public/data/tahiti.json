@@ -1,0 +1,442 @@
+{
+  "note": "Tahiti prototype content. Every name, line and group script here is a placeholder: replace it with the real friends and stories once private access (docs/TAHITI.md) is switched on, because this file is public until then.",
+  "npcs": [
+    {
+      "id": "tahiti_sf1",
+      "name": "Gang member",
+      "role": "Gang member · Developer",
+      "district": "tahiti",
+      "placeholder": true,
+      "species": "human",
+      "skin": "brown",
+      "hair": "short",
+      "hairColor": "#1b1716",
+      "top": "tee",
+      "topColor": "#3a8ad6",
+      "pants": "jeans",
+      "pantsColor": "#2a2730",
+      "shoes": "#1a1418",
+      "beard": "none",
+      "beardColor": "#1b1716",
+      "glasses": false,
+      "extras": "",
+      "color": "#3a8ad6",
+      "build": 1,
+      "height": 1,
+      "scripted": true,
+      "lines": [
+        "Took you long enough."
+      ],
+      "topics": [
+        "What are you doing? :: Guarding the bed. Somebody has to. (Placeholder)",
+        "Any plans tonight? :: Same as always: no plan. (Placeholder)"
+      ]
+    },
+    {
+      "id": "tahiti_sf2",
+      "name": "Gang member",
+      "role": "Gang member · Developer",
+      "district": "tahiti",
+      "placeholder": true,
+      "species": "human",
+      "skin": "tan",
+      "hair": "curly",
+      "hairColor": "#1b1716",
+      "top": "hoodie",
+      "topColor": "#4a5a7a",
+      "pants": "jeans",
+      "pantsColor": "#2a2730",
+      "shoes": "#1a1418",
+      "beard": "none",
+      "beardColor": "#1b1716",
+      "glasses": false,
+      "extras": "",
+      "color": "#4a5a7a",
+      "build": 1,
+      "height": 1,
+      "scripted": true,
+      "lines": [
+        "Oh hey, you made it."
+      ],
+      "topics": [
+        "Working on something? :: Always. Ask me again in a week. (Placeholder)",
+        "Seen the others? :: They never left the room. (Placeholder)"
+      ]
+    },
+    {
+      "id": "tahiti_sf3",
+      "name": "Gang member",
+      "role": "Gang member · Architect",
+      "district": "tahiti",
+      "placeholder": true,
+      "species": "human",
+      "skin": "fair",
+      "hair": "medium",
+      "hairColor": "#1b1716",
+      "top": "plaid",
+      "topColor": "#6b4a32",
+      "pants": "jeans",
+      "pantsColor": "#2a2730",
+      "shoes": "#1a1418",
+      "beard": "none",
+      "beardColor": "#1b1716",
+      "glasses": true,
+      "extras": "",
+      "color": "#6b4a32",
+      "build": 1,
+      "height": 1,
+      "scripted": true,
+      "lines": [
+        "Don't move the furniture. I just figured out the layout."
+      ],
+      "topics": [
+        "What would you change in here? :: The wardrobe. Always the wardrobe. (Placeholder)",
+        "Designing anything? :: A bigger room, apparently. (Placeholder)"
+      ]
+    },
+    {
+      "id": "tahiti_sf4",
+      "name": "Gang member",
+      "role": "Gang member · Developer",
+      "district": "tahiti",
+      "placeholder": true,
+      "species": "human",
+      "skin": "brown",
+      "hair": "buzz",
+      "hairColor": "#1b1716",
+      "top": "tee",
+      "topColor": "#2bb3a3",
+      "pants": "jeans",
+      "pantsColor": "#2a2730",
+      "shoes": "#1a1418",
+      "beard": "none",
+      "beardColor": "#1b1716",
+      "glasses": false,
+      "extras": "",
+      "color": "#2bb3a3",
+      "build": 1,
+      "height": 1,
+      "scripted": true,
+      "lines": [
+        "Pull up a stool."
+      ],
+      "topics": [
+        "Who's winning today? :: Depends who you ask. (Placeholder)",
+        "Need anything? :: Snacks. Always snacks. (Placeholder)"
+      ]
+    },
+    {
+      "id": "tahiti_cf1",
+      "name": "Outlaw",
+      "role": "Outlaw · College friend",
+      "district": "tahiti",
+      "placeholder": true,
+      "species": "human",
+      "skin": "fair",
+      "hair": "medium",
+      "hairColor": "#1b1716",
+      "top": "tee",
+      "topColor": "#e07a8f",
+      "pants": "jeans",
+      "pantsColor": "#2a2730",
+      "shoes": "#1a1418",
+      "beard": "none",
+      "beardColor": "#1b1716",
+      "glasses": false,
+      "extras": "",
+      "color": "#e07a8f",
+      "build": 1,
+      "height": 1,
+      "scripted": true,
+      "lines": [
+        "You found the good spot."
+      ],
+      "topics": [
+        "Nice view, right? :: Best one on the island. (Placeholder)",
+        "How was the flight? :: Harris didn't crash, so: great. (Placeholder)"
+      ]
+    },
+    {
+      "id": "tahiti_cf2",
+      "name": "Outlaw",
+      "role": "Outlaw · College friend",
+      "district": "tahiti",
+      "placeholder": true,
+      "species": "human",
+      "skin": "tan",
+      "hair": "short",
+      "hairColor": "#1b1716",
+      "top": "tee",
+      "topColor": "#c4302b",
+      "pants": "jeans",
+      "pantsColor": "#2a2730",
+      "shoes": "#1a1418",
+      "beard": "none",
+      "beardColor": "#1b1716",
+      "glasses": false,
+      "extras": "",
+      "color": "#c4302b",
+      "build": 1,
+      "height": 1,
+      "scripted": true,
+      "lines": [
+        "Grab a chair."
+      ],
+      "topics": [
+        "What's the plan? :: Sitting. Possibly more sitting. (Placeholder)",
+        "Did you eat? :: Define eat. (Placeholder)"
+      ]
+    },
+    {
+      "id": "tahiti_cf3",
+      "name": "Outlaw",
+      "role": "Outlaw · College friend",
+      "district": "tahiti",
+      "placeholder": true,
+      "species": "human",
+      "skin": "brown",
+      "hair": "short",
+      "hairColor": "#1b1716",
+      "top": "jacket",
+      "topColor": "#4a5a7a",
+      "pants": "jeans",
+      "pantsColor": "#2a2730",
+      "shoes": "#1a1418",
+      "beard": "none",
+      "beardColor": "#1b1716",
+      "glasses": false,
+      "extras": "",
+      "color": "#4a5a7a",
+      "build": 1,
+      "height": 1,
+      "scripted": true,
+      "lines": [
+        "The sunset is right on schedule."
+      ],
+      "topics": [
+        "Remember college? :: (Real memories go here later.) (Placeholder)",
+        "Any news? :: Nothing I can say before the coffee. (Placeholder)"
+      ]
+    },
+    {
+      "id": "tahiti_cf4",
+      "name": "Outlaw",
+      "role": "Outlaw · College friend",
+      "district": "tahiti",
+      "placeholder": true,
+      "species": "human",
+      "skin": "tan",
+      "hair": "buzz",
+      "hairColor": "#1b1716",
+      "top": "tee",
+      "topColor": "#2f6fc6",
+      "pants": "jeans",
+      "pantsColor": "#2a2730",
+      "shoes": "#1a1418",
+      "beard": "none",
+      "beardColor": "#1b1716",
+      "glasses": false,
+      "extras": "",
+      "color": "#2f6fc6",
+      "build": 1,
+      "height": 1,
+      "scripted": true,
+      "lines": [
+        "Took the stairs? Respect."
+      ],
+      "topics": [
+        "Gym later? :: Only if there's food after. (Placeholder)",
+        "What's up? :: The sun, mostly. (Placeholder)"
+      ]
+    },
+    {
+      "id": "tahiti_cf5",
+      "name": "Outlaw",
+      "role": "Outlaw · College friend",
+      "district": "tahiti",
+      "placeholder": true,
+      "species": "human",
+      "skin": "fair",
+      "hair": "short",
+      "hairColor": "#1b1716",
+      "top": "coat",
+      "topColor": "#f4f4f0",
+      "pants": "trousers",
+      "pantsColor": "#2a2730",
+      "shoes": "#1a1418",
+      "beard": "none",
+      "beardColor": "#1b1716",
+      "glasses": false,
+      "extras": "",
+      "color": "#7d8fa8",
+      "build": 1,
+      "height": 1,
+      "scripted": true,
+      "lines": [
+        "Careful, the railing's mine."
+      ],
+      "topics": [
+        "Working on anything? :: My tan. (Placeholder)",
+        "Thoughts? :: Too many, not now. (Placeholder)"
+      ]
+    },
+    {
+      "id": "tahiti_cf6",
+      "name": "Outlaw",
+      "role": "Outlaw · College friend",
+      "district": "tahiti",
+      "placeholder": true,
+      "species": "human",
+      "skin": "brown",
+      "hair": "medium",
+      "hairColor": "#1b1716",
+      "top": "hoodie",
+      "topColor": "#6b7280",
+      "pants": "jeans",
+      "pantsColor": "#2a2730",
+      "shoes": "#1a1418",
+      "beard": "none",
+      "beardColor": "#1b1716",
+      "glasses": false,
+      "extras": "",
+      "color": "#6b7280",
+      "build": 1,
+      "height": 1,
+      "scripted": true,
+      "lines": [
+        "One sec, replying to the group chat."
+      ],
+      "topics": [
+        "Who are you texting? :: Everyone who isn't here yet. (Placeholder)",
+        "Photo? :: Already posted. (Placeholder)"
+      ]
+    },
+    {
+      "id": "tahiti_cf7",
+      "name": "Outlaw",
+      "role": "Outlaw · College friend",
+      "district": "tahiti",
+      "placeholder": true,
+      "species": "human",
+      "skin": "brown",
+      "hair": "short",
+      "hairColor": "#1b1716",
+      "top": "coat",
+      "topColor": "#e8e2d0",
+      "pants": "trousers",
+      "pantsColor": "#2a2730",
+      "shoes": "#1a1418",
+      "beard": "full",
+      "beardColor": "#1b1716",
+      "glasses": false,
+      "extras": "",
+      "color": "#8a6a4a",
+      "build": 1,
+      "height": 1,
+      "scripted": true,
+      "lines": [
+        "Hey, good timing."
+      ],
+      "topics": [
+        "How's the villa? :: Better than the hostel. (Placeholder)",
+        "What's next? :: Probably food. (Placeholder)"
+      ]
+    }
+  ],
+  "overrides": {
+    "harris": {
+      "lines": [
+        "Ready to head back?"
+      ],
+      "topics": [
+        "Fly back to Island 01 :: Strap in. [action:fly-home]",
+        "Not now :: I'll be by the jet."
+      ]
+    }
+  },
+  "groups": {
+    "vanderlinde": {
+      "title": "Join the gang",
+      "slot": {
+        "x": -13.4,
+        "z": -10.6,
+        "heading": 3.14
+      },
+      "zoom": 1.45,
+      "members": [
+        "tahiti_sf1",
+        "tahiti_sf2",
+        "tahiti_sf3",
+        "tahiti_sf4"
+      ],
+      "lines": [
+        {
+          "who": "tahiti_sf2",
+          "text": "Look who finally showed up."
+        },
+        {
+          "who": "nathan",
+          "text": "There was traffic. On a private island."
+        },
+        {
+          "who": "tahiti_sf1",
+          "text": "He flew in on a jet and he's still the last one here.",
+          "gesture": "wave"
+        },
+        {
+          "who": "tahiti_sf4",
+          "text": "Somebody turn the AC up."
+        },
+        {
+          "who": "tahiti_sf3",
+          "text": "(Placeholder: the gang's real banter goes in data/tahiti.json.)"
+        }
+      ]
+    },
+    "outlaws": {
+      "title": "Join the Outlaws",
+      "slot": {
+        "x": 23.3,
+        "z": -0.9,
+        "heading": 1.57
+      },
+      "zoom": 1.35,
+      "members": [
+        "tahiti_cf1",
+        "tahiti_cf2",
+        "tahiti_cf3",
+        "tahiti_cf4",
+        "tahiti_cf5",
+        "tahiti_cf6",
+        "tahiti_cf7"
+      ],
+      "lines": [
+        {
+          "who": "tahiti_cf3",
+          "text": "Sunset's on time for once."
+        },
+        {
+          "who": "tahiti_cf1",
+          "text": "Told you the view was worth the stairs."
+        },
+        {
+          "who": "nathan",
+          "text": "It really is."
+        },
+        {
+          "who": "tahiti_cf6",
+          "text": "Hold still, I'm taking a picture.",
+          "gesture": "wave"
+        },
+        {
+          "who": "tahiti_cf7",
+          "text": "Who's ordering food?"
+        },
+        {
+          "who": "tahiti_cf5",
+          "text": "(Placeholder: real college stories go in data/tahiti.json.)"
+        }
+      ]
+    }
+  }
+}

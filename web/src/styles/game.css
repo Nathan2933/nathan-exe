@@ -699,3 +699,15 @@ body.game .stamp i { font-style: normal; letter-spacing: .1em; }
 body.game .stamp.on { border: 2px solid #ff6a3d; color: #ff6a3d; transform: rotate(-4deg); background: rgba(255,106,61,.08); }
 body.game .passport-note { margin: 8px 0 0; font-size: 12px; }
 @media (max-width: 420px) { body.game .stamps { grid-template-columns: 1fr; } }
+
+/* Island travel cinematic + group scenes */
+#cine { position: fixed; inset: 0; pointer-events: none; z-index: 60; }
+#cine:not(.on) { display: none; }
+#cine .cine-bar { position: absolute; left: 0; right: 0; height: 9vh; background: #120e1c; transform: scaleY(0); transition: transform .5s; }
+#cine .cine-bar.top { top: 0; transform-origin: top; } #cine .cine-bar.bottom { bottom: 0; transform-origin: bottom; }
+#cine.bars .cine-bar { transform: scaleY(1); }
+#cine .cine-clouds { position: absolute; inset: 0; opacity: 0; background: radial-gradient(circle at 30% 40%, #ffffff 0 18%, transparent 19%), radial-gradient(circle at 70% 60%, #f4f8ff 0 22%, transparent 23%), radial-gradient(circle at 50% 30%, #eef6ff 0 26%, transparent 27%), #dff0ff; image-rendering: pixelated; }
+#cine .cine-caption { position: absolute; left: 50%; bottom: 11vh; transform: translateX(-50%); margin: 0; font-family: var(--font-pixel, monospace); font-size: 14px; letter-spacing: .12em; color: #fff1d6; text-transform: uppercase; text-shadow: 0 2px 0 #120e1c; }
+#cine .cine-skip { position: absolute; right: 16px; bottom: calc(9vh + 12px); pointer-events: auto; }
+
+body.cine-on .journey, body.cine-on .minimap-wrap, body.cine-on #prompt, body.cine-on .hud-top, body.cine-on #map-btn { visibility: hidden; }

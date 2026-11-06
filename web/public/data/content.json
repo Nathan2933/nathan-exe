@@ -781,12 +781,11 @@
       "accessory": null,
       "scarfColor": "#e8dcc0",
       "lines": [
-        "Oi, Nathan. Flight's ready. Destination's another story."
+        "Ready for Tahiti?"
       ],
       "topics": [
-        "Where does this jet go? :: Somewhere off the map. Not everyone gets a boarding pass.",
-        "Can we go now? :: Not yet. The next island's still under construction.",
-        "Who gets to board? :: Only the ones on the list. You'll know when it's time."
+        "Fly to Tahiti :: Wheels up. Grab a seat. [action:fly-tahiti]",
+        "Not now :: No rush. The jet waits for you."
       ],
       "scripted": true
     },

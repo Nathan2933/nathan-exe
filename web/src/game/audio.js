@@ -139,6 +139,15 @@ const THEMES = {
     if (i % 8 === 2) kick(out, t, 0.05, 70);
   } },
   // founder: cheerful chiptune with triangle bass and noise hats
+  // Tahiti: an easy, sunny island loop (soft plucks, warm bass, a little shaker)
+  tahiti: { bpm: 84, steps: 32, amb: 0, play(i, t, out, s) {
+    const prog = [[60, 64, 67, 72], [57, 60, 64, 69], [53, 57, 60, 65], [55, 59, 62, 67]];
+    const ch = prog[Math.floor(i / 8)], k = i % 8;
+    if (k % 2 === 0) note(out, t, ch[[0, 2, 1, 3][k / 2]], 0.9, { wave: 'triangle', vol: 0.05, attack: 0.004, lp: 2400 });
+    if (k === 0) note(out, t, ch[0] - 24, s * 6, { wave: 'sine', vol: 0.07 });
+    if (i % 4 === 2) hit(out, t, { freq: 6500, q: 1, dur: 0.05, vol: 0.02, type: 'highpass' });
+    if (i === 20) note(out, t, 79, 1.2, { wave: 'sine', vol: 0.025, attack: 0.08 });
+  } },
   sv: { bpm: 110, steps: 32, amb: 0, play(i, t, out, s) {
     const lead = { 0: 76, 2: 79, 4: 81, 6: 79, 8: 76, 10: 74, 12: 72, 16: 74, 18: 76, 20: 79, 22: 76, 24: 74, 26: 72, 28: 71 };
     if (lead[i]) note(out, t, lead[i], s * 1.6, { wave: 'square', vol: 0.03, lp: 2800 });
@@ -204,3 +213,19 @@ export function setTheme(id, level = 0) {
   }
 }
 export const currentTheme = () => cur;
+
+// ---------------- Ocean ambience (Tahiti) ----------------
+let oceanGain = null;
+/** 0..1 surf loudness: filtered noise with a slow swell. */
+export function setOcean(level) {
+  if (!ctx) return;
+  if (!oceanGain) {
+    const len = ctx.sampleRate * 4, buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (0.55 + 0.45 * Math.sin((i / len) * Math.PI * 2));
+    const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 700;
+    oceanGain = ctx.createGain(); oceanGain.gain.value = 0;
+    src.connect(lp).connect(oceanGain).connect(master); src.start();
+  }
+  oceanGain.gain.setTargetAtTime(enabled ? level * 0.1 : 0, ctx.currentTime, 0.8);
+}
