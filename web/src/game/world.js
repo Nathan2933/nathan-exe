@@ -156,21 +156,20 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
     ring.rotation.x = -Math.PI / 2; ring.position.y = 0.01;
     const pillar = add(new THREE.Mesh(new THREE.CylinderGeometry(R * 0.82, R * 0.9, small ? 1.6 : 2.4, 24, 1, true), glowMat(0.5, pillarTex())));
     pillar.position.y = (small ? 1.6 : 2.4) / 2;
-    pillar.visible = withPillar;
+    pillar.visible = true; void withPillar;
     g.userData.dynamic = true;
     root.add(g);
-    let visited = false;
     animated.push((t) => {
       const k = 0.5 + 0.5 * Math.sin(t * 2.6 + x);
-      ring.scale.setScalar(1 + k * (visited ? 0.02 : 0.07));
-      disc.material.opacity = visited ? 0.32 + k * 0.12 : 0.4 + k * 0.3;
-      pillar.material.opacity = visited ? 0 : 0.28 + k * 0.22;
+      ring.scale.setScalar(1 + k * 0.07);
+      disc.material.opacity = 0.4 + k * 0.3;
+      pillar.material.opacity = 0.28 + k * 0.22;
     });
     return {
       group: g, gem: disc, ring,
       // Visited spots keep their bright circle (you can always press E there);
       // only the light column goes, so unvisited spots still stand out.
-      setVisited() { visited = true; pillar.visible = false; },
+      setVisited() { /* every E spot looks the same, visited or not */ },
     };
   };
   const sparkle = (x, z) => {
