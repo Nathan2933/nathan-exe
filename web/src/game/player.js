@@ -140,7 +140,7 @@ export class Character {
       part(0.06, 0.3, 0.02, 0xc96a43, 0, 0.36, 0.175, this.spine);
     } else {
       part(bw, 0.56, 0.34, top, 0, 0.28, 0, this.spine);
-      if (o.top === 'hoodie') { part(0.3, 0.12, 0.05, 0xc96d84, 0, 0.15, 0.18, this.spine); part(0.42, 0.14, 0.2, top, 0, 0.6, -0.12, this.spine); }
+      if (o.top === 'hoodie') { part(0.3, 0.12, 0.05, new THREE.Color(top).multiplyScalar(0.78).getHex(), 0, 0.15, 0.18, this.spine); part(0.42, 0.14, 0.2, top, 0, 0.6, -0.12, this.spine); }
       if (o.top === 'tank' && o.trim) { part(bw + 0.01, 0.05, 0.35, o.trim, 0, 0.5, 0, this.spine); }
     }
     part(0.6 * o.build, 0.06, 0.36, o.pants === 'jeans' ? 0x2e4a72 : 0x2a2730, 0, 0.02, 0, this.spine); // belt
@@ -246,6 +246,12 @@ export class Character {
     } else if (o.hair === 'long') {
       part(0.62, 0.16, 0.56, c, 0, 0.62, -0.01, H); part(0.64, 0.6, 0.16, c, 0, 0.3, -0.24, H);
       part(0.08, 0.45, 0.4, c, -0.31, 0.35, -0.05, H); part(0.08, 0.45, 0.4, c, 0.31, 0.35, -0.05, H);
+    } else if (o.hair === 'medium') {
+      // shoulder-length: full top, sides down to the jaw, back to the nape
+      part(0.64, 0.16, 0.58, c, 0, 0.62, -0.01, H);
+      part(0.08, 0.42, 0.46, c, -0.31, 0.38, -0.03, H); part(0.08, 0.42, 0.46, c, 0.31, 0.38, -0.03, H);
+      part(0.64, 0.5, 0.14, c, 0, 0.36, -0.24, H);
+      part(0.5, 0.1, 0.08, c, 0, 0.55, 0.25, H);                                  // fringe
     } else if (o.hair === 'beanie') {
       part(0.62, 0.22, 0.14, c, 0, 0.44, -0.22, H);
       part(0.64, 0.3, 0.58, o.hatColor, 0, 0.66, 0, H);

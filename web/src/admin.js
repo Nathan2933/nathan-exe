@@ -120,7 +120,7 @@ const SCHEMA = [
       { key: 'skin', label: 'Skin tone', type: 'select', options: [['fair', 'Fair'], ['tan', 'Tan'], ['brown', 'Brown'], ['deep', 'Deep']] },
       { key: 'height', label: 'Height (1 = Nathan)', type: 'text' },
       { key: 'build', label: 'Build (1 = average, 1.3 = muscular)', type: 'text' },
-      { key: 'hair', label: 'Hair', type: 'select', options: [['short', 'Short'], ['buzz', 'Buzz cut'], ['curly', 'Curly'], ['long', 'Long'], ['bun', 'Bun'], ['beanie', 'Beanie'], ['none', 'None']] },
+      { key: 'hair', label: 'Hair', type: 'select', options: [['short', 'Short'], ['medium', 'Medium (shoulder length)'], ['buzz', 'Buzz cut'], ['curly', 'Curly'], ['long', 'Long'], ['bun', 'Bun'], ['beanie', 'Beanie'], ['none', 'None']] },
       { key: 'hairColor', label: 'Hair colour (#hex)', type: 'text' },
       { key: 'beard', label: 'Beard', type: 'select', options: [['none', 'None'], ['stubble', 'Stubble'], ['full', 'Full']] },
       { key: 'beardColor', label: 'Beard colour (#hex)', type: 'text' },
