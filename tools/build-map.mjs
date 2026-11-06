@@ -204,9 +204,9 @@ O('lot_sign', -11, -2.9, { text: 'IRON YARD', color: '#ff6a3d', rot: 0 });
 labels.push(point('label', -14.5, -16, { text: 'IRON YARD', color: '#1e1b2e', height: 7.2 }));
 interact.push(point('chapter', -8.5, -5.6, { id: 'iron-yard', district: 'iron-yard' }));
 interact.push(point('minigame', -8.5, -8.2, { id: 'lift', district: 'iron-yard' }));
-interact.push(point('memory', -18.6, -10.6, { id: 'before-photo' }));
-interact.push(point('memory', -11.8, -12.6, { id: 'first-logbook' }));
-interact.push(point('memory', -5.6, -5.2, { id: 'running-shoes' }));
+interact.push(point('memory', -18.6, -10.6, { id: 'starting-line' }));
+interact.push(point('memory', -11.8, -12.6, { id: 'checkpoint-60' }));
+interact.push(point('memory', -5.6, -5.2, { id: 'fitness-chapter' }));
 
 // --- City Park (placeholder pass: layout only) ---
 hedge(3, -20, 17, -19); hedge(17, -19, 18, -4); hedge(3, -19, 4, -13); hedge(3, -10, 4, -4);
@@ -232,8 +232,9 @@ labels.push(point('label', -16, 13.4, { text: 'SIGNAL TOWER', color: '#2a2440', 
 interact.push(point('chapter', -6.8, 5.6, { id: 'signal-tower', district: 'signal-tower' }));
 interact.push(point('panel', -12.6, 9.6, { id: 'achievements', district: 'signal-tower', panel: 'achievements', title: 'Trophy case' }));
 interact.push(point('panel', -7.2, 15.1, { id: 'experience', district: 'signal-tower', panel: 'experience', title: 'Radio log' }));
-interact.push(point('memory', -14.6, 9.6, { id: 'first-award' }));
-interact.push(point('memory', -7.4, 12.0, { id: 'first-internship' }));
+interact.push(point('memory', -14.6, 9.6, { id: 'the-pitch' }));
+interact.push(point('memory', -7.4, 12.0, { id: 'bug-report' }));
+interact.push(point('memory', -18.0, 9.6, { id: 'cluster-alert' }));
 
 // --- The Garage (projects + tech stack) ---
 // Workshop along the west side, a front yard with the tech-stack board, and
@@ -251,10 +252,12 @@ O('lamp', 4.6, 4.6); O('bin', 16.4, 19.5);
 labels.push(point('label', 7.4, 15.2, { text: 'THE GARAGE', color: '#2a2440', height: 6.4 }));
 interact.push(point('chapter', 13.4, 4.9, { id: 'garage', district: 'garage' }));
 interact.push(point('panel', 6.2, 7.2, { id: 'skills', district: 'garage', panel: 'skills', title: 'Tech stack' }));
-interact.push(point('memory', 16.0, 9.2, { id: 'first-commit' }));
-interact.push(point('memory', 13.4, 18.8, { id: 'late-night-debug' }));
+interact.push(point('memory', 16.0, 9.2, { id: 'six-hours' }));
+interact.push(point('memory', 13.4, 18.8, { id: 'warehouse-node' }));
+interact.push(point('memory', 13.4, 13.4, { id: 'hack-odyssey' }));
+interact.push(point('memory', 16.0, 15.6, { id: 'property-dashboard' }));
 // --- Winter Campus (Russia chapter) ---
-O('faculty_building', 0, -37.6, { text: 'UNIVERSITY' });
+O('faculty_building', 0, -37.6, { text: 'TOMSK STATE UNIVERSITY' });
 labels.push(point('label', 0, -37.6, { text: 'WINTER CAMPUS', color: '#2f5f9a', height: 9.6 }));
 interact.push(point('chapter', 0, -31, { id: 'winter-campus', district: 'winter-campus' }));
 for (const z of [-40, -36.8, -33.6]) { O('birch', -10.2, z, { scale: 1.05 }); O('birch', 10.4, z + 0.4, { scale: 0.95 }); }
@@ -263,10 +266,9 @@ O('lamp', -2.9, -31.6); O('lamp', 2.9, -31.6);
 O('bench', 7, -30.4, { rot: 0, snow: true });
 O('notice_board', 9.8, -33, { rot: 0, text: 'EXAMS' });
 O('snow_pile', -12.6, -32.4); O('snow_pile', 12.4, -30.6, { scale: 0.8 }); O('snow_pile', 5.2, -33.6, { scale: 0.7 });
-interact.push(point('memory', 7.9, -29.8, { id: 'student-id' }));
-interact.push(point('memory', 9.8, -31.9, { id: 'exam-results' }));
-interact.push(point('memory', -11.6, -38.2, { id: 'first-snow' }));
-interact.push(point('memory', 1.9, -32.4, { id: 'last-lecture' }));
+interact.push(point('memory', 7.9, -29.8, { id: 'new-campus' }));
+interact.push(point('memory', 9.8, -31.9, { id: 'two-semesters' }));
+interact.push(point('memory', -11.6, -38.2, { id: 'campus-sign' }));
 // --- Monsoon Campus (India chapter, Tamil Nadu college) ---
 O('college_building', 35.5, -9.2, { text: 'TCE Madurai', subtitle: 'Thiagarajar College of Engineering', logo: 'assets/logos/tce.png' });
 objects.push(area('rain_zone', 25.5, -14, 43, 14));   // monsoon showers fall inside this rectangle
@@ -279,10 +281,10 @@ for (const [x, z] of [[40.6, 4.5], [39.8, 9.2], [36.6, 11.4], [26.8, 11.2], [26.
 O('puddle', 32.6, 0.4); O('puddle', 37.2, -0.3, { scale: 0.7 }); O('puddle', 30, 4.6, { scale: 0.8 });
 labels.push(point('label', 35.5, -9.2, { text: 'MONSOON CAMPUS', color: '#b5523b', height: 9.2 }));
 interact.push(point('chapter', 29.6, 1.8, { id: 'monsoon-campus', district: 'monsoon-campus' }));
-interact.push(point('memory', 28.6, 2.9, { id: 'admission-letter' }));
-interact.push(point('memory', 32.6, 7.4, { id: 'chai-break' }));
-interact.push(point('memory', 31, -1.6, { id: 'first-hackathon' }));
-interact.push(point('memory', 34, 3.6, { id: 'monsoon-day' }));
+interact.push(point('memory', 28.6, 2.9, { id: 'madurai-checkpoint' }));
+interact.push(point('memory', 32.6, 7.4, { id: 'montfort' }));
+interact.push(point('memory', 31, -1.6, { id: 'association-badge' }));
+interact.push(point('memory', 34, 3.6, { id: 'ecell-crowd' }));
 // --- Lake Park (reflection) ---
 O('jetty', -35.5, 6.4, { rot: 0, length: 5 });
 O('rowboat', -38, -3);
@@ -293,8 +295,6 @@ O('lamp', -32.6, 7.8); O('lamp', -38.6, 7.6);
 O('bench', -31.6, 9.6, { rot: 180 });
 labels.push(point('label', -35.5, -2, { text: 'LAKE PARK', color: '#2f5f9a', height: 4 }));
 interact.push(point('chapter', -35.5, 2.6, { id: 'lake-park', district: 'lake-park' }));
-interact.push(point('memory', -38.8, 7.0, { id: 'letter-to-self' }));
-interact.push(point('memory', -32.2, 6.2, { id: 'people-who-helped' }));
 
 // --- Lighthouse (the ending) ---
 O('lighthouse', 5, 38.6, { rot: 90 });
@@ -304,7 +304,7 @@ O('bench', 2.8, 35.2, { rot: 180 });
 labels.push(point('label', 5, 38.6, { text: 'LIGHTHOUSE', color: '#c4402f', height: 13.2 }));
 interact.push(point('chapter', 1.8, 32, { id: 'lighthouse', district: 'lighthouse' }));
 interact.push(point('finale', 2.4, 38.6, { id: 'finale', district: 'lighthouse' }));
-interact.push(point('memory', 1.6, 36.8, { id: 'next-goal' }));
+interact.push(point('memory', 1.6, 36.8, { id: 'new-save-file' }));
 
 // --- Memory Line: a loop railway between the ring road and the outer districts.
 // It stands for moving between chapters of life; boarding is fast travel.

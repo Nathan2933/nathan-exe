@@ -1,18 +1,18 @@
 {
   "meta": {
     "siteTitle": "NATHAN.EXE",
-    "tagline": "A playable portfolio",
+    "tagline": "A portfolio you can play.",
     "version": "1.0"
   },
   "profile": {
-    "name": "Nathan",
-    "role": "Software Developer · IT Undergraduate",
-    "location": "India",
-    "availability": "Open to internships and full-time roles",
-    "summary": "I build full-stack products and explore cybersecurity, post-quantum cryptography and AI. My path went from a university in Russia to finishing my degree in India, and the discipline I learned rebuilding my body is the same discipline I bring to code.",
+    "name": "Nathan Jerald",
+    "role": "IT Undergraduate · Full-Stack & Cloud-Native Developer",
+    "location": "Tiruchirappalli, Tamil Nadu, India",
+    "availability": "",
+    "summary": "I'm Nathan, an Information Technology undergraduate at Thiagarajar College of Engineering who enjoys turning ideas into working software. My projects span full-stack applications, cloud-native security monitoring and blockchain-backed systems, with a growing interest in building memorable interactive experiences. NATHAN.EXE is where I bring that engineering curiosity together with the personal chapters that shaped me.",
     "about": [
-      "Replace this with your own about text. Write it in first person, keep each paragraph short.",
-      "Second paragraph: what you care about, what you are looking for next."
+      "I like building things that people can use, not just prototypes that look impressive in screenshots. At TCE, I've explored full-stack web development, cloud and security tooling, and team-based hackathons. From an agricultural supply-chain platform to Kubernetes security monitoring, I enjoy moving between the user experience and the systems behind it.",
+      "Outside code, fitness has been a long-running part of my life: my journey moved from roughly 100 kg to 60 kg, and later to around 75 kg. I've also experienced studying abroad and beginning a new chapter at TCE in Madurai. This portfolio tells those stories as a small playable town, while keeping the actual work, resume and contact details one click away."
     ],
     "photo": "",
     "resumeUrl": "/resume.pdf"
@@ -20,381 +20,518 @@
   "links": [
     {
       "label": "Email",
-      "url": "mailto:you@example.com"
+      "url": "mailto:nathanjerald293@gmail.com"
     },
     {
       "label": "GitHub",
-      "url": "https://github.com/your-username"
+      "url": "https://github.com/Nathan2933"
     },
     {
       "label": "LinkedIn",
-      "url": "https://www.linkedin.com/in/your-username"
+      "url": "https://www.linkedin.com/in/nathan-jerald/"
     }
   ],
   "chapters": [
     {
       "id": "fitness",
       "district": "iron-yard",
-      "title": "The Grind",
-      "subtitle": "Discipline before talent",
-      "period": "20XX – Present",
+      "title": "The Discipline",
+      "subtitle": "Built one rep at a time",
+      "period": "",
       "body": [
-        "Describe your fitness transformation here: where you started, what changed, and how long it took.",
-        "Connect it to how you work: consistency, tracking progress, showing up on bad days."
+        "My fitness story doesn't fit into a before-and-after photo. I started around 100 kg, reached about 60 kg, and later moved toward a different kind of balance at roughly 75 kg. What stayed with me was the habit of showing up and making small improvements over time.",
+        "That same idea follows me into software: learn what you need, test what you've built, and keep improving it. The Iron Yard is where this save file reminds me that progress is rarely a straight line."
       ],
       "highlights": [
-        "Example: lost/gained X kg over Y months",
-        "Example: trained 5x a week for 2 years",
-        "Example: what it taught you"
+        "Starting line: ~100 kg",
+        "Checkpoint: ~60 kg",
+        "Today: ~75 kg"
       ]
     },
     {
       "id": "russia",
       "district": "winter-campus",
-      "title": "The Detour",
-      "subtitle": "My first chapter abroad",
-      "period": "20XX – 20XX",
+      "title": "The First Chapter",
+      "subtitle": "Tomsk State University",
+      "period": "",
       "body": [
-        "Where you studied, what you were studying, what life there was like.",
-        "What you took away from your time there, and how it shaped the next chapter in India."
+        "My university journey began at Tomsk State University in Russia. I spent two semesters studying there, getting to know a different academic environment and a different place.",
+        "Winter Campus is a snapshot of that part of my life. Not every chapter has to explain what came next; some deserve a space of their own."
       ],
       "highlights": [
-        "University name and programme",
-        "What you learned about adapting",
-        "The decision to start again"
+        "Tomsk State University, Russia",
+        "Two semesters"
       ]
     },
     {
       "id": "india",
       "district": "monsoon-campus",
-      "title": "The Restart",
-      "subtitle": "Continuing in India",
-      "period": "20XX – Present",
+      "title": "The Next Chapter",
+      "subtitle": "Thiagarajar College of Engineering, Madurai",
+      "period": "2023 – 2027",
       "body": [
-        "Where you continued your education and what you focused on.",
-        "The communities, clubs and hackathons that shaped you."
+        "At Thiagarajar College of Engineering in Madurai, I continued my B.Tech in Information Technology. TCE became the place where coursework met real projects: hackathon builds, technical events, team collaboration, and the first versions of ideas that became much bigger.",
+        "The wins were exciting, but so were the ordinary parts of learning: debugging, presenting, and figuring out how to ship something with a team."
       ],
       "highlights": [
-        "B.Tech / B.Sc IT at University Name",
-        "Hackathons and clubs",
-        "Key coursework"
+        "B.Tech, Information Technology",
+        "Hack Odyssey 2K25 winner with Aratro",
+        "IT Association office bearer · E-Cell"
       ]
     },
     {
       "id": "projects",
       "district": "garage",
-      "title": "The Garage",
-      "subtitle": "Things I've built",
+      "title": "The Builder",
+      "subtitle": "Ideas in, projects out",
       "period": "",
       "body": [
-        "Every object in this workshop is a project. Open one to see what it does, how it was built, and where to try it."
+        "The Garage is where prototypes become something you can click, test and question. There are projects here about agriculture, cloud security, web systems and new ways to tell a story, each with the problem, the build and what it taught me."
+      ],
+      "highlights": []
+    },
+    {
+      "id": "skills",
+      "district": "signal-tower",
+      "title": "The Toolbox",
+      "subtitle": "What I've learned",
+      "period": "",
+      "body": [
+        "No one builds alone, and no one knows every tool. Signal Tower is a map of the languages, systems and teams I've worked with, from web development and cloud security to project competitions and testing."
       ],
       "highlights": []
     },
     {
       "id": "career",
       "district": "lighthouse",
-      "title": "Next Mission",
-      "subtitle": "Where I'm heading",
+      "title": "The Next Mission",
+      "subtitle": "Where this save file goes next",
       "period": "",
       "body": [
-        "What kind of role and team you want next, and what you would bring to it."
-      ],
-      "highlights": [
-        "Roles you are looking for",
-        "Locations / remote preference",
-        "Earliest start date"
-      ]
-    },
-    {
-      "id": "skills",
-      "district": "signal-tower",
-      "title": "Signal Tower",
-      "subtitle": "Skills, achievements and experience",
-      "period": "",
-      "body": [
-        "What I can do, what I've won, and where I've worked. Tune in to each frequency for details."
+        "This save file isn't finished. I want to keep building dependable software, learning from good teams, and making ideas that are useful as well as memorable.",
+        "If one of these projects sparks a conversation, I'd love to hear from you. The game ends here, but the next collaboration could start with a message."
       ],
       "highlights": []
     },
     {
       "id": "reflection",
       "district": "lake-park",
-      "title": "Still Water",
-      "subtitle": "A quiet place to look back",
+      "title": "The Quiet Save",
+      "subtitle": "A little space to think",
       "period": "",
       "body": [
-        "Write something personal here: what the last few years taught you, what you'd tell your younger self, or who helped you along the way.",
-        "This is the one place in the town that isn't about work."
+        "Some memories aren't awards or milestones. They're the ordinary moments between big chapters. This part of the map is a pause, not a test."
       ],
       "highlights": []
     }
   ],
   "projects": [
     {
-      "id": "pqc-vault",
-      "title": "Post-Quantum Vault",
-      "pitch": "File encryption using lattice-based (Kyber/ML-KEM) key exchange.",
-      "description": "Explain the problem, your approach, and the result. Mention anything measurable.",
+      "id": "aratro",
+      "title": "Aratro: Agricultural Supply Chain Platform",
+      "year": "2025",
+      "featured": true,
+      "pitch": "Tracing agricultural supply chains from farmers to distribution, with blockchain-backed workflows.",
+      "description": "Agricultural supply flows need clear visibility across farmers, warehouses and ration shops. In a team, I developed warehouse and inventory workflows and integrated Python-backed processes with Solidity smart contracts on an Ethereum/Ganache setup, covering MSP information, quality checks and inventory tracking. Won 1st place at Hack Odyssey 2K25, a 24-hour hackathon.",
       "stack": [
         "Python",
-        "liboqs",
-        "FastAPI"
+        "Solidity",
+        "Ethereum",
+        "Ganache"
       ],
       "tags": [
-        "cybersecurity",
-        "cryptography"
+        "blockchain",
+        "hackathon"
       ],
-      "year": "2025",
-      "github": "",
+      "github": "https://github.com/Nathan2933/aratro",
       "demo": "",
-      "image": "",
-      "featured": true
+      "image": ""
     },
     {
-      "id": "fullstack-app",
-      "title": "Full-Stack Project",
-      "pitch": "One sentence on what it does and who it is for.",
-      "description": "What you built, the hardest problem you solved, and what you would do next.",
+      "id": "microservices-security",
+      "title": "Microservices Security Logging Framework",
+      "year": "2026",
+      "featured": true,
+      "pitch": "Making Kubernetes activity easier to observe through runtime security alerts and dashboards.",
+      "description": "Security events from containers and clusters are hard to review when they live in disconnected logs. During the HPE Career Preview Program, I contributed to a Kubernetes-based monitoring pipeline using Falco detection and Grafana dashboards, combining runtime activity with cluster and audit-event visibility.",
       "stack": [
-        "React",
-        "Node.js",
-        "PostgreSQL"
+        "Kubernetes",
+        "Docker",
+        "Falco",
+        "Grafana",
+        "Python"
+      ],
+      "tags": [
+        "cloud",
+        "security",
+        "HPE"
+      ],
+      "github": "",
+      "demo": "",
+      "image": ""
+    },
+    {
+      "id": "tce-event-scheduler",
+      "title": "TCE Event Scheduler",
+      "year": "2025",
+      "featured": false,
+      "pitch": "Scheduling department events with practical admin and database workflows.",
+      "description": "Built during a six-hour hackathon: a Flask and SQL event scheduler with an HTML/CSS frontend, focused on user navigation and database connectivity. Runner-up at HackFest 2025.",
+      "stack": [
+        "Python",
+        "Flask",
+        "SQL",
+        "HTML",
+        "CSS"
+      ],
+      "tags": [
+        "hackathon",
+        "web"
+      ],
+      "github": "https://github.com/Nathan2933/TCE-scheduler",
+      "demo": "",
+      "image": ""
+    },
+    {
+      "id": "cauverysite",
+      "title": "CauverySite: Real Estate Management Platform",
+      "year": "",
+      "featured": false,
+      "pitch": "A role-aware property management platform for sales teams and administrators.",
+      "description": "Property sales teams need a structured way to manage staff and see business operations. I built an application with Next.js, TypeScript and Tailwind CSS featuring role-specific dashboards, an employee hierarchy, profiles and sales overview modules.",
+      "stack": [
+        "Next.js",
+        "TypeScript",
+        "Tailwind CSS"
       ],
       "tags": [
         "full-stack"
       ],
-      "year": "2025",
       "github": "",
       "demo": "",
-      "image": "",
-      "featured": true
+      "image": ""
     },
     {
-      "id": "hackathon-ai",
-      "title": "Hackathon AI Build",
-      "pitch": "Built in 36 hours at Hackathon Name.",
-      "description": "Team size, your role, what it did, and the result (placement / award).",
+      "id": "nathan-exe",
+      "title": "NATHAN.EXE: Play My Save File",
+      "year": "2026",
+      "featured": false,
+      "pitch": "An interactive game portfolio built around the chapters of my life.",
+      "description": "A compact 2.5D retro town with a playable character, fast travel on the Memory Line, collectible stories, interactive project exhibits and a recruiter-friendly quick view. In progress.",
       "stack": [
-        "Python",
-        "LLM API",
-        "Next.js"
+        "Three.js",
+        "JavaScript",
+        "Blender",
+        "Tiled",
+        "glTF"
       ],
       "tags": [
-        "ai",
-        "hackathon"
+        "game",
+        "portfolio"
       ],
-      "year": "2024",
       "github": "",
       "demo": "",
-      "image": "",
-      "featured": false
+      "image": ""
     }
   ],
   "skills": [
     {
       "group": "Languages",
       "items": [
-        "JavaScript / TypeScript",
         "Python",
         "Java",
-        "SQL"
+        "JavaScript",
+        "TypeScript",
+        "C",
+        "C++",
+        "SQL",
+        "Solidity"
       ]
     },
     {
-      "group": "Web",
+      "group": "Web & data",
       "items": [
+        "HTML",
+        "CSS",
         "React",
+        "Next.js",
+        "Flask",
         "Node.js",
-        "Express",
-        "Three.js"
+        "Tailwind CSS",
+        "MySQL",
+        "MongoDB",
+        "SQLite"
       ]
     },
     {
-      "group": "Security",
+      "group": "Cloud & security",
       "items": [
-        "Post-quantum cryptography",
-        "Network security",
-        "OWASP"
+        "Docker",
+        "Kubernetes",
+        "Falco",
+        "Grafana",
+        "Audit-event monitoring",
+        "Ethereum / Ganache"
+      ]
+    },
+    {
+      "group": "AI",
+      "items": [
+        "AI-assisted prototyping",
+        "Prompt engineering"
       ]
     },
     {
       "group": "Tools",
       "items": [
         "Git",
-        "Docker",
-        "Linux",
-        "Blender"
+        "GitHub",
+        "Reflect",
+        "BugBug.io",
+        "Blender (learning)",
+        "Three.js"
       ]
     }
   ],
   "experience": [
     {
-      "role": "Role title",
-      "org": "Company / Organisation",
-      "period": "Month 20XX – Month 20XX",
-      "summary": "One or two lines on what you did and the impact."
+      "role": "Career Preview Program Intern",
+      "org": "Hewlett Packard Enterprise (remote)",
+      "period": "Feb – Jun 2026",
+      "summary": "Contributed to a team-built Kubernetes security logging and monitoring project, integrating Falco event detection and Grafana dashboards for better cluster visibility."
+    },
+    {
+      "role": "Testing Intern",
+      "org": "SEZ US (remote)",
+      "period": "Jun – Oct 2025",
+      "summary": "Tested web and mobile functionality, documented defects, verified fixes and gave usability feedback, using tools including Reflect and BugBug.io."
+    },
+    {
+      "role": "Office Bearer",
+      "org": "TCE IT Association",
+      "period": "",
+      "summary": "Supported volunteer coordination for technical and cultural events."
+    },
+    {
+      "role": "Member",
+      "org": "Entrepreneurship Cell, TCE",
+      "period": "",
+      "summary": "Helped organise events and activities, including flagship events with 800+ participants, and hosted \"The Good, The Bad & The Ugly\", a survival-themed entrepreneurship event."
     }
   ],
   "achievements": [
     {
-      "title": "Award or placement",
-      "org": "Hackathon / Event",
+      "title": "Hack Odyssey 2K25: Winner",
+      "org": "External · with Aratro",
       "year": "2025",
-      "detail": "Short detail."
+      "detail": "24-hour hackathon, ₹15,000 prize money."
+    },
+    {
+      "title": "Product Pulse 2025: Winner",
+      "org": "E-Cell",
+      "year": "2025",
+      "detail": ""
+    },
+    {
+      "title": "Stake'25: Winner",
+      "org": "E-Cell",
+      "year": "2025",
+      "detail": ""
+    },
+    {
+      "title": "E-Cell Week Overall: Winner",
+      "org": "E-Cell",
+      "year": "2025",
+      "detail": ""
+    },
+    {
+      "title": "Pitch Perfect: Runner-up",
+      "org": "Inceptra VI",
+      "year": "2025",
+      "detail": ""
+    },
+    {
+      "title": "HackFest 2025: Runner-up",
+      "org": "IT Events · TCE Event Scheduler",
+      "year": "2025",
+      "detail": "Six-hour hackathon."
+    },
+    {
+      "title": "Content Creation 2025: Winner",
+      "org": "IT Events",
+      "year": "2025",
+      "detail": ""
+    },
+    {
+      "title": "Web Design Contest 2024: Second Runner-up",
+      "org": "IT Events",
+      "year": "2024",
+      "detail": ""
+    },
+    {
+      "title": "Blind Coding 2023: Runner-up",
+      "org": "IT Events",
+      "year": "2023",
+      "detail": ""
+    },
+    {
+      "title": "CaseLabs 2023: Second Runner-up",
+      "org": "E-Cell",
+      "year": "2023",
+      "detail": ""
     }
   ],
   "memories": [
     {
-      "id": "before-photo",
+      "id": "starting-line",
       "district": "iron-yard",
-      "title": "The 'before' photo",
-      "year": "20XX",
-      "text": "Describe the photo you took on day one: how you felt, what you weighed, why you decided to start. (Optional: add the image in the admin.)",
+      "title": "The starting line",
+      "year": "",
+      "text": "There was a point when the scale read about 100 kg. That number marks the beginning of my fitness chapter. I look at it now as a starting line, not a label.",
       "image": ""
     },
     {
-      "id": "first-logbook",
+      "id": "checkpoint-60",
       "district": "iron-yard",
-      "title": "Logbook #1",
-      "year": "20XX",
-      "text": "Your first training log. What did the first week look like? What did you write on the first page?",
-      "image": ""
-    },
-    {
-      "id": "running-shoes",
-      "district": "iron-yard",
-      "title": "Worn-out running shoes",
-      "year": "20XX",
-      "text": "The pair you wore through. How many kilometres, which route, what kept you going on bad days?",
+      "title": "The 60 kg checkpoint",
+      "year": "",
+      "text": "At one stage, I'd reached roughly 60 kg. It's an important milestone in the story, but not the entire story. Numbers change; the habits that help you keep moving matter more.",
       "image": ""
     },
     {
       "id": "transformation",
       "district": "iron-yard",
-      "title": "The transformation",
-      "year": "20XX – 20XX",
-      "text": "Unlocked by finishing the lift. Put your real numbers here: start and current weight / lifts, timeline, and the habit that made the difference.",
-      "image": ""
-    },
-    {
-      "id": "student-id",
-      "district": "winter-campus",
-      "title": "Student ID card",
-      "year": "20XX",
-      "text": "Your first student card in Russia. Which university and faculty, what you were studying, and how it felt to arrive.",
-      "image": ""
-    },
-    {
-      "id": "exam-results",
-      "district": "winter-campus",
-      "title": "First exam results",
-      "year": "20XX",
-      "text": "The subject, the grade, and what it took: a new language, a new system, long nights in the library.",
-      "image": ""
-    },
-    {
-      "id": "first-snow",
-      "district": "winter-campus",
-      "title": "First real snow",
-      "year": "20XX",
-      "text": "A small personal moment: the first winter, the cold, the friends you made, a place you loved walking to.",
-      "image": ""
-    },
-    {
-      "id": "last-lecture",
-      "district": "winter-campus",
-      "title": "The last lecture",
-      "year": "2022",
-      "text": "Your last lecture there: what you remember about the day, the people, and what you took with you to the next chapter.",
-      "image": ""
-    },
-    {
-      "id": "admission-letter",
-      "district": "monsoon-campus",
-      "title": "The admission letter",
-      "year": "20XX",
-      "text": "The day you were accepted to continue your degree in India. Which college, which programme, and what starting again felt like.",
-      "image": ""
-    },
-    {
-      "id": "chai-break",
-      "district": "monsoon-campus",
-      "title": "Chai between classes",
+      "title": "A different balance",
       "year": "",
-      "text": "A small everyday ritual: the tea stall, the friends you sat with, the conversations that turned into projects.",
+      "text": "My journey didn't stop at its lowest number. I later moved toward roughly 75 kg and a different set of goals. This memory is here to show that progress can mean change, not just reduction.",
       "image": ""
     },
     {
-      "id": "first-hackathon",
-      "district": "monsoon-campus",
-      "title": "First hackathon",
-      "year": "20XX",
-      "text": "The event, the team, what you built in those hours, and the result. Link the project in the Garage if it's there.",
-      "image": ""
-    },
-    {
-      "id": "monsoon-day",
-      "district": "monsoon-campus",
-      "title": "Rain day under the banyan",
+      "id": "fitness-chapter",
+      "district": "iron-yard",
+      "title": "Fitness becomes a chapter",
       "year": "",
-      "text": "A personal moment from campus life: a monsoon afternoon, a lesson learned, someone who helped you settle in.",
+      "text": "When I planned NATHAN.EXE, I knew the gym had to have its own district. Coding projects tell one part of my story. The Iron Yard tells another part that matters just as much to me.",
       "image": ""
     },
     {
-      "id": "first-commit",
+      "id": "new-campus",
+      "district": "winter-campus",
+      "title": "A new campus",
+      "year": "",
+      "text": "My university story began in Tomsk, at Tomsk State University. It was a campus in another country and a different setting for studying. That is the part I want this winter district to preserve.",
+      "image": ""
+    },
+    {
+      "id": "two-semesters",
+      "district": "winter-campus",
+      "title": "Two semesters",
+      "year": "",
+      "text": "Two semesters may fit on a short timeline, but they form a complete chapter in this little world. The Winter Campus is its own place on the map. It isn't just a transition screen.",
+      "image": ""
+    },
+    {
+      "id": "campus-sign",
+      "district": "winter-campus",
+      "title": "The campus sign",
+      "year": "",
+      "text": "The sign outside this building reads Tomsk State University. I wanted the game to use the university's real name rather than a fictional placeholder. Some details deserve to remain exact.",
+      "image": ""
+    },
+    {
+      "id": "montfort",
+      "district": "monsoon-campus",
+      "title": "Montfort",
+      "year": "2021",
+      "text": "Before the university chapters, there was St. Montfort in Trichy. I finished Class XII in 2021. It's a small marker for where this academic timeline began.",
+      "image": ""
+    },
+    {
+      "id": "madurai-checkpoint",
+      "district": "monsoon-campus",
+      "title": "Madurai checkpoint",
+      "year": "2023 – 2027",
+      "text": "A new academic chapter took shape at TCE in Madurai. My degree is in Information Technology, with the course running from 2023 to 2027. This is where much of the work in the Garage began.",
+      "image": ""
+    },
+    {
+      "id": "association-badge",
+      "district": "monsoon-campus",
+      "title": "The association badge",
+      "year": "",
+      "text": "I served as an office bearer in the IT Association. That meant helping coordinate people and events, not just building code. It taught me that a project needs cooperation as much as a good idea.",
+      "image": ""
+    },
+    {
+      "id": "ecell-crowd",
+      "district": "monsoon-campus",
+      "title": "The E-Cell crowd",
+      "year": "",
+      "text": "The Entrepreneurship Cell gave me a way to work on events and ideas beyond classes. Flagship activities reached more than 800 participants. It was another kind of teamwork to learn from.",
+      "image": ""
+    },
+    {
+      "id": "six-hours",
       "district": "garage",
-      "title": "First commit",
-      "year": "20XX",
-      "text": "The first project you pushed to GitHub. What it was, what you got wrong, and what it taught you.",
+      "title": "Six hours to build",
+      "year": "2025",
+      "text": "The Event Scheduler came out of a six-hour hackathon. We had to turn the requirement into a usable Flask and SQL application on a tight clock. The project earned a runner-up finish at HackFest 2025.",
       "image": ""
     },
     {
-      "id": "late-night-debug",
+      "id": "warehouse-node",
       "district": "garage",
-      "title": "The 3 a.m. bug",
-      "year": "",
-      "text": "A bug you'll never forget: what broke, how you found it, and how you fixed it.",
+      "title": "The warehouse node",
+      "year": "2025",
+      "text": "Aratro wasn't only about drawing a supply chain on screen. My work included warehouse and inventory workflows and their connection to the smart-contract side of the application. It's one of the projects where backend details really mattered.",
       "image": ""
     },
     {
-      "id": "first-award",
+      "id": "hack-odyssey",
+      "district": "garage",
+      "title": "Hack Odyssey",
+      "year": "2025",
+      "text": "Aratro earned first place at Hack Odyssey 2K25, a 24-hour hackathon. It remains a standout team achievement for me. This badge is a reminder of the people and the work behind the result.",
+      "image": ""
+    },
+    {
+      "id": "property-dashboard",
+      "district": "garage",
+      "title": "The property dashboard",
+      "year": "",
+      "text": "CauverySite pushed me toward practical full-stack application workflows. The interface included separate staff and administrator views, employee structure and sales overviews. Not every project needs a trophy to be useful work.",
+      "image": ""
+    },
+    {
+      "id": "the-pitch",
       "district": "signal-tower",
-      "title": "First award",
-      "year": "20XX",
-      "text": "Your first win or recognition. The event, the team, and why it mattered to you.",
+      "title": "The pitch",
+      "year": "2025",
+      "text": "A project needs more than features; you have to explain why it matters. Product Pulse and Stake'25 were won through pitching and product thinking. That's a different side of building worth remembering.",
       "image": ""
     },
     {
-      "id": "first-internship",
+      "id": "bug-report",
       "district": "signal-tower",
-      "title": "First day at work",
-      "year": "20XX",
-      "text": "Your first internship or job: the team, the first task you shipped, what surprised you.",
+      "title": "The bug report",
+      "year": "2025",
+      "text": "At SEZ US, my work included checking web and mobile behaviour, identifying issues and recording feedback. Testing changes how you look at an interface. You start noticing details that are easy to miss when you're only building the happy path.",
       "image": ""
     },
     {
-      "id": "letter-to-self",
-      "district": "lake-park",
-      "title": "Letter to my younger self",
-      "year": "",
-      "text": "What you'd tell yourself on the first day at the gym, or the day you left Russia.",
+      "id": "cluster-alert",
+      "district": "signal-tower",
+      "title": "The cluster alert",
+      "year": "2026",
+      "text": "The microservices security project brought together container activity, alerts and dashboards. Falco and Grafana became part of the toolkit for understanding what a running cluster was doing. It showed me a different view of software: what happens after it starts running.",
       "image": ""
     },
     {
-      "id": "people-who-helped",
-      "district": "lake-park",
-      "title": "The people who helped",
-      "year": "",
-      "text": "Family, friends, mentors: the people who made the restart possible. Thank them here.",
-      "image": ""
-    },
-    {
-      "id": "next-goal",
+      "id": "new-save-file",
       "district": "lighthouse",
-      "title": "The next goal",
-      "year": "",
-      "text": "The concrete next step you're working towards: a role, a skill, a project.",
+      "title": "A new save file",
+      "year": "2026",
+      "text": "I wanted my portfolio to be something people could explore instead of another page of cards. That's how NATHAN.EXE became a playable town built around projects and personal chapters. This memory is deliberately unfinished: the game is still being made.",
       "image": ""
     }
   ],
@@ -570,7 +707,7 @@
         "Mind the cables. Something's always compiling in here."
       ],
       "topics": [
-        "What kind of things does Nathan build? :: Full-stack apps, cloud security monitoring, blockchain workflows and a post-quantum messaging prototype.",
+        "What kind of things does Nathan build? :: Full-stack apps, cloud security monitoring and blockchain-backed workflows.",
         "What's the pegboard for? :: His tech stack, grouped by how he uses each tool."
       ],
       "scripted": true

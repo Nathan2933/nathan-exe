@@ -91,6 +91,9 @@ export function signTexture(text, { fg = '#ff6a3d', bg = '#1e1b2e', w = 128, h =
   g.strokeStyle = fg; g.lineWidth = 2; g.strokeRect(3, 3, w - 6, h - 6);
   g.fillStyle = fg;
   g.font = `${size}px Silkscreen, monospace`;
+  // shrink long names so they always fit inside the frame
+  const room = w - 16 - (icon ? 22 : 0);
+  while (size > 7 && g.measureText(text).width > room) { size -= 1; g.font = `${size}px Silkscreen, monospace`; }
   g.textAlign = 'center'; g.textBaseline = 'middle';
   g.fillText(text, w / 2 + (icon ? 8 : 0), h / 2 + 1);
   if (icon === 'dumbbell') {
@@ -523,7 +526,7 @@ export const KIT = {
     k.box(1.6, 2.3, 0.1, C.wood, 0, 0.5, D / 2 + 0.05);
     k.box(0.04, 2.1, 0.12, C.ink, 0, 0.6, D / 2 + 0.07, { shadow: false });
     k.box(3.2, 0.5, 0.1, C.ink, 0, 3.3, D / 2 + 0.06);
-    const sign = signMesh(String(text).toUpperCase(), 3.0, 0.4, { fg: '#ffd257', size: 14, w: 192 });
+    const sign = signMesh(String(text).toUpperCase(), 3.0, 0.4, { fg: '#ffd257', size: 22, w: 384, h: 52 });
     sign.position.set(0, 3.55, D / 2 + 0.12); g.add(sign);
     return { obj: g, colliders: [{ x: 0, z: 0, w: W + 0.6, d: D + 0.6 }, { x: 0, z: D / 2 + 1.2, w: 4.6, d: 0.6 }] };
   },
