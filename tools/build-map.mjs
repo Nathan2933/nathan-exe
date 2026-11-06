@@ -240,20 +240,23 @@ interact.push(point('memory', -7.4, 12.0, { id: 'bug-report' }));
 interact.push(point('memory', -18.0, 9.6, { id: 'cluster-alert' }));
 
 // --- The Garage (projects + tech stack) ---
-// One open-sided inventor's workshop: a steel canopy (its roof fades away while
-// Nathan is inside), a tool wall on the west side, and five handcrafted project
-// exhibits around a central aisle. Exhibits wake up as Nathan approaches.
+// An open inventor's workshop: two lean-to roofs run along the back (north and
+// west) edges only, so from the fixed camera a roof can never cover the
+// exhibits, the NPCs or the plaza CRT. The north roof carries the GARAGE sign.
+// The north-west corner stays open as the entrance from the plaza.
+// Five handcrafted exhibits sit around a central aisle and wake up on approach.
 // Project index = order in content.json projects.
 hedge(17, 3, 18, 25.2); hedge(3, 24.4, 17, 25.2);
-O('workshop_canopy', 10, 14.1, { w: 13.6, d: 19.4 });   // low roof, set back from the plaza CRT
-O('lot_sign', 10.3, 3.4, { text: 'THE GARAGE', color: '#ffb347', rot: 0 });
+O('workshop_shed', 13.1, 4.45, { len: 7.4, depth: 2.2, pillars: [-3.7, -0.7, 3.7], sign: 'GARAGE', rot: 0 });   // north roof, x 9.4..16.8
+O('workshop_shed', 3.85, 17.5, { len: 13, depth: 1.7, pillars: [-6.5, -1, 6.5], rot: -90 });                       // west roof, z 11..24
+O('tool_wall', 10.9, 3.55, { len: 2.4, rot: 0 });
 O('skills_board', 13.6, 4.4, { rot: 0 });
 O('server_rack', 15.4, 4.2);
 O('tool_wall', 3.6, 18.6, { len: 8, rot: -90 });
 const EXHIBITS = [
   // [piece, x, z, interact x, interact z]
   ['exhibit_aratro', 6.6, 8.6, 6.6, 11.0],            // 0 Aratro
-  ['exhibit_microservices', 14.0, 8.6, 14.0, 10.9],   // 1 Microservices Security
+  ['exhibit_microservices', 14.0, 9.2, 14.0, 11.5],   // 1 Microservices Security
   ['exhibit_scheduler', 6.6, 15.4, 6.6, 17.7],        // 2 TCE Event Scheduler
   ['exhibit_cauverysite', 14.0, 15.4, 14.0, 17.7],    // 3 CauverySite
   ['exhibit_nathanexe', 10.3, 21.0, 13.0, 21.0],      // 4 NATHAN.EXE (centre workbench)
@@ -262,7 +265,6 @@ EXHIBITS.forEach(([piece, x, z, ix, iz], i) => {
   O(piece, x, z, { index: i });
   interact.push(point('project', ix, iz, { index: i }));
 });
-labels.push(point('label', 10.3, 13.0, { text: 'THE GARAGE', color: '#2a2440', height: 7.4 }));
 // (The Builder chapter unlocks when the first Garage exhibit is opened.)
 interact.push(point('panel', 13.6, 5.6, { id: 'skills', district: 'garage', panel: 'skills', title: 'Tech stack' }));
 interact.push(point('memory', 9.6, 6.8, { id: 'hack-odyssey' }));      // by the Aratro trophy

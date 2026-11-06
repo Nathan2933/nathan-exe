@@ -1561,4 +1561,90 @@ export const KIT = {
       },
     };
   },
+
+  workshop_shed({ len = 8, depth = 2.4, hBack = 3.7, hFront = 3.2, pillars = null, sign = '' } = {}) {
+    // Open lean-to workshop roof along local x, sloping down toward +z (the
+    // open side). Placed only along the Garage's back edges, so from the fixed
+    // camera it can never overlap the exhibits in front of it. The roof sheet
+    // also turns see-through while Nathan stands underneath.
+    const g = new THREE.Group(), k = kit(g);
+    const hz = depth / 2, xs = pillars || [-len / 2, 0, len / 2];
+    for (const x of xs) {
+      for (const [z, h] of [[-hz, hBack], [hz, hFront]]) {
+        k.box(0.34, 0.22, 0.34, C.plinth, x, 0, z);
+        k.box(0.2, h - 0.22, 0.2, C.charcoal, x, 0.22, z);
+        k.box(0.22, 0.06, 0.22, C.accent, x, 1.2, z, { shadow: false });
+      }
+      k.box(0.12, 0.12, depth, C.charcoal, x, (hBack + hFront) / 2 - 0.12, 0, { rx: Math.atan2(hBack - hFront, depth) }); // rafter
+    }
+    // eave beams
+    k.box(len + 0.3, 0.2, 0.18, C.charcoal, 0, hBack - 0.2, -hz);
+    k.box(len + 0.3, 0.2, 0.18, C.charcoal, 0, hFront - 0.2, hz);
+    // corrugated roof sheet (one mesh, striped texture)
+    const slope = Math.atan2(hBack - hFront, depth), run = Math.hypot(depth, hBack - hFront) + 0.5;
+    const c = document.createElement('canvas'); c.width = 64; c.height = 8;
+    const cg = c.getContext('2d');
+    for (let i = 0; i < 8; i++) { cg.fillStyle = ['#c3ccd8', '#b3bdcb', '#a3aec0', '#b3bdcb', '#c3ccd8', '#d0d7e0', '#c3ccd8', '#b8c2d0'][i]; cg.fillRect(i * 8, 0, 8, 8); }
+    const tex = new THREE.CanvasTexture(c); tex.magFilter = THREE.NearestFilter; tex.wrapS = THREE.RepeatWrapping; tex.repeat.set(len / 2.2, 1); tex.colorSpace = THREE.SRGBColorSpace;
+    const roofMat = new THREE.MeshLambertMaterial({ map: tex, transparent: true, opacity: 1, flatShading: true });
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(len + 0.6, 0.08, run), roofMat);
+    roof.position.set(0, (hBack + hFront) / 2 + 0.04, 0); roof.rotation.x = slope; roof.castShadow = true; roof.receiveShadow = true;
+    roof.userData.dynamic = true; g.add(roof);
+    // front fascia + gutter
+    k.box(len + 0.6, 0.24, 0.1, 0x3a3150, 0, hFront - 0.08, hz + 0.24);
+    k.box(len + 0.6, 0.06, 0.12, C.accent, 0, hFront + 0.16, hz + 0.24, { shadow: false });
+    // hanging work lamps
+    const lampMat = mat(C.amber, { emissive: C.amber, emissiveIntensity: 0.8 });
+    const pools = [];
+    for (let i = 0; i < xs.length - 1; i++) {
+      const x = (xs[i] + xs[i + 1]) / 2;
+      k.box(0.03, 0.5, 0.03, C.ink, x, hFront - 0.7, hz - 0.3, { shadow: false });
+      k.cyl(0.08, 0.22, 0.16, C.ink, x, hFront - 0.86, hz - 0.3, 8, { shadow: false });
+      k.box(0.14, 0.08, 0.14, lampMat, x, hFront - 0.92, hz - 0.3, { shadow: false });
+      const pool = lightPool(2.2, 0xffd08a); pool.position.set(x, 0.09, hz - 0.2); g.add(pool); pools.push(pool);
+    }
+    if (sign) {
+      // Big physical sign standing on the front edge: ink board, cream chunky
+      // letters with a drop shadow, orange trims and rivets, three gooseneck lamps.
+      const SW = Math.min(len - 0.8, 5.8), SH = 1.3, sy = hFront + 0.22, sz = hz + 0.22;
+      for (const x of [-SW / 2 + 0.5, SW / 2 - 0.5]) k.box(0.1, 0.4, 0.1, C.charcoal, x, hFront + 0.12, sz - 0.1);
+      k.box(SW + 0.24, SH + 0.24, 0.18, 0x14101f, 0, sy, sz - 0.12);               // depth / backing
+      k.box(SW, SH, 0.1, C.ink, 0, sy + 0.12, sz);
+      k.box(SW, 0.08, 0.12, mat(C.accent, { keep: true }), 0, sy + 0.18, sz + 0.01, { shadow: false });
+      k.box(SW, 0.08, 0.12, mat(C.accent, { keep: true }), 0, sy + SH - 0.02, sz + 0.01, { shadow: false });
+      const cv = document.createElement('canvas'); cv.width = 512; cv.height = 112;
+      const x2 = cv.getContext('2d');
+      x2.fillStyle = '#2a2440'; x2.fillRect(0, 0, 512, 112);
+      let size = 84; x2.font = `bold ${size}px Silkscreen, monospace`;
+      while (size > 40 && x2.measureText(sign).width > 420) { size -= 2; x2.font = `bold ${size}px Silkscreen, monospace`; }
+      x2.textAlign = 'center'; x2.textBaseline = 'middle';
+      x2.fillStyle = '#100c1a'; x2.fillText(sign, 256 + 6, 58 + 6);
+      x2.fillStyle = '#fff1d6'; x2.fillText(sign, 256, 58);
+      x2.fillStyle = '#ff6a3d';
+      for (const x of [18, 494]) { x2.fillRect(x - 7, 44, 14, 14); x2.fillRect(x - 3, 66, 6, 6); }
+      const st = new THREE.CanvasTexture(cv); st.colorSpace = THREE.SRGBColorSpace; st.magFilter = THREE.NearestFilter; st.minFilter = THREE.LinearFilter;
+      const face = new THREE.Mesh(new THREE.PlaneGeometry(SW - 0.1, SH - 0.32), new THREE.MeshBasicMaterial({ map: st }));
+      face.position.set(0, sy + 0.12 + SH / 2, sz + 0.055); face.userData.dynamic = true; g.add(face);
+      for (const x of [-SW / 2 + 0.12, SW / 2 - 0.12]) for (const yy of [0.32, SH - 0.08]) k.box(0.06, 0.06, 0.04, C.accent, x, sy + yy, sz + 0.06, { shadow: false });
+      for (const x of [-SW / 3, 0, SW / 3]) {
+        k.box(0.04, 0.3, 0.04, C.ink, x, sy + SH + 0.12, sz - 0.02);
+        k.box(0.04, 0.04, 0.3, C.ink, x, sy + SH + 0.4, sz + 0.1);
+        k.box(0.18, 0.08, 0.12, lampMat, x, sy + SH + 0.33, sz + 0.24, { shadow: false });
+      }
+    }
+    const v = new THREE.Vector3();
+    let fade = 1;
+    return {
+      obj: g,
+      colliders: xs.flatMap((x) => [{ x, z: -hz, r: 0.24 }, { x, z: hz, r: 0.24 }]),
+      nightGlow: pools,
+      animate: (t, state) => {
+        const p = state.playerPos;
+        let under = false;
+        if (p) { v.set(p.x, 0, p.z); g.worldToLocal(v); under = Math.abs(v.x) < len / 2 + 0.3 && v.z > -hz - 0.3 && v.z < hz + 0.6; }
+        fade += ((under ? 0.35 : 1) - fade) * 0.12;
+        roofMat.opacity = fade; roofMat.depthWrite = fade > 0.95;
+      },
+    };
+  },
 };
