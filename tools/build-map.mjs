@@ -234,6 +234,7 @@ O('rooftop_props', 13.5, -25.6);
 // western camp + round paddock where Arthur rides
 O('pop_camp', 20.8, -25.0, { horse: false });
 O('paddock', 20.6, -19.6, { r: 2.7 });
+interact.push(point('vehicle', 17.2, -23.4, { id: 'horse-camp', vtype: 'horse', rot: 0, district: 'city-park' }));   // saddled horse you can ride
 // Tyler's basement + the soap
 O('pop_boxing', 6.2, -11.6);
 O('bench', 4.2, -8.6, { rot: 90 });
@@ -324,6 +325,9 @@ O('snow_pile', -12.6, -38.4); O('snow_pile', 12.4, -36.6, { scale: 0.8 }); O('sn
 interact.push(point('memory', 7.9, -35.8, { id: 'new-campus' }));
 interact.push(point('memory', 9.8, -37.9, { id: 'two-semesters' }));
 interact.push(point('memory', -11.6, -44.2, { id: 'campus-sign' }));
+// Rideable bicycles at the two universities (E to ride, E again to get off)
+interact.push(point('vehicle', 4.6, -36.2, { id: 'bike-tomsk', vtype: 'bike', rot: 90, color: '#2f5f9a', district: 'winter-campus' }));
+interact.push(point('vehicle', 46.4, -0.2, { id: 'bike-tce', vtype: 'bike', rot: 180, color: '#b5523b', district: 'monsoon-campus' }));
 // --- Monsoon Campus (India chapter, Tamil Nadu college) ---
 O('college_building', 41.5, -9.2, { text: 'TCE Madurai', subtitle: 'Thiagarajar College of Engineering', logo: 'assets/logos/tce.png' });
 objects.push(area('rain_zone', 31.5, -14, 49, 14));   // monsoon showers fall inside this rectangle

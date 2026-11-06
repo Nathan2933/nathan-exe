@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { KIT, buildHorse, mat, C } from './kit.js';
+import { KIT, buildHorse, buildBicycle, mat, C } from './kit.js';
 import { tileAt } from './tiled.js';
 import { Character, OUTFITS, appearanceToOutfit } from './player.js';
 import { buildRailway } from './railway.js';
@@ -222,6 +222,17 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
     } else if (o.type === 'finale') {
       const it = { ...base, id: 'finale', kind: 'finale', district: 'lighthouse', radius: 2.0 };
       it.beacon = beacon(o.x, 2.6, o.z); hitBox(it); interactables.push(it);
+    } else if (o.type === 'vehicle') {
+      // rideable bicycle / horse, parked at its rack or post
+      const vt = pr.vtype === 'horse' ? 'horse' : 'bike';
+      const model = vt === 'horse' ? buildHorse(0x8a5a36, 0x2a1a12) : buildBicycle(pr.color ? parseInt(String(pr.color).replace('#', ''), 16) : 0x2f5fb0);
+      const heading = ((pr.rot ?? 0) * Math.PI) / 180;
+      const tile = tileAt(map, o.x, o.z);
+      model.group.position.set(o.x, tile ? Math.max(0, groundHeight(tile.type)) : 0, o.z);
+      model.group.rotation.y = heading + (vt === 'horse' ? -Math.PI / 2 : 0);
+      root.add(model.group);
+      const it = { ...base, id: `vehicle:${pr.id}`, kind: 'vehicle', vtype: vt, model, heading, home: { x: o.x, z: o.z, heading }, district: pr.district, radius: 1.5 };
+      it.beacon = beacon(o.x, 1.6, o.z, { small: true }); hitBox(it, 1.4, 2, 1.4); interactables.push(it);
     } else if (o.type === 'station') {
       const it = { ...base, id: `station:${pr.id}`, kind: 'station', stationId: pr.id, name: pr.name || pr.id, district: pr.district, order: pr.order || 0, tagline: pr.tagline || '', radius: 2.4 };
       it.beacon = beacon(o.x, 2.3, o.z, { small: true }); hitBox(it, 2.4, 3, 2.4); interactables.push(it);

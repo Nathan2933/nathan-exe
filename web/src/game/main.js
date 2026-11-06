@@ -264,6 +264,7 @@ function setupUI() {
     if (e.key === 'm' || e.key === 'M') { e.preventDefault(); toggleBigMap(); return; }
     if (e.key === 'h' || e.key === 'H') { e.preventDefault(); toggleControls(); return; }
     if (e.key === 'n' || e.key === 'N') { e.preventDefault(); cycleTime(); return; }
+    if ((e.key === 'r' || e.key === 'R') && state.mount) { e.preventDefault(); resetMount(); return; }
     if (e.key === 'Escape') {
       if (!$('#bigmap').classList.contains('hidden')) return toggleBigMap(false);
       if (!$('#controls').classList.contains('hidden')) return toggleControls(false);
@@ -308,6 +309,8 @@ function renderJourney() {
 
 // ---------------- Interactions ----------------
 function interact(it) {
+  if (state.mount) return dismount();
+  if (it.kind === 'vehicle') return mount(it);
   if (it.kind === 'npc') return talkTo(it);
   if (it.kind === 'minigame') return startMinigame(it);
   if (it.kind === 'memory') return collectMemory(it);
@@ -606,6 +609,129 @@ function openEducation(readId = null) {
   }));
 }
 
+// ---------------- Mounts: one controller for bicycles and the horse ----------------
+// Each vehicle type is just a config; on foot movement is untouched and comes
+// back as soon as Nathan gets off.
+const VEHICLES = {
+  bike: { speed: 5.2, boost: 7.0, accel: 5, brake: 9, turn: 4.2, seatY: 0.3, pose: 'cycle', r: 0.42, yaw: 0, avoid: ['sand', 'water', 'snow_deep'], label: 'bicycle' },
+  horse: { speed: 4.0, boost: 6.6, accel: 3.5, brake: 7, turn: 3.0, seatY: 0.7, pose: 'ride', r: 0.6, yaw: -Math.PI / 2, avoid: ['water'], label: 'horse' },
+};
+let railPts = null;
+function vehicleFree(x, z, cfg) {
+  const r = cfg.r;
+  for (const c of world.colliders) {
+    if (c.r !== undefined) { if (Math.hypot(x - c.cx, z - c.cz) < c.r + r) return false; }
+    else if (x > c.minX - r && x < c.maxX + r && z > c.minZ - r && z < c.maxZ + r) return false;
+  }
+  for (const f of world.floors) if (x >= f.minX && x <= f.maxX && z >= f.minZ && z <= f.maxZ) return false;   // no riding indoors or onto platforms
+  const tile = tileAt(map, x, z);
+  if (!tile || !tile.walkable || cfg.avoid.includes(tile.type)) return false;
+  if (Math.hypot(x, z) > (map.props.islandRadius || 44) - 3) return false;
+  for (const n of world.npcs) { const p = n.character.group.position; if (Math.hypot(p.x - x, p.z - z) < r + 0.45) return false; }
+  for (const it of world.interactables) if (it.kind === 'vehicle' && it !== state.mount?.it && Math.hypot(it.x - x, it.z - z) < r + 0.6) return false;
+  // the railway: only cross where a road crosses it
+  if (world.railway) {
+    if (!railPts) railPts = world.railway.curve.getSpacedPoints(500);
+    if (tile.type !== 'road' && tile.type !== 'road_line') for (const q of railPts) if (Math.abs(q.x - x) < 1.6 && Math.abs(q.z - z) < 1.6 && Math.hypot(q.x - x, q.z - z) < 1.4) return false;
+    if (trainNear(x, z, 0.6)) return false;
+  }
+  return true;
+}
+function mount(it) {
+  if (state.mount || dialogue.open || state.panelOpen || state.minigame || state.ko) return;
+  const cfg = VEHICLES[it.vtype];
+  closePanel(); state.path = []; marker.visible = false;
+  state.mount = { it, cfg, speed: 0, heading: it.heading, lift: 0, phase: 0, from: player.group.position.clone() };
+  it.beacon.group.visible = false; state.nearby = null; // refresh the prompt to 'Dismount'
+  player.play('interact'); sfx.open();
+  if (!state.rideHint) { state.rideHint = true; toast(`${isTouch ? 'Tap to steer' : 'WASD to steer · Shift for speed'} · E to get off${isTouch ? '' : ' · R returns it to its rack'}`); }
+}
+function dismount(force = false) {
+  const m = state.mount; if (!m) return;
+  const p = player.group.position, h = m.heading;
+  const cands = [[Math.cos(h), -Math.sin(h)], [-Math.cos(h), Math.sin(h)], [-Math.sin(h), -Math.cos(h)], [Math.sin(h), Math.cos(h)]];
+  let spot = null;
+  for (const d of [1.1, 1.6]) for (const [ox, oz] of cands) { const x = p.x + ox * d, z = p.z + oz * d; if (solidFree(x, z) && nav.isWalkable(x, z, 0.32)) { spot = { x, z }; break; } if (spot) break; }
+  if (!spot && !force) { toast('No room to get off here. Ride a little further.'); return; }
+  spot = spot || { x: p.x, z: p.z };
+  const it = m.it;
+  it.x = p.x; it.z = p.z; it.heading = h;
+  it.beacon.group.position.set(p.x, heightAt(p.x, p.z) + 0.04, p.z); it.beacon.group.visible = true;
+  it.hit.position.set(p.x, 1.3, p.z);
+  state.mount = null; state.nearby = null;
+  player.pose = null;
+  p.set(spot.x, heightAt(spot.x, spot.z), spot.z);
+  player.heading = Math.atan2(it.x - spot.x, it.z - spot.z);
+  sfx.close();
+}
+function resetMount() {
+  const m = state.mount; if (!m) return;
+  const home = m.it.home;
+  player.group.position.set(home.x, heightAt(home.x, home.z), home.z);
+  m.heading = home.heading; m.speed = 0;
+  toast(`Back at the ${m.cfg.label} rack.`);
+}
+const rideDir = new THREE.Vector3();
+function rideUpdate(dt, t, kx, kz, running) {
+  const m = state.mount, cfg = m.cfg, it = m.it, pos = player.group.position;
+  let want = false;
+  if (!state.minigame && !state.ko) {
+    if (kx || kz) { state.path = []; marker.visible = false; rideDir.set(0, 0, 0).addScaledVector(right, kx).addScaledVector(fwd, kz).normalize(); want = true; }
+    else if (state.path.length) {
+      const wp = state.path[0], dx = wp.x - pos.x, dz = wp.z - pos.z, d = Math.hypot(dx, dz);
+      if (d < 0.5) { state.path.shift(); if (!state.path.length) { marker.visible = false; state.pendingOpen = null; } }
+      else { rideDir.set(dx / d, 0, dz / d); want = true; }
+    }
+  }
+  const target = want ? (running || state.path.length > 6 ? cfg.boost : cfg.speed) : 0;
+  const dv = target - m.speed;
+  m.speed += Math.max(-cfg.brake * dt, Math.min(cfg.accel * dt, dv));
+  if (want) {
+    const h = Math.atan2(rideDir.x, rideDir.z);
+    const turn = Math.atan2(Math.sin(h - m.heading), Math.cos(h - m.heading));
+    m.heading += turn * Math.min(1, dt * cfg.turn);
+    if (Math.abs(turn) > 2.2) m.speed *= 1 - Math.min(1, dt * 3);          // slow for a hard U-turn
+  }
+  const vx = Math.sin(m.heading) * m.speed, vz = Math.cos(m.heading) * m.speed;
+  const nx = pos.x + vx * dt, nz = pos.z + vz * dt;
+  let blocked = false;
+  if (vehicleFree(nx, pos.z, cfg)) pos.x = nx; else blocked = true;
+  if (vehicleFree(pos.x, nz, cfg)) pos.z = nz; else blocked = true;
+  if (blocked) m.speed *= 1 - Math.min(1, dt * 6);
+  velocity.set(vx, 0, vz);
+  const ground = heightAt(pos.x, pos.z);
+  m.lift = Math.min(1, m.lift + dt / 0.35);                                      // mount: hop up into the seat
+  const hop = Math.sin(m.lift * Math.PI) * 0.25;
+  // model follows Nathan
+  const g = it.model.group;
+  g.position.set(pos.x, ground, pos.z);
+  g.rotation.y = m.heading + cfg.yaw;
+  it.x = pos.x; it.z = pos.z;
+  const sp = Math.abs(m.speed);
+  if (it.vtype === 'bike') {
+    for (const w of it.model.wheels) w.rotation.x += (m.speed * dt) / 0.34;
+    m.phase += (m.speed * dt) / 0.34 * 0.55;
+    it.model.crank.rotation.x = m.phase;
+    player.pedal = m.phase;
+    g.rotation.z = Math.atan2(Math.sin(rideDir.x * 0), 1) * 0;                  // keep upright
+    pos.y = ground + cfg.seatY * m.lift + hop;
+  } else {
+    const trot = sp > 4.6;
+    m.phase += dt * sp * (trot ? 5.5 : 4.2);
+    const amp = Math.min(1, sp / 2) * (trot ? 0.7 : 0.45);
+    it.model.legs.forEach((l, i) => { l.rotation.z = Math.sin(m.phase + (i % 2 ? Math.PI : 0) + (i > 1 ? (trot ? Math.PI : Math.PI / 2) : 0)) * amp; });
+    it.model.head.rotation.z = sp > 0.1 ? Math.sin(m.phase * 2) * 0.08 : Math.sin(t * 0.9) * 0.1 - 0.12;
+    it.model.tail.rotation.x = Math.sin(t * 2.2) * 0.3 + (trot ? 0.3 : 0);
+    const bounce = trot ? Math.abs(Math.sin(m.phase)) * 0.08 : Math.abs(Math.sin(m.phase)) * 0.03 * Math.min(1, sp);
+    g.position.y = ground + bounce;
+    pos.y = ground + cfg.seatY * m.lift + hop + bounce;
+  }
+  player.heading = m.heading;
+  player.pose = cfg.pose;
+  player.update(dt, zeroV, t);
+}
+const zeroV = new THREE.Vector3();
+
 // ---------------- Lighthouse finale ----------------
 function runFinale(it) {
   closePanel();
@@ -708,6 +834,7 @@ const TRAIN_SVG = `<svg viewBox="0 0 66 22" width="132" height="44" shape-render
 </svg>`;
 
 function travel(from, dest) {
+  if (state.mount) dismount(true);
   closePanel();
   const c = state.content;
   const ch = chapterFor(c, dest.district) || {};
@@ -996,7 +1123,10 @@ function update(dt, t) {
   const pos = player.group.position;
   const frozen = !!state.minigame;
 
-  const keyboardMove = state.started && !frozen && !state.ko && !!(kx || kz);
+  const keyboardMove = !state.mount && state.started && !frozen && !state.ko && !!(kx || kz);
+  if (state.mount) {
+    rideUpdate(dt, t, kx, kz, running);
+  } else {
   if (keyboardMove) {
     state.path = []; state.pendingOpen = null; marker.visible = false;
     velocity.addScaledVector(right, kx).addScaledVector(fwd, kz).normalize().multiplyScalar(running ? RUN : SPEED);
@@ -1033,6 +1163,7 @@ function update(dt, t) {
   player.update(dt, velocity, t);
   stepT -= dt * Math.hypot(velocity.x, velocity.z);
   if (stepT < 0) { stepT = 1.55; if (velocity.lengthSq() > 1) sfx.step(); }
+  }
 
   // Nearby interactable + prompt
   let best = null, bestD = Infinity;
@@ -1042,6 +1173,7 @@ function update(dt, t) {
     const score = it.kind === 'npc' ? d - 0.8 : d; // people take priority when you're beside them
     if (d < it.radius && score < bestD) { best = it; bestD = score; }
   }
+  if (state.mount) best = state.mount.it; // while riding, the only action is getting off
   if (best && !dialogue.open) player.lookAt(lookV.set(best.x, 0, best.z)); else if (!dialogue.open) player.lookAt(null);
   if (dialogue.open && state.talkingTo) player.lookAt(lookV.set(state.talkingTo.x, 0, state.talkingTo.z));
   if (best !== state.nearby) {
@@ -1280,6 +1412,7 @@ function onBigMapClick(e) {
 
 // ---------------- Collisions with characters + hazards ----------------
 function charBlocks(x, z) {
+  for (const it of world.interactables) if (it.kind === 'vehicle' && it !== state.mount?.it && Math.hypot(it.x - x, it.z - z) < 0.7) return true;
   for (const w of world.walkers) { const p = w.ch.group.position; if (Math.hypot(p.x - x, p.z - z) < 0.62) return true; }
   for (const n of world.npcs) { const p = n.character.group.position; if (Math.hypot(p.x - x, p.z - z) < 0.62) return true; }
   return false;
@@ -1472,6 +1605,7 @@ function updatePrompt() {
     memory: ['Memory', mem ? 'Pick up ✦' : ''],
     station: ['Memory Line', best.name ? `${best.name} station` : 'Station'],
     panel: ['Look', best.title],
+    vehicle: [best.vtype === 'horse' ? 'Horse' : 'Bicycle', state.mount ? 'Dismount' : best.vtype === 'horse' ? 'Ride horse' : 'Ride bicycle'],
     finale: ['Departures', state.save.finale ? 'Replay the ending' : 'End of Island 01'],
     chapter: ['Open chapter', chapterFor(c, best.district)?.title],
   }[best.kind] || ['Open', best.id];

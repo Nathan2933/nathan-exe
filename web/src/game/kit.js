@@ -164,6 +164,32 @@ function boardSign(text, SW, SH, { size = 0, w = 512, h = 112, fg = '#fff1d6', b
   return g;
 }
 
+/** Low-poly bicycle facing +z: rolling wheels, turning crank. */
+export function buildBicycle(color = 0x2f5fb0) {
+  const g = new THREE.Group(), k = kit(g);
+  const wheels = [];
+  for (const z of [-0.52, 0.52]) {
+    const w = new THREE.Group(); w.position.set(0, 0.34, z); g.add(w);
+    const tyre = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.06, 14), mat(0x1e1b2e)); tyre.rotation.z = Math.PI / 2; w.add(tyre);
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.27, 0.065, 14), mat(0xc6d2e0)); hub.rotation.z = Math.PI / 2; w.add(hub);
+    for (const a of [0, Math.PI / 2]) { const sp = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.5, 0.04), mat(0x7d8fa8)); sp.rotation.x = a; w.add(sp); }
+    wheels.push(w);
+  }
+  k.box(0.06, 0.06, 0.9, color, 0, 0.62, 0.02, { rx: 0.12 });                     // top tube
+  k.box(0.06, 0.55, 0.06, color, 0, 0.34, -0.12, { rx: -0.2 });                    // seat tube
+  k.box(0.06, 0.06, 0.62, color, 0, 0.4, 0.22, { rx: -0.6 });                      // down tube
+  k.box(0.05, 0.42, 0.05, color, 0, 0.36, 0.5, { rx: 0.25 });                      // fork
+  k.box(0.22, 0.06, 0.3, 0x2a2440, 0, 0.86, -0.18);                                // saddle
+  k.box(0.04, 0.3, 0.04, 0x7d8fa8, 0, 0.62, -0.16);
+  k.box(0.5, 0.05, 0.05, 0x2a2440, 0, 0.98, 0.44); k.box(0.04, 0.3, 0.04, 0x7d8fa8, 0, 0.7, 0.44);   // handlebar
+  k.box(0.2, 0.12, 0.16, 0xd8dee8, 0, 0.82, 0.58);                                // front basket
+  const crank = new THREE.Group(); crank.position.set(0, 0.34, 0); g.add(crank);
+  const ring = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.04, 10), mat(0x7d8fa8)); ring.rotation.z = Math.PI / 2; crank.add(ring);
+  for (const s of [-1, 1]) { const arm = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.32, 0.04), mat(0x4a5a7a)); arm.position.set(s * 0.1, s * 0.14, 0); crank.add(arm); const pd = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.04, 0.1), mat(0x1e1b2e)); pd.position.set(s * 0.16, s * 0.28, 0); crank.add(pd); }
+  g.userData.dynamic = true;
+  return { group: g, wheels, crank };
+}
+
 /** Boxy horse used as a walking companion (Arthur's horse). */
 export function buildHorse(coat = 0x7a4a2a, mane = 0x2a1a12) {
   const g = new THREE.Group(), k = kit(g);
@@ -602,9 +628,10 @@ export const KIT = {
     // doors + name plaque
     k.box(1.6, 2.3, 0.1, C.wood, 0, 0.5, D / 2 + 0.05);
     k.box(0.04, 2.1, 0.12, C.ink, 0, 0.6, D / 2 + 0.07, { shadow: false });
-    k.box(3.2, 0.5, 0.1, C.ink, 0, 3.3, D / 2 + 0.06);
-    const sign = signMesh(String(text).toUpperCase(), 3.0, 0.4, { fg: '#ffd257', size: 22, w: 384, h: 52 });
-    sign.position.set(0, 3.55, D / 2 + 0.12); g.add(sign);
+    // big university board standing on the cornice, above the portico
+    const sign = boardSign(String(text).toUpperCase(), 9.6, 1.05, { fg: '#fff8ea', bg: '#2f5f9a', board: 0x2f5f9a, trim: C.cream });
+    sign.position.set(0, 0.5 + H + 0.75, D / 2 + 0.35); g.add(sign);
+    for (const x of [-3.6, 3.6]) k.box(0.14, 0.9, 0.14, 0x9a96a6, x, 0.5 + H - 0.2, D / 2 + 0.25);
     return { obj: g, colliders: [{ x: 0, z: 0, w: W + 0.6, d: D + 0.6 }, { x: 0, z: D / 2 + 1.2, w: 4.6, d: 0.6 }] };
   },
   birch({ scale = 1 }) {
@@ -659,73 +686,80 @@ export const KIT = {
 
   // ----- Monsoon Campus (Tamil Nadu college) -----
   college_building({ text = 'COLLEGE', subtitle = '', logo = '' } = {}) {
-    // 11 m × 6 m block with a pillared veranda along the front (+z), red-oxide
-    // plinth, cream walls, green shutters and a terracotta-tiled hipped roof.
+    // Engineering-college block facing +z: two symmetrical two-storey wings with
+    // repeated classroom / lab windows, a taller central entrance block with a
+    // pillared covered corridor, flat roofs behind parapets (camera-safe), and a
+    // wide two-line name board with the college emblem.
     const g = new THREE.Group(), k = kit(g);
-    const W = 11, D = 6, H = 4.2, wall = 0xf6e7c8, oxide = 0xb5523b, tile = 0xd06a3e, shutter = 0x3f9a72;
-    k.box(W + 2.2, 0.45, D + 2.6, oxide, 0, 0, 0.6);                            // raised red-oxide plinth + veranda floor
-    k.box(W + 2.3, 0.06, D + 2.7, 0x8f3e2c, 0, 0.45, 0.6, { shadow: false });
-    k.box(W, H, D, wall, 0, 0.45, 0);
-    k.box(W + 0.1, 0.5, D + 0.1, 0xe8d3a8, 0, 0.45, 0);                         // skirting
-    // windows: green shutters, wooden frames
-    for (const x of [-4.2, -2.4, 2.4, 4.2]) {
-      k.box(1.1, 1.6, 0.08, C.wood, x, 1.3, D / 2 + 0.03);
-      k.box(0.45, 1.4, 0.06, shutter, x - 0.26, 1.4, D / 2 + 0.08);
-      k.box(0.45, 1.4, 0.06, shutter, x + 0.26, 1.4, D / 2 + 0.08);
-      for (let y = 1.6; y < 2.7; y += 0.25) k.box(0.95, 0.03, 0.03, 0x2f7a58, x, y, D / 2 + 0.12, { shadow: false });
+    const W = 13, D = 6, HW = 5.0, HC = 6.4, CW = 4.4, CF = 1.2;      // wing/centre heights, centre width, centre forward step
+    const cream = 0xf2e2bf, oxide = 0xb5523b, stone = 0xb8aa98, glass = mat(0x9fc8e8, { emissive: 0x24476a, emissiveIntensity: 0.3 });
+    k.box(W + 0.6, 0.4, D + 0.6, stone, 0, 0, 0);                                   // plinth
+    k.box(W, HW, D, cream, 0, 0.4, 0);                                             // wings (one long block)
+    for (const y of [0.4, 0.4 + HW / 2 - 0.1]) k.box(W + 0.08, 0.2, D + 0.08, oxide, 0, y, 0);   // red-oxide floor bands
+    k.box(W + 0.3, 0.35, D + 0.3, oxide, 0, 0.4 + HW, 0);                            // wing parapet
+    k.box(W - 0.4, 0.04, D - 0.4, 0x9a8f80, 0, 0.4 + HW + 0.36, 0, { shadow: false }); // flat roof deck
+    // classroom / lab windows: two rows along both wings
+    for (const y of [1.0, 1.0 + HW / 2]) for (let x = -W / 2 + 0.8; x < W / 2 - 0.4; x += 1.05) {
+      if (Math.abs(x) < CW / 2 + 0.3) continue;
+      k.box(0.78, 1.2, 0.06, 0xe0cfa8, x, 0.4 + y - 0.08, D / 2 + 0.03);
+      k.box(0.62, 1.04, 0.05, glass, x, 0.4 + y, D / 2 + 0.06, { shadow: false });
+      k.box(0.62, 0.04, 0.06, 0xe0cfa8, x, 0.4 + y + 0.5, D / 2 + 0.08, { shadow: false });
+      k.box(0.7, 0.07, 0.16, oxide, x, 0.4 + y - 0.12, D / 2 + 0.1, { shadow: false });   // sunshade sill
     }
-    // central double door with a carved frame
-    k.box(1.8, 2.7, 0.12, C.wood, 0, 0.45, D / 2 + 0.03);
-    k.box(1.5, 2.4, 0.1, 0x7a4a2c, 0, 0.5, D / 2 + 0.08);
-    k.box(0.04, 2.3, 0.12, C.amber, 0, 0.55, D / 2 + 0.12, { shadow: false });
-    // veranda: square pillars carrying a deep sloping eave
-    for (let x = -W / 2 - 0.6; x <= W / 2 + 0.7; x += 2.05) {
-      k.box(0.36, 0.3, 0.36, oxide, x, 0.45, D / 2 + 1.55);
-      k.box(0.26, H - 0.75, 0.26, C.cream, x, 0.75, D / 2 + 1.55);
-      k.box(0.36, 0.18, 0.36, C.cream, x, H - 0.05, D / 2 + 1.55);
-    }
-    // eave: high against the wall, sloping down over the pillars (shape x maps to -z)
-    const eave = new THREE.Shape(); eave.moveTo(0, 0); eave.lineTo(2.3, 0); eave.lineTo(2.3, 0.9); eave.closePath();
-    k.mesh(new THREE.ExtrudeGeometry(eave, { depth: W + 2.2, bevelEnabled: false }), tile, -(W + 2.2) / 2, H + 0.1, D / 2 + 2.3, { ry: Math.PI / 2 });
-    // main hipped roof
-    const roof = new THREE.Shape(); roof.moveTo(-D / 2 - 0.7, 0); roof.lineTo(D / 2 + 0.7, 0); roof.lineTo(0, 2.3); roof.closePath();
-    k.mesh(new THREE.ExtrudeGeometry(roof, { depth: W + 0.8, bevelEnabled: false }), tile, (W + 0.8) / 2, H + 0.45, 0, { ry: -Math.PI / 2 });
-    for (let i = 0; i < 6; i++) k.box(W + 0.9, 0.05, 0.08, 0xa8502f, 0, H + 0.6 + i * 0.36, -D / 2 - 0.4 + i * 0.64 - 0.15, { shadow: false }); // tile courses (rear)
-    for (let i = 0; i < 6; i++) k.box(W + 0.9, 0.05, 0.08, 0xa8502f, 0, H + 0.6 + i * 0.36, D / 2 + 0.4 - i * 0.64 + 0.15, { shadow: false }); // tile courses (front)
-    k.box(W + 1.0, 0.16, 0.22, 0x8f3e2c, 0, H + 2.7, 0);                         // ridge
-    // name board above the veranda: logo panel + two-line name
-    const BW = 6.4, BH = 1.25, by = H + 0.85, bz = D / 2 + 2.3;
-    k.box(BW + 0.2, BH + 0.2, 0.14, C.ink, 0, by, bz);
-    const nameCanvas = document.createElement('canvas');
-    nameCanvas.width = 384; nameCanvas.height = 80;
-    const ng = nameCanvas.getContext('2d');
-    ng.fillStyle = '#fff1d6'; ng.fillRect(0, 0, 384, 80);
-    ng.fillStyle = '#2a2440'; ng.textAlign = 'center'; ng.textBaseline = 'middle';
-    ng.font = '34px Silkscreen, monospace'; ng.fillText(String(text).toUpperCase(), 192, 30);
-    ng.font = '15px Silkscreen, monospace'; ng.fillStyle = '#7a3b2c'; ng.fillText(String(subtitle).toUpperCase(), 192, 62);
-    const nameTex = new THREE.CanvasTexture(nameCanvas); nameTex.colorSpace = THREE.SRGBColorSpace;
-    const nameBoard = new THREE.Mesh(new THREE.PlaneGeometry(BW - BH - 0.1, BH), new THREE.MeshBasicMaterial({ map: nameTex }));
-    nameBoard.position.set((BH + 0.1) / 2, by + BH / 2 + 0.1, bz + 0.08); nameBoard.userData.dynamic = true; g.add(nameBoard);
-    // logo panel: shows public/<logo> when the file exists, a neutral emblem until then
-    const logoCanvas = document.createElement('canvas');
-    logoCanvas.width = logoCanvas.height = 96;
+    for (const x of [-W / 2 + 0.15, W / 2 - 0.15]) k.box(0.3, HW, 0.12, oxide, x, 0.4, D / 2 + 0.04);   // corner pilasters
+    // central entrance block, stepped forward and taller
+    k.box(CW, HC, D + CF, 0xf6ead0, 0, 0.4, CF / 2);
+    k.box(CW + 0.3, 0.35, D + CF + 0.3, oxide, 0, 0.4 + HC, CF / 2);
+    for (const y of [3.5, 4.9]) for (const x of [-1.2, 0, 1.2]) { k.box(0.8, 1.0, 0.06, 0xe0cfa8, x, 0.4 + y - 0.08, D / 2 + CF + 0.03); k.box(0.64, 0.84, 0.05, glass, x, 0.4 + y, D / 2 + CF + 0.06, { shadow: false }); }
+    k.box(1.8, 2.4, 0.1, 0x5a3a26, 0, 0.4, D / 2 + CF + 0.04);                       // main doors
+    k.box(1.5, 2.2, 0.06, glow(0xffd08a), 0, 0.45, D / 2 + CF + 0.08, { shadow: false });
+    k.box(0.05, 2.2, 0.1, 0x3a2418, 0, 0.45, D / 2 + CF + 0.1, { shadow: false });
+    // covered entrance corridor: pillars carrying a flat canopy
+    const PZ = D / 2 + CF + 1.5;
+    for (let i = 0; i < 3; i++) k.box(4.6 - i * 0.3, 0.14, 2.2 - i * 0.3, 0xd8cdb8, 0, i * 0.14, D / 2 + CF + 1.0 - i * 0.15);   // steps
+    for (const x of [-2.1, -0.7, 0.7, 2.1]) { k.box(0.34, 0.2, 0.34, stone, x, 0.4, PZ); k.cyl(0.15, 0.17, 2.6, C.cream, x, 0.6, PZ, 10); }
+    k.box(5.0, 0.28, 2.0, cream, 0, 3.2, D / 2 + CF + 0.9);
+    k.box(5.1, 0.1, 2.1, oxide, 0, 3.48, D / 2 + CF + 0.9);
+    // roof details: water tank and a lab exhaust, kept low and back
+    k.box(1.2, 0.9, 1.0, 0x8a93a6, -4.4, 0.4 + HW + 0.35, -1.6); k.cyl(0.18, 0.18, 0.8, C.steelDark, 4.6, 0.4 + HW + 0.35, -1.8, 8);
+    // name board: emblem + THIAGARAJAR COLLEGE OF ENGINEERING / TCE · MADURAI
+    const BW = 9.4, BH = 1.35, by = 0.4 + HC - 1.05, bz = D / 2 + CF + 0.2;
+    k.box(BW + 0.2, BH + 0.2, 0.16, 0x14101f, 0, by - 0.1, bz - 0.04);
+    k.box(BW, BH, 0.1, 0x7a2c22, 0, by, bz);
+    const cv = document.createElement('canvas'); cv.width = 768; cv.height = 112;
+    const x2 = cv.getContext('2d');
+    x2.fillStyle = '#7a2c22'; x2.fillRect(0, 0, 768, 112);
+    x2.textAlign = 'center'; x2.textBaseline = 'middle';
+    let fs = 40; x2.font = `bold ${fs}px Silkscreen, monospace`;
+    const main = 'THIAGARAJAR COLLEGE OF ENGINEERING';
+    while (fs > 14 && x2.measureText(main).width > 640) { fs -= 1; x2.font = `bold ${fs}px Silkscreen, monospace`; }
+    x2.fillStyle = '#3a120e'; x2.fillText(main, 438, 42); x2.fillStyle = '#fff1d6'; x2.fillText(main, 436, 40);
+    x2.font = 'bold 22px Silkscreen, monospace'; x2.fillStyle = '#ffd257'; x2.fillText(String(subtitle ? 'TCE · MADURAI' : text).toUpperCase(), 436, 84);
+    const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.LinearFilter;
+    const face = new THREE.Mesh(new THREE.PlaneGeometry(BW - BH - 0.2, BH - 0.15), new THREE.MeshBasicMaterial({ map: tex }));
+    face.position.set((BH + 0.1) / 2, by + BH / 2, bz + 0.06); face.userData.dynamic = true; g.add(face);
+    for (const y of [by + 0.04, by + BH - 0.08]) k.box(BW, 0.05, 0.12, mat(C.amber, { keep: true }), 0, y, bz + 0.02, { shadow: false });
+    const logoCanvas = document.createElement('canvas'); logoCanvas.width = logoCanvas.height = 96;
     const lg = logoCanvas.getContext('2d');
     lg.fillStyle = '#fff1d6'; lg.fillRect(0, 0, 96, 96);
     lg.strokeStyle = '#7a3b2c'; lg.lineWidth = 5; lg.beginPath(); lg.arc(48, 48, 38, 0, Math.PI * 2); lg.stroke();
     lg.fillStyle = '#7a3b2c'; lg.font = '26px Silkscreen, monospace'; lg.textAlign = 'center'; lg.textBaseline = 'middle'; lg.fillText('TCE', 48, 50);
-    const logoMat = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(logoCanvas), transparent: true });
-    logoMat.map.colorSpace = THREE.SRGBColorSpace;
-    const logoPanel = new THREE.Mesh(new THREE.PlaneGeometry(BH, BH), logoMat);
-    logoPanel.position.set(-BW / 2 + BH / 2, by + BH / 2 + 0.1, bz + 0.08); logoPanel.userData.dynamic = true; g.add(logoPanel);
+    const logoMat = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(logoCanvas), transparent: true }); logoMat.map.colorSpace = THREE.SRGBColorSpace;
+    const logoPanel = new THREE.Mesh(new THREE.PlaneGeometry(BH - 0.15, BH - 0.15), logoMat);
+    logoPanel.position.set(-BW / 2 + BH / 2, by + BH / 2, bz + 0.06); logoPanel.userData.dynamic = true; g.add(logoPanel);
     if (logo) {
-      new THREE.TextureLoader().load(`${import.meta.env.BASE_URL || '/'}${String(logo).replace(/^\//, '')}`, (tex) => {
-        tex.colorSpace = THREE.SRGBColorSpace;
-        logoMat.map = tex; logoMat.needsUpdate = true;
-      }, undefined, () => { /* no logo file yet: keep the placeholder emblem */ });
+      new THREE.TextureLoader().load(`${import.meta.env.BASE_URL || '/'}${String(logo).replace(/^\//, '')}`, (t2) => { t2.colorSpace = THREE.SRGBColorSpace; logoMat.map = t2; logoMat.needsUpdate = true; }, undefined, () => { /* keep the placeholder emblem */ });
     }
-    // potted plants on the veranda
-    for (const x of [-3.2, 3.2]) { k.cyl(0.25, 0.2, 0.45, 0xc8643c, x, 0.5, D / 2 + 0.6, 8); k.mesh(new THREE.IcosahedronGeometry(0.35, 0), C.leaf, x, 1.15, D / 2 + 0.6); }
-    return { obj: g, colliders: [{ x: 0, z: 0, w: W + 0.4, d: D + 0.4 }, ...[-1, 1].map((s) => ({ x: s * (W / 2 + 0.6), z: D / 2 + 1.55, r: 0.25 }))], floors: [{ x: 0, z: D / 2 + 1.3, w: W + 2.2, d: 2.5, h: 0.45 }] };
+    const pool = lightPool(3.2, 0xffd08a); pool.position.set(0, 0.06, PZ); g.add(pool);
+    return {
+      obj: g,
+      colliders: [
+        { x: 0, z: 0, w: W + 0.6, d: D + 0.6 },
+        { x: 0, z: D / 2 + CF / 2, w: CW + 0.3, d: CF + 0.2 },
+        ...[-2.1, -0.7, 0.7, 2.1].map((x) => ({ x, z: PZ, r: 0.2 })),
+      ],
+      nightGlow: [pool],
+    };
   },
   gate_arch({ text = 'WELCOME' } = {}) {
     // Entrance arch spanning a 4 m path; the path runs along the piece's x axis.
@@ -2252,11 +2286,11 @@ export const KIT = {
     }
     k.box(1.3, 1.9, 0.1, 0x5a3a26, 0, 0.3, D / 2 + 0.03);                        // entrance
     k.box(W + 0.5, 0.25, D + 0.6, 0xc4623a, 0, 0.3 + H, 0);                        // roof slab
-    k.box(2.0, 1.1, 0.4, 0xf3e6c8, 0, 0.3 + H + 0.25, D / 2 - 0.3);                  // front gable block
-    k.cyl(0.36, 0.36, 0.06, C.white, 0, 0.3 + H + 0.75, D / 2 - 0.05, 16, { rx: Math.PI / 2 });
-    k.box(0.04, 0.24, 0.03, C.ink, 0, 0.3 + H + 0.7, D / 2 + 0.0, { shadow: false });
-    k.box(0.18, 0.04, 0.03, C.ink, 0.07, 0.3 + H + 0.8, D / 2 + 0.0, { shadow: false });
-    const sign = boardSign(text, 3.4, 0.5); sign.position.set(0, 0.3 + 2.0, D / 2 + 0.12); g.add(sign);
+    k.box(2.0, 1.1, 0.4, 0xf3e6c8, 0, 0.3 + H + 1.45, D / 2 - 0.3); k.box(0.3, 1.2, 0.3, 0xf3e6c8, -0.7, 0.3 + H + 0.25, D / 2 - 0.3); k.box(0.3, 1.2, 0.3, 0xf3e6c8, 0.7, 0.3 + H + 0.25, D / 2 - 0.3);                  // front gable block
+    k.cyl(0.36, 0.36, 0.06, C.white, 0, 0.3 + H + 1.95, D / 2 - 0.05, 16, { rx: Math.PI / 2 });
+    k.box(0.04, 0.24, 0.03, C.ink, 0, 0.3 + H + 1.9, D / 2 + 0.0, { shadow: false });
+    k.box(0.18, 0.04, 0.03, C.ink, 0.07, 0.3 + H + 2.0, D / 2 + 0.0, { shadow: false });
+    const sign = boardSign(text, 6.2, 1.15, { fg: '#fff8ea', bg: '#3a6fa8', board: 0x3a6fa8, trim: C.cream }); sign.position.set(0, 0.3 + H + 0.85, D / 2 + 0.35); g.add(sign);   // big board on the roof edge
     // flag pole
     k.box(0.06, 4.2, 0.06, C.steel, W / 2 + 0.8, 0, D / 2 + 0.6);
     const flag = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.4, 0.02), mat(0x3a6fa8)); flag.geometry.translate(0.3, 0, 0); flag.position.set(W / 2 + 0.83, 3.9, D / 2 + 0.6); flag.userData.dynamic = true; g.add(flag);
