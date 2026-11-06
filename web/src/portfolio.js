@@ -13,7 +13,7 @@ function notice(msg) {
 function section(id, title, body, file) {
   return `
     <section id="${id}" class="window section">
-      <div class="window-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">${esc(file)}</span></div>
+      <div class="window-bar"><span class="title">${esc(file)}</span></div>
       <div class="section-body"><h2>${esc(title)}</h2>${body}</div>
     </section>`;
 }

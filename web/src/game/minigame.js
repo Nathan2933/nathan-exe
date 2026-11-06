@@ -13,7 +13,7 @@ export function runLift(root, { title = 'Progressive overload', intro = '', onDo
   const speed = [0.9, 1.15, 1.4];
 
   root.innerHTML = `
-    <div class="window-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">iron-yard/lift.exe</span><button class="panel-close mg-x" aria-label="Close">✕</button></div>
+    <div class="window-bar"><span class="title">iron-yard/lift.exe</span><button class="panel-close mg-x" aria-label="Close">✕</button></div>
     <div class="mg-body">
       <h2>${esc(title)}</h2>
       <p class="mg-intro">${esc(intro)}</p>

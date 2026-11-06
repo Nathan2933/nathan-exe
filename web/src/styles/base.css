@@ -93,3 +93,6 @@ img { max-width: 100%; display: block; }
 .project-desc { margin: 4px 0 0; color: var(--ink-2); font-size: 14.5px; }
 .project-links { display: flex; gap: 14px; margin-top: 10px; font-family: var(--font-mono); font-size: 13px; font-weight: 600; }
 .project-links a { text-decoration: none; border-bottom: 2px solid var(--accent); }
+
+/* No decorative window-control squares in title bars */
+.window-bar .dots { display: none !important; }

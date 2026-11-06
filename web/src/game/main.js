@@ -504,7 +504,7 @@ function runFinale(it) {
     const el = $('#finale');
     el.innerHTML = `
       <div class="finale-card window" role="dialog" aria-labelledby="finale-title">
-        <div class="window-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">nathan.exe — process complete</span></div>
+        <div class="window-bar"><span class="title">nathan.exe — process complete</span></div>
         <div class="finale-body">
           <img class="mini-portrait" src="${portraitURL()}" alt="">
           <p class="eyebrow">THE LIGHT IS ON</p>
