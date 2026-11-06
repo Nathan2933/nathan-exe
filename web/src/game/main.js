@@ -3,7 +3,7 @@ import { RetroRenderer } from './retro.js';
 import { applyPalette, SKY } from './palette.js';
 import { setGlowBoost } from './kit.js';
 import { sfx, setSound, setRain } from './audio.js';
-import { buildWorld, loadKitOverrides, updateWalkers, groundHeight } from './world.js';
+import { buildWorld, loadKitOverrides, updateWalkers, updateNpcs, groundHeight } from './world.js';
 import { loadTiledMap, tileAt } from './tiled.js';
 import { NavGrid } from './nav.js';
 import { Player } from './player.js';
@@ -797,7 +797,9 @@ function handleTap(x, y) {
   ndc.set((x / window.innerWidth) * 2 - 1, -(y / window.innerHeight) * 2 + 1);
   raycaster.setFromCamera(ndc, camera);
   const hits = raycaster.intersectObjects(world.interactables.filter((i) => i.hit && (i.kind !== 'memory' || !i.visited)).map((i) => i.hit), false);
-  if (hits.length) return walkToInteractable(hits[0].object.userData.interactable);
+  // a person under the cursor wins over benches/memories behind or around them
+  const npcHit = hits.find((h) => h.object.userData.interactable.kind === 'npc');
+  if (npcHit || hits.length) return walkToInteractable((npcHit || hits[0]).object.userData.interactable);
   if (world.railway && world.stations.length && raycaster.intersectObjects(world.railway.train, true).length) {
     const p = player.group.position;
     const nearest = world.stations.reduce((a, b) => (Math.hypot(a.x - p.x, a.z - p.z) <= Math.hypot(b.x - p.x, b.z - p.z) ? a : b));
@@ -900,7 +902,8 @@ function update(dt, t) {
   for (const it of world.interactables) {
     if (it.kind === 'memory' && it.visited) continue;
     const d = Math.hypot(pos.x - it.x, pos.z - it.z);
-    if (d < it.radius && d < bestD) { best = it; bestD = d; }
+    const score = it.kind === 'npc' ? d - 0.8 : d; // people take priority when you're beside them
+    if (d < it.radius && score < bestD) { best = it; bestD = score; }
   }
   if (best && !dialogue.open) player.lookAt(lookV.set(best.x, 0, best.z)); else if (!dialogue.open) player.lookAt(null);
   if (dialogue.open && state.talkingTo) player.lookAt(lookV.set(state.talkingTo.x, 0, state.talkingTo.z));
@@ -911,16 +914,8 @@ function update(dt, t) {
   if (state.panelOpen && Math.hypot(pos.x - state.panelOpen.x, pos.z - state.panelOpen.z) > state.panelOpen.radius + 2.5) closePanel();
   if (dialogue.open && state.talkingTo && Math.hypot(pos.x - state.talkingTo.x, pos.z - state.talkingTo.z) > 4) dialogue.close();
 
-  // NPCs: idle, look at the player when close, return to their post afterwards
-  for (const it of world.npcs) {
-    const ch = it.character;
-    const d = Math.hypot(pos.x - it.x, pos.z - it.z);
-    if (state.talkingTo !== it) {
-      ch.lookAt(d < 5 ? pos : null);
-      ch.heading += Math.atan2(Math.sin(it.homeHeading - ch.heading), Math.cos(it.homeHeading - ch.heading)) * Math.min(1, dt * 2);
-    }
-    ch.update(dt, ZERO, t);
-  }
+  // Named NPCs roam their district routes, stop for Nathan, then carry on
+  updateNpcs(world.npcs, dt, t, heightAt, state.ko ? null : pos, state.talkingTo);
   updateWalkers(world.walkers, dt, t, heightAt, state.ko ? null : pos);
 
   for (const it of world.interactables) {
@@ -1123,6 +1118,7 @@ function onBigMapClick(e) {
 // ---------------- Collisions with characters + hazards ----------------
 function charBlocks(x, z) {
   for (const w of world.walkers) { const p = w.ch.group.position; if (Math.hypot(p.x - x, p.z - z) < 0.62) return true; }
+  for (const n of world.npcs) { const p = n.character.group.position; if (Math.hypot(p.x - x, p.z - z) < 0.62) return true; }
   return false;
 }
 function solidFree(x, z) {

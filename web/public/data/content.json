@@ -278,14 +278,6 @@
       "image": ""
     },
     {
-      "id": "coach-advice",
-      "district": "iron-yard",
-      "title": "Advice that stuck",
-      "year": "",
-      "text": "The one piece of advice that changed how you train (and maybe how you work).",
-      "image": ""
-    },
-    {
       "id": "student-id",
       "district": "winter-campus",
       "title": "Student ID card",
@@ -408,69 +400,226 @@
   ],
   "npcs": [
     {
-      "id": "coach",
-      "name": "Coach Arjun",
-      "role": "Iron Yard",
+      "id": "thianesh",
+      "name": "Thianesh",
+      "role": "Gymmate",
       "district": "iron-yard",
-      "outfit": "coach",
-      "color": "#ff6a3d",
+      "color": "#c8553d",
+      "skin": "brown",
+      "build": 1.3,
+      "height": 1.1,
+      "hair": "buzz",
+      "hairColor": "#1b1716",
+      "top": "tank",
+      "topColor": "#2a2440",
+      "pants": "shorts",
+      "pantsColor": "#3d4250",
+      "shoes": "#f6f3ec",
+      "glasses": false,
+      "beard": "none",
+      "species": "human",
       "lines": [
-        "Nathan! Back for another session? // Visitors keep asking me how you changed so much.",
-        "I tell them the same thing every time: it wasn't one big moment."
+        "Back for another session? The Iron Yard keeps score in reps, not words."
       ],
       "topics": [
-        "How did he start? :: Write the real story here: when you walked in the first time, what you could and couldn't do. // Keep it short and honest.",
-        "What changed? :: Your numbers and habits: training days per week, food, sleep. // What the hardest month was. [memory:coach-advice]",
-        "Can I try a lift? :: Step up to the rack. Three clean reps, the zone gets smaller every time. Like real progress."
-      ]
+        "How did Nathan's journey go? :: Roughly 100 kg, then about 60, then around 75. // Three checkpoints, one habit: showing up.",
+        "What's the lesson here? :: Small, repeated efforts. Goals change; the habit stays."
+      ],
+      "scripted": true
     },
     {
-      "id": "classmate",
-      "name": "Classmate",
-      "role": "Winter Campus",
+      "id": "guru",
+      "name": "Guru",
+      "role": "Best friend · Winter Campus",
       "district": "winter-campus",
-      "outfit": "classmate",
       "color": "#2f5f9a",
+      "skin": "tan",
+      "build": 1,
+      "height": 1,
+      "hair": "beanie",
+      "hairColor": "#2b1e16",
+      "hatColor": "#2f5f9a",
+      "top": "coat",
+      "topColor": "#3d5a8a",
+      "pants": "trousers",
+      "pantsColor": "#2a2730",
+      "shoes": "#3a2a22",
+      "glasses": false,
+      "beard": "none",
+      "species": "human",
+      "accessory": "scarf",
+      "scarfColor": "#ffd257",
       "lines": [
-        "Nathan! You came back to see the old campus? // It still looks the same under all this snow."
+        "Welcome to Winter Campus. This chapter begins at Tomsk State University."
       ],
       "topics": [
-        "What was he like here? :: Write how a classmate would describe you: the subjects you were good at, the study group, the late nights. // One honest, specific detail.",
-        "What was it like studying here? :: The language, the lectures, the cold, the people. // Something that surprised you. [memory:first-snow]",
-        "What did he take away from here? :: What studying abroad taught you: independence, a new language, a different way of learning. // One thing you still carry with you."
-      ]
+        "Where did Nathan study here? :: Tomsk State University, in Russia.",
+        "How long was this chapter? :: Two semesters. A short chapter, but a complete one."
+      ],
+      "scripted": true
     },
     {
-      "id": "batchmate",
-      "name": "Batchmate",
-      "role": "Monsoon Campus",
-      "district": "monsoon-campus",
-      "outfit": "batchmate",
+      "id": "shabeer",
+      "name": "Shabeer",
+      "role": "Friend · Winter Campus",
+      "district": "winter-campus",
       "color": "#3f9a72",
+      "skin": "tan",
+      "build": 1,
+      "height": 1,
+      "hair": "beanie",
+      "hairColor": "#1b1716",
+      "hatColor": "#3f9a72",
+      "top": "coat",
+      "topColor": "#6b3f2a",
+      "pants": "trousers",
+      "pantsColor": "#2a2730",
+      "shoes": "#3a2a22",
+      "glasses": false,
+      "beard": "none",
+      "species": "human",
+      "accessory": "scarf",
+      "scarfColor": "#e2574a",
       "lines": [
-        "Hey Nathan! Rain's coming again, good thing the banyan is right here. // People keep asking what you were like when you joined."
+        "Cold out here, isn't it? Every district in this town keeps one chapter."
       ],
       "topics": [
-        "What was it like when he joined? :: Describe arriving mid-way through your studies: the new city, the new syllabus, how quickly you found your people. // One specific memory.",
-        "What did you build together? :: Your college projects, clubs and hackathons. Mention one result you're proud of. [memory:first-hackathon]",
-        "What's he like as a teammate? :: How classmates would describe working with you: the role you usually take, how you handle deadlines. // Keep it honest and specific."
-      ]
+        "What is this place to Nathan? :: His first university chapter, abroad. It gets its own place on the map.",
+        "Is there more to find here? :: Look around campus for the glowing memories."
+      ],
+      "scripted": true
     },
     {
-      "id": "guide",
-      "name": "Town Guide",
-      "role": "City Park",
-      "district": "plaza",
-      "outfit": "pink",
+      "id": "bubu",
+      "name": "Bubu",
+      "role": "TCE campus mascot",
+      "district": "monsoon-campus",
       "color": "#e8648e",
+      "species": "panda",
+      "build": 1.1,
+      "height": 0.95,
+      "bowColor": "#e8648e",
       "lines": [
-        "Welcome to NATHAN.EXE! This whole town is Nathan's story. // Every ◆ opens a chapter, every ✦ is a memory."
+        "Hi! I'm Bubu, the campus panda. Welcome to TCE Madurai!"
       ],
       "topics": [
-        "Where should I start? :: Start at the Iron Yard next to the plaza, then follow the chapters in your save file, bottom left. // The Memory Line train gets you between campuses fast.",
-        "I'm short on time. :: No problem: the Resume, Projects and Contact buttons at the top work anytime. // Or press Skip game for the classic portfolio.",
-        "What's at the lighthouse? :: The ending. Light the lamp when you're ready. // You can keep exploring afterwards."
-      ]
+        "What does Nathan study? :: B.Tech in Information Technology at Thiagarajar College of Engineering, 2023 to 2027.",
+        "Where should I go next? :: The Garage has his projects. Signal Tower has his skills and awards."
+      ],
+      "scripted": true
+    },
+    {
+      "id": "anu",
+      "name": "Anu",
+      "role": "Friend · TCE",
+      "district": "monsoon-campus",
+      "color": "#3f9a72",
+      "skin": "tan",
+      "build": 1,
+      "height": 1,
+      "hair": "short",
+      "hairColor": "#1b1716",
+      "top": "tee",
+      "topColor": "#6fa8dc",
+      "pants": "jeans",
+      "shoes": "#f6f3ec",
+      "glasses": false,
+      "beard": "none",
+      "species": "human",
+      "accessory": "bag",
+      "lines": [
+        "You found TCE! There's always a project or an event happening somewhere here."
+      ],
+      "topics": [
+        "What has Nathan built here? :: Aratro, an event scheduler, cloud security monitoring and more. // The Garage has the full list.",
+        "Did he win any hackathons? :: Aratro took first place at Hack Odyssey 2025, and the TCE Event Scheduler was runner-up at HackFest 2025."
+      ],
+      "scripted": true
+    },
+    {
+      "id": "akshai",
+      "name": "Akshai",
+      "role": "Garage crew",
+      "district": "garage",
+      "color": "#2bb3a3",
+      "skin": "deep",
+      "build": 1.05,
+      "height": 1.12,
+      "hair": "short",
+      "hairColor": "#14100e",
+      "top": "tee",
+      "topColor": "#2a2440",
+      "pants": "jeans",
+      "shoes": "#f6f3ec",
+      "glasses": true,
+      "beard": "full",
+      "beardColor": "#14100e",
+      "species": "human",
+      "lines": [
+        "Welcome to the Garage. Ideas in, projects out."
+      ],
+      "topics": [
+        "What's on these benches? :: Each bench is a project: the problem, the build, and what it taught him.",
+        "Which one should I open first? :: Try Aratro. It won first place at Hack Odyssey 2025."
+      ],
+      "scripted": true
+    },
+    {
+      "id": "naveen",
+      "name": "Naveen",
+      "role": "Garage crew",
+      "district": "garage",
+      "color": "#a0673f",
+      "skin": "tan",
+      "build": 1.05,
+      "height": 1,
+      "hair": "short",
+      "hairColor": "#3a2418",
+      "top": "hoodie",
+      "topColor": "#3f9a72",
+      "pants": "trousers",
+      "pantsColor": "#2a2730",
+      "shoes": "#2a2440",
+      "glasses": false,
+      "beard": "full",
+      "beardColor": "#6b3f2a",
+      "species": "human",
+      "lines": [
+        "Mind the cables. Something's always compiling in here."
+      ],
+      "topics": [
+        "What kind of things does Nathan build? :: Full-stack apps, cloud security monitoring, blockchain workflows and a post-quantum messaging prototype.",
+        "What's the pegboard for? :: His tech stack, grouped by how he uses each tool."
+      ],
+      "scripted": true
+    },
+    {
+      "id": "shabesh",
+      "name": "Shabesh",
+      "role": "Garage crew",
+      "district": "garage",
+      "color": "#ffb347",
+      "skin": "fair",
+      "build": 1,
+      "height": 1,
+      "hair": "short",
+      "hairColor": "#2a1d17",
+      "top": "tee",
+      "topColor": "#e2574a",
+      "pants": "jeans",
+      "shoes": "#f6f3ec",
+      "glasses": false,
+      "beard": "stubble",
+      "beardColor": "#2a1d17",
+      "species": "human",
+      "lines": [
+        "Hey. This whole town is one of his projects too."
+      ],
+      "topics": [
+        "Is NATHAN.EXE finished? :: Not yet. It's still being built, one district at a time.",
+        "Where's his resume? :: Top right, any time. You don't need to finish the game."
+      ],
+      "scripted": true
     }
   ]
 }

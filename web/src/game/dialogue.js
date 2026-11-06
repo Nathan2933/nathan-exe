@@ -78,7 +78,7 @@ export class Dialogue {
     this.root.innerHTML = `
       <div class="dlg-portrait" style="--npc:${esc(n.color || '#1e1b2e')}">${this.portrait ? `<img src="${this.portrait}" alt="">` : esc((n.name || '?')[0])}</div>
       <div class="dlg-body">
-        <div class="dlg-name">${esc(n.name)}${n.role ? ` <span>${esc(n.role)}</span>` : ''}</div>
+        <div class="dlg-name">${esc(n.name)}${n.role ? ` <span>${esc(n.role)}</span>` : ''}${n.scripted ? '<em class="dlg-scripted" title="Written for the game, not a real quote">scripted</em>' : ''}</div>
         <p class="dlg-text" aria-live="polite"></p>
         ${choices}
         <div class="dlg-more">${last && !choices ? 'close ▸' : last ? '' : 'next ▸'}</div>

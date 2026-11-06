@@ -3,7 +3,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { KIT, mat, C } from './kit.js';
 import { tileAt } from './tiled.js';
-import { Character, OUTFITS } from './player.js';
+import { Character, OUTFITS, appearanceToOutfit } from './player.js';
 import { buildRailway } from './railway.js';
 import { buildRain } from './weather.js';
 
@@ -223,23 +223,42 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
     } else if (o.type === 'npc') {
       const def = (content.npcs || []).find((n) => n.id === pr.id);
       if (!def) continue;
-      const ch = new Character(OUTFITS[def.outfit] || OUTFITS[def.id] || OUTFITS.coach);
-      const tile = tileAt(map, o.x, o.z);
-      ch.group.position.set(o.x, tile ? Math.max(0, groundHeight(tile.type)) : 0, o.z);
-      ch.heading = ((pr.rot ?? 0) * Math.PI) / 180; // 0 = facing +z (towards the camera)
-      ch.group.userData.dynamic = true;
-      root.add(ch.group);
-      colliders.push({ cx: o.x, cz: o.z, r: 0.45 });
-      const it = { ...base, id: `npc:${def.id}`, kind: 'npc', npcId: def.id, district: def.district, radius: 2.0, character: ch, homeHeading: ch.heading };
-      it.beacon = beacon(o.x, 0, o.z, { pillar: false });
-      hitBox(it, 1.2, 2.6, 1.2);
-      interactables.push(it); npcs.push(it);
+      if (npcs.some((n) => n.npcId === def.id)) continue;
+      npcs.push(makeNpc(def, [new THREE.Vector3(o.x, 0, o.z)], false, ((pr.rot ?? 0) * Math.PI) / 180));
     }
   }
 
-  // ---------- ambient walkers ----------
+  // ---------- named NPCs on their Tiled routes ----------
   for (const path of map.paths) {
-    if (!path.points || path.points.length < 2) continue;
+    if (path.type !== 'npc_route' || !path.points?.length) continue;
+    const def = (content.npcs || []).find((n) => n.id === path.props.npc);
+    if (!def) { console.warn(`Route for unknown NPC "${path.props.npc}"`); continue; }
+    if (npcs.some((n) => n.npcId === def.id)) continue;
+    const pts = path.points.map((q) => new THREE.Vector3(q.x, 0, q.z));
+    npcs.push(makeNpc(def, pts, !!path.props.loop || path.closed, 0));
+  }
+  function makeNpc(def, pts, loop, heading) {
+    const ch = new Character(def.outfit && OUTFITS[def.outfit] ? OUTFITS[def.outfit] : appearanceToOutfit(def));
+    const p0 = pts[0];
+    const tile = tileAt(map, p0.x, p0.z);
+    ch.group.position.set(p0.x, tile ? Math.max(0, groundHeight(tile.type)) : 0, p0.z);
+    ch.heading = heading;
+    ch.group.userData.dynamic = true;
+    root.add(ch.group);
+    const it = {
+      x: p0.x, z: p0.z, visited: false, id: `npc:${def.id}`, kind: 'npc', npcId: def.id, district: def.district,
+      radius: 2.0, character: ch, homeHeading: heading,
+      route: { pts, loop, seg: 0, dir: 1, t: 0, wait: 1 + Math.random() * 2 },
+    };
+    it.beacon = beacon(p0.x, 0, p0.z, { pillar: false });
+    hitBox(it, 1.2, 2.6, 1.2);
+    interactables.push(it);
+    return it;
+  }
+
+  // ---------- ambient walkers (legacy "walk" paths) ----------
+  for (const path of map.paths) {
+    if (path.type === 'npc_route' || !path.points || path.points.length < 2) continue;
     const ch = new Character(OUTFITS[path.props.outfit] || OUTFITS.teal);
     ch.group.userData.dynamic = true;
     root.add(ch.group);
@@ -292,6 +311,66 @@ function transformCollider(c, x, z, rotDeg) {
 }
 
 /** Walker NPCs stroll along their Tiled polylines, pausing at the ends. */
+/**
+ * Named NPCs roam their own route (inside their district), pausing now and
+ * then. They stop and turn to Nathan when he comes close, stay put while
+ * talking, then carry on. The interaction circle and hit box follow them.
+ */
+const NPC_SPEED = 1.1, STOP_DIST = 2.4;
+const _v = new THREE.Vector3(), _ahead = new THREE.Vector3();
+export function updateNpcs(npcs, dt, t, heightAt, player, talkingTo) {
+  for (const it of npcs) {
+    const ch = it.character, gp = ch.group.position, r = it.route;
+    _v.set(0, 0, 0);
+    const dP = player ? Math.hypot(player.x - gp.x, player.z - gp.z) : 99;
+    const turnTo = (x, z, rate) => {
+      const target = Math.atan2(x - gp.x, z - gp.z);
+      ch.heading += Math.atan2(Math.sin(target - ch.heading), Math.cos(target - ch.heading)) * Math.min(1, dt * rate);
+    };
+    if (it === talkingTo || dP < STOP_DIST) {
+      // Nathan is here: stop and face him
+      ch.lookAt(player);
+      turnTo(player.x, player.z, it === talkingTo ? 8 : 4);
+      if (r) r.wait = Math.max(r.wait, 0.8);
+    } else if (r && r.pts.length > 1) {
+      ch.lookAt(null);
+      if (r.wait > 0) {
+        r.wait -= dt;
+        if (r.wait < 1 && Math.sin(t * 0.7 + gp.x) > 0.6) ch.lookAt(_ahead.set(gp.x + Math.sin(t) * 3, 0, gp.z + Math.cos(t) * 3));
+      } else {
+        const a = r.pts[r.seg], b = r.pts[(r.seg + r.dir + r.pts.length) % r.pts.length];
+        const len = Math.max(0.01, a.distanceTo(b));
+        // give way to another NPC just ahead
+        const dirx = (b.x - a.x) / len, dirz = (b.z - a.z) / len;
+        const blocked = npcs.some((o) => o !== it && Math.hypot(o.character.group.position.x - (gp.x + dirx * 0.7), o.character.group.position.z - (gp.z + dirz * 0.7)) < 0.75);
+        if (blocked) { r.wait = 0.6; }
+        else {
+          r.t += (dt * NPC_SPEED) / len;
+          if (r.t >= 1) {
+            r.t = 0;
+            r.seg = (r.seg + r.dir + r.pts.length) % r.pts.length;
+            const atEnd = !r.loop && (r.seg === r.pts.length - 1 || r.seg === 0);
+            if (atEnd) r.dir *= -1;
+            r.wait = Math.random() < 0.5 ? 1.5 + Math.random() * 2.5 : 0.2;   // linger sometimes
+          } else {
+            gp.x = a.x + (b.x - a.x) * r.t; gp.z = a.z + (b.z - a.z) * r.t;
+            _v.set(dirx, 0, dirz).multiplyScalar(NPC_SPEED);
+          }
+        }
+      }
+    } else {
+      ch.lookAt(dP < 5 ? player : null);
+      ch.heading += Math.atan2(Math.sin(it.homeHeading - ch.heading), Math.cos(it.homeHeading - ch.heading)) * Math.min(1, dt * 2);
+    }
+    gp.y = heightAt(gp.x, gp.z);
+    ch.update(dt, _v, t);
+    // keep the interaction spot glued to the character
+    it.x = gp.x; it.z = gp.z;
+    it.beacon.group.position.set(gp.x, gp.y + 0.04, gp.z);
+    it.hit.position.set(gp.x, 1.3, gp.z);
+  }
+}
+
 export function updateWalkers(walkers, dt, t, heightAt, avoid = null) {
   for (const w of walkers) {
     const v = new THREE.Vector3();

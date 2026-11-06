@@ -89,6 +89,14 @@ Nathan and the NPCs share one jointed rig (`web/src/game/player.js`). Outfits ar
 
 ---
 
+
+### Named NPCs (people in the town)
+
+Each person is data, not code:
+- **Who they are and what they say:** admin → *NPCs* (name, role, district, greeting, two conversations as `Question :: Answer`, and appearance: species, skin, height, build, hair, beard, glasses, clothes and colours). Stored in `web/public/data/content.json` → `npcs[]`.
+- **Where they walk:** a polyline on the `paths` layer in Tiled with type `npc_route` and properties `npc` = the person's id and `loop` (true = walk a circuit, false = back and forth). Keep every point on walkable ground inside the person's district; they pause at points now and then, stop and face Nathan when he's within ~2.4 m, and carry on after the conversation.
+- A person with no route can instead be placed as a point on the `interact` layer (type `npc`, property `id`); they then stand still.
+
 ## 3. Story content (admin)
 
 `npm run dev`, then open `http://localhost:5173/admin.html`.

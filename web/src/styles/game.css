@@ -624,3 +624,4 @@ body.game .panel-body::-webkit-scrollbar-thumb { background: #6a5d8c; }
 /* Look row: 2 × 2 grid now that it has four switches */
 body.game .look { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
 body.game .look button { flex: none; }
+.dlg-scripted { float: right; font: 400 9px var(--font-pixel); letter-spacing: .06em; color: var(--ink-3); border: 1px solid var(--ink-3); padding: 1px 5px; font-style: normal; }

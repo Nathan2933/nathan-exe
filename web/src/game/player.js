@@ -25,6 +25,31 @@ export const OUTFITS = {
   pink: { skin: SKIN.fair, hair: 'bun', hairColor: 0x6b3f2a, top: 'hoodie', topColor: 0xe07a8f, pants: 'jeans', shoes: 0x1e1b2e, accessory: 'bag' },
 };
 
+/**
+ * Turn the flat appearance fields stored in content.json (editable in the
+ * admin) into an outfit for Character. Unknown/missing fields fall back to
+ * neutral defaults, so a new NPC only needs the fields that matter.
+ */
+const hex = (v, d) => (typeof v === 'number' ? v : typeof v === 'string' && /^#?[0-9a-f]{6}$/i.test(v) ? parseInt(v.replace('#', ''), 16) : d);
+export function appearanceToOutfit(a = {}) {
+  if (a.species === 'panda') {
+    return {
+      species: 'panda', skin: 0xf7f6f1, limbColor: 0x1e1b26, hair: 'none', top: 'tee', topColor: 0xf7f6f1,
+      pants: 'trousers', pantsColor: 0x1e1b26, shoes: 0x1e1b26, build: a.build ?? 1.15, height: a.height ?? 0.95,
+      bowColor: hex(a.bowColor, 0xe8648e),
+    };
+  }
+  return {
+    skin: SKIN[a.skin] ?? hex(a.skin, SKIN.tan),
+    hair: a.hair || 'short', hairColor: hex(a.hairColor, 0x1b1716), hatColor: hex(a.hatColor, 0xe0453a),
+    top: a.top || 'tee', topColor: hex(a.topColor, 0x6fa8dc),
+    pants: a.pants || 'jeans', pantsColor: hex(a.pantsColor, 0x2a2730), shoes: hex(a.shoes, 0xf6f3ec),
+    glasses: !!a.glasses, beard: a.beard && a.beard !== 'none' ? a.beard : false, beardColor: hex(a.beardColor, hex(a.hairColor, 0x1b1716)),
+    build: Number(a.build) || 1, height: Number(a.height) || 1,
+    accessory: a.accessory || null, scarfColor: hex(a.scarfColor, 0xffc14d),
+  };
+}
+
 let plaidTex = null;
 function plaid() {
   if (plaidTex) return plaidTex;
@@ -77,12 +102,12 @@ export class Character {
     const o = { topColor: 0xffffff, pantsColor: 0x3d5f8f, shoes: 0xf6f3ec, build: 1, ...outfit };
     this.outfit = o;
     this.group = new THREE.Group();
-    this.group.scale.setScalar(1.25);
+    this.group.scale.setScalar(1.25 * (o.height || 1));
     this.hips = pivot(0, 0.62, 0, this.group);
 
     const pants = o.pants === 'jeans' ? 0x3d5f8f : o.pantsColor;
     const top = o.top === 'plaid' ? 'plaid' : o.topColor;
-    const sleeve = o.top === 'tank' ? o.skin : top;
+    const sleeve = o.limbColor ?? (o.top === 'tank' ? o.skin : top);
 
     // Legs: thigh pivot at hip, shin pivot at knee
     this.legs = [-1, 1].map((s) => {
@@ -128,8 +153,8 @@ export class Character {
       const shoulder = pivot(s * (0.37 * o.build + 0.015), 0.53, 0, this.spine);
       part(0.17, 0.27, 0.19, sleeve, 0, -0.13, 0, shoulder);
       const elbow = pivot(0, -0.27, 0, shoulder);
-      part(0.155, 0.22, 0.175, o.top === 'tee' || o.top === 'tank' ? o.skin : sleeve, 0, -0.11, 0, elbow);
-      part(0.15, 0.1, 0.17, o.skin, 0, -0.27, 0, elbow);
+      part(0.155, 0.22, 0.175, o.limbColor ?? (o.top === 'tee' || o.top === 'tank' ? o.skin : sleeve), 0, -0.11, 0, elbow);
+      part(0.15, 0.1, 0.17, o.limbColor ?? o.skin, 0, -0.27, 0, elbow);
       return { shoulder, elbow, side: s };
     });
 
@@ -145,7 +170,28 @@ export class Character {
     part(0.06, 0.06, 0.03, 0xe2b99e, 0, 0.25, 0.27, H);
     part(0.22, 0.05, 0.02, 0x7a3b3b, 0, 0.17, 0.265, H);
     if (o.teeth) { part(0.075, 0.09, 0.035, 0xffffff, -0.042, 0.135, 0.272, H); part(0.075, 0.09, 0.035, 0xffffff, 0.042, 0.135, 0.272, H); }
-    if (o.beard) { part(0.6, 0.18, 0.1, o.hairColor, 0, 0.1, 0.22, H); part(0.6, 0.3, 0.08, o.hairColor, 0, 0.2, 0.18, H); }
+    const bc = o.beardColor ?? o.hairColor;
+    if (o.beard === 'stubble') {
+      // light stubble: a thin jaw line and chin, mouth still visible
+      part(0.6, 0.07, 0.05, bc, 0, 0.08, 0.245, H);
+      part(0.05, 0.2, 0.3, bc, -0.29, 0.16, 0.1, H); part(0.05, 0.2, 0.3, bc, 0.29, 0.16, 0.1, H);
+    } else if (o.beard) {
+      // full beard around the jaw and chin, with a moustache
+      part(0.6, 0.2, 0.12, bc, 0, 0.1, 0.22, H);
+      part(0.08, 0.3, 0.36, bc, -0.29, 0.2, 0.07, H); part(0.08, 0.3, 0.36, bc, 0.29, 0.2, 0.07, H);
+      part(0.26, 0.05, 0.03, bc, 0, 0.205, 0.275, H);
+    }
+    if (o.species === 'panda') {
+      for (const sx of [-1, 1]) {
+        part(0.18, 0.18, 0.1, o.limbColor, sx * 0.24, 0.62, -0.02, H);            // ears
+        part(0.15, 0.16, 0.03, o.limbColor, sx * 0.13, 0.36, 0.262, H);           // eye patches
+        part(0.04, 0.04, 0.02, 0xffffff, sx * 0.12, 0.38, 0.28, H);               // eye shine
+      }
+      part(0.1, 0.06, 0.04, o.limbColor, 0, 0.25, 0.28, H);                        // nose
+      part(0.14, 0.12, 0.08, o.bowColor, 0.26, 0.56, 0.08, H);                     // bow
+      part(0.1, 0.1, 0.06, o.bowColor, 0.17, 0.6, 0.1, H); part(0.1, 0.1, 0.06, o.bowColor, 0.35, 0.52, 0.06, H);
+      part(0.62, 0.12, 0.5, o.limbColor, 0, 0.02, 0, this.spine).position.y = 0.58; // dark shoulders band
+    }
     if (o.glasses) {
       for (const sx of [-0.13, 0.13]) {
         part(0.19, 0.03, 0.03, 0x1e1b2e, sx, 0.435, 0.28, H); part(0.19, 0.03, 0.03, 0x1e1b2e, sx, 0.29, 0.28, H);

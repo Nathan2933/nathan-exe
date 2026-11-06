@@ -203,7 +203,6 @@ O('tree_round', -5.2, -17.6); O('tree_round', -8.6, -17.8, { scale: 0.85 });
 O('lot_sign', -11, -2.9, { text: 'IRON YARD', color: '#ff6a3d', rot: 0 });
 labels.push(point('label', -14.5, -16, { text: 'IRON YARD', color: '#1e1b2e', height: 7.2 }));
 interact.push(point('chapter', -8.5, -5.6, { id: 'iron-yard', district: 'iron-yard' }));
-interact.push(point('npc', -11.2, -9.6, { id: 'coach', rot: 90 }));
 interact.push(point('minigame', -8.5, -8.2, { id: 'lift', district: 'iron-yard' }));
 interact.push(point('memory', -18.6, -10.6, { id: 'before-photo' }));
 interact.push(point('memory', -11.8, -12.6, { id: 'first-logbook' }));
@@ -220,8 +219,6 @@ O('picnic_blanket', 6.4, -15.8);
 O('bench', 12.6, -16.6, { rot: 0 });
 O('lamp', 7.2, -8.4); O('lamp', 12.0, -14.8);
 labels.push(point('label', 9.5, -11.5, { text: 'CITY PARK', color: '#3b6d11', height: 5 }));
-interact.push(point('npc', 7.6, -7.4, { id: 'guide', rot: 45 }));
-paths.push(line('walk', [[6.2, -14.6], [12.8, -14.6], [12.8, -8.6], [6.2, -8.6], [6.2, -14.6]], { outfit: 'teal', loop: true }));
 
 // --- Signal Tower (skills, achievements, experience) ---
 hedge(-22, 3, -3, 4); hedge(-22, 4, -21, 19); hedge(-4, 7, -3, 19); hedge(-22, 19, -3, 20);
@@ -264,7 +261,6 @@ O('lamp', -2.9, -31.6); O('lamp', 2.9, -31.6);
 O('bench', 7, -30.4, { rot: 0, snow: true });
 O('notice_board', 9.8, -33, { rot: 0, text: 'EXAMS' });
 O('snow_pile', -12.6, -32.4); O('snow_pile', 12.4, -30.6, { scale: 0.8 }); O('snow_pile', 5.2, -33.6, { scale: 0.7 });
-interact.push(point('npc', 4.4, -31.4, { id: 'classmate', rot: -90 }));
 interact.push(point('memory', 7.9, -29.8, { id: 'student-id' }));
 interact.push(point('memory', 9.8, -31.9, { id: 'exam-results' }));
 interact.push(point('memory', -11.6, -38.2, { id: 'first-snow' }));
@@ -281,7 +277,6 @@ for (const [x, z] of [[40.6, 4.5], [39.8, 9.2], [36.6, 11.4], [26.8, 11.2], [26.
 O('puddle', 32.6, 0.4); O('puddle', 37.2, -0.3, { scale: 0.7 }); O('puddle', 30, 4.6, { scale: 0.8 });
 labels.push(point('label', 35.5, -9.2, { text: 'MONSOON CAMPUS', color: '#b5523b', height: 9.2 }));
 interact.push(point('chapter', 29.6, 1.8, { id: 'monsoon-campus', district: 'monsoon-campus' }));
-interact.push(point('npc', 36.6, 1.6, { id: 'batchmate', rot: -90 }));
 interact.push(point('memory', 28.6, 2.9, { id: 'admission-letter' }));
 interact.push(point('memory', 32.6, 7.4, { id: 'chai-break' }));
 interact.push(point('memory', 31, -1.6, { id: 'first-hackathon' }));
@@ -359,9 +354,21 @@ for (let a = 0; a < Math.PI * 2; a += 0.085) {
 }
 
 // NPC walking routes (ambient townsfolk follow these polylines back and forth)
-paths.push(line('walk', [[2.7, 29], [2.7, 2.7], [23.5, 2.7]], { outfit: 'teal' }));          // along the sidewalks
-paths.push(line('walk', [[-29.5, -2.7], [-2.7, -2.7], [-2.7, -27]], { outfit: 'saffron' }));
-paths.push(line('walk', [[-6.2, 0.5], [-4.4, 4.4], [0.5, 6.2], [4.4, 4.4], [6.2, -0.5], [4.4, -4.4], [-0.5, -6.2], [-4.4, -4.4], [-6.2, 0.5]], { outfit: 'pink', loop: true }));
+
+// ---------------- Named NPC roaming routes ----------------
+// One polyline per character on the "paths" layer (type "npc_route", property
+// npc = the character's id in content.json). Each route stays inside its own
+// district and on walkable ground; edit them in Tiled to change where people roam.
+// loop: true walks the polyline as a circuit, otherwise back and forth.
+const route = (npc, pts, loop = false) => paths.push(line('npc_route', pts, { npc, loop }));
+route('thianesh', [[-17, -9.0], [-11.5, -8.0], [-10.5, -5.5], [-16.5, -5.5]], true);     // Iron Yard
+route('guru', [[-3.4, -32.2], [-8.6, -32.4], [-7.8, -30.0]]);                              // Winter Campus (west)
+route('shabeer', [[3.6, -32.0], [8.2, -31.7], [11.4, -31.4]]);                             // Winter Campus (east)
+route('bubu', [[33, 1.4], [36, 4.5], [33.5, 6.5], [31.2, 4.0]], true);                     // TCE court
+route('anu', [[33.2, -1.4], [36.4, -1.6], [39, 2.4], [35.8, 2.6]], true);                  // TCE forecourt
+route('akshai', [[13.2, 6.8], [13.2, 11.2], [13.2, 16.4]]);                                // Garage, centre aisle
+route('naveen', [[11.6, 16.8], [13.4, 16.8], [15.2, 16.8]]);                               // Garage, back strip
+route('shabesh', [[13.8, 4.8], [15.2, 4.8], [14.4, 6.3]], true);                           // Garage, front
 
 // ---------------- Write map ----------------
 const layer = (name, objs) => ({ id: nextId++, name, type: 'objectgroup', draworder: 'topdown', opacity: 1, visible: true, x: 0, y: 0, objects: objs });
