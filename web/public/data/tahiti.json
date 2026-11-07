@@ -247,6 +247,35 @@
       ],
       "sameAs": "naveen",
       "extras": ""
+    },
+    {
+      "id": "tahiti_cf9",
+      "name": "Sivasuthan",
+      "role": "The Outlaws · The Crew Member",
+      "district": "tahiti",
+      "scripted": true,
+      "lines": [
+        "Took your time, Nathan."
+      ],
+      "topics": [
+        "What's the plan today? :: Same as always. Hang out, talk, lose track of time."
+      ],
+      "species": "human",
+      "skin": "fair",
+      "hair": "medium",
+      "hairColor": "#2a1d16",
+      "top": "hoodie",
+      "topColor": "#7a2e3a",
+      "pants": "jeans",
+      "pantsColor": "#5a7aa8",
+      "shoes": "#f0ece2",
+      "beard": "none",
+      "beardColor": "#2a1d16",
+      "glasses": false,
+      "build": 1,
+      "height": 1.14,
+      "color": "#7a2e3a",
+      "extras": ""
     }
   ],
   "overrides": {
@@ -315,7 +344,8 @@
         "tahiti_cf5",
         "tahiti_cf6",
         "tahiti_cf7",
-        "tahiti_cf8"
+        "tahiti_cf8",
+        "tahiti_cf9"
       ],
       "lines": [
         {

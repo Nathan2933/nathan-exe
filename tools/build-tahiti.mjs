@@ -8,7 +8,10 @@
 //   SW  Tahiti Airstrip: runway (west approach), apron, jet, terminal, Harris
 //   NW  Vanderlinde Gang Hideout: house whose interior is Nathan's bedroom
 //   E   The Outlaws' Villa: two-storey villa + ocean-facing balcony deck
-//   C   small connecting plaza: palms, benches, campfire
+//   C   small connecting plaza: palms, benches (neutral ground)
+//   Each gang has its own land: Vanderlinde Gang to the west/north-west with
+//   its own campfire and beach, the Outlaws to the east with theirs. The
+//   south beach (race, volleyball) is neutral.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -16,7 +19,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(ROOT, 'web/public/maps');
-const N = 84, HALF = N / 2, PX = 16, ISLAND_R = 34;
+const N = 104, HALF = N / 2, PX = 16, ISLAND_R = 42;
 
 // must match the GROUND order in build-map.mjs (shared ground.tsj)
 const TYPES = ['grass', 'road', 'road_line', 'sidewalk', 'plaza', 'rubber', 'concrete', 'snow', 'path', 'water', 'sand', 'flowerbed', 'lawn', 'terracotta', 'boardwalk', 'grass_edge'];
@@ -33,11 +36,19 @@ const rect = (x0, z0, x1, z1, t) => { for (let z = z0; z <= z1; z++) for (let x 
 const disc = (cx, cz, r, t) => { for (let z = Math.floor(cz - r); z <= Math.ceil(cz + r); z++) for (let x = Math.floor(cx - r); x <= Math.ceil(cx + r); x++) if ((x + 0.5 - cx) ** 2 + (z + 0.5 - cz) ** 2 <= r * r) set(x, z, t); };
 const walk = (x0, z0, x1, z1, t = T.path, w = 1.1) => { const n = Math.ceil(Math.hypot(x1 - x0, z1 - z0) * 2); for (let i = 0; i <= n; i++) disc(x0 + ((x1 - x0) * i) / n, z0 + ((z1 - z0) * i) / n, w, t); };
 // a softer, rounder outline than Island 01, with a bulge for the airstrip
+// wide beaches: Vanderlinde (WNW), Outlaws (E), neutral south beach
+const inArc = (a, lo, hi) => a >= lo && a <= hi;
+function beachW(a) {
+  if (inArc(a, -2.95, -2.0)) return 10;      // Vanderlinde beach
+  if (inArc(a, -0.5, 0.5)) return 10;        // Outlaws beach
+  if (inArc(a, 1.1, 2.05)) return 7.5;       // south beach
+  return 4.5;
+}
 const islandR = (a) => ISLAND_R * (1 + 0.05 * Math.sin(a * 2 + 2.2) + 0.03 * Math.sin(a * 5 + 0.7) + 0.015 * Math.sin(a * 9));
 
 for (let z = -HALF; z < HALF; z++) for (let x = -HALF; x < HALF; x++) {
   const d = Math.hypot(x + 0.5, z + 0.5), r = islandR(Math.atan2(z + 0.5, x + 0.5));
-  if (d < r) ground[idx(x, z)] = d > r - 4.5 ? T.sand : T.grass;
+  if (d < r) ground[idx(x, z)] = d > r - beachW(Math.atan2(z + 0.5, x + 0.5)) ? T.sand : T.grass;
 }
 // airstrip (SW): runway west–east, apron in front of the terminal
 rect(-28, 15, -1, 18, T.concrete);
@@ -52,6 +63,11 @@ walkRect(13, 2, 14, 7); walkRect(13, 6, 19, 7);   // round the villa to its stai
 rect(-18, -5, -8, -1, T.plaza);              // hideout courtyard (light stone)
 rect(-14, -6, -12, -5, T.plaza);             //   doorstep
 disc(21, 8.8, 2.2, T.sand);                  // little beach below the villa stairs
+// gang roads: Vanderlinde west then north to their beach; Outlaws east to theirs
+walkRect(-29, -4, -19, -3); walkRect(-30, -24, -29, -3);
+walkRect(20, 6, 34, 7);
+// neutral: from the runway down to the south beach
+walkRect(1, 19, 2, 34);
 
 // ---- cleanup + borders ----
 const paved = new Set([T.path, T.plaza, T.concrete, T.terracotta]);
@@ -112,10 +128,16 @@ route('tahiti_cf5', [[23.2, -7.2]], { idles: 'lean', faces: '-90' });
 route('tahiti_cf6', [[21.6, 1.4]], { idles: 'phone', faces: '90' });
 route('tahiti_cf7', [[18.2, -1.0], [20.2, 2.4]], { idles: 'look,gaze', faces: '90,90' });
 route('tahiti_cf8', [[17.4, -1.6]], { idles: 'phone', faces: '135' });
+route('tahiti_cf9', [[18.2, 2.0]], { idles: 'look', faces: '90' });
 interact.push(point('group', 21.4, -2.6, { id: 'outlaws', title: 'Join the Outlaws' }));
 
+// ---- Vanderlinde land: their own campfire beside the road ----
+O('campfire', -24.5, -14.0);
+O('bench', -24.5, -17.2, { rot: 0 });
+labels.push(point('label', -29, -23, { text: 'VANDERLINDE BEACH', color: '#5a3a26', height: 3 }));
+labels.push(point('label', 38.5, 0, { text: 'OUTLAWS BEACH', color: '#2a2440', height: 3 }));
+labels.push(point('label', 2, 38, { text: 'SOUTH BEACH', color: '#c4402f', height: 3 }));
 // ---- centre: kept simple so the junction reads clearly ----
-O('campfire', 5.6, 6.0);
 O('bench', -0.6, -4.6, { rot: 0 }); O('bench', 3.8, -1.2, { rot: -90 });
 for (const [x, z, sc] of [[-5.5, 2.4, 1], [6.2, -2.4, 0.9], [0.5, -7.2, 1.05], [-8.6, -0.4, 0.95], [8.4, 6.2, 1], [-4.2, 7.4, 0.9]]) O('tree_palm', x, z, { scale: sc });
 // path lights along each walk (warm bollards, outside the walking width)
@@ -135,7 +157,7 @@ O('shrub', 15.6, 7.8); O('shrub', 21.6, 5.2, { scale: 0.8 }); O('shrub', 9.6, 1.
 for (let a = 0; a < Math.PI * 2; a += 0.21) {
   const r = islandR(a) - 6.2, x = Math.cos(a) * r, z = Math.sin(a) * r;
   const near = (cx, cz, rr) => Math.hypot(x - cx, z - cz) < rr;
-  if (near(-14, 15, 15) || near(-14, 12, 9) || near(20, -2, 9) || near(21, 8, 5) || near(-13, -8, 11)) continue;
+  if (near(-14, 15, 15) || near(-14, 12, 9) || near(20, -2, 9) || near(21, 8, 5) || near(-13, -8, 11) || inArc(a > Math.PI ? a - 2 * Math.PI : a, -2.95, -2.0) || inArc(a > Math.PI ? a - 2 * Math.PI : a, -0.5, 0.5) || inArc(a, 1.1, 2.05)) continue;
   const i = Math.round(a / 0.21);
   if (i % 5 === 0) O('rock', +x.toFixed(2), +z.toFixed(2), { scale: 0.8 + (i % 4) * 0.15 });
   else O('tree_palm', +x.toFixed(2), +z.toFixed(2), { scale: 0.85 + (i % 5) * 0.06 });
@@ -146,13 +168,15 @@ const A = (act, x, z, p = {}) => interact.push(point('activity', x, z, { id: p.i
 // villa: DJ booth on the deck (dance battle), barbecue by the stairs (eating contest)
 O('dj_booth', 21.5, -7.4, { lift: 1.4 }); A('dance', 21.5, -5.8, { title: 'Dance battle' });
 O('bbq_grill', 13.6, 9.6); A('food', 11.6, 9.0, { title: 'Eating contest' });
-// south beach: party speaker + lights, race flags, volleyball net
-O('beach_speaker', -7.0, 29.4); O('party_lights', 0.8, 31.4, { len: 14 }); A('party', -6.2, 28.4, { title: 'Start a beach party' });
-O('race_flag', -3.6, 30.6); O('race_flag', 7.6, 30.4, { color: '#2bb3a3' }); A('race', -3.0, 28.4, { title: 'Beach race' });
-O('volley_net', 10.6, 29.8); A('volley', 9.2, 28.6, { title: 'Beach volleyball' });
+// each gang's beach: speaker, string lights and its own party
+O('beach_speaker', -27.6, -18.6); O('party_lights', -31.6, -25.6, { len: 10, rot: -50, variant: 'vg' }); A('party', -28.8, -19.6, { id: 'party-vg', gang: 'vg', title: 'Vanderlinde beach party' });
+O('beach_speaker', 36.6, -5.4); O('party_lights', 42.2, 0, { len: 10, rot: 90, variant: 'ol' }); A('party', 35.8, -3.8, { id: 'party-ol', gang: 'ol', title: 'Outlaws beach party' });
+// neutral south beach: race and volleyball
+O('race_flag', -4.0, 38.4); O('race_flag', 9.0, 38.0, { color: '#2bb3a3' }); A('race', -3.4, 35.6, { title: 'Beach race' });
+O('volley_net', -10.0, 37.0); A('volley', -11.6, 35.6, { title: 'Beach volleyball' });
 // treasure hunt: clue board at the junction, five chests hidden around the island
 O('clue_board', -4.4, -1.6); A('clues', -4.4, -0.6, { title: 'Treasure hunt clues' });
-for (const [id, x, z] of [['palm', -8.6, 0.8], ['beach', 11.6, 27.4], ['stairs', 21.6, 9.6], ['rock', -24.2, 8.2], ['hideout', -21.4, -9.0]]) { O('treasure_chest', x, z); A('treasure_item', x + 0.6, z + 0.6, { id: 'treasure-' + id, treasure: id, title: 'Something shiny' }); }
+for (const [id, x, z] of [['palm', -8.6, 0.8], ['beach', 11.6, 35.4], ['stairs', 21.6, 9.6], ['rock', -24.2, 8.2], ['hideout', -21.4, -9.0]]) { O('treasure_chest', x, z); A('treasure_item', x + 0.6, z + 0.6, { id: 'treasure-' + id, treasure: id, title: 'Something shiny' }); }
 // group photos end up on this board in the courtyard
 // gang photo spots: the camera tripod looks at the spot from the front
 O('photo_tripod', -11.0, -0.4); A('photo', -13.4, -2.8, { id: 'photo-vg', gang: 'vg', title: 'Vanderlinde Gang photo' });
@@ -168,7 +192,7 @@ const layer = (name, objs) => ({ id: nextId++, name, type: 'objectgroup', drawor
 const tmj = {
   type: 'map', version: '1.10', tiledversion: '1.10.2', orientation: 'orthogonal', renderorder: 'right-down',
   width: N, height: N, tilewidth: PX, tileheight: PX, infinite: false, compressionlevel: -1, backgroundcolor: '#2fc4c9',
-  properties: props({ metresPerTile: 1, islandRadius: ISLAND_R, island: 'tahiti', note: 'Island 02 (Tahiti). Generated by tools/build-tahiti.mjs.' }),
+  properties: props({ metresPerTile: 1, islandRadius: ISLAND_R, navRadius: 46, island: 'tahiti', note: 'Island 02 (Tahiti). Generated by tools/build-tahiti.mjs.' }),
   tilesets: [{ firstgid: 1, source: 'ground.tsj' }],
   layers: [
     { id: nextId++, name: 'ground', type: 'tilelayer', width: N, height: N, x: 0, y: 0, opacity: 1, visible: true, data: ground },

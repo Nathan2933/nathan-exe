@@ -808,3 +808,6 @@ body.cine-on .tahiti-hints, body.cine-on .tahiti-bubbles { display: none; }
 @keyframes nudge-r { 50% { transform: translateX(4px); } }
 @keyframes nudge-l { 50% { transform: translateX(-4px); } }
 .boot .boot-skip { z-index: 3; }
+.boot .boot-hero { width: min(94vw, 500px); }
+
+.clue-text { font: 400 12px/1.7 var(--font-pixel); color: #ffd08a; border-left: 3px solid #ffb347; padding: 4px 0 4px 12px; margin: 10px 0; }

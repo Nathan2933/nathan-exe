@@ -10,33 +10,46 @@ import * as THREE from 'three';
 // splits up (some dance, some sit, some eat, some swim...).
 
 const V = (x, z) => ({ x, z });
+// each gang's own beach: centre, plus tangent (along the shore) and normal (out to sea)
+const BEACH = {
+  vg: { c: V(-28.5, -23.6), t: V(0.638, -0.77), n: V(-0.77, -0.638), sea: 4.6 },
+  ol: { c: V(38.5, 0), t: V(0, 1), n: V(1, 0), sea: 5.2 },
+};
+const on = (g, along, out) => { const b = BEACH[g]; return [+(b.c.x + b.t.x * along + b.n.x * out).toFixed(2), +(b.c.z + b.t.z * along + b.n.z * out).toFixed(2)]; };
+const seaFace = (g) => (Math.atan2(BEACH[g].n.x, BEACH[g].n.z) * 180) / Math.PI;   // facing the water
+const landFace = (g) => seaFace(g) + 180;
+// party: two rows of dancers on each gang's own beach, facing inland
+const PARTY = Object.fromEntries(['vg', 'ol'].map((g) => [g, [-4.5, -1.5, 1.5, 4.5, -3, 0, 3, -4.5, -1.5, 1.5, 4.5].map((s, i) => on(g, s, i < 4 ? 0.8 : i < 7 ? -0.8 : -2.4))]));
+// Anu and Shabesh keep their distance from each other
+const AVOID = { tahiti_cf1: 'tahiti_cf2', tahiti_cf2: 'tahiti_cf1' };
 // slot: [x, z, pose, faceDeg, opts]
 const ACTIVITIES = {
   vg: {
     room: { w: 2, slots: [[-15.0, -12.4, 'look', 0], [-12.6, -11.6, 'phone', 180], [-17.2, -11.2, 'lean', 90], [-10.45, -14.6, 'sit', -90, { free: true }]], lines: ['Who moved my charger?', 'Same room, same chaos.', 'Five more minutes.'] },
-    campfire: { w: 3, slots: [[4.0, 6.0, 'sing', 90, { free: true }], [7.2, 6.0, 'sing', -90, { free: true }], [5.6, 7.6, 'sing', 180, { free: true }], [5.6, 4.4, 'sing', 0]], lines: ['♪ la la la ♪', '♪ one more verse ♪', 'Okay, okay, story time.', 'And then the bike just stopped. In the middle of the road.'] },
+    campfire: { w: 3, slots: [[-26.1, -14.0, 'sing', 90, { free: true }], [-22.9, -14.0, 'sing', -90, { free: true }], [-24.5, -12.4, 'sing', 180, { free: true }], [-24.5, -15.6, 'sing', 0]], lines: ['♪ la la la ♪', '♪ one more verse ♪', 'Okay, okay, story time.', 'And then the bike just stopped. In the middle of the road.'] },
     courtyard: { w: 2, slots: [[-15.0, -2.6, 'dance1', 20], [-12.6, -2.2, 'dance2', 0], [-10.6, -3.0, 'dance3', -20]], lines: ['Woo!', 'Watch this move.', 'That was NOT a dance.'] },
     eat: { w: 2, slots: [[-16.2, -1.2, 'eat', 180, { free: true }], [-16.9, -2.7, 'eat', 90], [-15.3, -2.9, 'eat', -90]], lines: ['Mmm.', 'Who made this?', 'Pass the chips.'] },
-    beach: { w: 2, slots: [[-2.0, 29.4, 'look', 180], [1.0, 32.6, 'swim', 180, { free: true, water: true }], [4.4, 33.2, 'swim', 160, { free: true, water: true }], [2.6, 29.8, 'cheer', 160]], lines: ["We're heading to the beach. You coming?", 'Water\'s warm!', 'Race you to the rocks!'] },
+    beach: { w: 2, slots: [[...on('vg', -2, 1.5), 'look', seaFace('vg')], [...on('vg', -1.2, BEACH.vg.sea), 'swim', seaFace('vg'), { free: true, water: true }], [...on('vg', 1.6, BEACH.vg.sea), 'swim', seaFace('vg') - 20, { free: true, water: true }], [...on('vg', 2.4, 1.5), 'cheer', seaFace('vg')]], lines: ["We're heading to the beach. You coming?", 'Water\'s warm!', 'Race you to the rocks!'] },
   },
   ol: {
     deck: { w: 3, slots: [[19.0, 0.6, 'dance1', 90], [20.6, 1.6, 'dance2', 90], [18.4, 2.6, 'dance3', 60]], lines: ['Oi Nathan! Come join the party!', 'Turn it up!', 'That\'s my song!'] },
     dj: { w: 1, slots: [[21.5, -6.5, 'dj', 180]], lines: ['Next track!', 'Requests? No requests.'] },
     table: { w: 2, slots: [[18.7, -4.5, 'sit', 90, { free: true }], [20.5, -4.5, 'sit', -90, { free: true }], [19.6, -5.4, 'sit', 0, { free: true }], [19.6, -3.6, 'sit', 180, { free: true }]], lines: ['Your move.', 'That\'s cheating.', 'Best of three?'] },
-    railing: { w: 2, slots: [[23.3, -2.0, 'gaze', 90], [22.8, -5.6, 'look', 90], [23.2, 1.2, 'look', 90]], lines: ['Look at that sunset.', 'Could stay here forever.'] },
+    railing: { w: 2, slots: [[23.3, -2.0, 'gaze', 90], [22.8, -5.6, 'look', 90]], lines: ['Look at that sunset.', 'Could stay here forever.'] },
     lounge: { w: 1, slots: [[22.6, 0.2, 'sit', -90, { free: true }], [22.6, 2.2, 'sit', -90, { free: true }]], lines: ['Wake me up for food.'] },
     bbq: { w: 2, slots: [[13.6, 8.6, 'cook', 180], [12.0, 10.4, 'eat', 90], [15.2, 10.4, 'eat', -90]], lines: ['Who wants seconds?', 'Don\'t touch the grill.', 'This is the best part.'] },
+    beach: { w: 2, slots: [[...on('ol', -2, 1.5), 'look', seaFace('ol')], [...on('ol', -1.2, BEACH.ol.sea), 'swim', seaFace('ol'), { free: true, water: true }], [...on('ol', 1.6, BEACH.ol.sea), 'swim', seaFace('ol') + 20, { free: true, water: true }], [...on('ol', 2.4, 1.5), 'cheer', seaFace('ol')], [...on('ol', 0.4, 0.2), 'sit', seaFace('ol'), { free: true }]], lines: ['Last one in buys dinner!', 'This beach is ours.', 'Sun, sand, zero emails.'] },
     selfie: { w: 1, slots: [[17.4, -1.6, 'phone', 135], [17.9, -2.5, 'cheer', 135], [16.9, -2.7, 'look', 135]], lines: ['Smile!', 'One more, someone blinked.'] },
   },
 };
-const PARTY = [[-4, 29.2], [-1.5, 29.6], [1, 29.2], [3.5, 29.8], [6, 29.2], [8.5, 29.7], [-2.8, 30.6], [4.8, 30.8], [2.2, 28.4], [0, 30.8], [7.2, 30.6], [-5.4, 30.4]];
 const TERMINAL = V(-15.6, 13.2);       // where Harris meets Nathan
 const VG_MEET = V(-13.8, -1.4);        // courtyard
 const POSE_DANCES = ['dance1', 'dance2', 'dance3'];
+const GANG_NAME = { vg: 'Vanderlinde Gang', ol: 'The Outlaws' };
 
 export function createTahiti(ctx) {
   const { state, player } = ctx;
-  let brains = [], bubbles = [], layer = null, party = 0, partyLights = [], passenger = null, buddy = null;
+  let brains = [], bubbles = [], layer = null, party = { vg: 0, ol: 0 }, partyLights = {}, passenger = null, buddy = null;
   let photo = null, race = null, hunt = null, lastHint = 0;
   const harris = () => brains.find((b) => b.id === 'harris');
   const P = () => player.group.position;
@@ -76,7 +89,8 @@ export function createTahiti(ctx) {
   function pickActivity(b) {
     const acts = Object.entries(ACTIVITIES[b.group]).filter(([k]) => k !== b.act);
     const night = ctx.isNight?.();
-    const options = acts.filter(([k]) => freeSlot(b.group, k, b) !== undefined);
+    const rival = AVOID[b.id] && brains.find((o) => o.id === AVOID[b.id]);
+    const options = acts.filter(([k]) => freeSlot(b.group, k, b) !== undefined && !(rival && rival.act === k));
     if (!options.length) return null;
     let total = 0; const w = options.map(([k, a]) => { const x = (a.w || 1) * (night && (k === 'deck' || k === 'campfire') ? 2 : 1) * (b.id === 'tahiti_cf1' && k === 'railing' ? 4 : 1); total += x; return x; });
     let r = Math.random() * total;
@@ -170,8 +184,8 @@ export function createTahiti(ctx) {
       if (Math.random() < dt * 0.02) bubble(it, rand(ACTIVITIES[b.group][b.act].lines), 3);
       const dP = dist(P(), gp);
       if (dP < 3.2 && now - (b.invited || 0) > 30000 && !state.joined) { b.invited = now; bubble(it, b.group === 'ol' ? 'Oi Nathan! Come join us!' : "Nathan! Get over here!", 3); }
-      if (hunt && dP < 4 && now - lastHint > 20000 && Math.random() < dt * 0.3) { lastHint = now; bubble(it, rand(HUNT_HINTS), 3.6); }
-      if (now > b.until && !party) { release(b); const a = pickActivity(b); if (a) assign(b, a); }
+      if (hunt && huntTarget() && dP < 4 && now - lastHint > 20000 && Math.random() < dt * 0.3) { lastHint = now; bubble(it, huntTarget().hint, 3.6); }
+      if (now > b.until && !party[b.group]) { release(b); const a = pickActivity(b); if (a) assign(b, a); }
     } else if (b.mode === 'idle' && !b.forced) {
       const a = pickActivity(b); if (a) assign(b, a);
     }
@@ -185,14 +199,16 @@ export function createTahiti(ctx) {
   }
 
   // ---------- treasure hunt ----------
+  // a trail: the clue board gives the first clue, each chest holds the next one
   const TREASURE = [
-    { id: 'palm', x: -8.6, z: 0.8, clue: 'Under the palm that watches the west walk.' },
-    { id: 'beach', x: 11.6, z: 27.4, clue: 'Where the sand runs out to the east of the beach.' },
-    { id: 'stairs', x: 21.6, z: 9.6, clue: 'At the bottom of the villa stairs, by the little beach.' },
-    { id: 'rock', x: -24.2, z: 8.2, clue: 'Behind the airstrip, near the windsock.' },
-    { id: 'hideout', x: -21.4, z: -9.0, clue: 'Around the west side of the hideout.' },
+    { id: 'palm', x: -8.6, z: 0.8, prize: 'a lucky shell', clue: 'Start where the four walks meet. Head west towards the hideout and check under the first palm you pass.', hint: 'Palms on the west walk. Just saying.' },
+    { id: 'hideout', x: -21.4, z: -9.0, prize: 'an old bottle cap', clue: 'Nobody ever uses the west side of the Vanderlinde hideout. Walk round the outside wall.', hint: 'Round the back of the hideout, west side.' },
+    { id: 'rock', x: -24.2, z: 8.2, prize: 'a tiny compass', clue: 'Something tells the pilots which way the wind blows. Look a few steps north of it.', hint: 'Ask the windsock. North of it.' },
+    { id: 'beach', x: 11.6, z: 35.4, prize: 'a pirate coin', clue: 'Find the finish flag of the beach race on the south beach, then keep walking east along the sand.', hint: 'East of the race finish, on the sand.' },
+    { id: 'stairs', x: 21.6, z: 9.6, prize: 'a captain\'s ring', clue: 'Last one. The Outlaws climb their stairs every day. Look at the bottom, by the tiny beach.', hint: 'Bottom of the villa stairs.' },
   ];
-  const HUNT_HINTS = ['I saw something shiny near the palms.', 'Have you checked behind the hideout?', 'The windsock knows things.', 'Try the villa stairs.'];
+  const huntTarget = () => TREASURE.find((tr) => !(state.save.tahitiTreasure || []).includes(tr.id));
+  const HUNT_HINTS = ['I saw something shiny earlier...'];
 
   // ---------- public API ----------
   const api = {
@@ -210,11 +226,11 @@ export function createTahiti(ctx) {
         const i = freeSlot(b.group, a, b); b.act = a; b.slotI = i;
         const s = slotOf(b.group, a, i); const g = b.it.character.group.position; g.x = s.x; g.z = s.z; arrive(b);
       }
-      partyLights = ctx.world.apis.party_lights ? [ctx.world.apis.party_lights] : [];
+      partyLights = { vg: ctx.world.apis.party_lights_vg, ol: ctx.world.apis.party_lights_ol };
       const saved = state.save.tahitiTreasure || [];
       for (const it of ctx.world.interactables) if (it.kind === 'activity' && it.act === 'treasure_item' && saved.includes(it.treasureId)) it.found = true;
     },
-    exit() { layer?.remove(); layer = null; bubbles = []; brains = []; party = 0; passenger = null; buddy = null; photo = null; race = null; state.joined = null; },
+    exit() { layer?.remove(); layer = null; bubbles = []; brains = []; party = { vg: 0, ol: 0 }; passenger = null; buddy = null; photo = null; race = null; state.joined = null; },
     harrisState() { return harris()?.hstate; },
     _debug: () => ({ brains, ACTIVITIES, party, race, photo, passenger }),
     onArrive() { const h = harris(); if (h) { h.hstate = 'ARRIVING'; h.mode = 'idle'; h.leftTerminal = false; release(h); } },
@@ -225,12 +241,12 @@ export function createTahiti(ctx) {
       h.leftTerminal = true; h.forced = false; release(h); h.hstate = 'RETURNING_TO_TERMINAL';
       goTo(h, TERMINAL.x + 1.2, TERMINAL.z + 0.8, () => { h.hstate = 'WAITING_FOR_NATHAN'; h.mode = 'wait'; bubble(h.it, 'Ready for the next destination?', 3.4); }, true);
     },
-    musicOverride() { return party > 0 ? 'party' : null; },
+    musicOverride() { const p = P(); return ['vg', 'ol'].some((g) => party[g] > 0 && dist(p, BEACH[g].c) < 22) ? 'party' : null; },
 
     update(dt, t) {
       const now = performance.now();
       if (state.cine) { const h = harris(); if (h) h.hstate = state.cine.phase === 'board' ? 'BOARDING' : 'TRAVELLING'; drawBubbles(); return; }
-      if (party > 0) { party -= dt; if (party <= 0) endParty(); }
+      for (const g of ['vg', 'ol']) if (party[g] > 0) { party[g] -= dt; if (party[g] <= 0) endParty(g); }
       for (const b of brains) {
         if (b.id === 'harris' && !b.riding && harrisTick(b, now)) { tickBrain(b, dt, t, now); continue; }
         tickBrain(b, dt, t, now);
@@ -241,7 +257,7 @@ export function createTahiti(ctx) {
       if (photo) photoTick(dt);
       if (race) raceTick(dt);
       for (const it of ctx.world.interactables) if (it.kind === 'activity' && it.act === 'treasure_item') {
-        const vis = !it.found && !!hunt && dist(P(), it) < 7;
+        const vis = !it.found && !!hunt && huntTarget()?.id === it.treasureId && dist(P(), it) < 9;
         it.beacon.group.visible = vis; it.hit.visible = vis; it.disabled = !vis;
       }
       drawBubbles();
@@ -254,6 +270,7 @@ export function createTahiti(ctx) {
       if (nearestNpc(2.4) && ctx.hasMoto()) h.push('R Invite for a ride');
       if (joinable()) h.push('F Join activity');
       const ps = nearPhotoSpot(); if (ps) h.push(`G ${GANG_NAME[ps.gang]} photo`);
+      const tg = hunt && huntTarget(); if (tg) { const d = dist(P(), tg); h.push(`Treasure ${(state.save.tahitiTreasure || []).length + 1}/5: ${d < 6 ? 'HOT!' : d < 14 ? 'warm' : d < 28 ? 'cool' : 'cold'}`); }
       return h;
     },
     key(k) {
@@ -288,17 +305,17 @@ export function createTahiti(ctx) {
     if (state.joined) return null;
     const p = P();
     let best = null, bd = 3.2;
-    const zones = party > 0 ? [{ party: true }] : [];
+    const pz = ['vg', 'ol'].find((g) => party[g] > 0 && dist(p, BEACH[g].c) < 8);
     for (const [g, acts] of Object.entries(ACTIVITIES)) for (const [k, a] of Object.entries(acts)) {
       if (!brains.some((b) => b.group === g && b.act === k && b.mode === 'stay')) continue;
       a.slots.forEach((s, i) => { if (taken(g, k, i)) return; const d = Math.hypot(s[0] - p.x, s[1] - p.z); if (d < bd) { bd = d; best = { g, k, i }; } });
     }
-    if (!best && zones.length && Math.hypot(p.x - 2, p.z - 29.5) < 7) return { party: true };
+    if (!best && pz) return { party: pz };
     return best;
   }
   function joinActivity() {
     const j = joinable(); if (!j) return false;
-    if (j.party) { const p = P(); state.joined = { x: p.x, z: p.z, pose: rand(POSE_DANCES), face: Math.PI / 4 }; ctx.toast('Dancing! Move to stop.'); return true; }
+    if (j.party) { const p = P(); state.joined = { x: p.x, z: p.z, pose: rand(POSE_DANCES), face: (landFace(j.party) * Math.PI) / 180 }; ctx.toast('Dancing! Move to stop.'); return true; }
     const s = slotOf(j.g, j.k, j.i);
     state.joined = { x: s.x, z: s.z, pose: s.pose === 'swim' ? 'swim' : s.pose, face: s.face, swim: !!s.opts.water };
     state.path = [];
@@ -329,7 +346,7 @@ export function createTahiti(ctx) {
     if (!state.mount || state.mount !== m) { passenger = null; b.riding = false; b.it.passenger = false; b.forced = false; return; }
     if (!passenger.seated) return;
     const ch = b.it.character, g = m.it.model.group, h = m.heading;
-    ch.group.position.set(g.position.x - Math.sin(h) * 0.5, g.position.y + 0.72, g.position.z - Math.cos(h) * 0.5);
+    ch.group.position.set(g.position.x - Math.sin(h) * 0.62, g.position.y + 0.74, g.position.z - Math.cos(h) * 0.62);
     ch.heading = h; ch.pose = 'ride';
     ch.update(dt, new THREE.Vector3(), t);
     b.it.x = ch.group.position.x; b.it.z = ch.group.position.z;
@@ -344,7 +361,6 @@ export function createTahiti(ctx) {
 
   // ---------- group photo ----------
   // each gang has its own photo spot (camera tripod); only that gang lines up there
-  const GANG_NAME = { vg: 'Vanderlinde Gang', ol: 'The Outlaws' };
   const photoSpots = () => ctx.world.interactables.filter((i) => i.kind === 'activity' && i.act === 'photo');
   function nearPhotoSpot(r = 6) { let best = null, bd = r; for (const s of photoSpots()) { const d = dist(s, P()); if (d < bd) { bd = d; best = s; } } return best; }
   const FORMATION = [[1, 0], [-1, 0], [2, 0], [-2, 0], [0.5, 1], [-0.5, 1], [1.5, 1], [-1.5, 1], [2.5, 1], [-2.5, 1]];
@@ -354,6 +370,7 @@ export function createTahiti(ctx) {
     const gang = spot.gang;
     const crew = brains.filter((b) => b.group === gang && b.id !== 'harris' && !b.riding);
     if (!crew.length) return false;
+    for (const [id, at] of [['tahiti_cf1', 2], ['tahiti_cf2', 3]]) { const i = crew.findIndex((b) => b.id === id); if (i >= 0 && crew.length > at) { const [x] = crew.splice(i, 1); crew.splice(at, 0, x); } }
     state.joined = null; state.path = [];
     const c = { x: spot.x, z: spot.z };
     P().set(c.x, ctx.heightAt(c.x, c.z), c.z);       // Nathan stands in the middle
@@ -393,15 +410,20 @@ export function createTahiti(ctx) {
   }
 
   // ---------- events ----------
-  function startParty() {
-    if (party > 0) return;
-    party = 45; ctx.toast('Beach party! F to dance.');
-    partyLights.forEach((l) => l.setOn?.(true));
-    brains.forEach((b, i) => { if (b.riding) return; release(b); b.forced = true; const s = PARTY[i % PARTY.length]; goTo(b, s[0], s[1], () => { b.mode = 'party'; b.it.character.pose = POSE_DANCES[i % 3]; b.it.character.heading = Math.PI / 4 + (i % 3 - 1) * 0.4; }, true); b.mode = 'walk'; });
+  function startParty(g = 'vg') {
+    if (party[g] > 0) return;
+    party[g] = 45; ctx.toast(`${GANG_NAME[g]} beach party! F to dance.`);
+    partyLights[g]?.setOn?.(true);
+    const crew = brains.filter((b) => b.group === g && b.id !== 'harris' && !b.riding && !(photo && photo.spots.some((s) => s.b === b)));
+    // Anu takes one end of the front row, Shabesh the other
+    const order = [...crew].sort((a, b) => (a.id === 'tahiti_cf1' ? -1 : b.id === 'tahiti_cf1' ? 1 : 0));
+    const sh = order.findIndex((b) => b.id === 'tahiti_cf2'); if (sh > 0 && order.length > 3) { const [x] = order.splice(sh, 1); order.splice(3, 0, x); }
+    const face = (landFace(g) * Math.PI) / 180;
+    order.forEach((b, i) => { release(b); b.forced = true; const s = PARTY[g][i % PARTY[g].length]; goTo(b, s[0], s[1], () => { b.mode = 'party'; b.it.character.pose = POSE_DANCES[i % 3]; b.it.character.heading = face + (i % 3 - 1) * 0.4; }, true); });
   }
-  function endParty() {
-    party = 0; partyLights.forEach((l) => l.setOn?.(false));
-    brains.forEach((b) => { if (b.mode === 'party' || b.forced) { b.forced = false; b.mode = 'idle'; release(b); } });
+  function endParty(g) {
+    party[g] = 0; partyLights[g]?.setOn?.(false);
+    brains.forEach((b) => { if (b.group === g && b.id !== 'harris' && (b.mode === 'party' || (b.forced && !b.riding))) { b.forced = false; b.mode = 'idle'; release(b); } });
   }
   function opponent(group) {
     const c = brains.filter((b) => !b.riding && (!group || b.group === group)).sort((a, b) => dist(a.it.character.group.position, P()) - dist(b.it.character.group.position, P()));
@@ -409,7 +431,7 @@ export function createTahiti(ctx) {
   }
   function startRace() {
     const b = opponent(); if (!b) return;
-    const A = { x: -3.6, z: 29.6 }, B = { x: 7.6, z: 29.4 };
+    const A = { x: -4.0, z: 37.0 }, B = { x: 9.0, z: 36.8 };
     release(b); b.forced = true;
     const p = P(); p.set(A.x + 0.4, ctx.heightAt(A.x, A.z), A.z); state.path = []; player.heading = Math.PI / 2;
     b.it.character.group.position.set(A.x + 0.4, 0, A.z - 0.9); b.it.character.heading = Math.PI / 2; b.mode = 'race-wait';
@@ -432,7 +454,7 @@ export function createTahiti(ctx) {
   }
   function activityInteract(it) {
     switch (it.act) {
-      case 'party': startParty(); return true;
+      case 'party': startParty(it.gang); return true;
       case 'race': startRace(); return true;
       case 'dance': danceBattle(); return true;
       case 'food': foodChallenge(); return true;
@@ -444,19 +466,21 @@ export function createTahiti(ctx) {
       default: return false;
     }
   }
-  function clues() {
-    hunt = hunt || { started: true };
-    const got = state.save.tahitiTreasure || [];
-    ctx.panel('tahiti/treasure.txt', `<p class="eyebrow">TAHITI · TREASURE HUNT</p><h2 id="panel-title">Five lost things</h2>
-      <p class="subtitle">${got.length}/5 found. They glow when you get close. Friends drop hints too.</p>
-      <ol class="highlights">${TREASURE.map((tr) => `<li>${got.includes(tr.id) ? '✓ ' : ''}${tr.clue}</li>`).join('')}</ol>`);
+  function cluePanel(note = '') {
+    const got = state.save.tahitiTreasure || [], next = huntTarget();
+    ctx.panel('tahiti/treasure.txt', `<p class="eyebrow">TAHITI · TREASURE HUNT · ${got.length}/5</p><h2 id="panel-title">${next ? `Clue ${got.length + 1}` : 'Hunt complete'}</h2>
+      ${note ? `<p class="subtitle">${note}</p>` : ''}
+      ${next ? `<p class="clue-text">“${next.clue}”</p><p class="muted">The chest glows when you're close. The hint bar says how warm you are, and friends drop hints too.</p>` : '<p>All five found. The bandana is yours.</p>'}
+      <ol class="highlights">${TREASURE.map((tr, i) => `<li>${got.includes(tr.id) ? `✓ ${tr.prize}` : i === got.length ? 'You are here' : '???'}</li>`).join('')}</ol>`);
   }
+  function clues() { hunt = hunt || { started: true }; cluePanel(); }
   function foundTreasure(it) {
+    if (huntTarget()?.id !== it.treasureId) return;
     it.found = true; const s = state.save; s.tahitiTreasure = [...new Set([...(s.tahitiTreasure || []), it.treasureId])]; ctx.persist();
     ctx.sfx.memory();
-    const n = s.tahitiTreasure.length;
-    if (n >= 5) { ctx.toast('All five found! You earned the captain\'s bandana.'); ctx.giveBandana(); const h = harris(); if (h) bubble(h.it, 'Captain Nathan. Has a ring to it.', 3.4); }
-    else ctx.toast(`Treasure ${n}/5: ${rand(['a lucky shell', 'an old bottle cap', 'a tiny compass', 'a pirate coin'])}`);
+    const n = s.tahitiTreasure.length, tr = TREASURE.find((x) => x.id === it.treasureId);
+    if (n >= 5) { ctx.toast('All five found! You earned the captain\'s bandana.'); ctx.giveBandana(); const h = harris(); if (h) bubble(h.it, 'Captain Nathan. Has a ring to it.', 3.4); cluePanel(`You found ${tr.prize}.`); }
+    else { ctx.toast(`Treasure ${n}/5: ${tr.prize}`); cluePanel(`You found ${tr.prize}. Tucked inside is the next clue.`); }
   }
   function danceBattle() {
     const b = opponent('ol') || opponent(); if (!b) return;

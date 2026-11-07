@@ -72,6 +72,8 @@ function bootHero() {
   let dolly = -1;                                                // confirm camera push (0..1)
   const vel = new THREE.Vector3();
   let readyRes; const ready = new Promise((res) => (readyRes = res));
+  // the prompt never waits on rendering (background tabs pause rAF)
+  setTimeout(() => { if (readyRes) { readyRes(); readyRes = null; } }, reducedMotion ? 0 : 2200);
   $('#boot').classList.add('title-anim');
   if (reducedMotion || T >= 2.8) $('#boot').classList.add('title-skip');
   const tick = (now) => {
@@ -749,7 +751,7 @@ function vehicleFree(x, z, cfg) {
   for (const f of world.floors) if (x >= f.minX && x <= f.maxX && z >= f.minZ && z <= f.maxZ) return false;   // no riding indoors or onto platforms
   const tile = tileAt(map, x, z);
   if (!tile || !tile.walkable || cfg.avoid.includes(tile.type)) return false;
-  if (Math.hypot(x, z) > (map.props.islandRadius || 44) - 3) return false;
+  if (Math.hypot(x, z) > (map.props.navRadius || (map.props.islandRadius || 44) - 2.5) - 0.5) return false;
   for (const n of world.npcs) { if (n.passenger) continue; const p = n.character.group.position; if (Math.hypot(p.x - x, p.z - z) < r + 0.45) return false; }
   for (const it of world.interactables) if (it.kind === 'vehicle' && it !== state.mount?.it && Math.hypot(it.x - x, it.z - z) < r + 0.6) return false;
   // the railway is just ground to roll over, but never through a train
@@ -760,7 +762,7 @@ function vehicleFree(x, z, cfg) {
   return true;
 }
 function mount(it) {
-  if (state.mount || dialogue.open || state.panelOpen || state.minigame || state.ko) return;
+  if (state.mount || dialogue.open || state.minigame || state.ko) return;
   const cfg = VEHICLES[it.vtype];
   closePanel(); state.path = []; marker.visible = false;
   state.mount = { it, cfg, speed: 0, heading: it.heading, lift: 0, phase: 0, from: player.group.position.clone() };
@@ -829,7 +831,8 @@ function rideUpdate(dt, t, kx, kz, running) {
   const hop = Math.sin(m.lift * Math.PI) * 0.25;
   // model follows Nathan
   const g = it.model.group;
-  g.position.set(pos.x, ground, pos.z);
+  const back = it.vtype === 'moto' ? 0.28 : 0;                                  // bike sits a little behind the driver so the passenger fits
+  g.position.set(pos.x - Math.sin(m.heading) * back, ground, pos.z - Math.cos(m.heading) * back);
   g.rotation.y = m.heading + cfg.yaw;
   it.x = pos.x; it.z = pos.z;
   const sp = Math.abs(m.speed);
@@ -879,7 +882,7 @@ const mapCache = {};
 let kitOverrides = null;
 function makeNav() {
   return new NavGrid({
-    size: map.width, cell: 0.5, islandRadius: (map.props.islandRadius || 44) - 2.5, colliders: world.colliders,
+    size: map.width, cell: 0.5, islandRadius: map.props.navRadius || (map.props.islandRadius || 44) - 2.5, colliders: world.colliders,
     blocked: (x, z) => {
       for (const f of world.floors) if (x >= f.minX && x <= f.maxX && z >= f.minZ && z <= f.maxZ) return false;
       const t = tileAt(map, x, z); return !t || !t.walkable;
@@ -1677,6 +1680,7 @@ function update(dt, t) {
   state.playerPos = state.ko ? null : pos;
   state.reduceMotion = look.motion === 'off';
   world.animated.forEach((fn) => fn(t, state));
+  checkTrain();
   marker.scale.setScalar(1 + Math.sin(t * 6) * 0.15);
 
   // Camera: critically-damped follow with a little look-ahead, snapped to the
@@ -1688,6 +1692,7 @@ function update(dt, t) {
   camTarget.add(camVel);
   camera.position.copy(camTarget).addScaledVector(CAM_DIR, 60);
   camera.lookAt(camTarget);
+  if (shakeT > 0) { shakeT -= dt; const a = Math.max(0, shakeT) * 0.5; camera.position.x += (Math.random() - 0.5) * a; camera.position.z += (Math.random() - 0.5) * a; }
   camera.updateMatrixWorld();
   const wpp = (camera.top - camera.bottom) / retro.target.height;
   const r = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 0), u = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 1);
@@ -1916,7 +1921,166 @@ function checkHazards(dt) {
     safeT = 0.25;
   }
   if (!player.airborne && isWet(p.x, p.z)) return knockout('water');
-  if (world.railway && world.railway.speed > 0.5 && player.jumpY < 1.1 && trainNear(p.x, p.z)) return knockout('train');
+}
+
+// ---------------- Memory Line collisions ----------------
+// Runs every frame for walking AND mounted Nathan, after the train has moved.
+// Each car is an oriented box; we test the current pose plus an interpolated
+// half-step (car and player both), so a fast train or rider can't tunnel
+// through between frames. State machine: NORMAL -> HIT (state.ko) ->
+// RECOVERING (state.trainGuard, until clear of the train) -> NORMAL.
+const trainPrev = [];
+const trainLocal2 = new THREE.Vector3();
+const prevPlayer = new THREE.Vector3();
+let prevPlayerOk = false;
+function boxHit(x, z, cx, cz, ry, pad) {
+  trainLocal2.set(x - cx, 0, z - cz).applyAxisAngle(UP, -ry);
+  return Math.abs(trainLocal2.z) < 1.45 + pad && Math.abs(trainLocal2.x) < 0.85 + pad;
+}
+function lerpAngle(a, b, k) { return a + Math.atan2(Math.sin(b - a), Math.cos(b - a)) * k; }
+function checkTrain() {
+  const rw = world?.railway; if (!rw) return;
+  const cars = rw.train, p = player.group.position;
+  while (trainPrev.length < cars.length) trainPrev.push({ x: 0, z: 0, ry: 0, ok: false });
+  const moving = rw.speed > 0.5;
+  const pad = state.mount ? state.mount.cfg.r * (state.mount.it.vtype === 'horse' ? 1.3 : 1) : 0.3;
+  const canHit = state.started && !state.ko && !state.cine && !state.seated && moving
+    && (state.mount || player.jumpY < 1.1);
+  if (state.trainGuard && !trainNear(p.x, p.z, 1.0)) state.trainGuard = false;   // RECOVERING -> NORMAL
+  let hit = null;
+  if (canHit && !state.trainGuard) {
+    // broad phase: skip entirely when nowhere near the train
+    const head = cars[0].position;
+    if (Math.abs(p.x - head.x) < 14 && Math.abs(p.z - head.z) < 14) {
+      for (let i = 0; i < cars.length && !hit; i++) {
+        const c = cars[i], q = trainPrev[i];
+        if (boxHit(p.x, p.z, c.position.x, c.position.z, c.rotation.y, pad)) hit = c;
+        else if (q.ok && prevPlayerOk) {
+          const px = (p.x + prevPlayer.x) / 2, pz = (p.z + prevPlayer.z) / 2;
+          if (boxHit(px, pz, (c.position.x + q.x) / 2, (c.position.z + q.z) / 2, lerpAngle(q.ry, c.rotation.y, 0.5), pad)) hit = c;
+        }
+      }
+    }
+  }
+  cars.forEach((c, i) => { const q = trainPrev[i]; q.x = c.position.x; q.z = c.position.z; q.ry = c.rotation.y; q.ok = true; });
+  prevPlayer.copy(p); prevPlayerOk = true;
+  if (hit) trainKnock(hit);
+}
+// nearest distance from (x, z) to the rail line
+function railDist(x, z) {
+  if (!railPts) railPts = world.railway.curve.getSpacedPoints(500);
+  let d = Infinity;
+  for (const q of railPts) { const e = (q.x - x) ** 2 + (q.z - z) ** 2; if (e < d) d = e; }
+  return Math.sqrt(d);
+}
+// a walkable spot near `from`, pushed along `dir`, well clear of the tracks
+function offTrackSpot(from, dir, minRail = 3) {
+  const ok = (x, z) => solidFree(x, z) && nav.isWalkable(x, z, 0.32) && !isWet(x, z) && railDist(x, z) > minRail;
+  const base = Math.atan2(dir.x, dir.z);
+  for (const d of [3, 4.5, 6, 8, 10]) for (const da of [0, 0.5, -0.5, 1, -1, 1.6, -1.6, Math.PI]) {
+    const x = from.x + Math.sin(base + da) * d, z = from.z + Math.cos(base + da) * d;
+    if (ok(x, z)) return new THREE.Vector3(x, 0, z);
+  }
+  if (railDist(lastSafe.x, lastSafe.z) > minRail) return lastSafe.clone();
+  const s = world.stations.length ? world.stations.reduce((a, b) => (Math.hypot(a.x - from.x, a.z - from.z) <= Math.hypot(b.x - from.x, b.z - from.z) ? a : b)) : { x: 1.2, z: 6.2 };
+  return new THREE.Vector3(s.x, 0, s.z);
+}
+// park a vehicle at a safe spot after a crash; falls back to its rack
+function parkVehicle(it, near, heading, exact = false) {
+  const cfg = VEHICLES[it.vtype];
+  let spot = exact ? { x: near.x, z: near.z, heading } : null;
+  if (!spot) for (const [ox, oz] of [[1.6, 0], [-1.6, 0], [0, 1.6], [0, -1.6], [1.6, 1.6], [-1.6, -1.6]]) {
+    const x = near.x + ox, z = near.z + oz;
+    if (vehicleFree(x, z, cfg) && railDist(x, z) > 3) { spot = { x, z, heading }; break; }
+  }
+  spot = spot || it.home;
+  it.x = spot.x; it.z = spot.z; it.heading = spot.heading;
+  const g = it.model.group;
+  g.position.set(spot.x, heightAt(spot.x, spot.z), spot.z);
+  g.rotation.set(0, spot.heading + cfg.yaw, 0);
+  it.beacon.group.position.set(spot.x, heightAt(spot.x, spot.z) + 0.04, spot.z); it.beacon.group.visible = true;
+  it.hit.position.set(spot.x, 1.3, spot.z);
+}
+function impactStars(at) {
+  const parts = [], cols = [0xffd257, 0xfff1d6, 0xff8a2a];
+  for (let i = 0; i < 16; i++) {
+    const a = (i / 16) * Math.PI * 2, sp = 2.2 + Math.random() * 1.6;
+    const m = new THREE.Mesh(new THREE.OctahedronGeometry(0.11, 0), fxMat(cols[i % 3]));
+    m.position.set(at.x, at.y + 1, at.z); scene.add(m);
+    parts.push({ m, v: new THREE.Vector3(Math.cos(a) * sp, 2 + Math.random() * 2, Math.sin(a) * sp), g: 9 });
+  }
+  runParticles(parts, 900);
+}
+let shakeT = 0;
+function trainKnock(car) {
+  const m = state.mount, p = player.group.position;
+  state.ko = 'train';                                                     // HIT: input disabled
+  state.path = []; state.pendingOpen = null; marker.visible = false;
+  closePanel(); dialogue.close();
+  // knocked forward along the train's travel and out to the side it hit
+  const fling = new THREE.Vector3(Math.sin(car.rotation.y), 0, Math.cos(car.rotation.y));
+  const side = new THREE.Vector3(-fling.z, 0, fling.x);
+  if (side.dot(new THREE.Vector3().subVectors(p, car.position)) < 0) side.negate();
+  fling.multiplyScalar(1.2).add(side.clone().multiplyScalar(2.2));
+  // end the mounted state cleanly: the mount gets clear of the train on its own
+  let ride = null;
+  if (m) {
+    const it = m.it;
+    state.mount = null; state.nearby = null;
+    player.pose = null; player.pedal = 0;
+    if (it.vtype === 'moto') { setEngine(null); tahiti.onMotoDismount({ x: p.x + side.x, z: p.z + side.z }); }
+    ride = { it, g: it.model.group, from: it.model.group.position.clone(), dir: side.clone().normalize() };
+    it.beacon.group.visible = false;
+  }
+  player.heading = Math.atan2(-fling.x, -fling.z);
+  sfx.bonk();
+  impactStars(p);
+  shakeT = reducedMotion ? 0 : 0.45;
+  const el = $('#ko');
+  el.innerHTML = '<div class="ko-card"><b>WATCH THE TRACKS!</b><span>That train isn’t stopping for you.</span></div>';
+  setTimeout(() => el.classList.remove('hidden'), reducedMotion ? 0 : 350);
+  const t0 = performance.now(), start = p.clone();
+  const DUR = 750;
+  const fall = () => {
+    const k = Math.min(1, (performance.now() - t0) / DUR), e = 1 - (1 - k) * (1 - k);
+    p.x = start.x + fling.x * e; p.z = start.z + fling.z * e;
+    p.y = heightAt(p.x, p.z) + Math.sin(k * Math.PI) * 1.1;
+    // cartoon tumble: one flip, ending flat on his back
+    player.group.rotation.x = reducedMotion ? -1.45 * k : -(Math.PI * 2 * Math.min(1, k * 1.2)) - 1.45 * k;
+    if (ride) {
+      const r = ride;
+      if (r.it.vtype === 'horse') {
+        // the horse spooks, rears a little and trots clear of the rails
+        r.g.position.set(r.from.x + r.dir.x * 3.5 * e, heightAt(r.from.x, r.from.z) + Math.abs(Math.sin(k * Math.PI * 3)) * 0.25, r.from.z + r.dir.z * 3.5 * e);
+        r.g.rotation.z = -Math.sin(Math.min(1, k * 2) * Math.PI) * 0.25;
+      } else {
+        // bikes skid sideways and tip over
+        r.g.position.set(r.from.x + r.dir.x * 2.2 * e, heightAt(r.from.x, r.from.z), r.from.z + r.dir.z * 2.2 * e);
+        r.g.rotation.z = 1.35 * e;
+      }
+    }
+    if (k < 1) requestAnimationFrame(fall);
+  };
+  requestAnimationFrame(fall);
+  setTimeout(() => {
+    el.classList.add('dark');
+    setTimeout(() => {
+      const spawn = offTrackSpot(start, fling);
+      p.set(spawn.x, heightAt(spawn.x, spawn.z), spawn.z);
+      player.group.rotation.set(0, 0, 0);
+      player.pose = null; player.action = null; player.jumpY = 0; player.jumpV = 0;
+      player.heading = Math.atan2(fling.x, fling.z);
+      if (ride) {
+        try { parkVehicle(ride.it, ride.it.home, ride.it.home.heading, true); } catch (err) { console.warn(err); }
+        toast(`Your ${VEHICLES[ride.it.vtype].label} is back at its ${ride.it.vtype === 'horse' ? 'post' : 'rack'}.`);
+      }
+      camTarget.set(p.x, 0, p.z);
+      el.classList.remove('dark'); el.classList.add('hidden');
+      state.ko = null; state.trainGuard = true;                         // RECOVERING
+      prevPlayerOk = false;
+      persist();
+    }, reducedMotion ? 50 : 420);
+  }, reducedMotion ? 500 : 1500);
 }
 
 // ---------------- Death effects ----------------
