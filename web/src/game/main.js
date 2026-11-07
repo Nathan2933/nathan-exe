@@ -1879,8 +1879,11 @@ function onBigMapClick(e) {
 // ---------------- Collisions with characters + hazards ----------------
 function charBlocks(x, z) {
   for (const it of world.interactables) if (it.kind === 'vehicle' && it !== state.mount?.it && Math.hypot(it.x - x, it.z - z) < 0.7) return true;
-  for (const w of world.walkers) { const p = w.ch.group.position; if (Math.hypot(p.x - x, p.z - z) < 0.62) return true; }
-  for (const n of world.npcs) { const p = n.character.group.position; if (Math.hypot(p.x - x, p.z - z) < 0.62) return true; }
+  // people block you, but never trap you: moving away from someone you overlap is always allowed
+  const me = player.group.position;
+  const blocks = (p) => { const d = Math.hypot(p.x - x, p.z - z); return d < 0.62 && d < Math.hypot(p.x - me.x, p.z - me.z) - 0.001; };
+  for (const w of world.walkers) if (blocks(w.ch.group.position)) return true;
+  for (const n of world.npcs) if (!n.passenger && blocks(n.character.group.position)) return true;
   return false;
 }
 function solidFree(x, z) {

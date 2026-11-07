@@ -645,6 +645,8 @@ export function createTahiti(ctx) {
       const dx = tx - gp.x, dz = tz - gp.z, d = Math.hypot(dx, dz);
       vel.set(0, 0, 0);
       if (d > 0.08) { const s = Math.min(sp * dt, d); gp.x += (dx / d) * s; gp.z += (dz / d) * s; vel.set(dx / d, 0, dz / d).multiplyScalar(sp); }
+      // never run into Nathan or a teammate: keep a little personal space
+      for (const o of c.players) { if (o === p) continue; const op = posOf(o), ox = gp.x - op.x, oz = gp.z - op.z, od = Math.hypot(ox, oz); if (od < 0.7 && od > 1e-4) { gp.x = op.x + (ox / od) * 0.7; gp.z = op.z + (oz / od) * 0.7; } }
       const look = c.phase === 'fly' || c.phase === 'serve' ? Math.atan2(B.x - gp.x, B.z - gp.z) : (cface(c.g, p.side) * Math.PI) / 180;
       ch.heading += Math.atan2(Math.sin(look - ch.heading), Math.cos(look - ch.heading)) * Math.min(1, dt * 8);
       ch.pose = null; gp.y = ctx.heightAt(gp.x, gp.z);
