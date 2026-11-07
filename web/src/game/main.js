@@ -353,6 +353,7 @@ function setupUI() {
       if (!$('#controls').classList.contains('hidden')) return toggleControls(false);
       if (dialogue.open) dialogue.close(); else closePanel();
     }
+    if (e.key === ' ' && !dialogue.open && state.volley) { e.preventDefault(); tahiti.key(' '); return; }
     if (e.key === ' ' && !dialogue.open) { e.preventDefault(); if (player.jump()) sfx.rep(); return; }
     const act = e.key === 'e' || e.key === 'E' || e.key === 'Enter' || (e.key === ' ' && dialogue.open);
     const focused = document.activeElement;
@@ -2310,7 +2311,7 @@ function tahitiHints() {
     el = document.createElement('div'); el.id = 'tahiti-hints'; el.className = 'tahiti-hints'; document.body.append(el);
     el.addEventListener('click', (e) => { const b = e.target.closest('[data-k]'); if (b) tahiti.key(b.dataset.k); });
   }
-  el.innerHTML = h.map((s) => { const key = s[0]; return /^[RFG] /.test(s) ? `<button type="button" data-k="${key.toLowerCase()}"><kbd>${key}</kbd>${esc(s.slice(2))}</button>` : `<span>${esc(s)}</span>`; }).join('');
+  el.innerHTML = h.map((s) => { if (s.startsWith('Space ')) return `<button type="button" data-k=" "><kbd>Space</kbd>${esc(s.slice(6))}</button>`; const key = s[0]; return /^[RFG] /.test(s) ? `<button type="button" data-k="${key.toLowerCase()}"><kbd>${key}</kbd>${esc(s.slice(2))}</button>` : `<span>${esc(s)}</span>`; }).join('');
   el.classList.toggle('hidden', !h.length);
 }
 

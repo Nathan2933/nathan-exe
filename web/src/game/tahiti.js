@@ -20,6 +20,14 @@ const seaFace = (g) => (Math.atan2(BEACH[g].n.x, BEACH[g].n.z) * 180) / Math.PI;
 const landFace = (g) => seaFace(g) + 180;
 // party: two rows of dancers on each gang's own beach, facing inland
 const PARTY = Object.fromEntries(['vg', 'ol'].map((g) => [g, [-4.5, -1.5, 1.5, 4.5, -3, 0, 3, -4.5, -1.5, 1.5, 4.5].map((s, i) => on(g, s, i < 4 ? 0.8 : i < 7 ? -0.8 : -2.4))]));
+// beach volleyball courts: centre, u = along the court (side A at -u), w = across
+const COURT = {
+  vg: { c: V(-19.9, -30.1), u: V(0.638, -0.77), w: V(-0.77, -0.638) },
+  ol: { c: V(37, -10), u: V(0, 1), w: V(1, 0) },
+};
+const cpt = (g, a, b) => { const k = COURT[g]; return V(k.c.x + k.u.x * a + k.w.x * b, k.c.z + k.u.z * a + k.w.z * b); };
+const cface = (g, side) => { const u = COURT[g].u, s = side ? -1 : 1; return (Math.atan2(u.x * s, u.z * s) * 180) / Math.PI; };
+const volleySlots = (g) => [[-2.6, -1.1, 0], [-2.6, 1.1, 0], [2.6, -1.1, 1], [2.6, 1.1, 1]].map(([a, b, s]) => { const p = cpt(g, a, b); return [+p.x.toFixed(2), +p.z.toFixed(2), 'look', cface(g, s), { vb: s }]; });
 // Anu and Shabesh keep their distance from each other
 const AVOID = { tahiti_cf1: 'tahiti_cf2', tahiti_cf2: 'tahiti_cf1' };
 // slot: [x, z, pose, faceDeg, opts]
@@ -29,6 +37,9 @@ const ACTIVITIES = {
     campfire: { w: 3, slots: [[-26.1, -14.0, 'sing', 90, { free: true }], [-22.9, -14.0, 'sing', -90, { free: true }], [-24.5, -12.4, 'sing', 180, { free: true }], [-24.5, -15.6, 'sing', 0]], lines: ['♪ la la la ♪', '♪ one more verse ♪', 'Okay, okay, story time.', 'And then the bike just stopped. In the middle of the road.'] },
     courtyard: { w: 2, slots: [[-15.0, -2.6, 'dance1', 20], [-12.6, -2.2, 'dance2', 0], [-10.6, -3.0, 'dance3', -20]], lines: ['Woo!', 'Watch this move.', 'That was NOT a dance.'] },
     eat: { w: 2, slots: [[-16.2, -1.2, 'eat', 180, { free: true }], [-16.9, -2.7, 'eat', 90], [-15.3, -2.9, 'eat', -90]], lines: ['Mmm.', 'Who made this?', 'Pass the chips.'] },
+    picnic: { w: 2, slots: [[-18.4, -24.4, 'eat', 160, { free: true }], [-17.0, -25.6, 'sit', -60, { free: true }], [-14.4, -25.0, 'sit', 180, { free: true }], [-13.2, -26.4, 'phone', -90, { free: true }]], lines: ['Best spot on the island.', 'Who brought the snacks?', 'Look at those flowers.'] },
+    banyan: { w: 2, slots: [[-35.2, -2.8, 'look', 135], [-38.4, -1.6, 'phone', 90], [-35.2, -0.2, 'lean', 45]], lines: ['This tree is older than all of us.', 'Shade. Finally.', 'Story time under the tree.'] },
+    volley: { w: 3, slots: volleySlots('vg'), lines: ['Mine!', 'Set it up!', 'Nice one!', 'Out! That was out!'] },
     beach: { w: 2, slots: [[...on('vg', -2, 1.5), 'look', seaFace('vg')], [...on('vg', -1.2, BEACH.vg.sea), 'swim', seaFace('vg'), { free: true, water: true }], [...on('vg', 1.6, BEACH.vg.sea), 'swim', seaFace('vg') - 20, { free: true, water: true }], [...on('vg', 2.4, 1.5), 'cheer', seaFace('vg')]], lines: ["We're heading to the beach. You coming?", 'Water\'s warm!', 'Race you to the rocks!'] },
   },
   ol: {
@@ -39,6 +50,11 @@ const ACTIVITIES = {
     lounge: { w: 1, slots: [[22.6, 0.2, 'sit', -90, { free: true }], [22.6, 2.2, 'sit', -90, { free: true }]], lines: ['Wake me up for food.'] },
     bbq: { w: 2, slots: [[13.6, 8.6, 'cook', 180], [12.0, 10.4, 'eat', 90], [15.2, 10.4, 'eat', -90]], lines: ['Who wants seconds?', 'Don\'t touch the grill.', 'This is the best part.'] },
     beach: { w: 2, slots: [[...on('ol', -2, 1.5), 'look', seaFace('ol')], [...on('ol', -1.2, BEACH.ol.sea), 'swim', seaFace('ol'), { free: true, water: true }], [...on('ol', 1.6, BEACH.ol.sea), 'swim', seaFace('ol') + 20, { free: true, water: true }], [...on('ol', 2.4, 1.5), 'cheer', seaFace('ol')], [...on('ol', 0.4, 0.2), 'sit', seaFace('ol'), { free: true }]], lines: ['Last one in buys dinner!', 'This beach is ours.', 'Sun, sand, zero emails.'] },
+    hoop: { w: 2, slots: [[18.0, -24.4, 'cheer', 180], [16.4, -23.2, 'look', 150], [19.8, -23.0, 'cheer', 210]], lines: ['Swish!', 'Nothing but net.', 'Airball. Again.'] },
+    firepit: { w: 2, slots: [[28.0, -16.2, 'sing', 0, { free: true }], [30.2, -14.0, 'sing', -90, { free: true }], [25.8, -14.0, 'sing', 90, { free: true }], [28.0, -12.2, 'sit', 180]], lines: ['Fire\'s perfect tonight.', '♪ one more song ♪', 'Who\'s got the marshmallows?'] },
+    hammock: { w: 1, slots: [[27.0, 14.0, 'sit', 180, { free: true }], [31.0, 17.0, 'sit', 150, { free: true }]], lines: ['Do not disturb.', 'This is the life.'] },
+    snack: { w: 1, slots: [[13.4, 17.8, 'eat', 180], [16.6, 17.8, 'eat', 180], [15.0, 17.4, 'phone', 180]], lines: ['Best snacks on the island.', 'One more round of fries.'] },
+    volley: { w: 3, slots: volleySlots('ol'), lines: ['Mine!', 'Set it up!', 'Spike it!', 'Out! That was out!'] },
     selfie: { w: 1, slots: [[17.4, -1.6, 'phone', 135], [17.9, -2.5, 'cheer', 135], [16.9, -2.7, 'look', 135]], lines: ['Smile!', 'One more, someone blinked.'] },
   },
 };
@@ -157,7 +173,7 @@ export function createTahiti(ctx) {
   const vel = new THREE.Vector3();
   function tickBrain(b, dt, t, now) {
     const it = b.it, ch = it.character, gp = ch.group.position;
-    if (it.frozen || b.riding) return;                           // cinematic or on a bike
+    if (it.frozen || b.riding || b.vball) return;                // cinematic, on a bike, or playing volleyball
     vel.set(0, 0, 0);
     const talking = state.talkingTo === it;
     if (talking) {
@@ -227,12 +243,14 @@ export function createTahiti(ctx) {
         const s = slotOf(b.group, a, i); const g = b.it.character.group.position; g.x = s.x; g.z = s.z; arrive(b);
       }
       partyLights = { vg: ctx.world.apis.party_lights_vg, ol: ctx.world.apis.party_lights_ol };
+      courts = { vg: newCourt('vg'), ol: newCourt('ol') }; ballMesh();
       const saved = state.save.tahitiTreasure || [];
       for (const it of ctx.world.interactables) if (it.kind === 'activity' && it.act === 'treasure_item' && saved.includes(it.treasureId)) it.found = true;
     },
-    exit() { layer?.remove(); layer = null; bubbles = []; brains = []; party = { vg: 0, ol: 0 }; passenger = null; buddy = null; photo = null; race = null; state.joined = null; },
+    exit() { endMatch(true); hud?.remove(); hud = null; layer?.remove(); layer = null; bubbles = []; brains = []; party = { vg: 0, ol: 0 }; passenger = null; buddy = null; photo = null; race = null; state.joined = null; },
     harrisState() { return harris()?.hstate; },
-    _debug: () => ({ brains, ACTIVITIES, party, race, photo, passenger }),
+    inMatch: () => !!state.volley,
+    _debug: () => ({ brains, ACTIVITIES, party, race, photo, passenger, courts }),
     onArrive() { const h = harris(); if (h) { h.hstate = 'ARRIVING'; h.mode = 'idle'; h.leftTerminal = false; release(h); } },
     harrisNearJet() { const h = harris(); return !!h && dist(P(), ctx.jetPoint()) < 12 && (h.hstate === 'WAITING_FOR_NATHAN' || dist(h.it.character.group.position, P()) < 4); },
     callHarrisToJet() {
@@ -256,6 +274,7 @@ export function createTahiti(ctx) {
       if (passenger) updatePassenger(dt, t);
       if (photo) photoTick(dt);
       if (race) raceTick(dt);
+      for (const g of ['vg', 'ol']) courtTick(courts[g], dt, t, now);
       for (const it of ctx.world.interactables) if (it.kind === 'activity' && it.act === 'treasure_item') {
         const vis = !it.found && !!hunt && huntTarget()?.id === it.treasureId && dist(P(), it) < 9;
         it.beacon.group.visible = vis; it.hit.visible = vis; it.disabled = !vis;
@@ -266,6 +285,7 @@ export function createTahiti(ctx) {
     // context hints for the prompt (R / F / G)
     hints() {
       const h = [];
+      if (state.volley) return ['Space Spike'];
       if (state.mount || state.joined) return state.joined ? ['Move to leave'] : [];
       if (nearestNpc(2.4) && ctx.hasMoto()) h.push('R Invite for a ride');
       if (joinable()) h.push('F Join activity');
@@ -275,6 +295,7 @@ export function createTahiti(ctx) {
     },
     key(k) {
       if (state.cine || state.minigame || state.groupScene || ctx.dialogue.open) return false;
+      if (k === ' ' && state.volley) return spikeTry();
       if (k === 'r') return inviteRide();
       if (k === 'f') return joinActivity();
       if (k === 'g') return startPhoto();
@@ -307,6 +328,7 @@ export function createTahiti(ctx) {
     let best = null, bd = 3.2;
     const pz = ['vg', 'ol'].find((g) => party[g] > 0 && dist(p, BEACH[g].c) < 8);
     for (const [g, acts] of Object.entries(ACTIVITIES)) for (const [k, a] of Object.entries(acts)) {
+      if (k === 'volley') continue;                      // the court is joined with E (a proper match)
       if (!brains.some((b) => b.group === g && b.act === k && b.mode === 'stay')) continue;
       a.slots.forEach((s, i) => { if (taken(g, k, i)) return; const d = Math.hypot(s[0] - p.x, s[1] - p.z); if (d < bd) { bd = d; best = { g, k, i }; } });
     }
@@ -346,7 +368,8 @@ export function createTahiti(ctx) {
     if (!state.mount || state.mount !== m) { passenger = null; b.riding = false; b.it.passenger = false; b.forced = false; return; }
     if (!passenger.seated) return;
     const ch = b.it.character, g = m.it.model.group, h = m.heading;
-    ch.group.position.set(g.position.x - Math.sin(h) * 0.62, g.position.y + 0.74, g.position.z - Math.cos(h) * 0.62);
+    // rear of the two-up seat, level with Nathan, so the passenger never covers him
+    ch.group.position.set(g.position.x - Math.sin(h) * 0.92, g.position.y + 0.6, g.position.z - Math.cos(h) * 0.92);
     ch.heading = h; ch.pose = 'ride';
     ch.update(dt, new THREE.Vector3(), t);
     b.it.x = ch.group.position.x; b.it.z = ch.group.position.z;
@@ -414,7 +437,7 @@ export function createTahiti(ctx) {
     if (party[g] > 0) return;
     party[g] = 45; ctx.toast(`${GANG_NAME[g]} beach party! F to dance.`);
     partyLights[g]?.setOn?.(true);
-    const crew = brains.filter((b) => b.group === g && b.id !== 'harris' && !b.riding && !(photo && photo.spots.some((s) => s.b === b)));
+    const crew = brains.filter((b) => b.group === g && b.id !== 'harris' && !b.riding && !b.vball && !(photo && photo.spots.some((s) => s.b === b)));
     // Anu takes one end of the front row, Shabesh the other
     const order = [...crew].sort((a, b) => (a.id === 'tahiti_cf1' ? -1 : b.id === 'tahiti_cf1' ? 1 : 0));
     const sh = order.findIndex((b) => b.id === 'tahiti_cf2'); if (sh > 0 && order.length > 3) { const [x] = order.splice(sh, 1); order.splice(3, 0, x); }
@@ -458,7 +481,7 @@ export function createTahiti(ctx) {
       case 'race': startRace(); return true;
       case 'dance': danceBattle(); return true;
       case 'food': foodChallenge(); return true;
-      case 'volley': volley(); return true;
+      case 'volley': startMatch(it.gang); return true;
       case 'gallery': ctx.openGallery(); return true;
       case 'photo': startPhoto(it); return true;
       case 'clues': clues(); return true;
@@ -537,35 +560,173 @@ export function createTahiti(ctx) {
       return () => clearInterval(iv);
     });
   }
-  function volley() {
-    const b = opponent(); if (!b) return;
-    const name = def(b.id).name;
-    let rally = 0, best = 0;
-    ctx.minigame(`<h2>Beach volleyball with ${name}</h2><p class="muted">Press SPACE (or tap HIT) when the ball is in your zone.</p><canvas id="volley" width="320" height="120" style="width:100%;image-rendering:pixelated;background:#ffe9b8"></canvas><p id="volley-msg">Rally: 0</p><button type="button" class="btn primary" id="volley-hit">HIT</button>`, (root, close) => {
-      const cv = root.querySelector('#volley'), g = cv.getContext('2d');
-      let x = 300, dir = -1, speed = 120, over = false, raf = 0, last = performance.now();
-      const hit = () => {
-        if (over) return;
-        if (x < 70) { rally++; dir = 1; speed = Math.min(320, speed + 12); ctx.sfx.rep(); root.querySelector('#volley-msg').textContent = `Rally: ${rally}`; }
-      };
-      root.querySelector('#volley-hit').addEventListener('click', hit);
-      root.onkey = (k) => { if (k === ' ' || k === 'e') hit(); };
-      const loop = (now) => {
-        const dt = Math.min(0.05, (now - last) / 1000); last = now;
-        x += dir * speed * dt;
-        if (x > 290 && dir > 0) { if (Math.random() < Math.max(0.55, 0.97 - rally * 0.03)) { dir = -1; speed += 6; } else { over = true; best = rally; root.querySelector('#volley-msg').textContent = `${name} missed! You win with a ${rally}-hit rally.`; } }
-        if (x < 10) { over = true; best = rally; root.querySelector('#volley-msg').textContent = `Missed! Rally of ${rally}.`; }
-        g.clearRect(0, 0, 320, 120);
-        g.fillStyle = '#2a2440'; g.fillRect(158, 50, 4, 70);
-        g.fillStyle = 'rgba(255,106,61,.25)'; g.fillRect(0, 0, 70, 120);
-        const y = 90 - Math.sin(((x - 10) / 280) * Math.PI) * 70;
-        g.fillStyle = '#ffffff'; g.fillRect(x - 5, y - 5, 10, 10); g.fillStyle = '#ff6a3d'; g.fillRect(x - 5, y - 1, 10, 2);
-        g.fillStyle = '#c4402f'; g.fillRect(30, 96, 12, 22); g.fillStyle = '#2f6fc6'; g.fillRect(280, 96, 12, 22);
-        if (!over) raf = requestAnimationFrame(loop); else setTimeout(() => { bubble(b.it, best > 5 ? 'Great rally!' : 'Again!', 2.6); close(); }, 1600);
-      };
-      raf = requestAnimationFrame(loop);
-      return () => cancelAnimationFrame(raf);
-    });
+  // ---------- beach volleyball: real players, real ball ----------
+  // Ambient: gang members on the court's activity slots rally on their own.
+  // Match (E at the court): the whole gang splits into two teams, Nathan joins
+  // team A. He moves with the normal controls; standing under the ball bumps
+  // it, Space near the ball spikes (with a jump). First to 5 wins.
+  const G = 9.8, WIN = 5;
+  let courts = { vg: null, ol: null }, ball = null, shadow = null, ring = null, hud = null;
+  function newCourt(g) { return { g, players: [], ball: { x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0 }, phase: 'idle', cache: new Map(), wait: 1.2, serveSide: 0, recv: null, score: [0, 0], match: false, last: null }; }
+  function ballMesh() {
+    const root = ctx.world.root;
+    ball = new THREE.Mesh(new THREE.IcosahedronGeometry(0.17, 1), new THREE.MeshLambertMaterial({ color: 0xfff6e6 }));
+    const stripe = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.025, 4, 12), new THREE.MeshBasicMaterial({ color: 0xff6a3d })); ball.add(stripe);
+    shadow = new THREE.Mesh(new THREE.CircleGeometry(0.22, 12), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.25, depthWrite: false }));
+    shadow.rotation.x = -Math.PI / 2;
+    ring = new THREE.Mesh(new THREE.RingGeometry(0.55, 0.75, 20), new THREE.MeshBasicMaterial({ color: 0xffb347, transparent: true, opacity: 0.85, depthWrite: false }));
+    ring.rotation.x = -Math.PI / 2;
+    for (const m of [ball, shadow, ring]) { m.visible = false; m.userData.dynamic = true; root.add(m); }
   }
+  const posOf = (p) => (p.nathan ? P() : p.b.it.character.group.position);
+  const local = (g, x, z) => { const k = COURT[g], dx = x - k.c.x, dz = z - k.c.z; return { a: dx * k.u.x + dz * k.u.z, b: dx * k.w.x + dz * k.w.z }; };
+  const teamName = (c, s) => { const p = c.players.find((q) => q.side === s && !q.nathan); return s === 0 && c.match ? 'Team Nathan' : `Team ${p ? def(p.b.id).name : '?'}`; };
+
+  function ambientPlayers(c, now) {
+    const list = [];
+    for (const b of brains) {
+      if (b.group !== c.g) continue;
+      const on = b.mode === 'stay' && b.act === 'volley' && now <= b.until;
+      if (on) { const s = slotOf(b.group, 'volley', b.slotI); const p = c.cache.get(b) || { b, skill: 1 }; p.side = s.opts.vb; p.home = V(s.x, s.z); c.cache.set(b, p); list.push(p); }
+      if (!c.match) b.vball = on;
+    }
+    return list;
+  }
+  function courtTick(c, dt, t, now) {
+    if (!c) return;
+    if (!c.match) c.players = ambientPlayers(c, now);
+    const sides = [0, 1].map((s) => c.players.filter((p) => p.side === s));
+    const live = sides[0].length && sides[1].length;
+    const mine = state.volley === c;
+    if (!live) { if (c.phase !== 'idle') { c.phase = 'idle'; if (!courts.vg?.match && !courts.ol?.match) hideBall(); } return; }
+    if (c.phase === 'idle') { c.phase = 'serve'; c.wait = 1.4; c.server = rand(sides[c.serveSide]); }
+    // only one ball in the world: the match court, else the nearest live court
+    const showMe = mine || (!state.volley && dist(P(), COURT[c.g].c) < 30);
+    const B = c.ball;
+    if (c.phase === 'serve') {
+      if (!c.players.includes(c.server)) c.server = rand(sides[c.serveSide]);
+      const sp = posOf(c.server); B.x = sp.x; B.z = sp.z; B.y = 2.0 + Math.sin(t * 6) * 0.1;
+      c.wait -= dt;
+      if (c.wait <= 0) { c.phase = 'fly'; hit(c, c.server, false); }
+    } else if (c.phase === 'fly') {
+      B.x += B.vx * dt; B.z += B.vz * dt; B.y += B.vy * dt; B.vy -= G * dt;
+      if (B.vy < 0 && B.y <= 1.15 && !c.checked) {
+        c.checked = true;
+        const r = c.recv, rp = r && posOf(r);
+        if (r && Math.hypot(rp.x - B.x, rp.z - B.z) < (r.nathan ? 1.15 : 0.95)) hit(c, r, false);
+      }
+      if (B.y <= 0.15) { // landed
+        const side = local(c.g, B.x, B.z).a < 0 ? 0 : 1, out = Math.abs(local(c.g, B.x, B.z).a) > 4.4 || Math.abs(local(c.g, B.x, B.z).b) > 2.6;
+        const scorer = out ? 1 - c.last : 1 - side;
+        point(c, scorer);
+      }
+    } else if (c.phase === 'dead') {
+      B.y = Math.max(0.15, B.y); c.wait -= dt;
+      if (c.wait <= 0) { c.phase = 'serve'; c.wait = 1.0; c.server = rand(sides[c.serveSide]); }
+    }
+    // players: receiver runs to the landing spot, everyone else drifts home
+    for (const p of c.players) {
+      if (p.nathan) continue;
+      const ch = p.b.it.character, gp = ch.group.position;
+      let tx = p.home.x, tz = p.home.z, sp = 1.6;
+      if (c.phase === 'fly' && c.recv === p && !c.checked) { tx = c.land.x + (p.off?.x || 0); tz = c.land.z + (p.off?.z || 0); sp = 3.8; }
+      const dx = tx - gp.x, dz = tz - gp.z, d = Math.hypot(dx, dz);
+      vel.set(0, 0, 0);
+      if (d > 0.08) { const s = Math.min(sp * dt, d); gp.x += (dx / d) * s; gp.z += (dz / d) * s; vel.set(dx / d, 0, dz / d).multiplyScalar(sp); }
+      const look = c.phase === 'fly' || c.phase === 'serve' ? Math.atan2(B.x - gp.x, B.z - gp.z) : (cface(c.g, p.side) * Math.PI) / 180;
+      ch.heading += Math.atan2(Math.sin(look - ch.heading), Math.cos(look - ch.heading)) * Math.min(1, dt * 8);
+      ch.pose = null; gp.y = ctx.heightAt(gp.x, gp.z);
+      ch.update(dt, vel, t);
+      p.b.it.x = gp.x; p.b.it.z = gp.z;
+      p.b.it.beacon.group.position.set(gp.x, gp.y + 0.04, gp.z); p.b.it.hit.position.set(gp.x, 1.3, gp.z);
+    }
+    if (showMe && ball) {
+      ball.visible = shadow.visible = true;
+      ball.position.set(B.x, B.y + ctx.heightAt(B.x, B.z), B.z); ball.rotation.x += dt * 6; ball.rotation.z += dt * 4;
+      shadow.position.set(B.x, ctx.heightAt(B.x, B.z) + 0.03, B.z);
+      ring.visible = mine && c.phase === 'fly' && c.recv?.nathan && !c.checked;
+      if (ring.visible) { ring.position.set(c.land.x, ctx.heightAt(c.land.x, c.land.z) + 0.04, c.land.z); ring.scale.setScalar(0.9 + Math.sin(t * 10) * 0.1); }
+    }
+    if (mine) {
+      drawHud(c);
+      if (dist(P(), COURT[c.g].c) > 10) { ctx.toast('You left the court.'); endMatch(); }
+    }
+  }
+  function hideBall() { if (ball) ball.visible = shadow.visible = ring.visible = false; }
+  function hit(c, who, spike) {
+    const B = c.ball, wp = posOf(who), side = who.side;
+    (who.nathan ? player : who.b.it.character).play(spike ? 'spike' : 'bump');
+    if (who.nathan && spike) player.jump?.();
+    ctx.sfx.rep?.();
+    B.x = wp.x; B.z = wp.z; B.y = spike ? 2.3 : 1.15;
+    const other = 1 - side, sgn = other ? 1 : -1;
+    const land = cpt(c.g, sgn * (1.0 + Math.random() * 2.8), (Math.random() - 0.5) * 3.6);
+    const T = spike ? 0.8 : 1.3 + Math.random() * 0.35;
+    B.vx = (land.x - B.x) / T; B.vz = (land.z - B.z) / T; B.vy = (1.15 - B.y + 0.5 * G * T * T) / T;
+    c.land = land; c.last = side; c.checked = false; c.phase = 'fly';
+    // whoever on the other side is closest to where it's coming down goes for it
+    let best = null, bd = Infinity;
+    for (const p of c.players) if (p.side === other) { const pp = posOf(p), d = Math.hypot(pp.x - land.x, pp.z - land.z); if (d < bd) { bd = d; best = p; } }
+    c.recv = best;
+    if (best && !best.nathan) { const miss = Math.random() < (spike ? 0.5 : c.match ? 0.22 : 0.16), a = Math.random() * Math.PI * 2; best.off = miss ? V(Math.cos(a) * 1.7, Math.sin(a) * 1.7) : null; }   // sometimes they misread it
+    if (!who.nathan && Math.random() < 0.15) bubble(who.b.it, rand(ACTIVITIES[c.g].volley.lines), 1.6);
+  }
+  function point(c, scorer) {
+    c.phase = 'dead'; c.wait = 1.6; c.serveSide = scorer;
+    if (c.match) {
+      c.score[scorer]++;
+      const won = c.score[scorer] >= WIN;
+      const fans = c.players.filter((p) => p.side === scorer && !p.nathan);
+      if (fans[0]) bubble(fans[0].b.it, won ? 'GAME!' : rand(['Point!', 'Yes!', 'Too easy!']), 1.8);
+      fans.forEach((p) => p.b.it.character.play('wave'));
+      if (scorer === 0) player.play('flex');
+      if (won) {
+        ctx.toast(scorer === 0 ? `Your team wins ${c.score[0]}–${c.score[1]}!` : `${teamName(c, 1)} wins ${c.score[1]}–${c.score[0]}.`);
+        setTimeout(() => endMatch(), 1800); c.phase = 'over';
+      }
+    }
+  }
+  function startMatch(g) {
+    if (state.volley) return;
+    const c = courts[g]; if (!c) return;
+    let crew = brains.filter((b) => b.group === g && b.id !== 'harris' && !b.riding).slice(0, 5);
+    if (crew.length < 2) return;
+    // Anu and Shabesh always end up on opposite teams
+    const teamA = [], teamB = [];
+    for (const b of crew) {
+      if (b.id === 'tahiti_cf1') teamA.push(b); else if (b.id === 'tahiti_cf2') teamB.push(b);
+    }
+    for (const b of crew) if (!teamA.includes(b) && !teamB.includes(b)) (teamA.length + 1 <= teamB.length ? teamA : teamB).push(b);
+    const homes = (n, s) => { const sg = s ? 1 : -1, rows = [[2.8, -1.3], [2.8, 1.3], [1.4, 0], [3.6, 0]]; return Array.from({ length: n }, (_, i) => cpt(g, sg * rows[i % 4][0], rows[i % 4][1])); };
+    const hA = homes(teamA.length + 1, 0), hB = homes(teamB.length, 1);
+    c.players = [{ nathan: true, side: 0, home: hA[0] }, ...teamA.map((b, i) => ({ b, side: 0, home: hA[i + 1] })), ...teamB.map((b, i) => ({ b, side: 1, home: hB[i] }))];
+    for (const p of c.players) if (p.b) { release(p.b); p.b.forced = true; p.b.mode = 'vb'; p.b.vball = true; p.skill = 1; }
+    state.joined = null; state.path = [];
+    const h = hA[0]; P().set(h.x, ctx.heightAt(h.x, h.z), h.z); player.heading = (cface(g, 0) * Math.PI) / 180;
+    c.match = true; c.score = [0, 0]; c.phase = 'serve'; c.serveSide = 0; c.server = c.players[0]; c.wait = 2.2;
+    state.volley = c;
+    ctx.toast(`Beach volleyball! Stand under the ball to bump it, Space to spike. First to ${WIN}.`);
+  }
+  function endMatch(silent) {
+    const c = state.volley; if (!c) return;
+    for (const p of c.players) if (p.b) { p.b.forced = false; p.b.vball = false; p.b.mode = 'idle'; release(p.b); }
+    c.match = false; c.players = []; c.phase = 'idle'; state.volley = null;
+    hideBall(); hud?.classList.add('hidden');
+    if (!silent) player.pose = null;
+  }
+  function spikeTry() {
+    const c = state.volley; if (!c || c.phase !== 'fly') return true;
+    const me = c.players.find((p) => p.nathan), B = c.ball, p = P();
+    if (c.last !== me.side && local(c.g, B.x, B.z).a < 0.3 && Math.hypot(B.x - p.x, B.z - p.z) < 1.6 && B.y < 3.0 && B.y > 0.6) { c.checked = true; hit(c, me, true); }
+    else player.jump?.();
+    return true;
+  }
+  function drawHud(c) {
+    if (!hud) { hud = document.createElement('div'); hud.className = 'volley-hud'; document.body.append(hud); }
+    hud.classList.remove('hidden');
+    const txt = `<b>${esc(teamName(c, 0))}</b><span>${c.score[0]} : ${c.score[1]}</span><b>${esc(teamName(c, 1))}</b><small>Get under the ball · Space to spike · walk away to quit</small>`;
+    if (hud.dataset.t !== txt) { hud.innerHTML = txt; hud.dataset.t = txt; }
+  }
+  const esc = (s) => String(s).replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
   return api;
 }

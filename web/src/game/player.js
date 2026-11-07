@@ -98,7 +98,11 @@ const ACTIONS = {
   wave: { dur: 1.4 },
   nod: { dur: 0.8 },
   hug: { dur: 1.3 },
+  bump: { dur: 0.45 },
+  spike: { dur: 0.5 },
   tap: { dur: 0.7 },
+  glasses: { dur: 0.9 },  // push the glasses up the nose
+  cheer: { dur: 0.8 },    // little fist-pump of confirmation
 };
 
 export class Character {
@@ -520,9 +524,20 @@ export class Character {
       mix('sz1', 2.5); mix('sx1', 0); mix('el1', -0.4 + Math.sin(this.actionT * 12) * 0.45);
     } else if (this.action === 'nod') {
       mix('headX', Math.sin(this.actionT * 14) * 0.18);
+    } else if (this.action === 'bump') {
+      for (let i = 0; i < 2; i++) { mix(`sx${i}`, -1.15); mix(`sz${i}`, this.arms[i].side * 0.3); mix(`el${i}`, 0); }
+      mix('kn0', 0.5); mix('kn1', 0.5); mix('th0', -0.4); mix('th1', -0.4); mix('spineX', 0.2);
+    } else if (this.action === 'spike') {
+      const u = Math.min(1, this.actionT / 0.5);
+      mix('sx1', -3.0 + u * 2.6); mix('el1', -0.2); mix('sx0', -1.4); mix('el0', -0.6); mix('spineX', -0.15 + u * 0.35);
     } else if (this.action === 'hug') {
       for (let i = 0; i < 2; i++) { mix(`sx${i}`, -1.35); mix(`sz${i}`, -this.arms[i].side * 0.55); mix(`el${i}`, -0.9); }
       mix('spineX', 0.12);
+    } else if (this.action === 'glasses') {
+      mix('sx1', -2.55); mix('sz1', 0.35); mix('el1', -1.7 + Math.sin(this.actionT * 9) * 0.08); mix('headX', 0.08);
+    } else if (this.action === 'cheer') {
+      mix('sx1', -2.9); mix('sz1', 0.15); mix('el1', -0.5); mix('sx0', -0.6); mix('el0', -1.2);
+      mix('hipY', Math.abs(Math.sin(this.actionT * 7)) * 0.06);
     } else if (this.action === 'tap') {
       mix('sx1', -1.6); mix('el1', -0.3); mix('sz1', -0.3);
     }

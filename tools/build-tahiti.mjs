@@ -68,6 +68,16 @@ walkRect(-29, -4, -19, -3); walkRect(-30, -24, -29, -3);
 walkRect(20, 6, 34, 7);
 // neutral: from the runway down to the south beach
 walkRect(1, 19, 2, 34);
+// neutral fountain plaza north of the junction
+walkRect(-1, -18, 0, -4); disc(0.5, -22, 4.2, T.plaza);
+// Vanderlinde: little walk to the banyan hangout
+walkRect(-34, -2, -31, -1);
+// Outlaws: half court for shooting hoops (concrete), path round the villa to it
+rect(14, -28, 22, -21, T.concrete); walkRect(10, -20, 11, -1); walkRect(10, -21, 17, -20);
+// grass dividers between the lands: a 2-tile strip of lighter lawn under hedges
+rect(-7, -38, -6, -8, T.lawn); rect(9, -36, 10, -22, T.lawn); rect(6, 20, 7, 30, T.lawn);
+// flowerbeds: Vanderlinde garden, fountain plaza ring
+rect(-22, -30, -20, -29, T.flowerbed); rect(-13, -30, -11, -29, T.flowerbed); rect(-17, -21, -15, -20, T.flowerbed);
 
 // ---- cleanup + borders ----
 const paved = new Set([T.path, T.plaza, T.concrete, T.terracotta]);
@@ -137,6 +147,34 @@ O('bench', -24.5, -17.2, { rot: 0 });
 labels.push(point('label', -29, -23, { text: 'VANDERLINDE BEACH', color: '#5a3a26', height: 3 }));
 labels.push(point('label', 38.5, 0, { text: 'OUTLAWS BEACH', color: '#2a2440', height: 3 }));
 labels.push(point('label', 2, 38, { text: 'SOUTH BEACH', color: '#c4402f', height: 3 }));
+// ---- land dividers: hedge rows on the lawn strips (gaps to walk through) ----
+const hedgeRow = (x, z0, z1, gapEvery = 4) => { for (let z = z0; z < z1; z += gapEvery + 1.5) O('hedge', x, z + gapEvery / 2, { w: 1, d: gapEvery }); };
+hedgeRow(-6, -37, -9); hedgeRow(10, -35, -23); hedgeRow(7, 20.5, 30);
+// ---- Vanderlinde garden (north of the hideout): blossoms, picnics, flowers ----
+O('picnic_blanket', -18.0, -25.0); O('picnic_blanket', -14.0, -25.6);
+for (const [x, z] of [[-24, -27], [-10, -27], [-21, -20], [-9, -21], [-24, -22], [-12, -33], [-18, -33]]) O('tree_blossom', x, z, { scale: 0.9 + Math.abs(x % 3) * 0.06 });
+O('flower_patch', -16, -29.5, { w: 3, d: 1 }); O('lamp', -16, -22.4);
+labels.push(point('label', -16, -28, { text: 'VANDERLINDE GARDEN', color: '#5a3a26', height: 2.6 }));
+// ---- Vanderlinde banyan hangout (west) ----
+O('banyan', -36.5, -1.5); O('bench', -36.5, 2.2, { rot: 180 }); O('lantern_post', -33.2, -3.2);
+for (const [x, z] of [[-38, -8], [-34, 6], [-39, 4], [-31, -9]]) O('tree_palm', x, z, { scale: 0.95 });
+// ---- neutral fountain plaza ----
+O('fountain', 0.5, -22); O('bench', -3.4, -22, { rot: 90 }); O('bench', 4.4, -22, { rot: -90 }); O('bench', 0.5, -26.2, { rot: 0 });
+for (const [x, z] of [[-4, -26.5], [5, -26.5], [-4, -17.5], [5, -17.5]]) O('tree_round', x, z, { scale: 0.9 });
+O('flower_patch', -2.6, -18.6, { w: 2, d: 1 }); O('flower_patch', 3.6, -18.6, { w: 2, d: 1 });
+O('lamp', -2.0, -14); O('lamp', 3.0, -9);
+// ---- Outlaws outdoors: half court, firepit lounge, hammocks, snack cart ----
+O('hoop', 18, -27.4, { rot: 0 });
+O('campfire', 28, -14); O('bench', 28, -17.0, { rot: 0 }); O('bench', 31.0, -14, { rot: -90 }); O('bench', 25.0, -14, { rot: 90 });
+O('hammock', 27, 14); O('hammock', 31, 17, { rot: 30 });
+for (const [x, z] of [[24.6, 14], [29.6, 11.6], [33.4, 18], [26, 19]]) O('tree_palm', x, z, { scale: 1 });
+O('food_cart', 15, 16, { rot: 0 }); O('bench', 13.2, 18.6, { rot: 180 }); O('bench', 16.8, 18.6, { rot: 180 });
+for (const [x, z] of [[24, -24], [30, -22], [14, -32], [26, -30], [32, -6], [28, -2], [16, 24], [22, 26], [12, 26]]) O(z < 0 ? 'tree_round' : 'tree_palm', x, z, { scale: 0.95 });
+O('flower_patch', 25.6, 5.0, { w: 2, d: 1 }); O('lantern_post', 25.4, -10.6); O('lantern_post', 22.6, -21);
+labels.push(point('label', 18, -24, { text: 'OUTLAWS COURT', color: '#2a2440', height: 3.2 }));
+// ---- neutral south-west and south-east: palm groves ----
+for (const [x, z] of [[-30, 22], [-24, 26], [-34, 16], [-18, 28], [-36, 24], [24, 22], [28, 26], [18, 30], [30, 20]]) O('tree_palm', x, z, { scale: 0.9 });
+for (const [x, z] of [[-28, 28], [20, 28]]) O('rock', x, z, { scale: 1 });
 // ---- centre: kept simple so the junction reads clearly ----
 O('bench', -0.6, -4.6, { rot: 0 }); O('bench', 3.8, -1.2, { rot: -90 });
 for (const [x, z, sc] of [[-5.5, 2.4, 1], [6.2, -2.4, 0.9], [0.5, -7.2, 1.05], [-8.6, -0.4, 0.95], [8.4, 6.2, 1], [-4.2, 7.4, 0.9]]) O('tree_palm', x, z, { scale: sc });
@@ -173,7 +211,9 @@ O('beach_speaker', -27.6, -18.6); O('party_lights', -31.6, -25.6, { len: 10, rot
 O('beach_speaker', 36.6, -5.4); O('party_lights', 42.2, 0, { len: 10, rot: 90, variant: 'ol' }); A('party', 35.8, -3.8, { id: 'party-ol', gang: 'ol', title: 'Outlaws beach party' });
 // neutral south beach: race and volleyball
 O('race_flag', -4.0, 38.4); O('race_flag', 9.0, 38.0, { color: '#2bb3a3' }); A('race', -3.4, 35.6, { title: 'Beach race' });
-O('volley_net', -10.0, 37.0); A('volley', -11.6, 35.6, { title: 'Beach volleyball' });
+// each gang's beach volleyball court (net spans the court's width)
+O('volley_net', -19.9, -30.1, { len: 4.6, rot: 129.7 }); A('volley', -23.2, -26.1, { id: 'volley-vg', gang: 'vg', title: 'Vanderlinde volleyball' });
+O('volley_net', 37.0, -10.0, { len: 4.6, rot: -90 }); A('volley', 37.0, -15.0, { id: 'volley-ol', gang: 'ol', title: 'Outlaws volleyball' });
 // treasure hunt: clue board at the junction, five chests hidden around the island
 O('clue_board', -4.4, -1.6); A('clues', -4.4, -0.6, { title: 'Treasure hunt clues' });
 for (const [id, x, z] of [['palm', -8.6, 0.8], ['beach', 11.6, 35.4], ['stairs', 21.6, 9.6], ['rock', -24.2, 8.2], ['hideout', -21.4, -9.0]]) { O('treasure_chest', x, z); A('treasure_item', x + 0.6, z + 0.6, { id: 'treasure-' + id, treasure: id, title: 'Something shiny' }); }

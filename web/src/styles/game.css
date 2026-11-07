@@ -811,3 +811,8 @@ body.cine-on .tahiti-hints, body.cine-on .tahiti-bubbles { display: none; }
 .boot .boot-hero { width: min(94vw, 500px); }
 
 .clue-text { font: 400 12px/1.7 var(--font-pixel); color: #ffd08a; border-left: 3px solid #ffb347; padding: 4px 0 4px 12px; margin: 10px 0; }
+
+.volley-hud { position: fixed; left: 50%; top: 74px; transform: translateX(-50%); z-index: 6; display: grid; grid-template-columns: auto auto auto; gap: 4px 14px; align-items: center; padding: 8px 14px; background: #1b1429; color: #fff6e6; border: 2px solid #ffb347; border-radius: 4px; box-shadow: 3px 3px 0 rgba(10,6,20,.6); font: 400 10px var(--font-pixel); letter-spacing: .04em; pointer-events: none; }
+.volley-hud span { font-size: 22px; color: #ffb347; text-align: center; }
+.volley-hud small { grid-column: 1 / -1; text-align: center; color: #cfc4e6; font-size: 8px; }
+.volley-hud.hidden { display: none; }

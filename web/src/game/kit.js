@@ -2899,13 +2899,39 @@ export const KIT = {
     k.box(1.6, 0.06, 0.9, C.wood, 0, 0.72, 1.4); for (const x of [-0.7, 0.7]) k.box(0.08, 0.72, 0.8, C.wood, x, 0, 1.4);   // picnic table
     return { obj: g, colliders: [{ x: 0, z: 0, w: 1.2, d: 0.7 }, { x: 0, z: 1.4, w: 1.6, d: 0.9 }], animate: (t) => smoke.forEach((m, i) => { const u = (t * 0.5 + i / 3) % 1; m.position.set(Math.sin(t + i) * 0.1, 1.1 + u * 1.4, 0); m.scale.setScalar(0.6 + u); m.material.opacity = 0.4 * (1 - u); }) };
   },
-  volley_net() {
+  volley_net({ len = 2.4 } = {}) {
+    const g = new THREE.Group(), k = kit(g), h = len / 2;
+    for (const z of [-h, h]) k.box(0.08, 1.9, 0.08, C.white, 0, 0, z);
+    k.box(0.03, 0.5, len, 0xf4f4f0, 0, 1.35, 0, { shadow: false });
+    k.box(0.04, 0.06, len, 0xffffff, 0, 1.62, 0, { shadow: false });
+    for (let z = -h + 0.1; z <= h - 0.1; z += 0.22) k.box(0.02, 0.5, 0.02, 0x9aa3b2, 0, 1.35, z, { shadow: false });
+    // court lines in the sand
+    const L = 8.4;
+    for (const x of [-L / 2, L / 2]) k.box(0.06, 0.01, len + 0.4, 0xfff6e6, x, 0.01, 0, { shadow: false });
+    for (const z of [-(h + 0.2), h + 0.2]) k.box(L, 0.01, 0.06, 0xfff6e6, 0, 0.01, z, { shadow: false });
+    return { obj: g, colliders: [{ x: 0, z: -h, r: 0.12 }, { x: 0, z: h, r: 0.12 }] };
+  },
+  hoop() {
     const g = new THREE.Group(), k = kit(g);
-    for (const z of [-1.2, 1.2]) k.box(0.08, 1.9, 0.08, C.white, 0, 0, z);
-    k.box(0.03, 0.5, 2.4, 0xf4f4f0, 0, 1.35, 0, { shadow: false });
-    for (let z = -1.1; z <= 1.1; z += 0.22) k.box(0.02, 0.5, 0.02, 0x9aa3b2, 0, 1.35, z, { shadow: false });
-    k.mesh(new THREE.IcosahedronGeometry(0.14, 1), 0xffffff, 0.9, 0.14, 0.6);
-    return { obj: g, colliders: [{ x: 0, z: -1.2, r: 0.12 }, { x: 0, z: 1.2, r: 0.12 }] };
+    k.box(0.12, 2.9, 0.12, 0x2a2440, 0, 0, 0);
+    k.box(1.2, 0.8, 0.06, 0xffffff, 0, 2.6, 0.32); k.box(0.4, 0.3, 0.02, 0xc4302b, 0, 2.55, 0.36, { shadow: false });
+    k.box(0.5, 0.03, 0.03, 0xff6a3d, 0, 2.4, 0.62); k.box(0.03, 0.03, 0.4, 0xff6a3d, -0.24, 2.4, 0.46); k.box(0.03, 0.03, 0.4, 0xff6a3d, 0.24, 2.4, 0.46);
+    k.box(0.03, 0.03, 0.3, 0xff6a3d, 0, 2.38, 0.3);
+    k.mesh(new THREE.IcosahedronGeometry(0.13, 1), 0xe0702a, 0.9, 0.13, 0.9);
+    return { obj: g, colliders: [{ x: 0, z: 0, r: 0.18 }] };
+  },
+  hammock() {
+    const g = new THREE.Group(), k = kit(g);
+    for (const x of [-1.3, 1.3]) k.box(0.14, 1.4, 0.14, 0x6f4a30, x, 0, 0);
+    for (let i = 0; i < 7; i++) { const u = i / 6, x = -1.1 + u * 2.2, y = 0.95 - Math.sin(u * Math.PI) * 0.4; k.box(0.34, 0.05, 0.7, i % 2 ? 0xffd08a : 0xff8f6b, x, y, 0, { shadow: i === 3 }); }
+    return { obj: g, colliders: [{ x: -1.3, z: 0, r: 0.12 }, { x: 1.3, z: 0, r: 0.12 }] };
+  },
+  flower_patch({ w = 2, d = 1 } = {}) {
+    const g = new THREE.Group(), k = kit(g);
+    const cols = [C.accent, C.pink, C.cream, C.amber, 0xb48cff];
+    let i = 0;
+    for (let x = -w / 2 + 0.2; x < w / 2; x += 0.4) for (let z = -d / 2 + 0.2; z < d / 2; z += 0.4) { k.box(0.06, 0.26, 0.06, 0x3f8f3a, x, 0, z, { shadow: false }); k.box(0.16, 0.12, 0.16, cols[i++ % 5], x, 0.26, z, { shadow: false }); }
+    return { obj: g, colliders: [] };
   },
   party_lights({ len = 14 } = {}) {
     const g = new THREE.Group(), k = kit(g);
