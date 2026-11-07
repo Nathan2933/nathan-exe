@@ -92,10 +92,10 @@ function characterFile(c) {
           ${paras(p.about)}
         </details>
         </div>
-        <figure class="postcard" aria-label="Thiagarajar College of Engineering on Island 01">
+        <figure class="postcard" aria-label="Nathan's player character cheering on a little island">
           <span class="tape" aria-hidden="true"></span>
-          <div class="pc-img" data-shot="tce"></div>
-          <figcaption>TCE, Madurai</figcaption>
+          <div class="pc-img" data-hero></div>
+          <figcaption>Player 01 · Ready!</figcaption>
         </figure>
       </div>
     </section>`;
@@ -113,13 +113,15 @@ function journey(c) {
           <p class="ch-tag">${esc(e.tagline)}</p>
           <h3>${esc(e.institution)}</h3>
           <p class="ch-meta">${esc(e.place)} · ${esc(e.detail)}</p>
-          <details>
-            <summary>Chapter details</summary>
-            ${ch.title ? `<h4>${esc(ch.title)}${ch.subtitle ? ` — ${esc(ch.subtitle)}` : ''}</h4>` : ''}
+          <button type="button" class="link-btn ch-open" data-chapter="${i}">Chapter details ›</button>
+          <template class="ch-body">
+            <p class="m-id">${esc(e.tagline)} · ${esc(e.place)}</p>
+            <h2 id="md-title">${esc(e.institution)}</h2>
+            ${ch.title ? `<h3>${esc(ch.title)}${ch.subtitle ? ` — ${esc(ch.subtitle)}` : ''}</h3>` : ''}
             ${paras(ch.body)}
             ${chips(ch.highlights)}
             ${mems.length ? `<ul class="mem-list">${mems.map((m) => `<li><b>${esc(m.title)}</b>${m.year ? ` <span>${esc(m.year)}</span>` : ''}<p>${esc(m.text)}</p></li>`).join('')}</ul>` : ''}
-          </details>
+          </template>
         </div>
       </li>`;
   }).join('');
@@ -233,7 +235,7 @@ function trophies(c) {
   const order = { gold: 0, second: 1, third: 2, other: 3 };
   list.sort((a, b) => order[a.t] - order[b.t] || String(b.year).localeCompare(String(a.year)) || a.i - b.i);
   const present = Object.keys(order).filter((t) => list.some((a) => a.t === t));
-  return section('trophies', 'trophies.dat', 'Trophy Collection', `
+  return section('trophies', 'achievements', 'Trophy Collection', `
     <div class="filters" role="group" aria-label="Filter trophies">
       <button type="button" class="filter" aria-pressed="true" data-filter="all">All (${list.length})</button>
       ${present.map((t) => `<button type="button" class="filter" aria-pressed="false" data-filter="${t}">${TIER_LABEL[t]} (${list.filter((a) => a.t === t).length})</button>`).join('')}
@@ -300,6 +302,8 @@ async function loadShots() {
     const { renderBuildings } = await import('./buildingShots.js');
     const shots = await renderBuildings([...new Set(els.map((e) => e.dataset.shot))]);
     for (const e of els) if (shots[e.dataset.shot]) { e.style.backgroundImage = `url(${shots[e.dataset.shot]})`; e.classList.add('has-shot'); }
+    const heroEl = main.querySelector('[data-hero]');
+    if (heroEl) { const { renderHero } = await import('./buildingShots.js'); heroEl.style.backgroundImage = `url(${await renderHero()})`; heroEl.classList.add('has-shot'); }
   } catch (err) { console.warn('building previews unavailable', err); }
 }
 
@@ -316,7 +320,7 @@ function render(c) {
   const noticeEl = document.getElementById('notice');
   main.innerHTML = '';
   main.append(noticeEl);
-  main.insertAdjacentHTML('beforeend', characterFile(c) + `<div class="duo">${journey(c)}${missionList(sorted)}</div>` + trophyStrip(c) + discipline(c) + missions(c, sorted) + skillTree(c) + careerLog(c) + trophies(c) + terminal(c));
+  main.insertAdjacentHTML('beforeend', characterFile(c) + `<div class="duo">${journey(c)}${missionList(sorted)}</div>` + trophies(c) + discipline(c) + missions(c, sorted) + skillTree(c) + careerLog(c) + terminal(c));
   loadShots();
   main.removeAttribute('aria-busy');
 
@@ -344,6 +348,15 @@ dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(
 
 function wireMissions(c) {
   main.addEventListener('click', (e) => {
+    const chb = e.target.closest('[data-chapter]');
+    if (chb) {
+      document.getElementById('md-body').innerHTML = chb.parentElement.querySelector('.ch-body').innerHTML;
+      document.getElementById('md-file').textContent = 'journey.map';
+      lastOpener = chb;
+      if (dialog.showModal) dialog.showModal(); else dialog.setAttribute('open', '');
+      document.getElementById('md-close').focus();
+      return;
+    }
     const b = e.target.closest('[data-details]');
     if (b) openMission(c, b.dataset.details, b);
   });

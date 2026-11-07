@@ -37,3 +37,27 @@ export async function renderBuildings(ids, { w = 360, h = 220 } = {}) {
   r.dispose();
   return out;
 }
+
+/** Fun hero card: Nathan cheering, on a tiny palm island. */
+export async function renderHero({ w = 360, h = 220 } = {}) {
+  const { Player } = await import('./game/player.js');
+  const canvas = document.createElement('canvas');
+  const r = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: true, preserveDrawingBuffer: true });
+  r.setPixelRatio(1); r.setSize(w, h, false); r.outputColorSpace = THREE.SRGBColorSpace;
+  const scene = new THREE.Scene();
+  scene.add(new THREE.HemisphereLight(0xfff6e6, 0x4a7a9a, 1.6));
+  const sun = new THREE.DirectionalLight(0xffffff, 1.8); sun.position.set(-4, 10, 8); scene.add(sun);
+  const sea = new THREE.Mesh(new THREE.BoxGeometry(40, 0.2, 40), new THREE.MeshLambertMaterial({ color: 0x38c8d8 })); sea.position.y = -0.35; scene.add(sea);
+  const sand = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.9, 0.4, 10), new THREE.MeshLambertMaterial({ color: 0xffe9a8 })); sand.position.y = -0.2; scene.add(sand);
+  const palm = KIT.tree_palm({ scale: 1 }); palm.obj.position.set(-1.5, 0, -0.9); scene.add(palm.obj);
+  const hero = new Player();
+  hero.pose = 'dance1'; hero.heading = 0.5;
+  scene.add(hero.group);
+  for (let i = 0; i < 40; i++) hero.update(1 / 30, new THREE.Vector3(), 0.35 + i / 30);
+  const cam = new THREE.OrthographicCamera(-2.3 * (w / h), 2.3 * (w / h), 2.3, -2.3, 0.1, 100);
+  cam.position.set(6, 4, 10); cam.lookAt(-0.4, 1.3, 0);
+  r.render(scene, cam);
+  const url = canvas.toDataURL('image/png');
+  r.dispose();
+  return url;
+}
