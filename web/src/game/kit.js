@@ -2991,4 +2991,117 @@ export const KIT = {
     g.children.forEach((c) => { c.position.y += lift; });
     return { obj: g, colliders: [{ x: 0, z: 0, r: 0.25 }] };
   },
+  // ===== Vanderlinde hideout workstations =====
+  drafting_desk() {
+    // Jeswin's drafting table: tilted board with blueprints, pencil + ruler, a little model
+    const g = new THREE.Group(), k = kit(g);
+    for (const [x, z] of [[-0.5, -0.25], [0.5, -0.25], [-0.5, 0.25], [0.5, 0.25]]) k.box(0.06, 0.85, 0.06, 0x5a3a26, x, 0, z);
+    const board = new THREE.Group(); board.position.set(0, 0.9, 0); board.rotation.x = -0.35; g.add(board);
+    const bk = kit(board);
+    bk.box(1.2, 0.04, 0.7, 0xe9dcc0, 0, 0, 0);
+    bk.box(1.0, 0.01, 0.55, 0x2f6fc6, 0, 0.025, 0, { shadow: false });                       // blueprint
+    for (let i = 0; i < 5; i++) bk.box(0.8 - i * 0.1, 0.005, 0.01, 0xdfeaff, 0, 0.035, -0.2 + i * 0.1, { shadow: false });
+    bk.box(0.01, 0.005, 0.4, 0xdfeaff, -0.2, 0.035, 0, { shadow: false });
+    bk.box(0.5, 0.02, 0.04, 0xc8a050, 0.2, 0.05, 0.28);                                        // ruler
+    bk.box(0.02, 0.02, 0.22, 0xffd257, -0.38, 0.05, 0.18, { ry: 0.6 });                       // pencil
+    k.box(0.3, 0.22, 0.26, 0xf4efe4, 0.85, 0.85, -0.05); k.box(0.34, 0.06, 0.3, 0xc44a3a, 0.85, 1.07, -0.05);   // model house on a side shelf
+    k.box(0.4, 0.04, 0.4, 0x8a5428, 0.85, 0.8, -0.05); k.box(0.05, 0.8, 0.05, 0x5a3a26, 0.85, 0, -0.05);
+    return { obj: g, colliders: [{ x: 0.15, z: 0, w: 1.6, d: 0.7 }] };
+  },
+  stream_desk() {
+    // Arok's livestream setup: monitor with a LIVE overlay + scrolling chat, webcam,
+    // boom mic, ring light, keyboard, mouse, headphones on a stand, chair. Faces +x.
+    const g = new THREE.Group(), k = kit(g);
+    k.box(0.6, 0.72, 1.3, 0x2a2440, 0, 0, 0); k.box(0.64, 0.04, 1.34, 0x14101f, 0, 0.72, 0);
+    const cv = document.createElement('canvas'); cv.width = 128; cv.height = 72; const cx = cv.getContext('2d');
+    const tex = new THREE.CanvasTexture(cv); tex.magFilter = THREE.NearestFilter; tex.colorSpace = THREE.SRGBColorSpace;
+    const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.5), new THREE.MeshBasicMaterial({ map: tex }));
+    scr.position.set(-0.18, 1.08, 0); scr.rotation.y = Math.PI / 2; scr.userData.dynamic = true; g.add(scr);
+    k.box(0.04, 0.56, 0.96, 0x14101f, -0.21, 0.8, 0); k.box(0.06, 0.3, 0.06, 0x14101f, -0.18, 0.72, 0);
+    k.box(0.08, 0.06, 0.1, 0x14101f, -0.18, 1.36, 0); k.box(0.02, 0.03, 0.03, 0x4ad0ff, -0.13, 1.37, 0, { shadow: false });   // webcam
+    k.box(0.04, 0.5, 0.04, 0x3a3a46, 0.15, 0.74, 0.55); k.box(0.4, 0.04, 0.04, 0x3a3a46, 0.15, 1.22, 0.4, { ry: 0.6 }); k.box(0.08, 0.16, 0.08, 0x1e1b2e, 0.3, 1.12, 0.27);   // boom mic
+    k.box(0.04, 0.9, 0.04, 0x3a3a46, -0.15, 0.74, -0.58); k.cyl(0.14, 0.14, 0.03, 0xfff6e6, -0.12, 1.62, -0.58, 14, { rz: Math.PI / 2 });   // ring light
+    k.box(0.18, 0.02, 0.5, 0x1e1b2e, 0.05, 0.76, 0); k.box(0.1, 0.02, 0.07, 0x1e1b2e, 0.05, 0.76, 0.38);   // keyboard + mouse
+    k.box(0.04, 0.2, 0.04, 0x3a3a46, 0.15, 0.76, -0.38); k.box(0.16, 0.06, 0.18, 0xc4302b, 0.15, 0.94, -0.38);   // headphones
+    k.box(0.5, 0.45, 0.5, 0xc4302b, 0.75, 0, 0); k.box(0.5, 0.7, 0.1, 0x1e1b2e, 1.0, 0.45, 0);              // gaming chair
+    const CHAT = ['nathan_exe: gg', 'guru: W stream', 'prince: carry me', 'jeswin: lag?', 'shabeer: clip it!', 'viewer42: hi arok', 'harris: o7', 'anon: first'];
+    let last = -1;
+    const draw = (t) => {
+      const step = Math.floor(t * 1.2); if (step === last) return; last = step;
+      cx.fillStyle = '#10142a'; cx.fillRect(0, 0, 128, 72);
+      cx.fillStyle = '#2bb3a3'; cx.fillRect(4, 4, 80, 52);                                       // "game"
+      cx.fillStyle = '#ffd257'; cx.fillRect(10 + (step * 7) % 60, 36, 8, 8);
+      cx.fillStyle = '#1e1b2e'; cx.fillRect(4, 48, 80, 8);
+      cx.fillStyle = '#e0202a'; cx.fillRect(4, 4, 22, 9); cx.fillStyle = '#fff'; cx.font = 'bold 8px monospace'; cx.fillText('LIVE', 6, 11);
+      cx.fillStyle = '#9fe6f2'; cx.fillText(`${120 + (step * 3) % 40}`, 30, 11);
+      cx.font = '6px monospace';
+      for (let i = 0; i < 6; i++) { cx.fillStyle = i % 2 ? '#ffd257' : '#cfc3e6'; cx.fillText(CHAT[(step + i) % CHAT.length].slice(0, 13), 87, 10 + i * 10); }
+      tex.needsUpdate = true;
+    };
+    draw(0);
+    return { obj: g, colliders: [{ x: 0, z: 0, w: 0.6, d: 1.3 }], animate: (t) => draw(t) };
+  },
+  game_setup() {
+    // Prince's corner: small monitor on a stand with a game on screen + controller on the arm. Screen faces +z.
+    const g = new THREE.Group(), k = kit(g);
+    k.box(1.0, 0.55, 0.45, 0x5a3a26, 0, 0, 0);
+    const cv = document.createElement('canvas'); cv.width = 64; cv.height = 36; const cx = cv.getContext('2d');
+    const tex = new THREE.CanvasTexture(cv); tex.magFilter = THREE.NearestFilter; tex.colorSpace = THREE.SRGBColorSpace;
+    const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.45), new THREE.MeshBasicMaterial({ map: tex }));
+    scr.position.set(0, 0.95, 0.06); scr.userData.dynamic = true; g.add(scr);
+    k.box(0.86, 0.52, 0.06, 0x14101f, 0, 0.68, 0.0); k.box(0.3, 0.06, 0.25, 0x2a2440, 0, 0.62, 0.15);
+    let last = -1;
+    const draw = (t) => {
+      const step = Math.floor(t * 4); if (step === last) return; last = step;
+      cx.fillStyle = '#3a8ad6'; cx.fillRect(0, 0, 64, 36); cx.fillStyle = '#6fbf4a'; cx.fillRect(0, 26, 64, 10);
+      cx.fillStyle = '#c4302b'; cx.fillRect(8 + (step % 20) * 2, 18, 6, 8); cx.fillStyle = '#ffd257'; cx.fillRect(50 - (step % 16) * 2, 20, 6, 6);
+      cx.fillStyle = '#fff'; cx.font = '6px monospace'; cx.fillText(`P1 ${step % 9} - ${(step >> 3) % 9} P2`, 14, 7);
+      tex.needsUpdate = true;
+    };
+    draw(0);
+    k.box(0.5, 0.42, 0.5, 0x2f6fc6, 0, 0, 1.25); k.box(0.5, 0.6, 0.1, 0x1e1b2e, 0, 0.42, 1.48);                    // gaming chair
+    return { obj: g, colliders: [{ x: 0, z: 0, w: 1.0, d: 0.45 }], animate: (t) => draw(t) };
+  },
+  scooty() {
+    // A blue step-through scooter (Scooty Zest-like): bright blue panels, black seat,
+    // black tyres on silver wheels, mirrors, headlamp and tail lamp. Faces +z. Not ridable.
+    const g = new THREE.Group(), k = kit(g);
+    const blue = 0x1f6fe0;
+    for (const z of [-0.5, 0.55]) { k.cyl(0.24, 0.24, 0.12, 0x1e1b2e, 0, 0.24, z, 12, { rz: Math.PI / 2 }); k.cyl(0.13, 0.13, 0.13, 0xc6d2e0, 0, 0.24, z, 10, { rz: Math.PI / 2 }); }
+    k.box(0.36, 0.32, 0.62, blue, 0, 0.32, -0.38);                 // rear body
+    k.box(0.3, 0.06, 0.5, 0x1e1b2e, 0, 0.64, -0.36);               // seat
+    k.box(0.26, 0.08, 0.5, 0x14365f, 0, 0.2, 0.08);                // floorboard
+    k.box(0.32, 0.62, 0.18, blue, 0, 0.3, 0.42);                   // leg shield
+    k.box(0.06, 0.3, 0.06, 0xc6d2e0, 0, 0.84, 0.48);               // stem
+    k.box(0.6, 0.06, 0.08, blue, 0, 1.0, 0.46);                    // handlebar cover
+    k.box(0.14, 0.1, 0.06, 0xfff1c0, 0, 0.98, 0.52, { shadow: false });   // headlamp
+    for (const x of [-0.26, 0.26]) { k.box(0.02, 0.16, 0.02, 0x3a3a46, x, 1.04, 0.44); k.box(0.1, 0.06, 0.02, 0xc6d2e0, x, 1.2, 0.44); }   // mirrors
+    k.box(0.16, 0.06, 0.04, 0xe0202a, 0, 0.5, -0.7, { shadow: false });  // tail lamp
+    k.box(0.38, 0.06, 0.66, blue, 0, 0.52, 0.55);                  // front mudguard
+    return { obj: g, colliders: [{ x: 0, z: 0, w: 0.45, d: 1.35 }] };
+  },
+  photo_table() {
+    // Shabeer's memory corner: little table with a retro camera, a photo stack and a pinned board
+    const g = new THREE.Group(), k = kit(g);
+    k.box(0.8, 0.7, 0.5, 0x8a5428, 0, 0, 0);
+    k.box(0.26, 0.16, 0.14, 0x1e1b2e, -0.15, 0.7, 0); k.cyl(0.05, 0.05, 0.08, 0x7d8fa8, -0.15, 0.78, 0.09, 8, { rx: Math.PI / 2 });
+    k.box(0.06, 0.03, 0.04, 0xc4302b, -0.08, 0.86, 0, { shadow: false });
+    [0, 1, 2].forEach((i) => k.box(0.18, 0.01, 0.13, [0xfff6e6, 0x9fe6f2, 0xffd08a][i], 0.2, 0.71 + i * 0.012, 0.02 * i, { ry: i * 0.3, shadow: false }));
+    k.box(0.06, 1.4, 0.06, 0x5a3a26, 0.5, 0, -0.2); k.box(0.7, 0.5, 0.04, 0xd9b27a, 0.5, 1.15, -0.2);
+    [[0.32, 1.28], [0.62, 1.3], [0.4, 1.02], [0.7, 1.05]].forEach(([x, y], i) => k.box(0.18, 0.14, 0.01, [0xfff6e6, 0x9fe6f2, 0xffd08a, 0xb5e48c][i], x, y, -0.17, { shadow: false }));
+    return { obj: g, colliders: [{ x: 0.1, z: -0.05, w: 1.0, d: 0.6 }] };
+  },
+  food_table() {
+    const g = new THREE.Group(), k = kit(g);
+    k.box(1.6, 0.7, 0.7, 0xb07a4a, 0, 0, 0); k.box(1.66, 0.04, 0.76, 0xfff6e6, 0, 0.7, 0);
+    [[-0.55, 0xffd257], [-0.15, 0xc4302b], [0.25, 0x6fbf4a], [0.6, 0xff8fb1]].forEach(([x, c]) => k.cyl(0.13, 0.1, 0.08, c, x, 0.74, 0, 10));
+    for (const x of [-0.4, 0, 0.4]) k.box(0.07, 0.2, 0.07, 0x3fc0c0, x, 0.74, 0.22, { shadow: false });
+    return { obj: g, colliders: [{ x: 0, z: 0, w: 1.6, d: 0.7 }] };
+  },
+  beach_chair({ color = '#2f6fc6' } = {}) {
+    const g = new THREE.Group(), k = kit(g), c = parseInt(color.slice(1), 16);
+    for (const x of [-0.25, 0.25]) { k.box(0.04, 0.35, 0.04, 0xc6d2e0, x, 0, 0.2); k.box(0.04, 0.35, 0.04, 0xc6d2e0, x, 0, -0.2); }
+    k.box(0.54, 0.04, 0.5, c, 0, 0.35, 0); k.box(0.54, 0.5, 0.04, c, 0, 0.55, -0.27, { rx: -0.3 });
+    return { obj: g, colliders: [{ x: 0, z: 0, w: 0.55, d: 0.55 }] };
+  },
 };

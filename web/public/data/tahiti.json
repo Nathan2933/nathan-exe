@@ -12,7 +12,8 @@
       ],
       "topics": [
         "Who are you? :: A developer who always has something to build, fix, or figure out.",
-        "What's the plan today? :: Same as always. Hang out, talk, lose track of time."
+        "What's the plan today? :: Same as always. Hang out, talk, lose track of time.",
+        "Still coding out here? :: Scooty, laptop, fresh air. Best office on the island."
       ],
       "sameAs": "guru",
       "extras": ""
@@ -20,7 +21,7 @@
     {
       "id": "tahiti_sf2",
       "name": "Prince",
-      "role": "Vanderlinde Gang · The Developer",
+      "role": "Vanderlinde Gang · Developer & Gamer",
       "district": "tahiti",
       "scripted": true,
       "lines": [
@@ -28,7 +29,8 @@
       ],
       "topics": [
         "Who are you? :: One of the original crew. Code, conversations, and the usual chaos.",
-        "What's the plan today? :: Same as always. Hang out, talk, lose track of time."
+        "What's the plan today? :: Same as always. Hang out, talk, lose track of time.",
+        "What are you playing? :: Whatever Arok is losing at on stream."
       ],
       "species": "human",
       "skin": "tan",
@@ -58,7 +60,8 @@
       ],
       "topics": [
         "Who are you? :: The architect of the gang. While everyone else talks about ideas, he's thinking about how to build them.",
-        "What's the plan today? :: Same as always. Hang out, talk, lose track of time."
+        "What's the plan today? :: Same as always. Hang out, talk, lose track of time.",
+        "What are you designing? :: Something that won't collapse after one update."
       ],
       "species": "human",
       "skin": "fair",
@@ -80,7 +83,7 @@
     {
       "id": "tahiti_sf4",
       "name": "Arok",
-      "role": "Vanderlinde Gang · The Developer",
+      "role": "Vanderlinde Gang · Developer & Streamer",
       "district": "tahiti",
       "scripted": true,
       "lines": [
@@ -88,7 +91,8 @@
       ],
       "topics": [
         "Who are you? :: Another developer in the crew. A familiar face whenever the gang gets together.",
-        "What's the plan today? :: Same as always. Hang out, talk, lose track of time."
+        "What's the plan today? :: Same as always. Hang out, talk, lose track of time.",
+        "Are you live? :: Always. Say hi to chat."
       ],
       "species": "human",
       "skin": "brown",
@@ -276,6 +280,22 @@
       "height": 1.14,
       "color": "#7a2e3a",
       "extras": ""
+    },
+    {
+      "id": "tahiti_sf5",
+      "name": "Shabeer",
+      "role": "Vanderlinde Gang · The Memory Keeper",
+      "district": "tahiti",
+      "scripted": true,
+      "lines": [
+        "Hold still. Okay, now move."
+      ],
+      "topics": [
+        "Still taking photos? :: Someone has to remember what you guys did.",
+        "What's on the board? :: Every trip, every party. The gang's memory."
+      ],
+      "sameAs": "shabeer",
+      "extras": ""
     }
   ],
   "overrides": {
@@ -302,7 +322,8 @@
         "tahiti_sf1",
         "tahiti_sf2",
         "tahiti_sf3",
-        "tahiti_sf4"
+        "tahiti_sf4",
+        "tahiti_sf5"
       ],
       "lines": [
         {

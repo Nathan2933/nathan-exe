@@ -187,7 +187,7 @@ let renderer;
 try {
   renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
 } catch {
-  location.replace('portfolio.html?nowebgl=1');
+  location.replace('./?nowebgl=1');
   throw new Error('WebGL unavailable');
 }
 renderer.setPixelRatio(1);
@@ -290,7 +290,7 @@ async function init() {
     [state.content, map] = await Promise.all([loadContent(), loadTiledMap(`${BASE}maps/town.tmj`)]);
   } catch (err) {
     console.error(err);
-    location.replace('portfolio.html?error=content');
+    location.replace('./?error=content');
     return;
   }
   const overrides = await loadKitOverrides(BASE);
@@ -464,7 +464,7 @@ function openInteractable(it) {
       ${chapterHeader({ period: p.availability, title: p.name, subtitle: `${p.role || ''}${p.location ? ` · ${p.location}` : ''}` })}
       <p>${esc(p.summary)}</p>
       ${(p.about || []).map((t) => `<p>${esc(t)}</p>`).join('')}
-      <div class="transmit"><a class="btn" href="portfolio.html#about">Full profile →</a>${c.profile?.resumeUrl ? `<a class="btn" href="${esc(safeUrl(c.profile.resumeUrl))}" target="_blank" rel="noopener">Resume ↗</a>` : ''}</div>`;
+      <div class="transmit"><a class="btn" href="./#about">Full profile →</a>${c.profile?.resumeUrl ? `<a class="btn" href="${esc(safeUrl(c.profile.resumeUrl))}" target="_blank" rel="noopener">Resume ↗</a>` : ''}</div>`;
   } else {
     const ch = chapterFor(c, it.district) || { title: it.district, body: [] };
     bar = `${it.district}/chapter.txt`;
@@ -477,7 +477,7 @@ function openInteractable(it) {
     const edu = (c.education || []).find((e) => e.district === it.district);
     if (edu) html += educationExtras(edu);
     if (it.district === 'garage') {
-      html += `<div class="panel-projects">${c.projects.map(projectCard).join('')}</div><a class="btn" href="portfolio.html#projects">All projects →</a>`;
+      html += `<div class="panel-projects">${c.projects.map(projectCard).join('')}</div><a class="btn" href="./#projects">All projects →</a>`;
     }
     if (it.district === 'iron-yard') {
       const m = state.save.minigames;
@@ -992,27 +992,31 @@ async function switchLevel(name) {
 // ---------------- Flight cinematic ----------------
 // Keyframed jet paths per island (metres, relative to the parked jet's ground).
 const FLIGHT = {
+  // waypoints only (no per-waypoint stops): taxi loop onto the runway, roll, climb out
   island1: {
-    out: [[2.4, 0, 36.8], [-2, 0, 38.6], [-6.5, 0, 40.6], [-6.5, 0, 40.6, 0], [8, 0, 40.6], [24, 3.5, 41.5], [62, 15, 47]],
-    outT: [0, 0.8, 1.5, 2.0, 3.3, 4.3, 6.0],
-    in: [[-95, 16, 40.6], [-40, 7, 40.6], [-7, 0, 40.6], [5, 0, 40.6], [5, 0, 38.6], [2.4, 0, 36.8, 0]],
-    inT: [0, 2.2, 3.5, 4.7, 5.3, 6.0],
+    out: [[2.4, 0, 36.8], [-1.5, 0, 38.5], [-5.4, 0, 39.6], [-6.4, 0, 40.8], [-3.5, 0, 41.0], [4, 0, 40.7], [14, 0.4, 40.8], [26, 4, 41.6], [62, 15, 47]],
+    in: [[-95, 16, 40.6], [-40, 7, 40.6], [-12, 0.6, 40.6], [-4, 0, 40.6], [3.5, 0, 40.2], [4.6, 0, 38.8], [2.4, 0, 36.8]],
   },
   tahiti: {
-    out: [[-6, 0, 11.8], [-2.5, 0, 13.5], [-1.5, 0, 16.5], [-1.5, 0, 16.5, Math.PI], [-18, 0, 16.5], [-32, 4, 16.2], [-82, 15, 12]],
-    outT: [0, 0.7, 1.3, 1.8, 3.2, 4.2, 6.0],
-    in: [[-95, 16, 16.5], [-45, 7, 16.5], [-26, 0, 16.5], [-10, 0, 16.5], [-9, 0, 14.2], [-6, 0, 11.8, 0]],
-    inT: [0, 2.2, 3.5, 4.7, 5.3, 6.0],
+    out: [[-6, 0, 11.8], [-3.4, 0, 13.2], [-1.6, 0, 15.2], [-2.6, 0, 16.6], [-6, 0, 16.6], [-14, 0, 16.5], [-24, 0.4, 16.4], [-34, 4, 16.1], [-82, 15, 12]],
+    in: [[-95, 16, 16.5], [-45, 7, 16.5], [-26, 0.6, 16.5], [-14, 0, 16.5], [-9.5, 0, 15.6], [-7.4, 0, 13.6], [-6, 0, 11.8]],
   },
 };
+const FLIGHT_T = { out: 6.0, in: 6.0 };
+const flightCurves = new Map();
+function flightCurve(keys) {
+  if (!flightCurves.has(keys)) flightCurves.set(keys, new THREE.CatmullRomCurve3(keys.map(([x, y, z]) => new THREE.Vector3(x, y, z)), false, 'centripetal'));
+  return flightCurves.get(keys);
+}
 const ease = (t) => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2);
-function samplePath(keys, times, tt) {
-  const end = times[times.length - 1];
-  const t = Math.max(0, Math.min(end, tt));
-  let i = 0; while (i < times.length - 2 && t > times[i + 1]) i++;
-  const u = ease((t - times[i]) / Math.max(1e-6, times[i + 1] - times[i]));
-  const a = keys[i], b = keys[i + 1];
-  return { x: a[0] + (b[0] - a[0]) * u, y: a[1] + (b[1] - a[1]) * u, z: a[2] + (b[2] - a[2]) * u, rot: b[3], u, seg: i };
+// One continuous move along an arc-length spline. Departure accelerates the
+// whole way (taxi -> roll -> climb); arrival decelerates to a stop at the
+// stand. Speed never drops to zero mid-route, so there is no mid-air pause.
+function sampleFlight(keys, dur, tt, dir) {
+  const k = Math.max(0, Math.min(1, tt / dur));
+  const u = dir === 'out' ? 0.08 * k + 0.92 * k * k : 1 - (1 - k) * (1 - k) * 0.92 - (1 - k) * 0.08 * (1 - k);
+  const p = flightCurve(keys).getPointAt(Math.max(0, Math.min(1, u)));
+  return { x: p.x, y: p.y, z: p.z, u: k };
 }
 function poseJet(jet, s, prev) {
   const g = jet.group, base = jet.home.y;
@@ -1054,6 +1058,7 @@ async function startFlight(to) {
   const from = state.level;
   const jet = world.apis.private_jet;
   if (!jet) return;
+  try { if (to === 'tahiti') await loadTahitiData(); if (!mapCache[to]) mapCache[to] = await loadTiledMap(`${BASE}${LEVELS[to]}`); } catch { /* the swap will load it */ }
   if (!jet.home) { jet.home = jet.group.position.clone(); jet.homeRot = jet.group.rotation.y; }
   closePanel();
   state.minigame = 'flight';
@@ -1108,10 +1113,10 @@ function runCine(dt) {
   }
   if (c.phase === 'out') {
     // taxi, take-off and climb out over the ocean while the camera pulls back
-    const F = FLIGHT[c.from], end = F.outT[F.outT.length - 1];
-    const s = samplePath(F.out, F.outT, c.t);
+    const F = FLIGHT[c.from], end = FLIGHT_T.out;
+    const s = sampleFlight(F.out, end, c.t, 'out');
     poseJet(jet, s, c.prev); c.prev = s;
-    const climb = Math.max(0, Math.min(1, (c.t - F.outT[3]) / (end - F.outT[3])));
+    const climb = Math.max(0, Math.min(1, (c.t - end * 0.35) / (end * 0.65)));
     cineCamera(s.x, s.z, 1.15 - 0.85 * ease(climb));
     p.set(s.x, jet.home.y + s.y, s.z);
     if (c.t > end - 0.7) cineClouds(Math.min(1, (c.t - (end - 0.7)) / 0.6));
@@ -1120,12 +1125,12 @@ function runCine(dt) {
   }
   if (c.phase === 'in') {
     // wide view of the island, the approach, touchdown, then the camera closes in
-    const F = FLIGHT[c.to], end = F.inT[F.inT.length - 1];
+    const F = FLIGHT[c.to], end = FLIGHT_T.in;
     if (c.t < 0.7) cineClouds(1 - c.t / 0.7); else cineClouds(0);
-    const s = samplePath(F.in, F.inT, c.t);
+    const s = sampleFlight(F.in, end, c.t, 'in');
     poseJet(jet, s, c.prev); c.prev = s;
-    const land = Math.max(0, Math.min(1, (c.t - F.inT[1]) / (end - F.inT[1])));
-    const wide = 1 - Math.min(1, c.t / F.inT[2]);
+    const land = Math.max(0, Math.min(1, (c.t - end * 0.3) / (end * 0.7)));
+    const wide = 1 - Math.min(1, c.t / (end * 0.55));
     const cx = s.x * (1 - wide * 0.55), cz = s.z * (1 - wide * 0.55);
     cineCamera(cx, cz, 0.3 + 1.0 * ease(land));
     p.set(s.x, jet.home.y + s.y, s.z);
@@ -2306,6 +2311,7 @@ const tahiti = createTahiti({
   state, player, camera, heightAt, toast, sfx, dialogue, solidFree,
   get world() { return world; }, get nav() { return nav; },
   isNight: () => night > 0.5,
+  setView(v) { if (v) { state.camOverride = { x: v.x, z: v.z }; state.zoom = v.zoom; } else { state.camOverride = null; state.zoom = 1; } resize(); },
   persist,
   jetPoint() { const j = world.apis.private_jet; return j ? j.doorPoint() : { x: 0, z: 0 }; },
   hasMoto() { return world.interactables.some((i) => i.kind === 'vehicle' && i.vtype === 'moto'); },

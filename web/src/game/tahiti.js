@@ -34,10 +34,17 @@ const AVOID = { tahiti_cf1: 'tahiti_cf2', tahiti_cf2: 'tahiti_cf1' };
 // slot: [x, z, pose, faceDeg, opts]
 const ACTIVITIES = {
   vg: {
-    room: { w: 2, slots: [[-15.0, -12.4, 'look', 0], [-12.6, -11.6, 'phone', 180], [-17.2, -11.2, 'lean', 90], [-10.45, -14.6, 'sit', -90, { free: true }]], lines: ['Who moved my charger?', 'Same room, same chaos.', 'Five more minutes.'] },
-    campfire: { w: 3, slots: [[-26.1, -14.0, 'sing', 90, { free: true }], [-22.9, -14.0, 'sing', -90, { free: true }], [-24.5, -12.4, 'sing', 180, { free: true }], [-24.5, -15.6, 'sing', 0]], lines: ['♪ la la la ♪', '♪ one more verse ♪', 'Okay, okay, story time.', 'And then the bike just stopped. In the middle of the road.'] },
-    courtyard: { w: 2, slots: [[-15.0, -2.6, 'dance1', 20], [-12.6, -2.2, 'dance2', 0], [-10.6, -3.0, 'dance3', -20]], lines: ['Woo!', 'Watch this move.', 'That was NOT a dance.'] },
-    eat: { w: 2, slots: [[-16.2, -1.2, 'eat', 180, { free: true }], [-16.9, -2.7, 'eat', 90], [-15.3, -2.9, 'eat', -90]], lines: ['Mmm.', 'Who made this?', 'Pass the chips.'] },
+    // personal routines: only the owner uses these, and they come back to them between roams
+    drafting: { w: 5, owner: 'tahiti_sf3', slots: [[-17.6, -14.1, 'type', 180]], lines: ["Something that won't collapse after one update.", 'Measure twice, build once.'] },
+    stream: { w: 5, owner: 'tahiti_sf4', slots: [[-18.45, -7.4, 'sittype', -90]], lines: ['Chat, say hi to Nathan!', "We're live!", 'Thanks for the follow!'] },
+    gaming: { w: 5, owner: 'tahiti_sf2', slots: [[-16.6, -8.65, 'sittype', 180]], lines: ['One more round.', 'Arok, did you see that?', 'Clutch!'] },
+    coding: { w: 5, owner: 'tahiti_sf1', slots: [[-23.5, -5.85, 'sittype', 180]], lines: ['Just one more commit.', "It works. Don't touch it."] },
+    memories: { w: 4, owner: 'tahiti_sf5', slots: [[-8.8, -2.4, 'film', 45]], lines: ['Hold still!', "That one's going on the board."] },
+    photowalk: { w: 2, owner: 'tahiti_sf5', slots: [[-12.4, -23.6, 'film', 150], [-26.8, -20.8, 'film', 225], [-14.6, -2.2, 'film', 200]], lines: ['Golden hour. Perfect.', 'Got it.'] },
+    rest: { w: 4, owner: 'harris', slots: [[-9.4, -12.6, 'sit', 0]], lines: ['Five minutes. Then I fly.', "Pilot's break."] },
+    campfire: { w: 3, slots: [[-18.0, -3.6, 'sing', 90, { free: true }], [-14.8, -3.6, 'sing', -90, { free: true }], [-16.4, -5.1, 'sing', 0]], lines: ['♪ la la la ♪', '♪ one more verse ♪', 'Okay, okay, story time.', 'And then the bike just stopped. In the middle of the road.'] },
+    courtyard: { w: 2, slots: [[-12.2, -1.8, 'dance1', 20], [-10.6, -2.4, 'dance2', 0], [-12.0, -3.8, 'dance3', -20]], lines: ['Woo!', 'Watch this move.', 'That was NOT a dance.'] },
+    eat: { w: 2, slots: [[-16.6, -1.75, 'eat', 0, { free: true }], [-15.8, -1.75, 'eat', 0, { free: true }], [-13.8, -1.9, 'eat', -120]], lines: ['Mmm.', 'Who made this?', 'Pass the chips.'] },
     picnic: { w: 2, slots: [[-12.4, -20.8, 'eat', 135, { free: true }], [-10.6, -20.8, 'sit', -135, { free: true }], [-9.9, -22.8, 'sit', 135, { free: true }], [-8.1, -23.0, 'phone', -120, { free: true }]], lines: ['Best spot on the island.', 'Who brought the snacks?', 'Look at those flowers.'] },
     banyan: { w: 2, slots: [[-35.2, -2.8, 'look', 135], [-38.4, -1.6, 'phone', 90], [-35.2, -0.2, 'lean', 45]], lines: ['This tree is older than all of us.', 'Shade. Finally.', 'Story time under the tree.'] },
     volley: { w: 3, slots: volleySlots('vg'), lines: ['Mine!', 'Set it up!', 'Nice one!', 'Out! That was out!'] },
@@ -66,6 +73,7 @@ const GANG_NAME = { vg: 'Vanderlinde Gang', ol: 'The Outlaws' };
 
 export function createTahiti(ctx) {
   const { state, player } = ctx;
+  let partyMood = { vg: 'party', ol: 'party' }, partyView = null, partyNathan = null;
   let brains = [], bubbles = [], layer = null, party = { vg: 0, ol: 0 }, partyLights = {}, passenger = null, buddy = null;
   let photo = null, race = null, hunt = null, lastHint = 0;
   const harris = () => brains.find((b) => b.id === 'harris');
@@ -103,13 +111,15 @@ export function createTahiti(ctx) {
     const order = [...Array(n).keys()].sort(() => Math.random() - 0.5);
     return order.find((i) => !taken(group, act, i, except));
   }
+  // routine loop: own corner -> roam somewhere -> back to own corner
   function pickActivity(b) {
-    const acts = Object.entries(ACTIVITIES[b.group]).filter(([k]) => k !== b.act);
+    const last = b.last, wasHome = !!(last && ACTIVITIES[b.group][last]?.owner === b.id);
+    const acts = Object.entries(ACTIVITIES[b.group]).filter(([k, a]) => k !== b.act && k !== last && (!a.owner || a.owner === b.id) && !(wasHome && a.owner === b.id));
     const night = ctx.isNight?.();
     const rival = AVOID[b.id] && brains.find((o) => o.id === AVOID[b.id]);
     const options = acts.filter(([k]) => freeSlot(b.group, k, b) !== undefined && !(rival && rival.act === k) && !(k === 'hoop' && state.hoop));
     if (!options.length) return null;
-    let total = 0; const w = options.map(([k, a]) => { const x = (a.w || 1) * (night && (k === 'deck' || k === 'campfire') ? 2 : 1) * (b.id === 'tahiti_cf1' && k === 'railing' ? 4 : 1); total += x; return x; });
+    let total = 0; const w = options.map(([k, a]) => { const x = (a.owner ? (wasHome ? 0 : 8) : 1) * (a.w || 1) * (night && (k === 'deck' || k === 'campfire') ? 2 : 1) * (b.id === 'tahiti_cf1' && k === 'railing' ? 4 : 1); total += x; return x; });
     let r = Math.random() * total;
     for (let i = 0; i < options.length; i++) { r -= w[i]; if (r <= 0) return options[i][0]; }
     return options[0][0];
@@ -142,6 +152,12 @@ export function createTahiti(ctx) {
     if (Math.random() < 0.35) bubble(b.it, rand(ACTIVITIES[b.group][b.act].lines), 3.2);
   }
   const rand = (a) => a[Math.floor(Math.random() * a.length)];
+  let flashM = null;
+  function camFlash(gp, h) {
+    if (!flashM) { flashM = new THREE.Mesh(new THREE.IcosahedronGeometry(0.16, 0), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95 })); flashM.userData.dynamic = true; ctx.world.root.add(flashM); }
+    flashM.position.set(gp.x + Math.sin(h) * 0.35, gp.y + 1.75, gp.z + Math.cos(h) * 0.35); flashM.visible = true;
+    clearTimeout(flashM.t); flashM.t = setTimeout(() => { flashM.visible = false; }, 90);
+  }
 
   function harrisTick(b, now) {
     // companion states: ARRIVING → WALKING_TO_VANDERLINDE → SOCIALIZING ⇄
@@ -150,8 +166,11 @@ export function createTahiti(ctx) {
     const atTerminal = dist(p, TERMINAL) < 9 || dist(p, ctx.jetPoint()) < 7;
     if (!atTerminal && dist(p, ctx.jetPoint()) > 12) b.leftTerminal = true;      // Nathan has gone exploring
     const nearTerminal = atTerminal && b.leftTerminal;
-    if (b.hstate === 'ARRIVING') { b.hstate = 'WALKING_TO_VANDERLINDE'; bubble(b.it, 'Nathan, the gang\'s waiting for us!', 3); goTo(b, VG_MEET.x, VG_MEET.z, () => { b.hstate = 'SOCIALIZING'; b.mode = 'idle'; }); return true; }
-    if ((b.hstate === 'SOCIALIZING' || b.hstate === 'WALKING_TO_VANDERLINDE') && nearTerminal) {
+    if (b.hstate === 'ARRIVING') { b.hstate = 'WALKING_TO_VANDERLINDE'; bubble(b.it, "Nathan, the gang's waiting. I need a nap.", 3); release(b); if (!assign(b, 'rest')) goTo(b, VG_MEET.x, VG_MEET.z, () => { b.mode = 'idle'; }); return false; }
+    if (b.hstate === 'WALKING_TO_VANDERLINDE' || b.hstate === 'SOCIALIZING' || b.hstate === 'RESTING') {
+      if (b.mode === 'stay' || b.mode === 'party') b.hstate = b.act === 'rest' ? 'RESTING' : 'SOCIALIZING';
+    }
+    if ((b.hstate === 'SOCIALIZING' || b.hstate === 'WALKING_TO_VANDERLINDE' || b.hstate === 'RESTING') && nearTerminal) {
       release(b); b.hstate = 'RETURNING_TO_TERMINAL';
       goTo(b, TERMINAL.x + 1.2, TERMINAL.z + 0.8, () => { b.hstate = 'WAITING_FOR_NATHAN'; b.mode = 'wait'; bubble(b.it, 'Ready for the next destination?', 3.4); }, true);
       return true;
@@ -202,9 +221,16 @@ export function createTahiti(ctx) {
       const dP = dist(P(), gp);
       if (dP < 3.2 && now - (b.invited || 0) > 30000 && !state.joined) { b.invited = now; bubble(it, b.group === 'ol' ? 'Oi Nathan! Come join us!' : "Nathan! Get over here!", 3); }
       if (hunt && huntTarget() && dP < 4 && now - lastHint > 20000 && Math.random() < dt * 0.3) { lastHint = now; bubble(it, huntTarget().hint, 3.6); }
-      if (now > b.until && !party[b.group]) { release(b); const a = pickActivity(b); if (a) assign(b, a); }
+      if (now > b.until && !party[b.group]) { b.last = b.act; release(b); const a = pickActivity(b); if (a) assign(b, a); }
     } else if (b.mode === 'idle' && !b.forced) {
       const a = pickActivity(b); if (a) assign(b, a);
+    }
+    // Shabeer (and anyone filming) snaps a photo now and then: a little white flash
+    if (b.mode === 'stay' && ch.pose === 'film' && Math.random() < dt * 0.25) camFlash(gp, ch.heading);
+    // parties: dancers now and then grab a snack or cheer, then dance again
+    if (b.mode === 'party') {
+      if (!b.snack && Math.random() < dt * 0.06) { b.snack = now + 2500 + Math.random() * 2000; b.dance = ch.pose; ch.pose = rand(['eat', 'cheer', 'eat']); }
+      else if (b.snack && now > b.snack) { b.snack = 0; ch.pose = b.dance || 'dance1'; }
     }
     // swimming: drop into the water and paddle
     const ground = ctx.heightAt(gp.x, gp.z);
@@ -248,7 +274,7 @@ export function createTahiti(ctx) {
       const saved = state.save.tahitiTreasure || [];
       for (const it of ctx.world.interactables) if (it.kind === 'activity' && it.act === 'treasure_item' && saved.includes(it.treasureId)) it.found = true;
     },
-    exit() { endMatch(true); endShootout(true); bb.mesh = null; hud?.remove(); hud = null; layer?.remove(); layer = null; bubbles = []; brains = []; party = { vg: 0, ol: 0 }; passenger = null; buddy = null; photo = null; race = null; state.joined = null; },
+    exit() { endMatch(true); endShootout(true); bb.mesh = null; hud?.remove(); hud = null; layer?.remove(); layer = null; bubbles = []; brains = []; party = { vg: 0, ol: 0 }; partyNathan = null; if (partyView) { ctx.setView(null); partyView = null; } passenger = null; buddy = null; photo = null; race = null; state.joined = null; },
     harrisState() { return harris()?.hstate; },
     inMatch: () => !!state.volley || !!state.hoop,
     _debug: () => ({ brains, ACTIVITIES, party, race, photo, passenger, courts, bb }),
@@ -260,7 +286,7 @@ export function createTahiti(ctx) {
       h.leftTerminal = true; h.forced = false; release(h); h.hstate = 'RETURNING_TO_TERMINAL';
       goTo(h, TERMINAL.x + 1.2, TERMINAL.z + 0.8, () => { h.hstate = 'WAITING_FOR_NATHAN'; h.mode = 'wait'; bubble(h.it, 'Ready for the next destination?', 3.4); }, true);
     },
-    musicOverride() { const p = P(); return ['vg', 'ol'].some((g) => party[g] > 0 && dist(p, BEACH[g].c) < 22) ? 'party' : null; },
+    musicOverride() { const p = P(); const g = ['vg', 'ol'].find((x) => party[x] > 0 && dist(p, BEACH[x].c) < 22); return g ? partyMood[g] : null; },
 
     update(dt, t) {
       const now = performance.now();
@@ -275,6 +301,7 @@ export function createTahiti(ctx) {
       if (passenger) updatePassenger(dt, t);
       if (photo) photoTick(dt);
       if (race) raceTick(dt);
+      partyNathanTick();
       for (const g of ['vg', 'ol']) courtTick(courts[g], dt, t, now);
       hoopTick(dt, t, now);
       for (const it of ctx.world.interactables) if (it.kind === 'activity' && it.act === 'treasure_item') {
@@ -397,7 +424,7 @@ export function createTahiti(ctx) {
     const gang = spot.gang;
     const crew = brains.filter((b) => b.group === gang && b.id !== 'harris' && !b.riding);
     if (!crew.length) return false;
-    for (const [id, at] of [['tahiti_cf1', 2], ['tahiti_cf2', 3]]) { const i = crew.findIndex((b) => b.id === id); if (i >= 0 && crew.length > at) { const [x] = crew.splice(i, 1); crew.splice(at, 0, x); } }
+    for (const [id, at] of [['tahiti_cf1', 0], ['tahiti_cf2', 3]]) { const i = crew.findIndex((b) => b.id === id); if (i >= 0 && crew.length > at) { const [x] = crew.splice(i, 1); crew.splice(at, 0, x); } }
     state.joined = null; state.path = [];
     const c = { x: spot.x, z: spot.z };
     P().set(c.x, ctx.heightAt(c.x, c.z), c.z);       // Nathan stands in the middle
@@ -439,18 +466,38 @@ export function createTahiti(ctx) {
   // ---------- events ----------
   function startParty(g = 'vg') {
     if (party[g] > 0) return;
-    party[g] = 45; ctx.toast(`${GANG_NAME[g]} beach party! F to dance.`);
+    ctx.choose('Pick the party mood', [{ label: 'Retro Dance', value: 'retro' }, { label: 'Chill Beach', value: 'chill' }, { label: 'Party Beats', value: 'party' }], (mood) => runParty(g, mood || 'party'));
+  }
+  function runParty(g, mood) {
+    if (party[g] > 0) return;
+    party[g] = 50; partyMood[g] = mood; ctx.toast(`${GANG_NAME[g]} beach party! Everyone's on the way.`);
     partyLights[g]?.setOn?.(true);
-    const crew = brains.filter((b) => b.group === g && b.id !== 'harris' && !b.riding && !b.vball && !(photo && photo.spots.some((s) => s.b === b)));
+    const crew = brains.filter((b) => b.group === g && !b.riding && !(state.volley && state.volley.players.some((p) => p.b === b)) && !(b.id === 'harris' && (b.hstate === 'WAITING_FOR_NATHAN' || b.hstate === 'RETURNING_TO_TERMINAL')) && !(photo && photo.spots.some((s) => s.b === b)));
     // Anu takes one end of the front row, Shabesh the other
     const order = [...crew].sort((a, b) => (a.id === 'tahiti_cf1' ? -1 : b.id === 'tahiti_cf1' ? 1 : 0));
     const sh = order.findIndex((b) => b.id === 'tahiti_cf2'); if (sh > 0 && order.length > 3) { const [x] = order.splice(sh, 1); order.splice(3, 0, x); }
     const face = (landFace(g) * Math.PI) / 180;
-    order.forEach((b, i) => { release(b); b.forced = true; const s = PARTY[g][i % PARTY[g].length]; goTo(b, s[0], s[1], () => { b.mode = 'party'; b.it.character.pose = POSE_DANCES[i % 3]; b.it.character.heading = face + (i % 3 - 1) * 0.4; }, true); });
+    order.forEach((b, i) => { release(b); b.vball = false; b.forced = true; b.snack = 0; const s = PARTY[g][i % PARTY[g].length]; goTo(b, s[0], s[1], () => { b.mode = 'party'; b.it.character.pose = POSE_DANCES[i % 3]; b.it.character.heading = face + (i % 3 - 1) * 0.4; }, true); });
+    // Nathan's own spot: front and centre with his school gang, next to Anu with the Outlaws
+    const ns = g === 'ol' ? on(g, -3, 0.8) : on(g, 0, 0.8);
+    partyNathan = { g, x: ns[0], z: ns[1], face };
+    if (dist(P(), BEACH[g].c) < 30) { const path = ctx.nav.findPath(P().x, P().z, ns[0], ns[1]); state.path = path.length ? path : [{ x: ns[0], z: ns[1] }]; }
+    // group camera: frame the whole party (front row + back row) while Nathan is there
+    if (dist(P(), BEACH[g].c) < 30) { const c = BEACH[g].c, n = BEACH[g].n; ctx.setView({ x: c.x - n.x * 0.6, z: c.z - n.z * 0.6, zoom: 0.78 }); partyView = g; }
+  }
+  // Nathan reaches his party spot -> he dances too; walking away hands the camera back
+  function partyNathanTick() {
+    if (!partyNathan) return;
+    const pn = partyNathan;
+    if (!party[pn.g]) { partyNathan = null; return; }
+    if (!state.joined && !state.path.length && dist(P(), pn) < 0.6) state.joined = { x: pn.x, z: pn.z, pose: rand(POSE_DANCES), face: pn.face };
+    if (partyView && dist(P(), BEACH[partyView].c) > 22) { ctx.setView(null); partyView = null; }
   }
   function endParty(g) {
     party[g] = 0; partyLights[g]?.setOn?.(false);
-    brains.forEach((b) => { if (b.group === g && b.id !== 'harris' && (b.mode === 'party' || (b.forced && !b.riding))) { b.forced = false; b.mode = 'idle'; release(b); } });
+    brains.forEach((b) => { if (b.group === g && (b.mode === 'party' || (b.forced && !b.riding && !b.vball))) { b.forced = false; b.mode = 'idle'; b.snack = 0; release(b); } });
+    if (partyView === g) { ctx.setView(null); partyView = null; }
+    if (partyNathan?.g === g) { partyNathan = null; if (state.joined) { state.joined = null; player.pose = null; } }
   }
   function opponent(group) {
     const c = brains.filter((b) => !b.riding && (!group || b.group === group)).sort((a, b) => dist(a.it.character.group.position, P()) - dist(b.it.character.group.position, P()));

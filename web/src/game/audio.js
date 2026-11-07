@@ -44,6 +44,8 @@ export const sfx = {
   memory: () => [784, 988, 1319].forEach((f, i) => tone(f, 0.16, { type: 'triangle', vol: 0.1, delay: i * 0.08 })),
   chapter: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.18, { vol: 0.08, delay: i * 0.09 })),
   rep: () => tone(220, 0.12, { type: 'sawtooth', vol: 0.08, slide: 220 }),
+  select: () => { tone(523, 0.07, { type: 'square', vol: 0.06 }); setTimeout(() => tone(784, 0.07, { type: 'square', vol: 0.06 }), 70); setTimeout(() => tone(1047, 0.14, { type: 'square', vol: 0.06 }), 140); },
+  bonk: () => { tone(320, 0.12, { type: 'square', vol: 0.07, slide: -200 }); setTimeout(() => tone(900, 0.06, { type: 'triangle', vol: 0.05 }), 90); },
   miss: () => tone(180, 0.18, { type: 'sawtooth', vol: 0.06, slide: -80 }),
   whistle: () => { tone(880, 0.35, { type: 'sine', vol: 0.09 }); tone(1175, 0.35, { type: 'sine', vol: 0.06 }); },
   echo: () => [880, 660, 494, 370].forEach((f, i) => tone(f, 0.22, { type: 'sine', vol: 0.09 - i * 0.015, delay: i * 0.45 })),
@@ -156,6 +158,21 @@ const THEMES = {
     const ch = [[64, 67, 71], [62, 65, 69], [60, 64, 67], [62, 66, 69]][Math.floor(i / 8)];
     if (i % 8 === 2 || i % 8 === 6) ch.forEach((m) => note(out, t, m, s * 1.4, { wave: 'square', vol: 0.02, lp: 2600 }));
     if (i % 2 === 0) note(out, t, ch[0] - 24 + (i % 4 === 2 ? 12 : 0), s * 1.6, { wave: 'triangle', vol: 0.08 });
+  } },
+  // party moods: retro dance (chiptune arps) and chill beach (slow, soft)
+  retro: { bpm: 128, steps: 32, amb: 0, play(i, t, out, s) {
+    if (i % 4 === 0) kick(out, t, 0.26, 110);
+    if (i % 8 === 4) hit(out, t, { freq: 2200, q: 1, dur: 0.08, vol: 0.06 });
+    const ch = [[60, 64, 67, 72], [57, 60, 64, 69], [53, 57, 60, 65], [55, 59, 62, 67]][Math.floor(i / 8)];
+    note(out, t, ch[i % 4] + 12, s * 0.9, { wave: 'square', vol: 0.025, lp: 3200 });
+    if (i % 4 === 0) note(out, t, ch[0] - 12, s * 3, { wave: 'triangle', vol: 0.08 });
+  } },
+  chill: { bpm: 84, steps: 32, amb: 0, play(i, t, out, s) {
+    if (i % 8 === 0) kick(out, t, 0.18, 90);
+    if (i % 8 === 4) hit(out, t, { freq: 6000, q: 1, dur: 0.05, vol: 0.03, type: 'highpass' });
+    const ch = [[62, 65, 69], [60, 64, 67], [58, 62, 65], [60, 64, 67]][Math.floor(i / 8)];
+    if (i % 8 === 0) ch.forEach((m) => note(out, t, m, s * 7, { wave: 'triangle', vol: 0.03, lp: 1800 }));
+    if (i % 4 === 2) note(out, t, ch[(i >> 2) % 3] + 12, s * 1.5, { wave: 'sine', vol: 0.04 });
   } },
   sv: { bpm: 110, steps: 32, amb: 0, play(i, t, out, s) {
     const lead = { 0: 76, 2: 79, 4: 81, 6: 79, 8: 76, 10: 74, 12: 72, 16: 74, 18: 76, 20: 79, 22: 76, 24: 74, 26: 72, 28: 71 };

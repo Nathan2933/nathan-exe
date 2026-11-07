@@ -65,11 +65,10 @@ walkRect(RING.x0, RING.z0, RING.x1 + 1, RING.z0 + 1);    // north side: garden, 
 walkRect(RING.x0, RING.z1, RING.x1 + 1, RING.z1 + 1);    // south side: airstrip apron, villa stairs
 walkRect(RING.x0, RING.z0, RING.x0 + 1, RING.z1 + 1);    // west side: Vanderlinde land
 walkRect(RING.x1, RING.z0, RING.x1 + 1, RING.z1 + 1);    // east side: behind the villa deck
-// centre: one plaza with four short spokes
-rect(-3, -3, 2, 2, T.plaza);
-walkRect(-1, RING.z0 + 2, 0, -4);                        // north spoke to the ring (fountain plaza)
-walkRect(-1, 3, 0, RING.z1 - 1);                         // south spoke to the ring (airstrip)
-walkRect(-7, -4, -4, -3);                                // west spoke: hideout courtyard
+// centre: a plain path crossroads (no paved square) with four spokes
+walkRect(-1, RING.z0 + 2, 0, RING.z1 - 1);               // north-south through the centre
+walkRect(-7, -4, -2, -3);                                // west spoke: hideout courtyard
+walkRect(1, -1, 2, 0);                                   // east spoke joins the crossroads
 walkRect(3, -1, 7, 0);                                   // east spoke: villa entrance
 // destinations
 rect(-18, -5, -8, -1, T.plaza); rect(-14, -6, -12, -5, T.plaza);   // hideout courtyard + doorstep
@@ -129,6 +128,14 @@ route('tahiti_sf2', [[-13.4, -14.6], [-15.6, -12.0]], { idles: 'look,phone', fac
 route('tahiti_sf3', [[-19.25, -13.0]], { idles: 'lean', faces: '90' });                         // against the west wall
 route('tahiti_sf4', [[-7.6, -7.35]], { idles: 'sit', faces: '180' });                           // at the small table
 interact.push(point('group', -13.0, -10.6, { id: 'vanderlinde', title: 'Join the gang' }));
+// personal corners: Jeswin's drafting desk, Arok's stream desk, Prince's game corner (inside),
+// Guru's laptop + blue scooter (outside, south-west), Shabeer's memory table (courtyard)
+O('drafting_desk', -17.6, -14.9);
+O('stream_desk', -19.2, -7.4);
+O('game_setup', -16.6, -9.9);
+O('laptop_table', -23.5, -6.6); O('scooty', -21.3, -6.9, { rot: 25 });
+O('photo_table', -8.0, -1.6);
+route('tahiti_sf5', [[-8.8, -2.4]], { idles: 'film', faces: '45' });
 interact.push(point('panel', 17.6, 8.4, { id: 'place-villa', panel: 'place', place: 'villa', title: "The Outlaws' Villa" }));
 
 // ---- The Outlaws' Villa (E) ----
@@ -146,8 +153,7 @@ route('tahiti_cf9', [[18.2, 2.0]], { idles: 'look', faces: '90' });
 interact.push(point('group', 21.4, -2.6, { id: 'outlaws', title: 'Join the Outlaws' }));
 
 // ---- Vanderlinde land: their own campfire beside the road ----
-O('campfire', -24.5, -14.0);
-O('bench', -24.5, -17.2, { rot: 0 });
+O('campfire', -16.4, -3.6);   // front courtyard, beside the bench (was round the west side)
 labels.push(point('label', -29, -23, { text: 'VANDERLINDE BEACH', color: '#5a3a26', height: 3 }));
 labels.push(point('label', 38.5, 0, { text: 'OUTLAWS BEACH', color: '#2a2440', height: 3 }));
 labels.push(point('label', 2, 38, { text: 'SOUTH BEACH', color: '#c4402f', height: 3 }));
@@ -180,7 +186,7 @@ labels.push(point('label', 18, -24, { text: 'OUTLAWS COURT', color: '#2a2440', h
 for (const [x, z] of [[-30, 22], [-24, 26], [-34, 16], [-18, 28], [-36, 24], [24, 22], [28, 26], [18, 30], [30, 20]]) O('tree_palm', x, z, { scale: 0.9 });
 for (const [x, z] of [[-28, 28], [20, 28]]) O('rock', x, z, { scale: 1 });
 // ---- centre: kept simple so the junction reads clearly ----
-O('bench', -0.6, -4.6, { rot: 0 }); O('bench', 3.8, -1.2, { rot: -90 });
+O('bench', -2.6, -5.6, { rot: 0 }); O('bench', 3.8, -1.2, { rot: -90 });
 for (const [x, z, sc] of [[-5.5, 2.4, 1], [6.2, -2.4, 0.9], [0.5, -7.2, 1.05], [-8.6, -0.4, 0.95], [8.4, 6.2, 1], [-4.2, 7.4, 0.9]]) O('tree_palm', x, z, { scale: sc });
 // path lights along each walk (warm bollards, outside the walking width)
 for (const [x, z] of [[-5.5, -4.9], [-3.2, 5.0], [-3.2, 8.0], [5.5, 1.4], [9.5, 1.4], [12.2, 5.0], [16.5, 8.4]]) O('path_light', x, z);
@@ -211,7 +217,7 @@ const A = (act, x, z, p = {}) => interact.push(point('activity', x, z, { id: p.i
 O('dj_booth', 21.5, -7.4, { lift: 1.4 }); A('dance', 21.5, -5.8, { title: 'Dance battle' });
 O('bbq_grill', 13.6, 9.6); A('food', 11.6, 9.0, { title: 'Eating contest' });
 // each gang's beach: speaker, string lights and its own party
-O('beach_speaker', -27.6, -18.6); O('party_lights', -31.6, -25.6, { len: 10, rot: -50, variant: 'vg' }); A('party', -28.8, -19.6, { id: 'party-vg', gang: 'vg', title: 'Vanderlinde beach party' });
+O('beach_speaker', -27.6, -18.6); O('food_table', -24.6, -21.0, { rot: 40 }); O('beach_chair', -23.2, -22.6, { rot: -50 }); O('beach_chair', -22.4, -23.7, { rot: -50, color: '#2bb3a3' }); O('beach_chair', -31.8, -19.6, { rot: 220, color: '#ffd257' }); O('party_lights', -31.6, -25.6, { len: 10, rot: -50, variant: 'vg' }); A('party', -28.8, -19.6, { id: 'party-vg', gang: 'vg', title: 'Vanderlinde beach party' });
 O('beach_speaker', 34.4, -2.0); O('party_lights', 42.2, 0, { len: 10, rot: 90, variant: 'ol' }); A('party', 35.8, -3.8, { id: 'party-ol', gang: 'ol', title: 'Outlaws beach party' });
 // neutral south beach: race and volleyball
 O('race_flag', -4.0, 38.4); O('race_flag', 9.0, 38.0, { color: '#2bb3a3' }); A('race', -3.4, 35.6, { title: 'Beach race' });
