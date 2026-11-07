@@ -10,7 +10,7 @@ import { NavGrid } from './nav.js';
 import { Player } from './player.js';
 import { drawPortrait, portraitURL } from './portrait.js';
 import { Dialogue } from './dialogue.js';
-import { runLift } from './minigame.js';
+import { runLift, runTempo } from './minigame.js';
 import { loadSave, writeSave, resetSave, addUnique, formatTime } from './save.js';
 import { loadContent, esc, safeUrl, chapterFor, projectCard, projectDetails, DISTRICTS, MAIN_DISTRICTS } from '../shared/content.js';
 
@@ -58,6 +58,30 @@ function bootHero() {
   try { r = new THREE.WebGLRenderer({ canvas: cv, antialias: false, alpha: true }); } catch { return noop; }
   r.setPixelRatio(1);
   const W = 300, H = 240; r.setSize(W, H, false);              // low-res, scaled up crisp by CSS
+  // Integer nearest-neighbour upscale: pick a whole-number scale for the slot the
+  // layout gives the canvas, render at (slot / scale) and size the element to exactly
+  // buffer x scale device pixels, so every art pixel is the same size and edge-sharp.
+  const PIX_W = 150;
+  const fitCanvas = () => {
+    const dpr = window.devicePixelRatio || 1;
+    const slot = Math.min(window.innerWidth * 0.94, 500) * dpr; // .boot #boot-hero width
+    if (!(slot > 0)) return;                                      // hidden / zero-size window
+    const k = Math.max(1, Math.round(slot / PIX_W));            // chunky: ~PIX_W art pixels across
+    const bw = Math.max(1, Math.round(slot / k)), bh = Math.round(bw * H / W);
+    r.setSize(bw, bh, false);
+    cv.style.width = `${(bw * k) / dpr}px`; cv.style.height = `${(bh * k) / dpr}px`;
+  };
+  // flex centring can land the canvas on a sub-pixel; nudge it onto the device grid
+  let snapX = 0, snapY = 0;
+  const snapCanvas = () => {
+    const dpr = window.devicePixelRatio || 1, b = cv.getBoundingClientRect();
+    const fx = b.left - snapX, fy = b.top - snapY;
+    const nx = Math.round(fx * dpr) / dpr - fx, ny = Math.round(fy * dpr) / dpr - fy;
+    if (Math.abs(nx - snapX) > 1e-3 || Math.abs(ny - snapY) > 1e-3) { snapX = nx; snapY = ny; cv.style.translate = `${nx}px ${ny}px`; }
+  };
+  const onResize = () => { fitCanvas(); snapCanvas(); };
+  onResize();
+  window.addEventListener('resize', onResize);
   r.outputColorSpace = THREE.SRGBColorSpace;
   const sc = new THREE.Scene();
   sc.add(new THREE.HemisphereLight(0xfff4e0, 0x5a3a8a, 1.6));
@@ -108,6 +132,7 @@ function bootHero() {
     }
     hero.update(dt, vel, now / 1000);
     r.render(sc, cam);
+    snapCanvas();
     raf = requestAnimationFrame(tick);
   };
   raf = requestAnimationFrame(tick);
@@ -116,7 +141,7 @@ function bootHero() {
     // jump the intro straight to the idle loop (input during the opening)
     skip() { if (T < 2.8) { T = 2.8; waved = true; hero.action = null; hero.heading = 0; hero.group.position.x = 0; $('#boot').classList.add('title-skip'); if (readyRes) { readyRes(); readyRes = null; } } },
     confirm() { this.skip(); hero.play('cheer'); if (!reducedMotion) dolly = 0; },
-    stop() { alive = false; cancelAnimationFrame(raf); r.dispose(); },
+    stop() { alive = false; cancelAnimationFrame(raf); window.removeEventListener('resize', onResize); r.dispose(); },
   };
 }
 let stopBootHero = () => {};
@@ -454,6 +479,14 @@ function openInteractable(it) {
     if (it.district === 'garage') {
       html += `<div class="panel-projects">${c.projects.map(projectCard).join('')}</div><a class="btn" href="portfolio.html#projects">All projects →</a>`;
     }
+    if (it.district === 'iron-yard') {
+      const m = state.save.minigames;
+      html += `<p class="eyebrow" style="margin-top:14px">Training floor</p>
+        <div class="transmit">
+          <button class="btn primary" data-gym="lift">Lift · progressive overload${m.includes('lift') ? ' ✓' : ''}</button>
+          <button class="btn" data-gym="tempo">Tempo · rep rhythm${m.includes('tempo') ? ' ✓' : ''}</button>
+        </div>`;
+    }
     if (it.district === 'signal-tower') {
       html += (c.skills || []).map((g) => `<p class="eyebrow" style="margin-top:14px">${esc(g.group)}</p><ul class="chips">${(g.items || []).map((s) => `<li>${esc(s)}</li>`).join('')}</ul>`).join('');
       if ((c.experience || []).length) html += `<p class="eyebrow" style="margin-top:18px">Experience</p><ul class="highlights">${c.experience.map((e) => `<li><b>${esc(e.role)}</b> · ${esc(e.org)} <span class="muted">${esc(e.period)}</span><br>${esc(e.summary)}</li>`).join('')}</ul>`;
@@ -470,6 +503,7 @@ function openInteractable(it) {
     }
   }
   showPanel(bar, html, it);
+  $('#panel-body').querySelectorAll('[data-gym]').forEach((b) => b.addEventListener('click', () => startMinigame({ ...it, game: b.dataset.gym })));
   const eduHere = it.kind === 'chapter' && (c.education || []).find((e) => e.district === it.district);
   if (eduHere && addUnique(state.save.stamps, eduHere.id)) {
     persist(); sfx.memory();
@@ -528,6 +562,7 @@ function talkTo(it) {
 }
 
 function startMinigame(it) {
+  if (it.game === 'tempo') return startTempo(it);
   if (it.game !== 'lift') return;
   closePanel();
   face(it);
@@ -542,6 +577,22 @@ function startMinigame(it) {
       player.setBuff(true);
       if (!skipped) toast('SET COMPLETE · +3 reps');
       if (mem) setTimeout(() => unlockMemory(mem.id), 900);
+    },
+    onClose: () => { state.minigame = null; },
+  });
+}
+
+function startTempo(it) {
+  closePanel();
+  face(it);
+  state.minigame = runTempo($('#minigame'), {
+    title: 'Tempo set',
+    intro: 'Eight reps, steady tempo, one pause rep. Strength is rhythm you can repeat.',
+    onDone: ({ skipped, hits }) => {
+      state.minigame = null;
+      player.play('flex');
+      if (addUnique(state.save.minigames, 'tempo')) persist();
+      if (!skipped) toast(`TEMPO SET · ${hits}/8 on beat`);
     },
     onClose: () => { state.minigame = null; },
   });
@@ -1196,7 +1247,7 @@ function runFinale(it) {
     markVisited(it);
     // slow cinematic pull-back over the whole island
     const from = { zoom: state.zoom, x: camTarget.x, z: camTarget.z };
-    const to = { zoom: 0.42, x: 0, z: 6 };
+    const to = { zoom: 0.3, x: 0, z: 4 };
     const t0 = performance.now(), dur = reducedMotion ? 1 : 3200;
     const tick = () => {
       const k = Math.min(1, (performance.now() - t0) / dur), e = easeOutCubic(k);
@@ -1691,7 +1742,10 @@ function update(dt, t) {
   const k = 1 - Math.exp(-dt * 5.5);
   camVel.subVectors(goal, camTarget).multiplyScalar(k);
   camTarget.add(camVel);
-  camera.position.copy(camTarget).addScaledVector(CAM_DIR, 60);
+  // pull the camera back when zoomed out so the near clip plane never eats the island
+  const camDist = 60 / Math.min(1, state.zoom);
+  camera.position.copy(camTarget).addScaledVector(CAM_DIR, camDist);
+  if (Math.abs(camera.far - (camDist + 240)) > 1) { camera.far = camDist + 240; camera.updateProjectionMatrix(); }
   camera.lookAt(camTarget);
   if (shakeT > 0) { shakeT -= dt; const a = Math.max(0, shakeT) * 0.5; camera.position.x += (Math.random() - 0.5) * a; camera.position.z += (Math.random() - 0.5) * a; }
   camera.updateMatrixWorld();
@@ -2237,7 +2291,7 @@ function updatePrompt() {
     activity: ['Tahiti', best.title],
     seat: ['Bench', state.seated ? 'Stand up' : 'Sit down'],
     vehicle: [{ horse: 'Horse', moto: 'Motorcycle' }[best.vtype] || 'Bicycle', state.mount ? 'Dismount' : { horse: 'Ride horse', moto: 'Ride motorcycle' }[best.vtype] || 'Ride bicycle'],
-    finale: ['Departures', state.save.finale ? 'Replay the ending' : 'End of Island 01'],
+    finale: ['Departures', state.save.finale ? 'See the whole island again' : 'End of Island 01'],
     chapter: ['Open chapter', chapterFor(c, best.district)?.title],
   }[best.kind] || ['Open', best.id];
   $('#prompt-kind').textContent = kind;

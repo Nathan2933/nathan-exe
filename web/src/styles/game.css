@@ -354,7 +354,9 @@ body.look-retro #world { image-rendering: pixelated; }
 .travel-train.reverse { transform: scaleX(-1); }
 
 /* ---------- Lighthouse finale ---------- */
-.finale { position: fixed; inset: 0; z-index: 7; display: grid; place-items: center; background: rgba(42, 36, 64, .35); padding: var(--gutter); animation: travelIn .6s ease-out; }
+.finale { position: fixed; inset: 0; z-index: 7; display: grid; place-items: center end; background: transparent; padding: var(--gutter); animation: travelIn .6s ease-out; pointer-events: none; }
+.finale .finale-card { pointer-events: auto; }
+@media (max-width: 760px) { .finale { place-items: end center; } .finale-card { max-height: 60vh; } }
 .finale-card { width: min(520px, 100%); max-height: 90vh; overflow: auto; }
 .finale-body { padding: 22px 24px 24px; text-align: center; display: grid; justify-items: center; gap: 4px; }
 .finale-body .mini-portrait { width: 72px; height: 72px; }
@@ -835,3 +837,11 @@ body.cine-on .tahiti-hints, body.cine-on .tahiti-bubbles { display: none; }
 .volley-hud .hoop-meter { grid-column: 1 / -1; position: relative; height: 14px; margin-top: 4px; background: #2a1f40; border: 2px solid #4a3d66; border-radius: 3px; }
 .volley-hud .hoop-meter i { position: absolute; left: 40%; width: 20%; top: 0; bottom: 0; background: #5fd38a; }
 .volley-hud .hoop-meter b { position: absolute; top: -4px; bottom: -4px; width: 4px; margin-left: -2px; background: #fff6e6; }
+
+/* Iron Yard tempo minigame */
+.mg-line { position: absolute; left: 12%; top: -2px; bottom: -2px; width: 4px; margin-left: -2px; background: var(--ink); z-index: 1; }
+.mg-plate { position: absolute; top: 5px; bottom: 5px; width: 12px; margin-left: -6px; background: #ff3b30; border: 2px solid var(--ink); }
+.mg-plate.hit { background: #009fa9; transform: scaleY(1.25); }
+.mg-plate.gone { opacity: .25; }
+.mg-reps i.bad { background: #3a2f4f; }
+body.game .mg-line { background: #fff6e6; }
