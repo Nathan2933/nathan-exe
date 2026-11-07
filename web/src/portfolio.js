@@ -92,11 +92,7 @@ function characterFile(c) {
           ${paras(p.about)}
         </details>
         </div>
-        <figure class="postcard" aria-label="Nathan's player character cheering on a little island">
-          <span class="tape" aria-hidden="true"></span>
-          <div class="pc-img" data-hero></div>
-          <figcaption>Player 01 · Ready!</figcaption>
-        </figure>
+        <img class="name-tag" src="assets/hello-name.png" alt="Hello, my name is Nathan Jerald" width="859" height="544">
       </div>
     </section>`;
 }
@@ -320,13 +316,12 @@ function render(c) {
   const noticeEl = document.getElementById('notice');
   main.innerHTML = '';
   main.append(noticeEl);
-  main.insertAdjacentHTML('beforeend', characterFile(c) + `<div class="duo">${journey(c)}${missionList(sorted)}</div>` + trophies(c) + discipline(c) + missions(c, sorted) + skillTree(c) + careerLog(c) + terminal(c));
+  main.insertAdjacentHTML('beforeend', characterFile(c) + `<div class="duo">${journey(c)}${missionList(sorted)}</div>` + discipline(c) + missions(c, sorted) + skillTree(c) + careerLog(c) + terminal(c));
   loadShots();
   main.removeAttribute('aria-busy');
 
   wireMissions(c);
   wireSkills(c);
-  wireTrophies();
   wireNavHighlight();
   if (location.hash) document.querySelector(location.hash)?.scrollIntoView();
 }
@@ -416,6 +411,9 @@ function wireNavHighlight() {
     });
   }, { rootMargin: '-40% 0px -55% 0px' });
   main.querySelectorAll('section[id]').forEach((s) => io.observe(s));
+  const mark = (id) => links.forEach((a) => { if (a.getAttribute('href') === `#${id}`) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current'); });
+  links.forEach((a) => a.addEventListener('click', () => setTimeout(() => mark(a.getAttribute('href').slice(1)), 700)));
+  addEventListener('scroll', () => { if (innerHeight + scrollY >= document.documentElement.scrollHeight - 4) mark(main.querySelector('section[id]:last-of-type')?.id || 'contact'); }, { passive: true });
 }
 
 // Mobile menu
