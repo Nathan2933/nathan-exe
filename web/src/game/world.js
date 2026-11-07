@@ -64,10 +64,7 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
   const sea = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), mat(0x2fb3c9));
   sea.rotation.x = -Math.PI / 2; sea.position.y = -1.1; sea.userData.dynamic = true;
   root.add(sea);
-  const foam = new THREE.Mesh(new THREE.RingGeometry(R + 1.2, R + 2.6, 96), new THREE.MeshBasicMaterial({ color: 0xe9fbff }));
-  foam.rotation.x = -Math.PI / 2; foam.position.y = -1.08; foam.userData.dynamic = true;
-  root.add(foam);
-  animated.push((t) => foam.scale.setScalar(1 + Math.sin(t * 0.8) * 0.005));
+  // (no foam ring: a perfect circle never matched the island's real outline)
 
   // ---------- ground tiles (greedy runs per row → few boxes) ----------
   const W = map.width, half = map.half;
