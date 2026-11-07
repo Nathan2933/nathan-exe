@@ -133,6 +133,10 @@ export class RetroRenderer {
   }
 
   setSize(cssW, cssH) {
+    // resetting the canvas size wipes it for a frame (a bright flash), so only do it when something changed
+    const key = `${cssW}x${cssH}:${this.mode.pixels}:${window.devicePixelRatio}`;
+    if (key === this._sizeKey) return;
+    this._sizeKey = key;
     this.size = [cssW, cssH];
     let w, h;
     if (this.mode.pixels === 'retro') {

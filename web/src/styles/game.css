@@ -354,9 +354,8 @@ body.look-retro #world { image-rendering: pixelated; }
 .travel-train.reverse { transform: scaleX(-1); }
 
 /* ---------- Lighthouse finale ---------- */
-.finale { position: fixed; inset: 0; z-index: 7; display: grid; place-items: center end; background: transparent; padding: var(--gutter); animation: travelIn .6s ease-out; pointer-events: none; }
+.finale { position: fixed; inset: 0; z-index: 7; display: grid; place-items: center; background: transparent; padding: var(--gutter); animation: travelIn .6s ease-out; pointer-events: none; }
 .finale .finale-card { pointer-events: auto; }
-@media (max-width: 760px) { .finale { place-items: end center; } .finale-card { max-height: 60vh; } }
 .finale-card { width: min(520px, 100%); max-height: 90vh; overflow: auto; }
 .finale-body { padding: 22px 24px 24px; text-align: center; display: grid; justify-items: center; gap: 4px; }
 .finale-body .mini-portrait { width: 72px; height: 72px; }
