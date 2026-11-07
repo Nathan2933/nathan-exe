@@ -398,12 +398,13 @@ function wireTrophies() {
   });
 }
 
+let lockUntil = 0;
 function wireNavHighlight() {
   const links = [...document.querySelectorAll('.side-nav a, .top-nav a')];
   if (!('IntersectionObserver' in window)) return;
   const io = new IntersectionObserver((entries) => {
     entries.forEach((en) => {
-      if (!en.isIntersecting) return;
+      if (!en.isIntersecting || performance.now() < lockUntil) return;
       links.forEach((a) => {
         if (a.getAttribute('href') === `#${en.target.id}`) a.setAttribute('aria-current', 'true');
         else a.removeAttribute('aria-current');
@@ -412,8 +413,9 @@ function wireNavHighlight() {
   }, { rootMargin: '-40% 0px -55% 0px' });
   main.querySelectorAll('section[id]').forEach((s) => io.observe(s));
   const mark = (id) => links.forEach((a) => { if (a.getAttribute('href') === `#${id}`) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current'); });
-  links.forEach((a) => a.addEventListener('click', () => setTimeout(() => mark(a.getAttribute('href').slice(1)), 700)));
-  addEventListener('scroll', () => { if (innerHeight + scrollY >= document.documentElement.scrollHeight - 4) mark(main.querySelector('section[id]:last-of-type')?.id || 'contact'); }, { passive: true });
+  // a click highlights instantly and holds while the page scrolls there
+  links.forEach((a) => a.addEventListener('click', () => { lockUntil = performance.now() + 1200; mark(a.getAttribute('href').slice(1)); }));
+  addEventListener('scroll', () => { if (performance.now() > lockUntil && innerHeight + scrollY >= document.documentElement.scrollHeight - 4) mark('contact'); }, { passive: true });
 }
 
 // Mobile menu
