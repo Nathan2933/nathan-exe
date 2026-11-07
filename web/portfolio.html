@@ -3,9 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#efe6d2" />
-    <title>Nathan — Portfolio</title>
-    <meta name="description" content="Nathan — software developer. Projects, skills, experience, resume and contact." />
+    <meta name="theme-color" content="#009FA9" />
+    <title>Nathan Jerald — Player Archive</title>
+    <meta name="description" content="Nathan Jerald — IT undergraduate and full-stack & cloud-native developer. Projects, skills, experience, achievements, resume and contact." />
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <meta property="og:type" content="website" />
     <meta property="og:image" content="uploads/og-image.png" />
@@ -19,20 +19,57 @@
     <link rel="stylesheet" href="/src/styles/portfolio.css" />
   </head>
   <body class="portfolio">
+    <a class="skip" href="#main">Skip to content</a>
     <header class="site-head">
-      <a class="logo-small" href="./"><span>N.</span>NATHAN<b>.EXE</b></a>
-      <nav aria-label="Sections">
-        <a href="#about">About</a><a href="#projects">Projects</a><a href="#skills">Skills</a><a href="#contact">Contact</a>
-        <a class="btn primary play" href="./">▶ Play</a>
+      <a class="logo-small" href="#top" aria-label="NATHAN.EXE, back to top"><span aria-hidden="true">N.</span>NATHAN<b>.EXE</b></a>
+      <nav class="top-nav" aria-label="Sections">
+        <a href="#about">About</a><a href="#projects">Projects</a><a href="#skills">Skills</a><a href="#experience">Experience</a><a href="#contact">Contact</a>
       </nav>
+      <a class="btn primary play" href="./index.html"><span aria-hidden="true">▶</span> Play</a>
     </header>
-    <div class="notice hidden" id="notice"></div>
-    <main id="main" aria-busy="true">
-      <p class="loading">Loading…</p>
-    </main>
+
+    <div class="shell" id="top">
+      <aside class="side" aria-label="Player card">
+        <div class="side-card">
+          <div class="side-id">
+            <img class="portrait" id="portrait" alt="Pixel portrait of Nathan" width="96" height="96" />
+            <div class="side-meta">
+              <p class="p-label">PLAYER 01</p>
+              <p class="p-name" id="side-name">NATHAN JERALD</p>
+            </div>
+            <button class="menu-btn" id="menu-btn" type="button" aria-expanded="false" aria-controls="side-nav">Menu</button>
+          </div>
+          <nav class="side-nav" id="side-nav" aria-label="Archive">
+            <a href="#about"><i aria-hidden="true"></i>Profile</a>
+            <a href="#journey"><i aria-hidden="true"></i>Journey</a>
+            <a href="#discipline"><i aria-hidden="true"></i>Discipline</a>
+            <a href="#projects"><i aria-hidden="true"></i>Missions</a>
+            <a href="#skills"><i aria-hidden="true"></i>Skills</a>
+            <a href="#experience"><i aria-hidden="true"></i>Career</a>
+            <a href="#trophies"><i aria-hidden="true"></i>Achievements</a>
+            <a href="#contact"><i aria-hidden="true"></i>Contact</a>
+          </nav>
+          <div class="side-actions">
+            <a class="btn primary" href="./index.html"><span aria-hidden="true">▶</span> Play</a>
+            <a class="btn" id="side-resume" href="/resume.pdf" target="_blank" rel="noopener">Resume ↗</a>
+          </div>
+        </div>
+      </aside>
+
+      <main id="main" aria-busy="true">
+        <div class="notice hidden" id="notice" role="status"></div>
+        <p class="loading">Loading archive…</p>
+      </main>
+    </div>
+
     <footer class="site-foot">
-      <span id="foot-name">NATHAN.EXE</span> · <a href="./">Play the interactive version</a>
+      <span id="foot-name">NATHAN.EXE</span> · <a href="./index.html">Play the interactive version</a>
     </footer>
+
+    <dialog class="mission-dialog" id="mission-dialog" aria-labelledby="md-title">
+      <div class="window-bar"><span class="title" id="md-file">mission.log</span><button class="md-close" id="md-close" type="button" aria-label="Close details">✕</button></div>
+      <div class="md-body" id="md-body"></div>
+    </dialog>
     <script type="module" src="/src/portfolio.js"></script>
   </body>
 </html>
