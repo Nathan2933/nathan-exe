@@ -703,14 +703,15 @@ export function createTahiti(ctx) {
   function startMatch(g) {
     if (state.volley) return;
     const c = courts[g]; if (!c) return;
-    let crew = brains.filter((b) => b.group === g && b.id !== 'harris' && !b.riding).slice(0, 5);
+    let crew = brains.filter((b) => b.group === g && b.id !== 'harris' && !b.riding).sort((a, b) => dist(a.it.character.group.position, COURT[g].c) - dist(b.it.character.group.position, COURT[g].c)).slice(0, 3);   // 2 v 2: Nathan + 1 against 2
     if (crew.length < 2) return;
     // Anu and Shabesh always end up on opposite teams
     const teamA = [], teamB = [];
     for (const b of crew) {
       if (b.id === 'tahiti_cf1') teamA.push(b); else if (b.id === 'tahiti_cf2') teamB.push(b);
     }
-    for (const b of crew) if (!teamA.includes(b) && !teamB.includes(b)) (teamA.length + 1 <= teamB.length ? teamA : teamB).push(b);
+    for (const b of crew) if (!teamA.includes(b) && !teamB.includes(b)) (teamA.length < 1 && teamA.length + 1 <= teamB.length ? teamA : teamB.length < 2 ? teamB : teamA).push(b);
+    while (teamA.length > 1) teamA.pop(); while (teamB.length > 2) teamB.pop();
     const homes = (n, s) => { const sg = s ? 1 : -1, rows = [[3.4, -1.9], [3.4, 1.9], [1.8, 0], [4.6, 0]]; return Array.from({ length: n }, (_, i) => cpt(g, sg * rows[i % 4][0], rows[i % 4][1])); };
     const hA = homes(teamA.length + 1, 0), hB = homes(teamB.length, 1);
     c.players = [{ nathan: true, side: 0, home: hA[0] }, ...teamA.map((b, i) => ({ b, side: 0, home: hA[i + 1] })), ...teamB.map((b, i) => ({ b, side: 1, home: hB[i] }))];
@@ -821,7 +822,7 @@ export function createTahiti(ctx) {
 
   function startShootout() {
     if (state.hoop || state.volley) return;
-    const crew = brains.filter((b) => b.group === 'ol' && !b.riding && !b.vball).sort((a, b) => dist(a.it.character.group.position, RIM) - dist(b.it.character.group.position, RIM)).slice(0, 3);
+    const crew = brains.filter((b) => b.group === 'ol' && !b.riding && !b.vball && dist(b.it.character.group.position, RIM) < 30).sort((a, b) => dist(a.it.character.group.position, RIM) - dist(b.it.character.group.position, RIM)).slice(0, 3);
     const players = [{ nathan: true, name: 'Nathan', score: 0 }, ...crew.map((b, i) => ({ b, name: def(b.id).name, score: 0, side: SIDELINE[i] }))];
     for (const p of players) if (p.b) { const b = p.b; release(b); b.forced = true; goTo(b, p.side.x, p.side.z, () => { b.mode = 'bb'; p.ready = true; faceRimB(b); }, true); }
     bb.q = []; bb.cur = null; bb.busy = false; bb.hold = null;
@@ -837,16 +838,16 @@ export function createTahiti(ctx) {
     bb.ring.visible = who.nathan && (s.phase === 'aim' || s.phase === 'walk');
     if (bb.ring.visible) { bb.ring.position.set(spot.x, ctx.heightAt(spot.x, spot.z) + 0.04, spot.z); bb.ring.scale.setScalar(1 + Math.sin(t * 8) * 0.08); }
     if (s.phase === 'gather') {
-      if (s.players.every((p) => p.nathan || p.ready) || s.t > 20) { s.players.forEach((p) => { p.ready = true; }); s.phase = 'next'; ctx.toast('Everyone\'s here. Nathan shoots first!'); }
+      if (s.players.every((p) => p.nathan || p.ready) || s.t > 6) { s.players.forEach((p) => { if (p.b && !p.ready) { const gp = p.b.it.character.group.position; gp.x = p.side.x; gp.z = p.side.z; p.b.path = []; p.b.mode = 'bb'; faceRimB(p.b); } p.ready = true; }); s.phase = 'next'; ctx.toast('Everyone\'s here. Nathan shoots first!'); }
     } else if (s.phase === 'next') {
       s.phase = 'walk'; s.t = 0;
       if (!who.nathan) { const b = who.b; goTo(b, spot.x, spot.z, () => { b.mode = 'bb'; s.phase = 'npcAim'; s.t = 0; faceRimB(b); b.it.character.pose = null; }, false); }
+      else state.path = [{ x: spot.x, z: spot.z }];
       passTo(who);
     } else if (s.phase === 'walk' && who.nathan) {
-      if (dist(P(), spot) < 0.7) { s.phase = 'aim'; s.t = 0; faceRim(who); }
+      if (dist(P(), spot) < 0.7 || (bb.hold === who && s.t > 2.5)) { s.phase = 'aim'; s.t = 0; faceRim(who); }
     } else if (s.phase === 'aim') {
       s.meter = (Math.sin(s.t * 3.4 - Math.PI / 2) + 1) / 2;
-      if (dist(P(), spot) > 0.9) s.phase = 'walk';
     } else if (s.phase === 'npcAim' && s.t > 1.0 && bb.hold === who) {
       s.phase = 'flight'; s.shooting = true;
       shoot(who, Math.random() < 0.5, (made) => afterShot(made));
