@@ -207,7 +207,6 @@ details > summary:hover { color: var(--turq); }
 .mission-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 18px; }
 .mission { border: 3px solid var(--navy); border-radius: 4px; background: #fff; display: flex; flex-direction: column; min-width: 0; transition: transform .12s, box-shadow .12s; box-shadow: 3px 3px 0 var(--navy); }
 .mission:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 var(--navy), 0 0 0 3px var(--cyan); }
-.mission.is-featured { box-shadow: 3px 3px 0 var(--navy), 0 0 0 3px var(--sun); }
 .mission.is-match { outline: 3px solid var(--sun); outline-offset: 3px; }
 .m-shot { aspect-ratio: 16 / 7; width: 100%; object-fit: cover; border-bottom: 3px solid var(--navy); }
 .m-ph { display: grid; place-items: center; background:
