@@ -53,31 +53,35 @@ for (let z = -HALF; z < HALF; z++) for (let x = -HALF; x < HALF; x++) {
 // airstrip (SW): runway west–east, apron in front of the terminal
 rect(-28, 15, -1, 18, T.concrete);
 rect(-21, 9, -2, 14, T.concrete);
-// ---- paths: straight 2-tile walks meeting at one square junction ----
+// ---- ROAD NETWORK: the one authoritative layout ----
+// Everything (terrain, minimap, big map, nav grid) is built from these tiles.
+// One rectangular ring road (reads as a diamond in the isometric view), one
+// central plaza, and short straight spurs. All roads are 2 tiles wide.
 const walkRect = (x0, z0, x1, z1) => rect(Math.min(x0, x1), Math.min(z0, z1), Math.max(x0, x1), Math.max(z0, z1), T.path);
-rect(-3, -3, 2, 2, T.plaza);                // central junction
-walkRect(-7, -4, -4, -3);                    // west: to the hideout courtyard
-walkRect(-2, 3, -1, 8);                      // south: to the airstrip apron
-walkRect(3, 2, 12, 3);                       // east: towards the villa
-walkRect(13, 2, 14, 7); walkRect(13, 6, 19, 7);   // round the villa to its stairs
-rect(-18, -5, -8, -1, T.plaza);              // hideout courtyard (light stone)
-rect(-14, -6, -12, -5, T.plaza);             //   doorstep
-disc(21, 8.8, 2.2, T.sand);                  // little beach below the villa stairs
-// gang roads: Vanderlinde west then north to their beach; Outlaws east to theirs
-walkRect(-29, -4, -19, -3); walkRect(-30, -24, -29, -3);
-walkRect(20, 6, 34, 7);
-// neutral: from the runway down to the south beach
-walkRect(1, 19, 2, 34);
-// neutral fountain plaza north of the junction
-walkRect(-1, -18, 0, -4); disc(0.5, -22, 4.2, T.plaza);
-// Vanderlinde: little walk to the banyan hangout
-walkRect(-34, -2, -31, -1);
-// Outlaws: half court for shooting hoops (concrete), path round the villa to it
-rect(14, -28, 22, -21, T.concrete); walkRect(10, -20, 11, -1); walkRect(10, -21, 17, -20);
-// grass dividers between the lands: a 2-tile strip of lighter lawn under hedges
+const RING = { x0: -29, x1: 24, z0: -19, z1: 7 };        // outer tile edges of the loop
+// (lawn strips under the land-divider hedges go down first; roads cut through them)
 rect(-7, -38, -6, -8, T.lawn); rect(9, -36, 10, -22, T.lawn); rect(6, 20, 7, 30, T.lawn);
-// flowerbeds: Vanderlinde garden, fountain plaza ring
-rect(-12, -28, -10, -28, T.flowerbed); rect(-14, -18, -12, -18, T.flowerbed);
+walkRect(RING.x0, RING.z0, RING.x1 + 1, RING.z0 + 1);    // north side: garden, fountain plaza, Outlaws court
+walkRect(RING.x0, RING.z1, RING.x1 + 1, RING.z1 + 1);    // south side: airstrip apron, villa stairs
+walkRect(RING.x0, RING.z0, RING.x0 + 1, RING.z1 + 1);    // west side: Vanderlinde land
+walkRect(RING.x1, RING.z0, RING.x1 + 1, RING.z1 + 1);    // east side: behind the villa deck
+// centre: one plaza with four short spokes
+rect(-3, -3, 2, 2, T.plaza);
+walkRect(-1, RING.z0 + 2, 0, -4);                        // north spoke to the ring (fountain plaza)
+walkRect(-1, 3, 0, RING.z1 - 1);                         // south spoke to the ring (airstrip)
+walkRect(-7, -4, -4, -3);                                // west spoke: hideout courtyard
+walkRect(3, -1, 7, 0);                                   // east spoke: villa entrance
+// destinations
+rect(-18, -5, -8, -1, T.plaza); rect(-14, -6, -12, -5, T.plaza);   // hideout courtyard + doorstep
+walkRect(RING.x0 + 2, -4, -19, -3);                      // courtyard out to the west ring
+disc(0.5, -22, 4.2, T.plaza);                            // fountain plaza (on the north ring)
+rect(14, -28, 22, -21, T.concrete); walkRect(17, -20, 18, -20);   // Outlaws half court, joined to the ring
+walkRect(RING.x0, -23, RING.x0 + 1, RING.z0 - 1);        // Vanderlinde beach
+walkRect(-34, -2, RING.x0 - 1, -1);                      // banyan hangout
+walkRect(RING.x1 + 2, RING.z1, 34, RING.z1 + 1);         // Outlaws beach
+walkRect(1, RING.z1 + 2, 2, 34);                         // south beach
+// flowerbeds (garden, kept off the road)
+rect(-12, -28, -10, -28, T.flowerbed);
 
 // ---- cleanup + borders ----
 const paved = new Set([T.path, T.plaza, T.concrete, T.terracotta]);
@@ -165,12 +169,12 @@ O('flower_patch', -2.6, -18.6, { w: 2, d: 1 }); O('flower_patch', 3.6, -18.6, { 
 O('lamp', -2.0, -14); O('lamp', 3.0, -9);
 // ---- Outlaws outdoors: half court, firepit lounge, hammocks, snack cart ----
 O('hoop', 18, -27.4, { rot: 0 });
-O('campfire', 28, -14); O('bench', 28, -17.0, { rot: 0 }); O('bench', 31.0, -14, { rot: -90 }); O('bench', 25.0, -14, { rot: 90 });
+O('campfire', 28, -14); O('bench', 28, -17.0, { rot: 0 }); O('bench', 31.0, -14, { rot: -90 });
 O('hammock', 27, 14); O('hammock', 31, 17, { rot: 30 });
 for (const [x, z] of [[24.6, 14], [29.6, 11.6], [33.4, 18], [26, 19]]) O('tree_palm', x, z, { scale: 1 });
 O('food_cart', 15, 16, { rot: 0 }); O('bench', 13.2, 18.6, { rot: 180 }); O('bench', 16.8, 18.6, { rot: 180 });
 for (const [x, z] of [[24, -24], [30, -22], [14, -32], [26, -30], [32, -6], [28, -2], [16, 24], [22, 26], [12, 26]]) O(z < 0 ? 'tree_round' : 'tree_palm', x, z, { scale: 0.95 });
-O('flower_patch', 25.6, 5.0, { w: 2, d: 1 }); O('lantern_post', 25.4, -10.6); O('lantern_post', 22.6, -21);
+O('flower_patch', 25.6, 5.0, { w: 2, d: 1 }); O('lantern_post', 27.2, -10.6); O('lantern_post', 22.6, -21);
 labels.push(point('label', 18, -24, { text: 'OUTLAWS COURT', color: '#2a2440', height: 3.2 }));
 // ---- neutral south-west and south-east: palm groves ----
 for (const [x, z] of [[-30, 22], [-24, 26], [-34, 16], [-18, 28], [-36, 24], [24, 22], [28, 26], [18, 30], [30, 20]]) O('tree_palm', x, z, { scale: 0.9 });
@@ -237,6 +241,8 @@ const inCourt = (x, z, m = 0) => COURTS.some(({ c, u, w }) => { const dx = x - c
 for (let z = -HALF; z < HALF; z++) for (let x = -HALF; x < HALF; x++) if (ground[idx(x, z)] !== 0 && ground[idx(x, z)] !== T.water && inCourt(x + 0.5, z + 0.5)) ground[idx(x, z)] = T.sand;
 const DECOR = new Set(['tree_blossom', 'tree_palm', 'tree_round', 'rock', 'picnic_blanket', 'flower_patch', 'lamp', 'shrub', 'hedge', 'lantern_post', 'bench']);
 for (let i = objects.length - 1; i >= 0; i--) { const o = objects[i]; if (DECOR.has(o.type) && inCourt(o.x / PX - HALF, o.y / PX - HALF, 0.6)) objects.splice(i, 1); }
+const onRoad = (x, z) => { for (const [dx, dz] of [[0, 0], [0.45, 0], [-0.45, 0], [0, 0.45], [0, -0.45]]) { const tx = Math.floor(x + dx), tz = Math.floor(z + dz); if (inside(tx, tz) && ground[idx(tx, tz)] === T.path) return true; } return false; };
+for (let i = objects.length - 1; i >= 0; i--) { const o = objects[i]; if (DECOR.has(o.type) && onRoad(o.x / PX - HALF, o.y / PX - HALF)) objects.splice(i, 1); }
 const tmj = {
   type: 'map', version: '1.10', tiledversion: '1.10.2', orientation: 'orthogonal', renderorder: 'right-down',
   width: N, height: N, tilewidth: PX, tileheight: PX, infinite: false, compressionlevel: -1, backgroundcolor: '#2fc4c9',

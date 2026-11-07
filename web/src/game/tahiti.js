@@ -222,7 +222,7 @@ export function createTahiti(ctx) {
     { id: 'hideout', x: -21.4, z: -9.0, prize: 'an old bottle cap', clue: 'Nobody ever uses the west side of the Vanderlinde hideout. Walk round the outside wall.', hint: 'Round the back of the hideout, west side.' },
     { id: 'rock', x: -24.2, z: 8.2, prize: 'a tiny compass', clue: 'Something tells the pilots which way the wind blows. Look a few steps north of it.', hint: 'Ask the windsock. North of it.' },
     { id: 'beach', x: 11.6, z: 35.4, prize: 'a pirate coin', clue: 'Find the finish flag of the beach race on the south beach, then keep walking east along the sand.', hint: 'East of the race finish, on the sand.' },
-    { id: 'stairs', x: 21.6, z: 9.6, prize: 'a captain\'s ring', clue: 'Last one. The Outlaws climb their stairs every day. Look at the bottom, by the tiny beach.', hint: 'Bottom of the villa stairs.' },
+    { id: 'stairs', x: 21.6, z: 9.6, prize: 'a captain\'s ring', clue: 'Last one. The Outlaws climb their stairs every day. Look at the bottom of them.', hint: 'Bottom of the villa stairs.' },
   ];
   const huntTarget = () => TREASURE.find((tr) => !(state.save.tahitiTreasure || []).includes(tr.id));
   const HUNT_HINTS = ['I saw something shiny earlier...'];
