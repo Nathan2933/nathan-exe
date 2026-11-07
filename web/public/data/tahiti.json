@@ -62,19 +62,19 @@
       ],
       "species": "human",
       "skin": "fair",
-      "hair": "medium",
+      "hair": "short",
       "hairColor": "#1b1716",
-      "top": "plaid",
-      "topColor": "#6b4a32",
-      "pants": "jeans",
-      "pantsColor": "#2a2730",
-      "shoes": "#1a1418",
+      "top": "jacket",
+      "topColor": "#2f6f8f",
+      "pants": "trousers",
+      "pantsColor": "#b9a27a",
+      "shoes": "#f0ece2",
       "beard": "none",
       "beardColor": "#1b1716",
-      "glasses": true,
+      "glasses": false,
       "build": 1,
       "height": 1,
-      "color": "#6b4a32",
+      "color": "#2f6f8f",
       "extras": ""
     },
     {
@@ -232,6 +232,21 @@
       "height": 1,
       "color": "#8a6a4a",
       "extras": ""
+    },
+    {
+      "id": "tahiti_cf8",
+      "name": "Naveen",
+      "role": "The Outlaws · The Crew Member",
+      "district": "tahiti",
+      "scripted": true,
+      "lines": [
+        "Hey, you made it."
+      ],
+      "topics": [
+        "What's the plan today? :: Same as always. Hang out, talk, lose track of time."
+      ],
+      "sameAs": "naveen",
+      "extras": ""
     }
   ],
   "overrides": {
@@ -299,7 +314,8 @@
         "tahiti_cf4",
         "tahiti_cf5",
         "tahiti_cf6",
-        "tahiti_cf7"
+        "tahiti_cf7",
+        "tahiti_cf8"
       ],
       "lines": [
         {

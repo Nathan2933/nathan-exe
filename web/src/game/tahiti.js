@@ -253,7 +253,7 @@ export function createTahiti(ctx) {
       if (state.mount || state.joined) return state.joined ? ['Move to leave'] : [];
       if (nearestNpc(2.4) && ctx.hasMoto()) h.push('R Invite for a ride');
       if (joinable()) h.push('F Join activity');
-      if (brains.filter((b) => dist(b.it.character.group.position, P()) < 12).length >= 2) h.push('G Group photo');
+      const ps = nearPhotoSpot(); if (ps) h.push(`G ${GANG_NAME[ps.gang]} photo`);
       return h;
     },
     key(k) {
@@ -343,21 +343,34 @@ export function createTahiti(ctx) {
   }, 500);
 
   // ---------- group photo ----------
-  function startPhoto() {
-    const p = P();
-    const crew = brains.filter((b) => !b.riding && dist(b.it.character.group.position, p) < 12).slice(0, 8);
-    if (crew.length < 2) return false;
+  // each gang has its own photo spot (camera tripod); only that gang lines up there
+  const GANG_NAME = { vg: 'Vanderlinde Gang', ol: 'The Outlaws' };
+  const photoSpots = () => ctx.world.interactables.filter((i) => i.kind === 'activity' && i.act === 'photo');
+  function nearPhotoSpot(r = 6) { let best = null, bd = r; for (const s of photoSpots()) { const d = dist(s, P()); if (d < bd) { bd = d; best = s; } } return best; }
+  const FORMATION = [[1, 0], [-1, 0], [2, 0], [-2, 0], [0.5, 1], [-0.5, 1], [1.5, 1], [-1.5, 1], [2.5, 1], [-2.5, 1]];
+  function startPhoto(spot = nearPhotoSpot()) {
+    if (!spot) { ctx.toast('Find a gang photo spot (look for the camera tripod).'); return false; }
+    if (photo) return false;
+    const gang = spot.gang;
+    const crew = brains.filter((b) => b.group === gang && b.id !== 'harris' && !b.riding);
+    if (!crew.length) return false;
     state.joined = null; state.path = [];
+    const c = { x: spot.x, z: spot.z };
+    P().set(c.x, ctx.heightAt(c.x, c.z), c.z);       // Nathan stands in the middle
     const face = Math.PI / 4;                       // towards the camera
     const rx = Math.cos(face), rz = -Math.sin(face);  // camera-right in world space
+    const bx = -Math.sin(face), bz = -Math.cos(face); // one step back, away from the camera
     const spots = crew.map((b, i) => {
-      const k = i + 1, side = (k % 2 ? 1 : -1) * Math.ceil(k / 2), row = Math.abs(side) > 2 ? 0.9 : 0;
-      return { b, x: p.x + rx * side * 0.95 - Math.sin(face) * row, z: p.z + rz * side * 0.95 - Math.cos(face) * row };
+      const [side, row] = FORMATION[i % FORMATION.length];
+      let x = c.x + rx * side * 0.9 + bx * row * 0.9, z = c.z + rz * side * 0.9 + bz * row * 0.9;
+      if (!ctx.nav.isWalkable(x, z)) { x = c.x + rx * side * 0.6; z = c.z + rz * side * 0.6; }
+      return { b, x, z };
     });
+    bubble(crew[0].it, `${GANG_NAME[gang]}, photo time!`, 2.6);
     for (const s of spots) { release(s.b); s.b.forced = true; goTo(s.b, s.x, s.z, () => { s.b.mode = 'pose'; }, true); s.b.mode = 'walk'; }
     player.heading = face;
-    photo = { spots, t: 0, shot: false };
-    ctx.toast('Everyone in! Hold still...');
+    photo = { spots, t: 0, shot: false, gang };
+    ctx.toast(`${GANG_NAME[gang]} photo. Everyone in!`);
     return true;
   }
   function photoTick(dt) {
@@ -373,7 +386,7 @@ export function createTahiti(ctx) {
         const url = ctx.capture(); ctx.flash('', true); ctx.sfx.memory();
         const key = 'nathan-exe:tahiti-photos';
         let list = []; try { list = JSON.parse(localStorage.getItem(key) || '[]'); } catch { /* ignore */ }
-        if (url) { list.unshift({ url, at: Date.now() }); list = list.slice(0, 8); try { localStorage.setItem(key, JSON.stringify(list)); } catch { list = list.slice(0, 2); } }
+        if (url) { list.unshift({ url, at: Date.now(), gang: GANG_NAME[photo.gang] }); list = list.slice(0, 8); try { localStorage.setItem(key, JSON.stringify(list)); } catch { list = list.slice(0, 2); } }
         setTimeout(() => { for (const s of photo?.spots || []) { s.b.forced = false; s.b.mode = 'idle'; release(s.b); } player.pose = null; photo = null; ctx.openGallery(); }, 900);
       }
     }
@@ -398,8 +411,8 @@ export function createTahiti(ctx) {
     const b = opponent(); if (!b) return;
     const A = { x: -3.6, z: 29.6 }, B = { x: 7.6, z: 29.4 };
     release(b); b.forced = true;
-    const p = P(); p.set(A.x, ctx.heightAt(A.x, A.z), A.z + 0.9); state.path = [];
-    b.it.character.group.position.set(A.x, 0, A.z - 0.6); b.mode = 'race-wait';
+    const p = P(); p.set(A.x + 0.4, ctx.heightAt(A.x, A.z), A.z); state.path = []; player.heading = Math.PI / 2;
+    b.it.character.group.position.set(A.x + 0.4, 0, A.z - 0.9); b.it.character.heading = Math.PI / 2; b.mode = 'race-wait';
     race = { b, A, B, t: -3.5, done: false };
     ctx.toast(`Beach race vs ${def(b.id).name}! Run to the flag at the far end.`);
   }
@@ -425,6 +438,7 @@ export function createTahiti(ctx) {
       case 'food': foodChallenge(); return true;
       case 'volley': volley(); return true;
       case 'gallery': ctx.openGallery(); return true;
+      case 'photo': startPhoto(it); return true;
       case 'clues': clues(); return true;
       case 'treasure_item': if (!it.found && hunt) foundTreasure(it); return true;
       default: return false;

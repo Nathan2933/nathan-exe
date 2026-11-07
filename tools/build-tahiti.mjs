@@ -111,6 +111,7 @@ route('tahiti_cf4', [[19.6, -6.4]], { idles: 'look', faces: '0' });
 route('tahiti_cf5', [[23.2, -7.2]], { idles: 'lean', faces: '-90' });
 route('tahiti_cf6', [[21.6, 1.4]], { idles: 'phone', faces: '90' });
 route('tahiti_cf7', [[18.2, -1.0], [20.2, 2.4]], { idles: 'look,gaze', faces: '90,90' });
+route('tahiti_cf8', [[17.4, -1.6]], { idles: 'phone', faces: '135' });
 interact.push(point('group', 21.4, -2.6, { id: 'outlaws', title: 'Join the Outlaws' }));
 
 // ---- centre: kept simple so the junction reads clearly ----
@@ -153,6 +154,9 @@ O('volley_net', 10.6, 29.8); A('volley', 9.2, 28.6, { title: 'Beach volleyball' 
 O('clue_board', -4.4, -1.6); A('clues', -4.4, -0.6, { title: 'Treasure hunt clues' });
 for (const [id, x, z] of [['palm', -8.6, 0.8], ['beach', 11.6, 27.4], ['stairs', 21.6, 9.6], ['rock', -24.2, 8.2], ['hideout', -21.4, -9.0]]) { O('treasure_chest', x, z); A('treasure_item', x + 0.6, z + 0.6, { id: 'treasure-' + id, treasure: id, title: 'Something shiny' }); }
 // group photos end up on this board in the courtyard
+// gang photo spots: the camera tripod looks at the spot from the front
+O('photo_tripod', -11.0, -0.4); A('photo', -13.4, -2.8, { id: 'photo-vg', gang: 'vg', title: 'Vanderlinde Gang photo' });
+O('photo_tripod', 22.2, 0.6, { lift: 1.4 }); A('photo', 20.0, -1.6, { id: 'photo-ol', gang: 'ol', title: 'Outlaws photo' });
 O('photo_board', -9.4, -0.6); A('gallery', -9.4, 0.4, { title: 'Tahiti photos' });
 // motorcycles: two parking spots (central junction, villa)
 O('parking_pad', -4.8, 4.8); interact.push(point('vehicle', -4.8, 4.8, { id: 'moto-centre', vtype: 'moto', rot: 0, color: '#c4302b' }));

@@ -2957,4 +2957,13 @@ export const KIT = {
     for (const x of [-1.05, 1.05]) k.box(0.06, 0.01, 1.4, C.white, x, 0.035, 0, { shadow: false });
     return { obj: g, colliders: [] };
   },
+  photo_tripod({ lift = 0 } = {}) {
+    const g = new THREE.Group(), k = kit(g);
+    for (const a of [0, 2.1, 4.2]) k.box(0.05, 1.3, 0.05, 0x2a2440, Math.sin(a) * 0.22, 0, Math.cos(a) * 0.22, { rx: Math.cos(a) * -0.17, rz: Math.sin(a) * 0.17 });
+    k.box(0.36, 0.24, 0.22, 0x1e1b2e, 0, 1.28, 0);
+    k.cyl(0.08, 0.08, 0.14, 0x7d8fa8, 0, 1.4, -0.16, 10, { rx: Math.PI / 2 });
+    k.box(0.08, 0.06, 0.06, 0xff4a3a, 0.12, 1.53, 0.05, { shadow: false });
+    g.children.forEach((c) => { c.position.y += lift; });
+    return { obj: g, colliders: [{ x: 0, z: 0, r: 0.25 }] };
+  },
 };

@@ -47,53 +47,110 @@ const bootLines = [
   'Detecting drives ..... /russia  /india  /garage',
   'Loading save file .... ',
 ];
-// Boot screen: a big Nathan slowly turning on a character-select stage.
+// Title screen: the real Nathan rig walks in front of the NATHAN logo, waves,
+// pushes up his glasses and idles while PRESS START blinks. Timeline (s):
+// 0-0.5 logo · 0.5-1.5 walk in · 1.5-2.2 wave · 2.2-2.8 prompt · then idle.
 function bootHero() {
-  const cv = $('#boot-hero'); if (!cv) return () => {};
-  const r = new THREE.WebGLRenderer({ canvas: cv, antialias: false, alpha: true });
+  const cv = $('#boot-hero');
+  const noop = { stop() {}, skip() {}, confirm() {}, ready: Promise.resolve() };
+  if (!cv) return noop;
+  let r;
+  try { r = new THREE.WebGLRenderer({ canvas: cv, antialias: false, alpha: true }); } catch { return noop; }
   r.setPixelRatio(1);
-  const W = 180, H = 240; r.setSize(W, H, false);              // low-res, scaled up crisp by CSS
+  const W = 300, H = 240; r.setSize(W, H, false);              // low-res, scaled up crisp by CSS
   r.outputColorSpace = THREE.SRGBColorSpace;
   const sc = new THREE.Scene();
   sc.add(new THREE.HemisphereLight(0xfff4e0, 0x5a3a8a, 1.6));
   const key = new THREE.DirectionalLight(0xffffff, 1.8); key.position.set(2, 4, 3); sc.add(key);
-  const cam = new THREE.PerspectiveCamera(30, W / H, 0.1, 50); cam.position.set(0, 1.4, 6.2); cam.lookAt(0, 1.15, 0);
+  const CAM_Z = 6.2, CAM_Y = 1.4;
+  const cam = new THREE.PerspectiveCamera(30, W / H, 0.1, 50); cam.position.set(0, CAM_Y, CAM_Z); cam.lookAt(0, 1.15, 0);
   const hero = new Player();
   sc.add(hero.group);
-  hero.pose = 'guard';
-  let raf = 0, last = performance.now(), alive = true;
-  const zero = new THREE.Vector3();
+  const START_X = -2.9, WALK = [0.5, 1.5];
+  let T = reducedMotion ? 2.8 : 0;                               // timeline clock
+  let raf = 0, last = performance.now(), alive = true, waved = false, adjusted = false, nextFidget = 6;
+  let dolly = -1;                                                // confirm camera push (0..1)
+  const vel = new THREE.Vector3();
+  let readyRes; const ready = new Promise((res) => (readyRes = res));
+  $('#boot').classList.add('title-anim');
+  if (reducedMotion || T >= 2.8) $('#boot').classList.add('title-skip');
   const tick = (now) => {
     if (!alive) return;
     const dt = Math.min(0.05, (now - last) / 1000); last = now;
-    hero.heading += dt * (reducedMotion ? 0 : 0.9);
-    hero.update(dt, zero, now / 1000);
+    T += dt;
+    vel.set(0, 0, 0);
+    const p = hero.group.position;
+    if (T < WALK[0]) { p.x = START_X; hero.heading = Math.PI / 2; }
+    else if (T < WALK[1]) {
+      const k = (T - WALK[0]) / (WALK[1] - WALK[0]);
+      p.x = START_X * (1 - k); hero.heading = Math.PI / 2;
+      vel.x = -START_X / (WALK[1] - WALK[0]);
+    } else {
+      p.x = 0;
+      // turn to face the camera
+      hero.heading += Math.atan2(Math.sin(-hero.heading), Math.cos(-hero.heading)) * Math.min(1, dt * 9);
+      if (!waved && T >= 1.5) { waved = true; if (!reducedMotion) hero.play('wave'); }
+      if (T >= 2.2 && readyRes) { readyRes(); readyRes = null; }
+      if (T > 3.0 && !hero.action && dolly < 0 && !reducedMotion) {
+        nextFidget -= dt;
+        if (nextFidget < 0) { hero.play(Math.random() < 0.65 ? 'glasses' : 'wave'); nextFidget = 7 + Math.random() * 6; }
+      }
+      if (!adjusted && T > 2.9 && !hero.action) { adjusted = true; if (!reducedMotion) hero.play('glasses'); }
+      // subtle idle: weight shift + breathing
+      if (!reducedMotion) { hero.group.rotation.z = Math.sin(T * 1.3) * 0.015; p.y = Math.sin(T * 2.1) * 0.006; }
+    }
+    if (dolly >= 0) {
+      dolly = Math.min(1, dolly + dt / 0.6);
+      const e = 1 - (1 - dolly) * (1 - dolly);
+      cam.position.set(0, CAM_Y - 0.1 * e, CAM_Z - 1.4 * e); cam.lookAt(0, 1.15, 0);
+    }
+    hero.update(dt, vel, now / 1000);
     r.render(sc, cam);
     raf = requestAnimationFrame(tick);
   };
   raf = requestAnimationFrame(tick);
-  return () => { alive = false; cancelAnimationFrame(raf); r.dispose(); };
+  return {
+    ready,
+    // jump the intro straight to the idle loop (input during the opening)
+    skip() { if (T < 2.8) { T = 2.8; waved = true; hero.action = null; hero.heading = 0; hero.group.position.x = 0; $('#boot').classList.add('title-skip'); if (readyRes) { readyRes(); readyRes = null; } } },
+    confirm() { this.skip(); hero.play('cheer'); if (!reducedMotion) dolly = 0; },
+    stop() { alive = false; cancelAnimationFrame(raf); r.dispose(); },
+  };
 }
 let stopBootHero = () => {};
 
 async function runBoot(loaded) {
-  stopBootHero = bootHero();
-  const pre = $('#boot-text');
-  const quick = reducedMotion || sessionStorage.getItem('nathan-exe:booted');
-  // title screen: no BIOS text, just wait for loading, then "press any key"
-  void quick; void bootLines;
-  pre.textContent = '';
-  await loaded;
-  try { sessionStorage.setItem('nathan-exe:booted', '1'); } catch { /* ignore */ }
+  const title = bootHero();
+  stopBootHero = () => title.stop();
+  $('#boot-text').textContent = '';
+  void bootLines;
   const btn = $('#boot-start');
-  btn.classList.remove('hidden');
-  btn.textContent = isTouch ? 'Tap to continue' : 'Press any key to continue';
-  const go = () => {
-    window.removeEventListener('keydown', go);
-    start();
+  let isLoaded = false, armed = false, chosen = false;
+  const onKey = (e) => {
+    if (e.target.closest?.('a')) return;                            // Enter on "Skip to portfolio" follows the link
+    if (e.key !== 'Enter' && e.key !== ' ') { if (!e.repeat && e.key.length === 1) title.skip(); return; }
+    e.preventDefault(); press();
   };
-  window.addEventListener('keydown', go);
-  $('#boot').addEventListener('click', (e) => { if (!e.target.closest('a')) go(); });
+  const onClick = (e) => { if (e.target.closest('a')) return; press(); };
+  function press() {
+    if (chosen) return;
+    if (!armed) { title.skip(); return; }                          // still opening: skip ahead safely
+    chosen = true;
+    window.removeEventListener('keydown', onKey);
+    $('#boot').removeEventListener('click', onClick);
+    try { setSound(!!look.sound); sfx.select(); } catch { /* audio is optional */ }
+    btn.classList.add('chosen');
+    title.confirm();
+    setTimeout(start, reducedMotion ? 120 : 650);
+  }
+  window.addEventListener('keydown', onKey);
+  $('#boot').addEventListener('click', onClick);
+  const arm = () => { if (!isLoaded || armed) return; armed = true; btn.classList.remove('hidden'); };
+  title.ready.then(() => { isLoaded && arm(); });
+  await loaded;
+  isLoaded = true;
+  try { sessionStorage.setItem('nathan-exe:booted', '1'); } catch { /* ignore */ }
+  title.ready.then(arm);
 }
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -2056,7 +2113,7 @@ const tahiti = createTahiti({
   openGallery() {
     let list = []; try { list = JSON.parse(localStorage.getItem('nathan-exe:tahiti-photos') || '[]'); } catch { /* ignore */ }
     showPanel('tahiti/photos', `<p class="eyebrow">TAHITI · GROUP PHOTOS</p><h2 id="panel-title">Photo board</h2>
-      ${list.length ? `<div class="tahiti-gallery">${list.map((p) => `<figure><img src="${p.url}" alt="Group photo"><figcaption>${new Date(p.at).toLocaleString()}</figcaption></figure>`).join('')}</div>` : '<p class="subtitle">No photos yet. Stand near your friends and press G.</p>'}
+      ${list.length ? `<div class="tahiti-gallery">${list.map((p) => `<figure><img src="${p.url}" alt="Group photo"><figcaption>${p.gang ? esc(p.gang) + ' · ' : ''}${new Date(p.at).toLocaleString()}</figcaption></figure>`).join('')}</div>` : '<p class="subtitle">No photos yet. Stand near your friends and press G.</p>'}
       <p class="muted">Photos stay on this device.</p>`);
   },
   giveBandana: () => giveBandana(true),

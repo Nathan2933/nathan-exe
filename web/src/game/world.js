@@ -231,7 +231,7 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
       it.beacon = beacon(o.x, 2.6, o.z); hitBox(it); interactables.push(it);
     } else if (o.type === 'activity') {
       // Tahiti activity spot (party, race, dance battle, food, volleyball, clues, treasure, gallery)
-      const it = { ...base, id: `activity:${pr.id}`, kind: 'activity', act: pr.act, title: pr.title || pr.act, treasureId: pr.treasure, district: 'tahiti', radius: 1.6 };
+      const it = { ...base, id: `activity:${pr.id}`, kind: 'activity', act: pr.act, title: pr.title || pr.act, treasureId: pr.treasure, gang: pr.gang, district: 'tahiti', radius: 1.6 };
       it.beacon = beacon(o.x, 1.6, o.z, { small: true }); hitBox(it, 1.4, 2.2, 1.4); interactables.push(it);
     } else if (o.type === 'group') {
       // shared group conversation spot (Join the Gang / Join the Outlaws)
