@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { KIT, buildHorse, buildBicycle, mat, C } from './kit.js';
+import { KIT, buildHorse, buildBicycle, buildMotorbike, mat, C } from './kit.js';
 import { tileAt } from './tiled.js';
 import { Character, OUTFITS, appearanceToOutfit } from './player.js';
 import { buildRailway } from './railway.js';
@@ -229,14 +229,18 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
     } else if (o.type === 'finale') {
       const it = { ...base, id: 'finale', kind: 'finale', district: 'lighthouse', radius: 2.0 };
       it.beacon = beacon(o.x, 2.6, o.z); hitBox(it); interactables.push(it);
+    } else if (o.type === 'activity') {
+      // Tahiti activity spot (party, race, dance battle, food, volleyball, clues, treasure, gallery)
+      const it = { ...base, id: `activity:${pr.id}`, kind: 'activity', act: pr.act, title: pr.title || pr.act, treasureId: pr.treasure, district: 'tahiti', radius: 1.6 };
+      it.beacon = beacon(o.x, 1.6, o.z, { small: true }); hitBox(it, 1.4, 2.2, 1.4); interactables.push(it);
     } else if (o.type === 'group') {
       // shared group conversation spot (Join the Gang / Join the Outlaws)
       const it = { ...base, id: `group:${pr.id}`, kind: 'group', groupId: pr.id, title: pr.title || 'Join in', district: 'tahiti', radius: 1.6 };
       it.beacon = beacon(o.x, 2.0, o.z, { small: true }); hitBox(it, 1.6, 2.6, 1.6); interactables.push(it);
     } else if (o.type === 'vehicle') {
       // rideable bicycle / horse, parked at its rack or post
-      const vt = pr.vtype === 'horse' ? 'horse' : 'bike';
-      const model = vt === 'horse' ? buildHorse(0x8a5a36, 0x2a1a12) : buildBicycle(pr.color ? parseInt(String(pr.color).replace('#', ''), 16) : 0x2f5fb0);
+      const vt = pr.vtype === 'horse' ? 'horse' : pr.vtype === 'moto' ? 'moto' : 'bike';
+      const model = vt === 'horse' ? buildHorse(0x8a5a36, 0x2a1a12) : vt === 'moto' ? buildMotorbike(pr.color ? parseInt(String(pr.color).replace('#', ''), 16) : 0xc4302b) : buildBicycle(pr.color ? parseInt(String(pr.color).replace('#', ''), 16) : 0x2f5fb0);
       const heading = ((pr.rot ?? 0) * Math.PI) / 180;
       const tile = tileAt(map, o.x, o.z);
       model.group.position.set(o.x, tile ? Math.max(0, groundHeight(tile.type)) : 0, o.z);
@@ -408,7 +412,7 @@ const NPC_SPEED = 1.1, STOP_DIST = 2.4;
 const _v = new THREE.Vector3(), _ahead = new THREE.Vector3();
 export function updateNpcs(npcs, dt, t, heightAt, player, talkingTo) {
   for (const it of npcs) {
-    if (it.frozen) continue; // driven by a cinematic
+    if (it.frozen || it.brain) continue; // driven by a cinematic or by Tahiti's activity brains
     const ch = it.character, gp = ch.group.position, r = it.route;
     _v.set(0, 0, 0);
     const dP = player ? Math.hypot(player.x - gp.x, player.z - gp.z) : 99;

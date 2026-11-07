@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { RetroRenderer } from './retro.js';
 import { applyPalette, SKY } from './palette.js';
 import { setGlowBoost } from './kit.js';
-import { sfx, setSound, setRain, setMusic, setTheme, setOcean } from './audio.js';
+import { sfx, setSound, setRain, setMusic, setTheme, setOcean, setEngine } from './audio.js';
+import { createTahiti } from './tahiti.js';
 import { buildWorld, loadKitOverrides, updateWalkers, updateNpcs, groundHeight } from './world.js';
 import { loadTiledMap, tileAt } from './tiled.js';
 import { NavGrid } from './nav.js';
@@ -278,7 +279,10 @@ function setupUI() {
   applyLook();
   $('#journey-toggle').addEventListener('click', () => $('.journey').classList.toggle(innerWidth <= 760 ? 'open-m' : 'collapsed'));
   window.addEventListener('keydown', (e) => {
+    if (state.minigame && mgRoot()?.onkey && !e.repeat) { const k = e.key.length === 1 ? e.key.toLowerCase() : e.key; if (k.startsWith('Arrow') || k === ' ' || k === 'e' || k === 'Enter') { e.preventDefault(); mgRoot().onkey(k); return; } }
     if (!state.started || state.minigame) return;
+    if (e.target.closest?.('input, textarea')) return;
+    if (state.level === 'tahiti' && !e.repeat && !state.mount && ['r', 'f', 'g'].includes(e.key.toLowerCase()) && tahiti.key(e.key.toLowerCase())) { e.preventDefault(); return; }
     if (e.target.closest?.('input, textarea')) return;
     if (e.key === 'm' || e.key === 'M') { e.preventDefault(); toggleBigMap(); return; }
     if (e.key === 'h' || e.key === 'H') { e.preventDefault(); toggleControls(); return; }
@@ -307,7 +311,7 @@ function setupUI() {
   dialogue.onMemory = (id) => unlockMemory(id);
   dialogue.onAction = (name) => {
     if (name === 'fly-tahiti') return void setTimeout(() => startFlight('tahiti'), 900);
-    if (name === 'fly-home') return void setTimeout(() => startFlight('island1'), 900);
+    if (name === 'fly-home') { if (!tahiti.harrisNearJet()) { tahiti.callHarrisToJet(); toast('Harris will meet you at the jet.'); return; } return void setTimeout(() => startFlight('island1'), 900); }
     world.apis[name]?.trigger({ toast, sfx }); state.talkingTo?.character.play('nod');
   };
 }
@@ -336,6 +340,7 @@ function interact(it) {
   if (state.mount) return dismount();
   if (state.seated) return standUp();
   if (it.kind === 'group') return runGroupScene(it);
+  if (it.kind === 'activity') { tahiti.leaveJoin(); return void tahiti.interact(it); }
   if (it.kind === 'vehicle') return mount(it);
   if (it.kind === 'seat') return sitDown(it);
   if (it.kind === 'npc') return talkTo(it);
@@ -674,6 +679,7 @@ function standUp() {
 // back as soon as Nathan gets off.
 const VEHICLES = {
   bike: { speed: 5.2, boost: 7.0, accel: 5, brake: 9, turn: 4.2, seatY: 0.3, pose: 'cycle', r: 0.42, yaw: 0, avoid: ['water'], label: 'bicycle' },
+  moto: { speed: 7.0, boost: 9.5, accel: 6, brake: 10, turn: 3.6, seatY: 0.62, pose: 'ride', r: 0.5, yaw: 0, avoid: ['water'], label: 'motorcycle' },
   horse: { speed: 4.0, boost: 6.6, accel: 3.5, brake: 7, turn: 3.0, seatY: 0.7, pose: 'ride', r: 0.6, yaw: -Math.PI / 2, avoid: ['water'], label: 'horse' },
 };
 let railPts = null;
@@ -687,7 +693,7 @@ function vehicleFree(x, z, cfg) {
   const tile = tileAt(map, x, z);
   if (!tile || !tile.walkable || cfg.avoid.includes(tile.type)) return false;
   if (Math.hypot(x, z) > (map.props.islandRadius || 44) - 3) return false;
-  for (const n of world.npcs) { const p = n.character.group.position; if (Math.hypot(p.x - x, p.z - z) < r + 0.45) return false; }
+  for (const n of world.npcs) { if (n.passenger) continue; const p = n.character.group.position; if (Math.hypot(p.x - x, p.z - z) < r + 0.45) return false; }
   for (const it of world.interactables) if (it.kind === 'vehicle' && it !== state.mount?.it && Math.hypot(it.x - x, it.z - z) < r + 0.6) return false;
   // the railway is just ground to roll over, but never through a train
   if (world.railway) {
@@ -703,6 +709,7 @@ function mount(it) {
   state.mount = { it, cfg, speed: 0, heading: it.heading, lift: 0, phase: 0, from: player.group.position.clone() };
   it.beacon.group.visible = false; state.nearby = null; // refresh the prompt to 'Dismount'
   player.play('interact'); sfx.open();
+  if (it.vtype === 'moto') tahiti.onMotoMount(state.mount);
   if (!state.rideHint) { state.rideHint = true; toast(`${isTouch ? 'Tap to steer' : 'WASD to steer · Shift for speed'} · E to get off${isTouch ? '' : ' · R returns it to its rack'}`); }
 }
 function dismount(force = false) {
@@ -719,6 +726,7 @@ function dismount(force = false) {
   it.hit.position.set(p.x, 1.3, p.z);
   state.mount = null; state.nearby = null;
   player.pose = null;
+  if (it.vtype === 'moto') { setEngine(null); tahiti.onMotoDismount(spot); }
   p.set(spot.x, heightAt(spot.x, spot.z), spot.z);
   player.heading = Math.atan2(it.x - spot.x, it.z - spot.z);
   sfx.close();
@@ -742,7 +750,8 @@ function rideUpdate(dt, t, kx, kz, running) {
       else { rideDir.set(dx / d, 0, dz / d); want = true; }
     }
   }
-  const target = want ? (running || state.path.length > 6 ? cfg.boost : cfg.speed) : 0;
+  const hold = it.vtype === 'moto' && !tahiti.passengerReady();               // wait for the passenger to climb on
+  const target = want && !hold ? (running || state.path.length > 6 ? cfg.boost : cfg.speed) : 0;
   const dv = target - m.speed;
   m.speed += Math.max(-cfg.brake * dt, Math.min(cfg.accel * dt, dv));
   if (want) {
@@ -774,6 +783,12 @@ function rideUpdate(dt, t, kx, kz, running) {
     player.pedal = m.phase;
     g.rotation.z = Math.atan2(Math.sin(rideDir.x * 0), 1) * 0;                  // keep upright
     pos.y = ground + cfg.seatY * m.lift + hop;
+  } else if (it.vtype === 'moto') {
+    for (const w of it.model.wheels) w.rotation.x += (m.speed * dt) / 0.36;
+    g.rotation.z = -Math.atan2(Math.sin(Math.atan2(rideDir.x, rideDir.z) - m.heading), 1) * Math.min(1, sp / 6) * 0.25 * (want ? 1 : 0);   // lean into turns
+    pos.y = ground + cfg.seatY * m.lift + hop + (sp > 0.2 ? Math.sin(t * 40) * 0.006 : 0);
+    setEngine(Math.min(1, sp / cfg.boost));
+    if (sp > 2 && tileAt(map, pos.x, pos.z)?.type?.match(/sand|beach|dirt|path/) && Math.random() < dt * sp * 2) dust(pos.x - Math.sin(m.heading) * 0.8, pos.z - Math.cos(m.heading) * 0.8);
   } else {
     const trot = sp > 4.6;
     m.phase += dt * sp * (trot ? 5.5 : 4.2);
@@ -790,6 +805,14 @@ function rideUpdate(dt, t, kx, kz, running) {
   player.update(dt, zeroV, t);
 }
 const zeroV = new THREE.Vector3();
+// little sand puffs behind the motorcycle
+const dustPool = [];
+function dust(x, z) {
+  let d = dustPool.find((q) => !q.m.visible);
+  if (!d) { if (dustPool.length > 40) return; const m = new THREE.Mesh(new THREE.IcosahedronGeometry(0.14, 0), new THREE.MeshBasicMaterial({ color: 0xe9d6a8, transparent: true, depthWrite: false })); scene.add(m); d = { m }; dustPool.push(d); }
+  d.t = 0; d.m.visible = true; d.m.position.set(x + (Math.random() - 0.5) * 0.3, heightAt(x, z) + 0.12, z + (Math.random() - 0.5) * 0.3);
+}
+function dustTick(dt) { for (const d of dustPool) if (d.m.visible) { d.t += dt; d.m.position.y += dt * 0.5; d.m.scale.setScalar(1 + d.t * 2.5); d.m.material.opacity = 0.55 * (1 - d.t / 0.8); if (d.t > 0.8) d.m.visible = false; } }
 
 // ---------------- Islands: Island 01 (public) and Tahiti (Island 02) ----------------
 // Each island is its own Tiled map; switching rebuilds the world in place
@@ -838,6 +861,9 @@ async function loadTahitiData() {
 async function switchLevel(name) {
   if (name === 'tahiti') await loadTahitiData();
   const m = mapCache[name] || (mapCache[name] = await loadTiledMap(`${BASE}${LEVELS[name]}`));
+  if (state.level === 'tahiti') { tahiti.exit(); $('#tahiti-hints')?.classList.add('hidden'); hintKey = ''; }
+  if (state.mount) dismount(true);
+  setEngine(null);
   scene.remove(world.root);
   map = m; state.level = name;
   world = buildWorld(scene, state.content, map, kitOverrides);
@@ -848,6 +874,7 @@ async function switchLevel(name) {
   if (jet) { jet.home = jet.group.position.clone(); jet.homeRot = jet.group.rotation.y; }
   setupLabels(); setupMinimap();
   state.nearby = null; state.talkingTo = null; state.path = [];
+  if (name === 'tahiti') tahiti.enter();
 }
 
 // ---------------- Flight cinematic ----------------
@@ -1047,6 +1074,7 @@ function endCine() {
   camTarget.copy(p);
   cineClouds(0); cineCaption(''); cineUI(false);
   toast(state.level === 'tahiti' ? 'Welcome to Tahiti' : 'Back on Island 01');
+  if (state.level === 'tahiti') tahiti.onArrive();
 }
 
 // ---------------- Group conversations (Join the Gang / Join the Outlaws) ----------------
@@ -1465,6 +1493,7 @@ const lookV = new THREE.Vector3();
 function start() {
   if (state.started) return;
   state.started = true;
+  if ((state.save.tahitiTreasure || []).length >= 5) giveBandana(false);
   const boot = $('#boot');
   boot.classList.add('fade');
   setTimeout(() => { stopBootHero(); boot.remove(); }, 600);
@@ -1488,6 +1517,7 @@ function update(dt, t) {
   if (state.cine) runCine(dt);
 
   if (state.seated && (kx || kz || state.path.length)) standUp();
+  if (state.joined && (kx || kz || state.path.length)) tahiti.leaveJoin();
   const keyboardMove = !state.mount && state.started && !frozen && !state.ko && !!(kx || kz);
   if (state.mount) {
     rideUpdate(dt, t, kx, kz, running);
@@ -1523,7 +1553,7 @@ function update(dt, t) {
     if (free(nx, pos.z)) pos.x = nx; else velocity.x = 0;
     if (free(pos.x, nz)) pos.z = nz; else velocity.z = 0;
   }
-  if (!state.ko) pos.y += (heightAt(pos.x, pos.z) - pos.y) * Math.min(1, dt * 18);
+  if (!state.ko && !state.joined) pos.y += (heightAt(pos.x, pos.z) - pos.y) * Math.min(1, dt * 18);
   if (!state.cine) checkHazards(dt);
   if (state.cine) velocity.copy(state.cine.vel);
   player.update(dt, velocity, t);
@@ -1534,7 +1564,7 @@ function update(dt, t) {
   // Nearby interactable + prompt
   let best = null, bestD = Infinity;
   for (const it of world.interactables) {
-    if (it.kind === 'memory' && it.visited) continue;
+    if ((it.kind === 'memory' && it.visited) || it.disabled) continue;
     const d = Math.hypot(pos.x - it.x, pos.z - it.z);
     const score = it.kind === 'npc' ? d - 0.8 : d; // people take priority when you're beside them
     if (d < it.radius && score < bestD) { best = it; bestD = score; }
@@ -1568,6 +1598,7 @@ function update(dt, t) {
         if (d < bd) { bd = d; theme = def.theme; lvl = Math.min(1, (7.5 - d) / 3.5) * 0.5; }
       }
     }
+    if (state.level === 'tahiti' && !state.cine && tahiti.musicOverride()) { theme = tahiti.musicOverride(); lvl = 0.6; }
     if (!theme && state.level === 'tahiti' && !state.cine) { theme = 'tahiti'; lvl = 0.32; }
     setTheme(state.started && !state.minigame ? theme : null, lvl);
   }
@@ -1577,6 +1608,8 @@ function update(dt, t) {
   // Named NPCs roam their district routes, stop for Nathan, then carry on
   updateNpcs(world.npcs, dt, t, heightAt, state.ko ? null : pos, state.talkingTo);
   updateWalkers(world.walkers, dt, t, heightAt, state.ko ? null : pos);
+  if (state.level === 'tahiti') { tahiti.update(dt, t); tahitiHints(); }
+  dustTick(dt);
 
   for (const it of world.interactables) {
     if (!it.beacon) continue;
@@ -1976,8 +2009,9 @@ function updatePrompt() {
     station: ['Memory Line', best.name ? `${best.name} station` : 'Station'],
     panel: ['Look', best.title],
     group: ['Group', best.title || 'Join in'],
+    activity: ['Tahiti', best.title],
     seat: ['Bench', state.seated ? 'Stand up' : 'Sit down'],
-    vehicle: [best.vtype === 'horse' ? 'Horse' : 'Bicycle', state.mount ? 'Dismount' : best.vtype === 'horse' ? 'Ride horse' : 'Ride bicycle'],
+    vehicle: [{ horse: 'Horse', moto: 'Motorcycle' }[best.vtype] || 'Bicycle', state.mount ? 'Dismount' : { horse: 'Ride horse', moto: 'Ride motorcycle' }[best.vtype] || 'Ride bicycle'],
     finale: ['Departures', state.save.finale ? 'Replay the ending' : 'End of Island 01'],
     chapter: ['Open chapter', chapterFor(c, best.district)?.title],
   }[best.kind] || ['Open', best.id];
@@ -1985,6 +2019,78 @@ function updatePrompt() {
   $('#prompt-title').textContent = title || best.id;
   pr.querySelector('kbd').textContent = isTouch ? '◆' : 'E';
   pr.classList.remove('hidden');
+}
+
+// ---------------- Tahiti: companion AI, activities and events ----------------
+const mgRoot = () => $('#minigame');
+const tahiti = createTahiti({
+  state, player, camera, heightAt, toast, sfx, dialogue, solidFree,
+  get world() { return world; }, get nav() { return nav; },
+  isNight: () => night > 0.5,
+  persist,
+  jetPoint() { const j = world.apis.private_jet; return j ? j.doorPoint() : { x: 0, z: 0 }; },
+  hasMoto() { return world.interactables.some((i) => i.kind === 'vehicle' && i.vtype === 'moto'); },
+  panel: (bar, html) => showPanel(bar, `<div class="panel-body-inner">${html}</div>`),
+  choose(title, options, cb) {
+    const el = document.createElement('div'); el.className = 'tahiti-choose window';
+    el.innerHTML = `<div class="window-bar"><span class="title">ride.exe</span></div><div class="mg-body"><h2>${esc(title)}</h2><div class="choose-list"></div></div>`;
+    const list = el.querySelector('.choose-list');
+    options.forEach((o, i) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn' + (i === 0 ? ' primary' : ''); b.textContent = o.label; b.addEventListener('click', () => { el.remove(); state.choosing = null; cb(o.value); }); list.append(b); });
+    document.body.append(el); state.choosing = el;
+    setTimeout(() => list.querySelector('button')?.focus(), 0);
+  },
+  flash(text, white = false) {
+    const el = document.createElement('div'); el.className = 'tahiti-flash' + (white ? ' white' : '');
+    el.textContent = text; document.body.append(el);
+    setTimeout(() => el.remove(), white ? 700 : 850);
+  },
+  capture() {
+    try {
+      retro.render(scene, camera);
+      const src = renderer.domElement, w = 480, h = Math.round((src.height / src.width) * w);
+      const c = document.createElement('canvas'); c.width = w; c.height = h;
+      c.getContext('2d').drawImage(src, 0, 0, w, h);
+      return c.toDataURL('image/jpeg', 0.72);
+    } catch { return null; }
+  },
+  openGallery() {
+    let list = []; try { list = JSON.parse(localStorage.getItem('nathan-exe:tahiti-photos') || '[]'); } catch { /* ignore */ }
+    showPanel('tahiti/photos', `<p class="eyebrow">TAHITI · GROUP PHOTOS</p><h2 id="panel-title">Photo board</h2>
+      ${list.length ? `<div class="tahiti-gallery">${list.map((p) => `<figure><img src="${p.url}" alt="Group photo"><figcaption>${new Date(p.at).toLocaleString()}</figcaption></figure>`).join('')}</div>` : '<p class="subtitle">No photos yet. Stand near your friends and press G.</p>'}
+      <p class="muted">Photos stay on this device.</p>`);
+  },
+  giveBandana: () => giveBandana(true),
+  minigame(html, setup) {
+    const root = mgRoot();
+    root.innerHTML = `<div class="window-bar"><span class="title">tahiti/event.exe</span><button class="panel-close mg-x" aria-label="Close">✕</button></div><div class="mg-body tahiti-mg">${html}</div>`;
+    root.classList.remove('hidden'); state.minigame = 'tahiti';
+    let cleanup = null;
+    const close = () => { if (!root.onkey && state.minigame !== 'tahiti') return; root.onkey = null; cleanup?.(); root.classList.add('hidden'); root.innerHTML = ''; state.minigame = null; state.nearby = null; };
+    root.querySelector('.mg-x').addEventListener('click', close);
+    root.onkey = () => {};
+    cleanup = setup(root, close);
+  },
+});
+function giveBandana(fresh) {
+  if (player.bandana) return;
+  const m = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.1, 0.48), new THREE.MeshLambertMaterial({ color: 0xd83a3a }));
+  m.position.set(0, 0.5, 0); player.head.add(m);
+  const knot = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.16, 0.06), m.material); knot.position.set(0, 0.46, -0.26); player.head.add(knot);
+  player.bandana = m;
+  if (fresh) player.play('flex');
+}
+// context hints (R/F/G) under the prompt, plus touch buttons on phones
+let hintKey = '';
+function tahitiHints() {
+  const h = state.cine || state.minigame || dialogue.open || state.panelOpen ? [] : tahiti.hints();
+  const k = h.join('|'); if (k === hintKey) return; hintKey = k;
+  let el = $('#tahiti-hints');
+  if (!el) {
+    el = document.createElement('div'); el.id = 'tahiti-hints'; el.className = 'tahiti-hints'; document.body.append(el);
+    el.addEventListener('click', (e) => { const b = e.target.closest('[data-k]'); if (b) tahiti.key(b.dataset.k); });
+  }
+  el.innerHTML = h.map((s) => { const key = s[0]; return /^[RFG] /.test(s) ? `<button type="button" data-k="${key.toLowerCase()}"><kbd>${key}</kbd>${esc(s.slice(2))}</button>` : `<span>${esc(s)}</span>`; }).join('');
+  el.classList.toggle('hidden', !h.length);
 }
 
 // ---------------- Debug overlay (?debug) ----------------
@@ -2016,7 +2122,7 @@ if (import.meta.env.DEV) {
   window.__game = {
     state, player, camera, get world() { return world; }, renderer, dialogue,
     step(frames = 60) { for (let i = 0; i < frames; i++) update(1 / 60, clock.elapsedTime + i / 60); retro.render(scene, camera); },
-    tap: handleTap, walkTo, interact, knockout, startFlight, skipCine, switchLevel, get map() { return map; },
+    tap: handleTap, walkTo, interact, knockout, startFlight, skipCine, switchLevel, get map() { return map; }, tahiti: () => tahiti, keys,
   };
 }
 

@@ -762,3 +762,29 @@ body.cine-on .journey, body.cine-on .minimap-wrap, body.cine-on #prompt, body.ci
   95% { transform: rotate(-5deg) skewX(-8deg) translate(2px, 0); }
 }
 .boot .boot-start { grid-area: auto; }
+
+/* ---------- Tahiti: bubbles, hints, flash, events ---------- */
+.tahiti-bubbles { position: fixed; inset: 0; pointer-events: none; z-index: 3; }
+.tahiti-bubble { position: absolute; left: 0; top: 0; max-width: 220px; padding: 6px 10px; font: 600 12.5px var(--font-mono); color: var(--ink); background: #fffaf0; border: 2px solid var(--ink); border-radius: 10px; box-shadow: 2px 2px 0 var(--ink); white-space: normal; animation: bubble-in .18s steps(3); }
+.tahiti-bubble::after { content: ''; position: absolute; left: 50%; bottom: -8px; margin-left: -6px; border: 6px solid transparent; border-top-color: var(--ink); border-bottom: 0; }
+@keyframes bubble-in { from { opacity: 0; margin-top: 6px; } }
+.tahiti-hints { position: fixed; left: 50%; bottom: calc(max(16px, env(safe-area-inset-bottom)) + 74px); transform: translateX(-50%); display: flex; gap: 8px; z-index: 5; flex-wrap: wrap; justify-content: center; }
+.tahiti-hints.hidden { display: none; }
+.tahiti-hints button, .tahiti-hints span { font: 600 12px var(--font-mono); padding: 5px 9px; background: rgba(255,250,240,.94); color: var(--ink); border: 1.5px solid var(--ink); border-radius: var(--radius); box-shadow: 2px 2px 0 var(--ink); cursor: pointer; }
+.tahiti-hints kbd { font: 700 11px var(--font-mono); border: 1.5px solid var(--ink); border-radius: 3px; padding: 0 4px; margin-right: 6px; background: var(--accent); }
+.tahiti-flash { position: fixed; inset: 0; display: grid; place-items: center; z-index: 30; pointer-events: none; font: 400 96px var(--font-pixel); color: #fff6e6; text-shadow: 4px 4px 0 var(--ink); animation: flash-num .85s ease-out forwards; }
+.tahiti-flash.white { background: #fff; animation: flash-white .7s ease-out forwards; }
+@keyframes flash-num { from { transform: scale(1.4); opacity: 1; } to { transform: scale(1); opacity: 0; } }
+@keyframes flash-white { from { opacity: 1; } to { opacity: 0; } }
+.tahiti-choose { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(360px, calc(100vw - 32px)); z-index: 20; }
+.choose-list { display: grid; gap: 8px; margin-top: 10px; }
+.tahiti-mg .dance-arrow { font: 400 64px var(--font-pixel); text-align: center; margin: 10px 0; min-height: 1.2em; }
+.tahiti-mg .dance-pad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.tahiti-mg .dance-pad button { font: 700 26px var(--font-mono); padding: 10px 0; background: var(--cream); border: 2px solid var(--ink); border-radius: var(--radius); box-shadow: 2px 2px 0 var(--ink); cursor: pointer; }
+.tahiti-mg .food-count { font: 400 40px var(--font-pixel); text-align: center; margin: 8px 0; }
+.tahiti-mg .btn { margin-top: 8px; }
+.tahiti-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+.tahiti-gallery figure { margin: 0; border: 2px solid var(--ink); background: #fff; padding: 6px 6px 4px; box-shadow: 2px 2px 0 var(--ink); }
+.tahiti-gallery img { width: 100%; display: block; image-rendering: pixelated; }
+.tahiti-gallery figcaption { font: 11px var(--font-mono); color: var(--ink-2); margin-top: 4px; }
+body.cine-on .tahiti-hints, body.cine-on .tahiti-bubbles { display: none; }

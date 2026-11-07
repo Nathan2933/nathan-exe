@@ -140,6 +140,24 @@ for (let a = 0; a < Math.PI * 2; a += 0.21) {
   else O('tree_palm', +x.toFixed(2), +z.toFixed(2), { scale: 0.85 + (i % 5) * 0.06 });
 }
 
+// ---- Tahiti activities ----
+const A = (act, x, z, p = {}) => interact.push(point('activity', x, z, { id: p.id || act, act, ...p }));
+// villa: DJ booth on the deck (dance battle), barbecue by the stairs (eating contest)
+O('dj_booth', 21.5, -7.4, { lift: 1.4 }); A('dance', 21.5, -5.8, { title: 'Dance battle' });
+O('bbq_grill', 13.6, 9.6); A('food', 11.6, 9.0, { title: 'Eating contest' });
+// south beach: party speaker + lights, race flags, volleyball net
+O('beach_speaker', -7.0, 29.4); O('party_lights', 0.8, 31.4, { len: 14 }); A('party', -6.2, 28.4, { title: 'Start a beach party' });
+O('race_flag', -3.6, 30.6); O('race_flag', 7.6, 30.4, { color: '#2bb3a3' }); A('race', -3.0, 28.4, { title: 'Beach race' });
+O('volley_net', 10.6, 29.8); A('volley', 9.2, 28.6, { title: 'Beach volleyball' });
+// treasure hunt: clue board at the junction, five chests hidden around the island
+O('clue_board', -4.4, -1.6); A('clues', -4.4, -0.6, { title: 'Treasure hunt clues' });
+for (const [id, x, z] of [['palm', -8.6, 0.8], ['beach', 11.6, 27.4], ['stairs', 21.6, 9.6], ['rock', -24.2, 8.2], ['hideout', -21.4, -9.0]]) { O('treasure_chest', x, z); A('treasure_item', x + 0.6, z + 0.6, { id: 'treasure-' + id, treasure: id, title: 'Something shiny' }); }
+// group photos end up on this board in the courtyard
+O('photo_board', -9.4, -0.6); A('gallery', -9.4, 0.4, { title: 'Tahiti photos' });
+// motorcycles: two parking spots (central junction, villa)
+O('parking_pad', -4.8, 4.8); interact.push(point('vehicle', -4.8, 4.8, { id: 'moto-centre', vtype: 'moto', rot: 0, color: '#c4302b' }));
+O('parking_pad', 11.6, 6.4); interact.push(point('vehicle', 11.6, 6.4, { id: 'moto-villa', vtype: 'moto', rot: 0, color: '#2f6fc6' }));
+
 spawn.push(point('spawn', -4.4, 14.8));
 
 const layer = (name, objs) => ({ id: nextId++, name, type: 'objectgroup', draworder: 'topdown', opacity: 1, visible: true, x: 0, y: 0, objects: objs });

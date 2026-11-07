@@ -97,6 +97,8 @@ const ACTIONS = {
   flex: { dur: 1.9 },
   wave: { dur: 1.4 },
   nod: { dur: 0.8 },
+  hug: { dur: 1.3 },
+  tap: { dur: 0.7 },
 };
 
 export class Character {
@@ -452,6 +454,29 @@ export class Character {
         pm('sx1', -0.4 - 1.2 * k); pm('el1', -1.7 + 1.5 * k); pm('sx0', -1.05); pm('el0', -1.85); pm('spineY', 0.22 * k); pm('th0', -0.2); pm('kn0', 0.25);
       } else if (P === 'type') {
         pm('sx0', -0.95); pm('sx1', -0.95); pm('el0', -0.75 + 0.12 * Math.sin(t * 14)); pm('el1', -0.75 + 0.12 * Math.sin(t * 15 + 1)); pm('headX', 0.22); pm('spineX', 0.12);
+      } else if (P === 'dance1') {
+        const k = Math.sin(t * 7); pm('hipY', Math.abs(k) * 0.05); pm('sx0', -2.6 + k * 0.3); pm('sx1', -2.6 - k * 0.3); pm('el0', -0.3); pm('el1', -0.3); pm('spineY', k * 0.25); pm('headX', 0.08 * k);
+      } else if (P === 'dance2') {
+        const k = Math.sin(t * 6.4); pm('sx0', -1.2 + k * 0.7); pm('sx1', -1.2 - k * 0.7); pm('el0', -1.6); pm('el1', -1.6); pm('hipY', Math.abs(Math.sin(t * 12.8)) * 0.04); pm('th0', k * 0.2); pm('th1', -k * 0.2);
+      } else if (P === 'dance3') {
+        const k = Math.sin(t * 3.2); pm('sx1', -2.4 + Math.max(0, k) * 0.6); pm('sz1', -0.6); pm('el1', 0); pm('sx0', 0.3); pm('el0', -0.4); pm('hipX', k * 0.08); pm('spineY', -k * 0.3); pm('kn0', 0.2 + Math.max(0, -k) * 0.4);
+      } else if (P === 'sing') {
+        const k = Math.sin(t * 2.6);                          // shared clock: everyone sways together
+        pm('hipY', -0.3); pm('th0', -1.45); pm('th1', -1.45); pm('kn0', 1.45); pm('kn1', 1.45);
+        pm('sx1', -1.2); pm('el1', -0.4); pm('sz1', -0.3 + k * 0.1); pm('sx0', -0.4); pm('el0', -0.7); pm('spineY', k * 0.18); pm('headX', -0.15); pm('headY', k * 0.3);
+      } else if (P === 'eat') {
+        const k = Math.max(0, Math.sin(t * 2.4));
+        pm('hipY', -0.3); pm('th0', -1.45); pm('th1', -1.45); pm('kn0', 1.45); pm('kn1', 1.45);
+        pm('sx1', -0.9 - k * 0.6); pm('el1', -1.4 - k * 0.6); pm('sx0', -0.6); pm('el0', -0.9); pm('headX', 0.15 - k * 0.1);
+      } else if (P === 'swim') {
+        const k = Math.sin(t * 3.2);
+        pm('spineX', 0.9); pm('sx0', -2.4 * (0.5 + 0.5 * k)); pm('sx1', -2.4 * (0.5 - 0.5 * k)); pm('el0', -0.2); pm('el1', -0.2); pm('th0', 0.3 * k); pm('th1', -0.3 * k); pm('headX', -0.6);
+      } else if (P === 'dj') {
+        const k = Math.sin(t * 8); pm('sx0', -1.1); pm('sx1', -1.1); pm('el0', -0.9 + k * 0.15); pm('el1', -0.9); pm('ez0', 0.2 * k); pm('headX', 0.12 + Math.abs(k) * 0.08); pm('hipY', Math.abs(Math.sin(t * 4)) * 0.03);
+      } else if (P === 'cook') {
+        const k = Math.sin(t * 3); pm('sx1', -1.0); pm('el1', -0.6); pm('ez1', k * 0.4); pm('sx0', -0.6); pm('el0', -0.8); pm('spineX', 0.15); pm('headX', 0.25);
+      } else if (P === 'cheer') {
+        const k = Math.abs(Math.sin(t * 5)); pm('sx0', -2.8); pm('sx1', -2.8); pm('el0', -0.2 - k * 0.3); pm('el1', -0.2 - k * 0.3); pm('hipY', k * 0.04);
       } else if (P === 'guard') {
         // held fighting stance (fists up), no motion
         pm('sx0', -1.25); pm('el0', -1.95); pm('sz0', 0.25); pm('sx1', -1.05); pm('el1', -2.05); pm('sz1', -0.2);
@@ -495,6 +520,11 @@ export class Character {
       mix('sz1', 2.5); mix('sx1', 0); mix('el1', -0.4 + Math.sin(this.actionT * 12) * 0.45);
     } else if (this.action === 'nod') {
       mix('headX', Math.sin(this.actionT * 14) * 0.18);
+    } else if (this.action === 'hug') {
+      for (let i = 0; i < 2; i++) { mix(`sx${i}`, -1.35); mix(`sz${i}`, -this.arms[i].side * 0.55); mix(`el${i}`, -0.9); }
+      mix('spineX', 0.12);
+    } else if (this.action === 'tap') {
+      mix('sx1', -1.6); mix('el1', -0.3); mix('sz1', -0.3);
     }
     if (this.talking && !this.action) J.sx1 += Math.sin(t * 3.1) * 0.12 - 0.25, J.el1 += -0.5;
 

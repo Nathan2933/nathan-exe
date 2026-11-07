@@ -167,6 +167,30 @@ function boardSign(text, SW, SH, { size = 0, w = 0, h = 0, fg = '#fff1d6', bg = 
   return g;
 }
 
+/** Retro motorcycle facing +z: rolling wheels, chrome tank, two-up seat. */
+export function buildMotorbike(color = 0xc4302b) {
+  const g = new THREE.Group(), k = kit(g);
+  const wheels = [];
+  for (const z of [-0.62, 0.66]) {
+    const w = new THREE.Group(); w.position.set(0, 0.36, z); g.add(w);
+    const tyre = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.36, 0.14, 14), mat(0x1e1b2e)); tyre.rotation.z = Math.PI / 2; w.add(tyre);
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.15, 10), mat(0xd8dee8)); hub.rotation.z = Math.PI / 2; w.add(hub);
+    for (const a of [0, Math.PI / 2]) { const sp = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.5, 0.05), mat(0x7d8fa8)); sp.rotation.x = a; w.add(sp); }
+    wheels.push(w);
+  }
+  k.box(0.3, 0.3, 0.9, 0x3a3a46, 0, 0.32, 0.02);                                 // engine block
+  k.box(0.18, 0.16, 0.5, 0xc6d2e0, 0.18, 0.3, -0.25);                            // exhaust
+  k.box(0.38, 0.26, 0.6, color, 0, 0.66, 0.24);                                  // tank
+  k.box(0.39, 0.06, 0.6, 0xfff1d6, 0, 0.8, 0.24, { shadow: false });              // tank stripe
+  k.box(0.36, 0.12, 0.95, 0x2a2024, 0, 0.7, -0.42);                               // long two-up seat
+  k.box(0.06, 0.5, 0.06, 0x7d8fa8, 0, 0.42, 0.62, { rx: 0.35 });                  // fork
+  k.box(0.7, 0.05, 0.05, 0x2a2440, 0, 0.98, 0.56);                                // handlebar
+  k.box(0.2, 0.18, 0.12, 0xfff1c0, 0, 0.82, 0.78);                                // headlight
+  k.box(0.4, 0.06, 0.4, color, 0, 0.58, -0.68);                                   // rear fender
+  g.userData.dynamic = true;
+  return { group: g, wheels };
+}
+
 /** Low-poly bicycle facing +z: rolling wheels, turning crank. */
 export function buildBicycle(color = 0x2f5fb0) {
   const g = new THREE.Group(), k = kit(g);
@@ -2853,5 +2877,84 @@ export const KIT = {
     k.mesh(new THREE.IcosahedronGeometry(0.4 * scale, 0), 0x3f8f4a, 0, 0.35 * scale, 0);
     for (let i = 0; i < 5; i++) { const a = (i / 5) * Math.PI * 2; k.box(0.5 * scale, 0.06, 0.18 * scale, 0x5aa85a, Math.cos(a) * 0.3 * scale, 0.45 * scale, Math.sin(a) * 0.3 * scale, { ry: -a, rz: 0.4 }); }
     return { obj: g, colliders: [{ x: 0, z: 0, r: 0.35 * scale }] };
+  },
+
+  // ===================== Tahiti activity props =====================
+  dj_booth({ lift = 0 } = {}) {
+    const g = new THREE.Group(), k = kit(g), y = lift;
+    k.box(1.6, 0.9, 0.6, 0x2a2440, 0, y, 0); k.box(1.66, 0.06, 0.66, C.accent, 0, y + 0.9, 0);
+    for (const x of [-0.45, 0.45]) k.cyl(0.22, 0.22, 0.04, 0x14101f, x, y + 0.96, 0, 14);
+    for (const x of [-0.95, 0.95]) { k.box(0.4, 1.1, 0.4, 0x1e1b2e, x, y, -0.05); k.cyl(0.13, 0.13, 0.03, 0x7d8fa8, x, y + 0.7, 0.16, 10, { rx: Math.PI / 2 }); }
+    const dyn = new THREE.Group(); dyn.userData.dynamic = true; g.add(dyn);
+    const lights = [0xff3b6b, 0x3fe0c8, 0xffd257].map((c, i) => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.12), new THREE.MeshBasicMaterial({ color: c })); m.position.set(-0.4 + i * 0.4, y + 1.05, -0.2); dyn.add(m); return m; });
+    return { obj: g, colliders: [{ x: 0, z: 0, w: 2.4, d: 0.7 }], animate: (t) => lights.forEach((m, i) => { m.visible = Math.sin(t * 6 + i * 2) > -0.2; }) };
+  },
+  bbq_grill() {
+    const g = new THREE.Group(), k = kit(g);
+    for (const [x, z] of [[-0.45, -0.25], [0.45, -0.25], [-0.45, 0.25], [0.45, 0.25]]) k.box(0.06, 0.8, 0.06, 0x2a2440, x, 0, z);
+    k.box(1.1, 0.25, 0.6, 0x3a3a46, 0, 0.8, 0); k.box(1.0, 0.03, 0.5, 0x7d8fa8, 0, 1.05, 0, { shadow: false });
+    for (const x of [-0.3, 0, 0.3]) k.box(0.18, 0.06, 0.1, 0x8a3a2a, x, 1.08, 0.05);
+    const dyn = new THREE.Group(); dyn.userData.dynamic = true; g.add(dyn);
+    const smoke = [0, 1, 2].map(() => { const m = new THREE.Mesh(new THREE.IcosahedronGeometry(0.12, 0), new THREE.MeshBasicMaterial({ color: 0xe8e8f0, transparent: true, opacity: 0.4, depthWrite: false })); dyn.add(m); return m; });
+    k.box(1.6, 0.06, 0.9, C.wood, 0, 0.72, 1.4); for (const x of [-0.7, 0.7]) k.box(0.08, 0.72, 0.8, C.wood, x, 0, 1.4);   // picnic table
+    return { obj: g, colliders: [{ x: 0, z: 0, w: 1.2, d: 0.7 }, { x: 0, z: 1.4, w: 1.6, d: 0.9 }], animate: (t) => smoke.forEach((m, i) => { const u = (t * 0.5 + i / 3) % 1; m.position.set(Math.sin(t + i) * 0.1, 1.1 + u * 1.4, 0); m.scale.setScalar(0.6 + u); m.material.opacity = 0.4 * (1 - u); }) };
+  },
+  volley_net() {
+    const g = new THREE.Group(), k = kit(g);
+    for (const z of [-1.2, 1.2]) k.box(0.08, 1.9, 0.08, C.white, 0, 0, z);
+    k.box(0.03, 0.5, 2.4, 0xf4f4f0, 0, 1.35, 0, { shadow: false });
+    for (let z = -1.1; z <= 1.1; z += 0.22) k.box(0.02, 0.5, 0.02, 0x9aa3b2, 0, 1.35, z, { shadow: false });
+    k.mesh(new THREE.IcosahedronGeometry(0.14, 1), 0xffffff, 0.9, 0.14, 0.6);
+    return { obj: g, colliders: [{ x: 0, z: -1.2, r: 0.12 }, { x: 0, z: 1.2, r: 0.12 }] };
+  },
+  party_lights({ len = 14 } = {}) {
+    const g = new THREE.Group(), k = kit(g);
+    for (const x of [-len / 2, 0, len / 2]) k.box(0.1, 2.6, 0.1, 0x6f4a30, x, 0, 0);
+    const dyn = new THREE.Group(); dyn.userData.dynamic = true; g.add(dyn);
+    const bulbs = [];
+    const cols = [0xffd08a, 0xff8fb1, 0x8fe0ff, 0xffd257];
+    for (let i = 0; i <= 28; i++) { const u = i / 28, x = -len / 2 + len * u; const m = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.12), new THREE.MeshBasicMaterial({ color: 0x5a4a3a })); m.position.set(x, 2.5 - Math.abs(Math.sin(u * Math.PI * 2)) * 0.4, 0); dyn.add(m); bulbs.push(m); }
+    let on = false;
+    return { obj: g, colliders: [-len / 2, 0, len / 2].map((x) => ({ x, z: 0, r: 0.12 })), api: { setOn(v) { on = v; } }, animate: (t) => bulbs.forEach((m, i) => m.material.color.setHex(on ? cols[(i + Math.floor(t * 3)) % 4] : 0x5a4a3a)) };
+  },
+  race_flag({ color = '#ff6a3d' } = {}) {
+    const g = new THREE.Group(), k = kit(g);
+    k.box(0.06, 1.8, 0.06, 0x2a2440, 0, 0, 0);
+    const f = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.4, 0.03), mat(parseInt(color.slice(1), 16))); f.geometry.translate(0.3, 0, 0); f.position.set(0.03, 1.6, 0); f.userData.dynamic = true; g.add(f);
+    return { obj: g, colliders: [{ x: 0, z: 0, r: 0.1 }], animate: (t) => { f.rotation.y = Math.sin(t * 3) * 0.3; } };
+  },
+  clue_board() {
+    const g = new THREE.Group(), k = kit(g);
+    for (const x of [-0.5, 0.5]) k.box(0.08, 1.6, 0.08, 0x6f4a30, x, 0, 0);
+    k.box(1.2, 0.8, 0.06, 0xd9b27a, 0, 0.8, 0);
+    k.box(0.5, 0.35, 0.02, 0xf6e7c4, -0.2, 1.0, 0.04, { shadow: false }); k.box(0.12, 0.12, 0.02, C.accent, 0.3, 1.1, 0.04, { shadow: false });
+    k.box(0.04, 0.3, 0.02, 0xc4402f, 0.3, 0.95, 0.05, { rz: 0.8, shadow: false }); k.box(0.04, 0.3, 0.02, 0xc4402f, 0.3, 0.95, 0.05, { rz: -0.8, shadow: false });
+    return { obj: g, colliders: [{ x: 0, z: 0, w: 1.2, d: 0.2 }] };
+  },
+  treasure_chest() {
+    const g = new THREE.Group(), k = kit(g);
+    k.box(0.45, 0.28, 0.32, 0x8a5428, 0, 0, 0); k.box(0.47, 0.1, 0.34, 0x6a3a1a, 0, 0.28, 0);
+    k.box(0.08, 0.1, 0.02, C.yellow, 0, 0.18, 0.17, { shadow: false });
+    return { obj: g, colliders: [] };
+  },
+  photo_board() {
+    const g = new THREE.Group(), k = kit(g);
+    for (const x of [-0.6, 0.6]) k.box(0.08, 1.7, 0.08, 0x6f4a30, x, 0, 0);
+    k.box(1.4, 0.95, 0.06, 0x2a2440, 0, 0.8, 0);
+    const cols = [0xffd08a, 0x8fe0ff, 0xff8fb1, 0xb5e48c];
+    [[-0.35, 1.35], [0.3, 1.38], [-0.3, 1.0], [0.35, 1.02]].forEach(([x, y], i) => k.box(0.42, 0.3, 0.02, cols[i], x, y - 0.15, 0.04, { shadow: false }));
+    return { obj: g, colliders: [{ x: 0, z: 0, w: 1.4, d: 0.2 }] };
+  },
+  beach_speaker() {
+    const g = new THREE.Group(), k = kit(g);
+    k.box(0.6, 1.1, 0.5, 0x1e1b2e, 0, 0, 0);
+    for (const y of [0.3, 0.75]) k.cyl(0.18, 0.18, 0.03, 0x7d8fa8, 0, y, 0.26, 10, { rx: Math.PI / 2 });
+    return { obj: g, colliders: [{ x: 0, z: 0, w: 0.6, d: 0.5 }] };
+  },
+  parking_pad() {
+    const g = new THREE.Group(), k = kit(g);
+    k.box(2.2, 0.03, 1.4, 0xdcd8d0, 0, 0, 0, { shadow: false });
+    for (const x of [-1.05, 1.05]) k.box(0.06, 0.01, 1.4, C.white, x, 0.035, 0, { shadow: false });
+    return { obj: g, colliders: [] };
   },
 };

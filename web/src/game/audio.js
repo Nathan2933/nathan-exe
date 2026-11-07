@@ -148,6 +148,15 @@ const THEMES = {
     if (i % 4 === 2) hit(out, t, { freq: 6500, q: 1, dur: 0.05, vol: 0.02, type: 'highpass' });
     if (i === 20) note(out, t, 79, 1.2, { wave: 'sine', vol: 0.025, attack: 0.08 });
   } },
+  // beach party: four-on-the-floor, bright stabs
+  party: { bpm: 122, steps: 32, amb: 0, play(i, t, out, s) {
+    if (i % 4 === 0) kick(out, t, 0.3, 120);
+    if (i % 4 === 2) hit(out, t, { freq: 8000, q: 1, dur: 0.04, vol: 0.05, type: 'highpass' });
+    if (i % 8 === 4) hit(out, t, { freq: 1800, q: 1, dur: 0.1, vol: 0.07 });
+    const ch = [[64, 67, 71], [62, 65, 69], [60, 64, 67], [62, 66, 69]][Math.floor(i / 8)];
+    if (i % 8 === 2 || i % 8 === 6) ch.forEach((m) => note(out, t, m, s * 1.4, { wave: 'square', vol: 0.02, lp: 2600 }));
+    if (i % 2 === 0) note(out, t, ch[0] - 24 + (i % 4 === 2 ? 12 : 0), s * 1.6, { wave: 'triangle', vol: 0.08 });
+  } },
   sv: { bpm: 110, steps: 32, amb: 0, play(i, t, out, s) {
     const lead = { 0: 76, 2: 79, 4: 81, 6: 79, 8: 76, 10: 74, 12: 72, 16: 74, 18: 76, 20: 79, 22: 76, 24: 74, 26: 72, 28: 71 };
     if (lead[i]) note(out, t, lead[i], s * 1.6, { wave: 'square', vol: 0.03, lp: 2800 });
@@ -228,4 +237,22 @@ export function setOcean(level) {
     src.connect(lp).connect(oceanGain).connect(master); src.start();
   }
   oceanGain.gain.setTargetAtTime(enabled ? level * 0.1 : 0, ctx.currentTime, 0.8);
+}
+
+// ---------------- Motorcycle engine ----------------
+let engine = null;
+/** speed 0..1 (null = off): a low two-oscillator putter that rises with speed. */
+export function setEngine(speed) {
+  if (!ctx || !enabled) { if (engine) { engine.g.gain.setTargetAtTime(0, ctx.currentTime, 0.1); } return; }
+  if (!engine) {
+    const o1 = ctx.createOscillator(), o2 = ctx.createOscillator(), lp = ctx.createBiquadFilter(), g = ctx.createGain();
+    o1.type = 'sawtooth'; o2.type = 'square'; lp.type = 'lowpass'; lp.frequency.value = 420; g.gain.value = 0;
+    o1.connect(lp); o2.connect(lp); lp.connect(g).connect(master); o1.start(); o2.start();
+    engine = { o1, o2, g };
+  }
+  const on = speed !== null && speed !== undefined;
+  const f = 38 + (on ? speed : 0) * 70;
+  engine.o1.frequency.setTargetAtTime(f, ctx.currentTime, 0.1);
+  engine.o2.frequency.setTargetAtTime(f * 1.5, ctx.currentTime, 0.1);
+  engine.g.gain.setTargetAtTime(on ? 0.05 + speed * 0.04 : 0, ctx.currentTime, 0.15);
 }
