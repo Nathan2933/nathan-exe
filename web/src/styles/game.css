@@ -816,3 +816,10 @@ body.cine-on .tahiti-hints, body.cine-on .tahiti-bubbles { display: none; }
 .volley-hud span { font-size: 22px; color: #ffb347; text-align: center; }
 .volley-hud small { grid-column: 1 / -1; text-align: center; color: #cfc4e6; font-size: 8px; }
 .volley-hud.hidden { display: none; }
+
+.volley-hud .hoop-board { grid-column: 1 / -1; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.volley-hud .hoop-board span { padding: 3px 7px; border: 1px solid #4a3d66; border-radius: 3px; }
+.volley-hud .hoop-board span.on { border-color: #ffb347; color: #ffb347; }
+.volley-hud .hoop-meter { grid-column: 1 / -1; position: relative; height: 14px; margin-top: 4px; background: #2a1f40; border: 2px solid #4a3d66; border-radius: 3px; }
+.volley-hud .hoop-meter i { position: absolute; left: 40%; width: 20%; top: 0; bottom: 0; background: #5fd38a; }
+.volley-hud .hoop-meter b { position: absolute; top: -4px; bottom: -4px; width: 4px; margin-left: -2px; background: #fff6e6; }

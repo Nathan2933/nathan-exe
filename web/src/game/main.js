@@ -353,7 +353,7 @@ function setupUI() {
       if (!$('#controls').classList.contains('hidden')) return toggleControls(false);
       if (dialogue.open) dialogue.close(); else closePanel();
     }
-    if (e.key === ' ' && !dialogue.open && state.volley) { e.preventDefault(); tahiti.key(' '); return; }
+    if (e.key === ' ' && !dialogue.open && (state.volley || state.hoop)) { e.preventDefault(); tahiti.key(' '); return; }
     if (e.key === ' ' && !dialogue.open) { e.preventDefault(); if (player.jump()) sfx.rep(); return; }
     const act = e.key === 'e' || e.key === 'E' || e.key === 'Enter' || (e.key === ' ' && dialogue.open);
     const focused = document.activeElement;

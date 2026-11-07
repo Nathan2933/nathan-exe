@@ -2899,14 +2899,13 @@ export const KIT = {
     k.box(1.6, 0.06, 0.9, C.wood, 0, 0.72, 1.4); for (const x of [-0.7, 0.7]) k.box(0.08, 0.72, 0.8, C.wood, x, 0, 1.4);   // picnic table
     return { obj: g, colliders: [{ x: 0, z: 0, w: 1.2, d: 0.7 }, { x: 0, z: 1.4, w: 1.6, d: 0.9 }], animate: (t) => smoke.forEach((m, i) => { const u = (t * 0.5 + i / 3) % 1; m.position.set(Math.sin(t + i) * 0.1, 1.1 + u * 1.4, 0); m.scale.setScalar(0.6 + u); m.material.opacity = 0.4 * (1 - u); }) };
   },
-  volley_net({ len = 2.4 } = {}) {
+  volley_net({ len = 2.4, L = 8.4 } = {}) {
     const g = new THREE.Group(), k = kit(g), h = len / 2;
     for (const z of [-h, h]) k.box(0.08, 1.9, 0.08, C.white, 0, 0, z);
     k.box(0.03, 0.5, len, 0xf4f4f0, 0, 1.35, 0, { shadow: false });
     k.box(0.04, 0.06, len, 0xffffff, 0, 1.62, 0, { shadow: false });
     for (let z = -h + 0.1; z <= h - 0.1; z += 0.22) k.box(0.02, 0.5, 0.02, 0x9aa3b2, 0, 1.35, z, { shadow: false });
     // court lines in the sand
-    const L = 8.4;
     for (const x of [-L / 2, L / 2]) k.box(0.06, 0.01, len + 0.4, 0xfff6e6, x, 0.01, 0, { shadow: false });
     for (const z of [-(h + 0.2), h + 0.2]) k.box(L, 0.01, 0.06, 0xfff6e6, 0, 0.01, z, { shadow: false });
     return { obj: g, colliders: [{ x: 0, z: -h, r: 0.12 }, { x: 0, z: h, r: 0.12 }] };

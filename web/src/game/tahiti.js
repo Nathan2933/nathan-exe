@@ -22,12 +22,13 @@ const landFace = (g) => seaFace(g) + 180;
 const PARTY = Object.fromEntries(['vg', 'ol'].map((g) => [g, [-4.5, -1.5, 1.5, 4.5, -3, 0, 3, -4.5, -1.5, 1.5, 4.5].map((s, i) => on(g, s, i < 4 ? 0.8 : i < 7 ? -0.8 : -2.4))]));
 // beach volleyball courts: centre, u = along the court (side A at -u), w = across
 const COURT = {
-  vg: { c: V(-19.9, -30.1), u: V(0.638, -0.77), w: V(-0.77, -0.638) },
-  ol: { c: V(37, -10), u: V(0, 1), w: V(1, 0) },
+  vg: { c: V(-17.95, -28.5), u: V(0.638, -0.77), w: V(-0.77, -0.638) },
+  ol: { c: V(35.3, -10), u: V(0, 1), w: V(1, 0) },
 };
 const cpt = (g, a, b) => { const k = COURT[g]; return V(k.c.x + k.u.x * a + k.w.x * b, k.c.z + k.u.z * a + k.w.z * b); };
 const cface = (g, side) => { const u = COURT[g].u, s = side ? -1 : 1; return (Math.atan2(u.x * s, u.z * s) * 180) / Math.PI; };
-const volleySlots = (g) => [[-2.6, -1.1, 0], [-2.6, 1.1, 0], [2.6, -1.1, 1], [2.6, 1.1, 1]].map(([a, b, s]) => { const p = cpt(g, a, b); return [+p.x.toFixed(2), +p.z.toFixed(2), 'look', cface(g, s), { vb: s }]; });
+const HL = 5.4, HW = 3.3;                 // half length / half width of the (wider) court
+const volleySlots = (g) => [[-3.4, -1.6, 0], [-3.4, 1.6, 0], [3.4, -1.6, 1], [3.4, 1.6, 1]].map(([a, b, s]) => { const p = cpt(g, a, b); return [+p.x.toFixed(2), +p.z.toFixed(2), 'look', cface(g, s), { vb: s }]; });
 // Anu and Shabesh keep their distance from each other
 const AVOID = { tahiti_cf1: 'tahiti_cf2', tahiti_cf2: 'tahiti_cf1' };
 // slot: [x, z, pose, faceDeg, opts]
@@ -37,7 +38,7 @@ const ACTIVITIES = {
     campfire: { w: 3, slots: [[-26.1, -14.0, 'sing', 90, { free: true }], [-22.9, -14.0, 'sing', -90, { free: true }], [-24.5, -12.4, 'sing', 180, { free: true }], [-24.5, -15.6, 'sing', 0]], lines: ['♪ la la la ♪', '♪ one more verse ♪', 'Okay, okay, story time.', 'And then the bike just stopped. In the middle of the road.'] },
     courtyard: { w: 2, slots: [[-15.0, -2.6, 'dance1', 20], [-12.6, -2.2, 'dance2', 0], [-10.6, -3.0, 'dance3', -20]], lines: ['Woo!', 'Watch this move.', 'That was NOT a dance.'] },
     eat: { w: 2, slots: [[-16.2, -1.2, 'eat', 180, { free: true }], [-16.9, -2.7, 'eat', 90], [-15.3, -2.9, 'eat', -90]], lines: ['Mmm.', 'Who made this?', 'Pass the chips.'] },
-    picnic: { w: 2, slots: [[-18.4, -24.4, 'eat', 160, { free: true }], [-17.0, -25.6, 'sit', -60, { free: true }], [-14.4, -25.0, 'sit', 180, { free: true }], [-13.2, -26.4, 'phone', -90, { free: true }]], lines: ['Best spot on the island.', 'Who brought the snacks?', 'Look at those flowers.'] },
+    picnic: { w: 2, slots: [[-12.4, -20.8, 'eat', 135, { free: true }], [-10.6, -20.8, 'sit', -135, { free: true }], [-9.9, -22.8, 'sit', 135, { free: true }], [-8.1, -23.0, 'phone', -120, { free: true }]], lines: ['Best spot on the island.', 'Who brought the snacks?', 'Look at those flowers.'] },
     banyan: { w: 2, slots: [[-35.2, -2.8, 'look', 135], [-38.4, -1.6, 'phone', 90], [-35.2, -0.2, 'lean', 45]], lines: ['This tree is older than all of us.', 'Shade. Finally.', 'Story time under the tree.'] },
     volley: { w: 3, slots: volleySlots('vg'), lines: ['Mine!', 'Set it up!', 'Nice one!', 'Out! That was out!'] },
     beach: { w: 2, slots: [[...on('vg', -2, 1.5), 'look', seaFace('vg')], [...on('vg', -1.2, BEACH.vg.sea), 'swim', seaFace('vg'), { free: true, water: true }], [...on('vg', 1.6, BEACH.vg.sea), 'swim', seaFace('vg') - 20, { free: true, water: true }], [...on('vg', 2.4, 1.5), 'cheer', seaFace('vg')]], lines: ["We're heading to the beach. You coming?", 'Water\'s warm!', 'Race you to the rocks!'] },
@@ -106,7 +107,7 @@ export function createTahiti(ctx) {
     const acts = Object.entries(ACTIVITIES[b.group]).filter(([k]) => k !== b.act);
     const night = ctx.isNight?.();
     const rival = AVOID[b.id] && brains.find((o) => o.id === AVOID[b.id]);
-    const options = acts.filter(([k]) => freeSlot(b.group, k, b) !== undefined && !(rival && rival.act === k));
+    const options = acts.filter(([k]) => freeSlot(b.group, k, b) !== undefined && !(rival && rival.act === k) && !(k === 'hoop' && state.hoop));
     if (!options.length) return null;
     let total = 0; const w = options.map(([k, a]) => { const x = (a.w || 1) * (night && (k === 'deck' || k === 'campfire') ? 2 : 1) * (b.id === 'tahiti_cf1' && k === 'railing' ? 4 : 1); total += x; return x; });
     let r = Math.random() * total;
@@ -243,14 +244,14 @@ export function createTahiti(ctx) {
         const s = slotOf(b.group, a, i); const g = b.it.character.group.position; g.x = s.x; g.z = s.z; arrive(b);
       }
       partyLights = { vg: ctx.world.apis.party_lights_vg, ol: ctx.world.apis.party_lights_ol };
-      courts = { vg: newCourt('vg'), ol: newCourt('ol') }; ballMesh();
+      courts = { vg: newCourt('vg'), ol: newCourt('ol') }; ballMesh(); hoopMesh();
       const saved = state.save.tahitiTreasure || [];
       for (const it of ctx.world.interactables) if (it.kind === 'activity' && it.act === 'treasure_item' && saved.includes(it.treasureId)) it.found = true;
     },
-    exit() { endMatch(true); hud?.remove(); hud = null; layer?.remove(); layer = null; bubbles = []; brains = []; party = { vg: 0, ol: 0 }; passenger = null; buddy = null; photo = null; race = null; state.joined = null; },
+    exit() { endMatch(true); endShootout(true); bb.mesh = null; hud?.remove(); hud = null; layer?.remove(); layer = null; bubbles = []; brains = []; party = { vg: 0, ol: 0 }; passenger = null; buddy = null; photo = null; race = null; state.joined = null; },
     harrisState() { return harris()?.hstate; },
-    inMatch: () => !!state.volley,
-    _debug: () => ({ brains, ACTIVITIES, party, race, photo, passenger, courts }),
+    inMatch: () => !!state.volley || !!state.hoop,
+    _debug: () => ({ brains, ACTIVITIES, party, race, photo, passenger, courts, bb }),
     onArrive() { const h = harris(); if (h) { h.hstate = 'ARRIVING'; h.mode = 'idle'; h.leftTerminal = false; release(h); } },
     harrisNearJet() { const h = harris(); return !!h && dist(P(), ctx.jetPoint()) < 12 && (h.hstate === 'WAITING_FOR_NATHAN' || dist(h.it.character.group.position, P()) < 4); },
     callHarrisToJet() {
@@ -275,6 +276,7 @@ export function createTahiti(ctx) {
       if (photo) photoTick(dt);
       if (race) raceTick(dt);
       for (const g of ['vg', 'ol']) courtTick(courts[g], dt, t, now);
+      hoopTick(dt, t, now);
       for (const it of ctx.world.interactables) if (it.kind === 'activity' && it.act === 'treasure_item') {
         const vis = !it.found && !!hunt && huntTarget()?.id === it.treasureId && dist(P(), it) < 9;
         it.beacon.group.visible = vis; it.hit.visible = vis; it.disabled = !vis;
@@ -286,6 +288,7 @@ export function createTahiti(ctx) {
     hints() {
       const h = [];
       if (state.volley) return ['Space Spike'];
+      if (state.hoop) return state.hoop.turnNathan ? ['Space Shoot'] : [];
       if (state.mount || state.joined) return state.joined ? ['Move to leave'] : [];
       if (nearestNpc(2.4) && ctx.hasMoto()) h.push('R Invite for a ride');
       if (joinable()) h.push('F Join activity');
@@ -296,6 +299,7 @@ export function createTahiti(ctx) {
     key(k) {
       if (state.cine || state.minigame || state.groupScene || ctx.dialogue.open) return false;
       if (k === ' ' && state.volley) return spikeTry();
+      if (k === ' ' && state.hoop) return shootTry();
       if (k === 'r') return inviteRide();
       if (k === 'f') return joinActivity();
       if (k === 'g') return startPhoto();
@@ -482,6 +486,7 @@ export function createTahiti(ctx) {
       case 'dance': danceBattle(); return true;
       case 'food': foodChallenge(); return true;
       case 'volley': startMatch(it.gang); return true;
+      case 'hoop': startShootout(); return true;
       case 'gallery': ctx.openGallery(); return true;
       case 'photo': startPhoto(it); return true;
       case 'clues': clues(); return true;
@@ -600,10 +605,17 @@ export function createTahiti(ctx) {
     const mine = state.volley === c;
     if (!live) { if (c.phase !== 'idle') { c.phase = 'idle'; if (!courts.vg?.match && !courts.ol?.match) hideBall(); } return; }
     if (c.phase === 'idle') { c.phase = 'serve'; c.wait = 1.4; c.server = rand(sides[c.serveSide]); }
+    if (c.phase === 'gather') {
+      const ready = c.players.filter((p) => p.nathan || p.b.vball).length;
+      c.gatherT += dt;
+      if (ready === c.players.length) { c.phase = 'serve'; c.wait = 1.6; c.server = c.players[0]; ctx.toast('Everyone\'s in. Serve!'); }
+      else if (c.gatherT > 25) { for (const p of c.players) if (p.b && !p.b.vball) { const gp = p.b.it.character.group.position; gp.x = p.home.x; gp.z = p.home.z; p.b.mode = 'vb'; p.b.vball = true; } }
+    }
     // only one ball in the world: the match court, else the nearest live court
     const showMe = mine || (!state.volley && dist(P(), COURT[c.g].c) < 30);
     const B = c.ball;
-    if (c.phase === 'serve') {
+    if (c.phase === 'gather') { const sp = P(); B.x = sp.x; B.z = sp.z; B.y = 1.9; }
+    else if (c.phase === 'serve') {
       if (!c.players.includes(c.server)) c.server = rand(sides[c.serveSide]);
       const sp = posOf(c.server); B.x = sp.x; B.z = sp.z; B.y = 2.0 + Math.sin(t * 6) * 0.1;
       c.wait -= dt;
@@ -616,7 +628,7 @@ export function createTahiti(ctx) {
         if (r && Math.hypot(rp.x - B.x, rp.z - B.z) < (r.nathan ? 1.15 : 0.95)) hit(c, r, false);
       }
       if (B.y <= 0.15) { // landed
-        const side = local(c.g, B.x, B.z).a < 0 ? 0 : 1, out = Math.abs(local(c.g, B.x, B.z).a) > 4.4 || Math.abs(local(c.g, B.x, B.z).b) > 2.6;
+        const side = local(c.g, B.x, B.z).a < 0 ? 0 : 1, out = Math.abs(local(c.g, B.x, B.z).a) > HL + 0.3 || Math.abs(local(c.g, B.x, B.z).b) > HW + 0.3;
         const scorer = out ? 1 - c.last : 1 - side;
         point(c, scorer);
       }
@@ -626,7 +638,7 @@ export function createTahiti(ctx) {
     }
     // players: receiver runs to the landing spot, everyone else drifts home
     for (const p of c.players) {
-      if (p.nathan) continue;
+      if (p.nathan || !p.b.vball) continue;                 // still walking over to the court
       const ch = p.b.it.character, gp = ch.group.position;
       let tx = p.home.x, tz = p.home.z, sp = 1.6;
       if (c.phase === 'fly' && c.recv === p && !c.checked) { tx = c.land.x + (p.off?.x || 0); tz = c.land.z + (p.off?.z || 0); sp = 3.8; }
@@ -649,7 +661,7 @@ export function createTahiti(ctx) {
     }
     if (mine) {
       drawHud(c);
-      if (dist(P(), COURT[c.g].c) > 10) { ctx.toast('You left the court.'); endMatch(); }
+      if (dist(P(), COURT[c.g].c) > 12) { ctx.toast('You left the court.'); endMatch(); }
     }
   }
   function hideBall() { if (ball) ball.visible = shadow.visible = ring.visible = false; }
@@ -660,8 +672,8 @@ export function createTahiti(ctx) {
     ctx.sfx.rep?.();
     B.x = wp.x; B.z = wp.z; B.y = spike ? 2.3 : 1.15;
     const other = 1 - side, sgn = other ? 1 : -1;
-    const land = cpt(c.g, sgn * (1.0 + Math.random() * 2.8), (Math.random() - 0.5) * 3.6);
-    const T = spike ? 0.8 : 1.3 + Math.random() * 0.35;
+    const land = cpt(c.g, sgn * (1.0 + Math.random() * (HL - 1.6)), (Math.random() - 0.5) * 2 * (HW - 0.5));
+    const T = spike ? 0.85 : 1.45 + Math.random() * 0.4;
     B.vx = (land.x - B.x) / T; B.vz = (land.z - B.z) / T; B.vy = (1.15 - B.y + 0.5 * G * T * T) / T;
     c.land = land; c.last = side; c.checked = false; c.phase = 'fly';
     // whoever on the other side is closest to where it's coming down goes for it
@@ -697,15 +709,16 @@ export function createTahiti(ctx) {
       if (b.id === 'tahiti_cf1') teamA.push(b); else if (b.id === 'tahiti_cf2') teamB.push(b);
     }
     for (const b of crew) if (!teamA.includes(b) && !teamB.includes(b)) (teamA.length + 1 <= teamB.length ? teamA : teamB).push(b);
-    const homes = (n, s) => { const sg = s ? 1 : -1, rows = [[2.8, -1.3], [2.8, 1.3], [1.4, 0], [3.6, 0]]; return Array.from({ length: n }, (_, i) => cpt(g, sg * rows[i % 4][0], rows[i % 4][1])); };
+    const homes = (n, s) => { const sg = s ? 1 : -1, rows = [[3.4, -1.9], [3.4, 1.9], [1.8, 0], [4.6, 0]]; return Array.from({ length: n }, (_, i) => cpt(g, sg * rows[i % 4][0], rows[i % 4][1])); };
     const hA = homes(teamA.length + 1, 0), hB = homes(teamB.length, 1);
     c.players = [{ nathan: true, side: 0, home: hA[0] }, ...teamA.map((b, i) => ({ b, side: 0, home: hA[i + 1] })), ...teamB.map((b, i) => ({ b, side: 1, home: hB[i] }))];
-    for (const p of c.players) if (p.b) { release(p.b); p.b.forced = true; p.b.mode = 'vb'; p.b.vball = true; p.skill = 1; }
+    // everyone walks over first (nav paths); the first serve waits until all are in position
+    for (const p of c.players) if (p.b) { release(p.b); p.b.forced = true; p.b.vball = false; p.skill = 1; const b = p.b; goTo(b, p.home.x, p.home.z, () => { b.mode = 'vb'; b.vball = true; bubble(b.it, rand(['I\'m in!', 'Let\'s go!', 'Ready!']), 1.6); }, true); }
     state.joined = null; state.path = [];
     const h = hA[0]; P().set(h.x, ctx.heightAt(h.x, h.z), h.z); player.heading = (cface(g, 0) * Math.PI) / 180;
-    c.match = true; c.score = [0, 0]; c.phase = 'serve'; c.serveSide = 0; c.server = c.players[0]; c.wait = 2.2;
+    c.match = true; c.score = [0, 0]; c.phase = 'gather'; c.gatherT = 0; c.serveSide = 0; c.server = c.players[0];
     state.volley = c;
-    ctx.toast(`Beach volleyball! Stand under the ball to bump it, Space to spike. First to ${WIN}.`);
+    ctx.toast(`Beach volleyball! Waiting for both teams to take the court. First to ${WIN}.`);
   }
   function endMatch(silent) {
     const c = state.volley; if (!c) return;
@@ -724,8 +737,164 @@ export function createTahiti(ctx) {
   function drawHud(c) {
     if (!hud) { hud = document.createElement('div'); hud.className = 'volley-hud'; document.body.append(hud); }
     hud.classList.remove('hidden');
-    const txt = `<b>${esc(teamName(c, 0))}</b><span>${c.score[0]} : ${c.score[1]}</span><b>${esc(teamName(c, 1))}</b><small>Get under the ball · Space to spike · walk away to quit</small>`;
+    const waiting = c.phase === 'gather' ? `Waiting for players ${c.players.filter((p) => p.nathan || p.b.vball).length}/${c.players.length}` : 'Get under the ball · Space to spike · walk away to quit';
+    const txt = `<b>${esc(teamName(c, 0))}</b><span>${c.score[0]} : ${c.score[1]}</span><b>${esc(teamName(c, 1))}</b><small>${waiting}</small>`;
     if (hud.dataset.t !== txt) { hud.innerHTML = txt; hud.dataset.t = txt; }
+  }
+  // ---------- basketball: one shooter at a time ----------
+  // Ambient: Outlaws on the half court take turns shooting while the rest watch.
+  // Shootout (E at the court): Nathan and up to three Outlaws, three rounds,
+  // one shooter at a time. Nathan stands on the ring and presses Space when
+  // the meter is in the green.
+  const RIM = V(18, -26.94), RIM_Y = 2.45;
+  const SPOTS = [-50, -25, 0, 25, 50].map((d) => { const a = (d * Math.PI) / 180; return V(RIM.x + Math.sin(a) * 3.8, RIM.z + Math.cos(a) * 3.8); });
+  const SIDELINE = [V(14.8, -22.4), V(21.2, -22.4), V(14.8, -24.2)];
+  const bb = { mesh: null, ring: null, q: [], cur: null, hold: null, x: RIM.x, y: 0.15, z: RIM.z - 1, busy: false, wait: 1, idx: 0 };
+  function hoopMesh() {
+    const m = new THREE.Mesh(new THREE.IcosahedronGeometry(0.15, 1), new THREE.MeshLambertMaterial({ color: 0xe0702a }));
+    const seam = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.015, 4, 12), new THREE.MeshBasicMaterial({ color: 0x2a1a12 })); m.add(seam);
+    const r = new THREE.Mesh(new THREE.RingGeometry(0.45, 0.62, 20), new THREE.MeshBasicMaterial({ color: 0xffb347, transparent: true, opacity: 0.85, depthWrite: false }));
+    r.rotation.x = -Math.PI / 2;
+    for (const o of [m, r]) { o.visible = false; o.userData.dynamic = true; ctx.world.root.add(o); }
+    bb.mesh = m; bb.ring = r; bb.q = []; bb.cur = null; bb.hold = null; bb.busy = false;
+  }
+  const whoPos = (w) => (w.nathan ? P() : w.b ? w.b.it.character.group.position : w.it.character.group.position);
+  const whoChar = (w) => (w.nathan ? player : w.b ? w.b.it.character : w.it.character);
+  function hands(w) { const p = whoPos(w), h = whoChar(w).heading; return { x: p.x + Math.sin(h) * 0.3, y: p.y + 1.9, z: p.z + Math.cos(h) * 0.3 }; }
+  function arc(p0, p1, T, h, on) { bb.q.push({ p0: { ...p0 }, p1: { ...p1 }, T, h, on, t: 0 }); }
+  function faceRim(w) { const p = whoPos(w); whoChar(w).heading = Math.atan2(RIM.x - p.x, RIM.z - p.z); }
+  function shoot(w, make, done) {
+    faceRim(w); whoChar(w).play('spike'); if (w.nathan) player.jump?.();
+    const h = hands(w); bb.hold = null;
+    const top = { x: RIM.x, y: RIM_Y + 0.12, z: RIM.z };
+    if (make) {
+      arc(h, top, 1.0, 1.7);
+      arc(top, { x: RIM.x, y: 0.2, z: RIM.z }, 0.42, 0, () => { ctx.sfx.rep?.(); done(true); });
+    } else {
+      const a = Math.random() * Math.PI * 2, off = { x: RIM.x + Math.cos(a) * 0.32, y: RIM_Y + 0.08, z: RIM.z + Math.abs(Math.sin(a)) * 0.32 };
+      const out = { x: off.x + (off.x - RIM.x) * 5, y: 0.2, z: off.z + 1.6 };
+      arc(h, off, 1.0, 1.7);
+      arc(off, out, 0.65, 0.9, () => { ctx.sfx.miss?.(); });
+      arc(out, { x: out.x + (out.x - RIM.x) * 0.2, y: 0.2, z: out.z + 0.6 }, 0.35, 0.3, () => done(false));
+    }
+  }
+  function passTo(w, then) { const p = { x: bb.x, y: bb.y, z: bb.z }; bb.hold = null; arc(p, hands(w), 0.6, 0.8, () => { bb.hold = w; then?.(); }); }
+  function hoopTick(dt, t, now) {
+    if (!bb.mesh) return;
+    // ball motion
+    if (!bb.cur && bb.q.length) bb.cur = bb.q.shift();
+    const a = bb.cur;
+    if (a) {
+      a.t += dt; const u = Math.min(1, a.t / a.T);
+      bb.x = a.p0.x + (a.p1.x - a.p0.x) * u; bb.z = a.p0.z + (a.p1.z - a.p0.z) * u;
+      bb.y = a.p0.y + (a.p1.y - a.p0.y) * u + a.h * 4 * u * (1 - u);
+      if (u >= 1) { bb.cur = null; a.on?.(); }
+    } else if (bb.hold) { const h = hands(bb.hold); bb.x = h.x; bb.y = h.y + (bb.hold.nathan && !state.hoop?.shooting ? Math.abs(Math.sin(t * 7)) * -0.9 : 0); bb.z = h.z; }
+    if (state.hoop) shootoutTick(dt, t);
+    else {
+      // ambient: whoever is on the court shoots in turn
+      const crew = brains.filter((b) => b.group === 'ol' && b.mode === 'stay' && b.act === 'hoop');
+      if (!crew.length) { if (!bb.cur && !bb.q.length) bb.hold = null; }
+      else if (!bb.busy) {
+        bb.idx %= crew.length; const s = crew[bb.idx];
+        if (bb.hold !== s && !bb.cur && !bb.q.length) passTo(s);
+        else if (bb.hold === s) {
+          bb.wait -= dt;
+          crew.forEach((o) => { if (o !== s) o.it.character.pose = 'look'; }); s.it.character.pose = null;
+          if (bb.wait <= 0) {
+            bb.busy = true;
+            shoot(s, Math.random() < 0.55, (made) => {
+              if (made) { crew.forEach((o) => { if (o !== s) o.it.character.play('wave'); }); if (Math.random() < 0.5) bubble(s.it, rand(ACTIVITIES.ol.hoop.lines.slice(0, 2)), 1.6); }
+              else if (Math.random() < 0.4) bubble(s.it, 'Airball. Again.', 1.6);
+              bb.idx++; bb.busy = false; bb.wait = 1.4;
+            });
+          }
+        }
+      }
+    }
+    const show = dist(P(), RIM) < 26 && (bb.hold || bb.cur || bb.q.length || state.hoop);
+    bb.mesh.visible = !!show;
+    bb.mesh.position.set(bb.x, bb.y + 0.02, bb.z); bb.mesh.rotation.x += dt * 5;
+  }
+
+  function startShootout() {
+    if (state.hoop || state.volley) return;
+    const crew = brains.filter((b) => b.group === 'ol' && !b.riding && !b.vball).sort((a, b) => dist(a.it.character.group.position, RIM) - dist(b.it.character.group.position, RIM)).slice(0, 3);
+    const players = [{ nathan: true, name: 'Nathan', score: 0 }, ...crew.map((b, i) => ({ b, name: def(b.id).name, score: 0, side: SIDELINE[i] }))];
+    for (const p of players) if (p.b) { const b = p.b; release(b); b.forced = true; goTo(b, p.side.x, p.side.z, () => { b.mode = 'bb'; p.ready = true; faceRimB(b); }, true); }
+    bb.q = []; bb.cur = null; bb.busy = false; bb.hold = null;
+    state.joined = null; state.path = [];
+    state.hoop = { players, turn: 0, round: 0, phase: 'gather', t: 0, meter: 0, shooting: false };
+    ctx.toast('Shootout! One shooter at a time, three rounds. Waiting for everyone...');
+  }
+  function faceRimB(b) { const p = b.it.character.group.position; b.it.character.heading = Math.atan2(RIM.x - p.x, RIM.z - p.z); b.it.character.pose = 'look'; }
+  function shootoutTick(dt, t) {
+    const s = state.hoop; s.t += dt;
+    const who = s.players[s.turn], spot = SPOTS[(s.round * 2 + s.turn) % SPOTS.length];
+    s.turnNathan = who.nathan && s.phase === 'aim';
+    bb.ring.visible = who.nathan && (s.phase === 'aim' || s.phase === 'walk');
+    if (bb.ring.visible) { bb.ring.position.set(spot.x, ctx.heightAt(spot.x, spot.z) + 0.04, spot.z); bb.ring.scale.setScalar(1 + Math.sin(t * 8) * 0.08); }
+    if (s.phase === 'gather') {
+      if (s.players.every((p) => p.nathan || p.ready) || s.t > 20) { s.players.forEach((p) => { p.ready = true; }); s.phase = 'next'; ctx.toast('Everyone\'s here. Nathan shoots first!'); }
+    } else if (s.phase === 'next') {
+      s.phase = 'walk'; s.t = 0;
+      if (!who.nathan) { const b = who.b; goTo(b, spot.x, spot.z, () => { b.mode = 'bb'; s.phase = 'npcAim'; s.t = 0; faceRimB(b); b.it.character.pose = null; }, false); }
+      passTo(who);
+    } else if (s.phase === 'walk' && who.nathan) {
+      if (dist(P(), spot) < 0.7) { s.phase = 'aim'; s.t = 0; faceRim(who); }
+    } else if (s.phase === 'aim') {
+      s.meter = (Math.sin(s.t * 3.4 - Math.PI / 2) + 1) / 2;
+      if (dist(P(), spot) > 0.9) s.phase = 'walk';
+    } else if (s.phase === 'npcAim' && s.t > 1.0 && bb.hold === who) {
+      s.phase = 'flight'; s.shooting = true;
+      shoot(who, Math.random() < 0.5, (made) => afterShot(made));
+    }
+    if (dist(P(), RIM) > 13) { ctx.toast('You left the court.'); endShootout(); return; }
+    drawHoopHud(s);
+  }
+  function shootTry() {
+    const s = state.hoop; if (!s) return true;
+    const who = s.players[s.turn];
+    if (!who.nathan || s.phase !== 'aim' || bb.hold !== who) return true;
+    const m = s.meter, make = m > 0.4 && m < 0.6 ? true : m > 0.32 && m < 0.68 ? Math.random() < 0.4 : false;
+    s.phase = 'flight'; s.shooting = true;
+    shoot(who, make, (made) => afterShot(made));
+    return true;
+  }
+  function afterShot(made) {
+    const s = state.hoop; if (!s) return;
+    const who = s.players[s.turn]; s.shooting = false;
+    if (made) { who.score++; s.players.forEach((p) => { if (p !== who && p.b) p.b.it.character.play('wave'); }); }
+    if (who.b) bubble(who.b.it, made ? rand(['Swish!', 'Nothing but net.', 'Too easy.']) : rand(['Rim! So close.', 'That doesn\'t count.', 'Ugh.']), 1.8);
+    else ctx.toast(made ? 'Swish!' : 'Off the rim.');
+    if (who.b) { const b = who.b; goTo(b, who.side.x, who.side.z, () => { b.mode = 'bb'; faceRimB(b); }, false); }
+    s.turn++;
+    if (s.turn >= s.players.length) { s.turn = 0; s.round++; }
+    if (s.round >= 3) {
+      const best = Math.max(...s.players.map((p) => p.score)), winners = s.players.filter((p) => p.score === best);
+      ctx.toast(winners.length > 1 ? `Tie at ${best}! ${winners.map((w) => w.name).join(' & ')}` : `${winners[0].name} wins the shootout with ${best}!`);
+      if (winners.some((w) => w.nathan)) player.play('flex');
+      setTimeout(() => endShootout(), 1500); s.phase = 'over'; return;
+    }
+    s.phase = 'next';
+  }
+  function endShootout(silent) {
+    const s = state.hoop; if (!s) return;
+    for (const p of s.players) if (p.b) { p.b.forced = false; p.b.mode = 'idle'; release(p.b); }
+    state.hoop = null; bb.q = []; bb.cur = null; bb.hold = null; bb.busy = false;
+    if (bb.ring) bb.ring.visible = false; hud?.classList.add('hidden');
+    if (!silent) player.pose = null;
+  }
+  function drawHoopHud(s) {
+    if (!hud) { hud = document.createElement('div'); hud.className = 'volley-hud'; document.body.append(hud); }
+    hud.classList.remove('hidden');
+    const who = s.players[s.turn];
+    const msg = s.phase === 'gather' ? `Waiting for players ${s.players.filter((p) => p.nathan || p.ready).length}/${s.players.length}`
+      : s.phase === 'over' ? 'Final score'
+      : who.nathan ? (s.phase === 'aim' ? 'Space when the marker is in the green' : 'Walk onto the glowing ring') : `${who.name} is shooting...`;
+    const meter = who.nathan && s.phase === 'aim' ? `<div class="hoop-meter"><i></i><b style="left:${(s.meter * 100).toFixed(1)}%"></b></div>` : '';
+    const html = `<div class="hoop-board">${s.players.map((p, i) => `<span class="${i === s.turn && s.phase !== 'over' ? 'on' : ''}">${esc(p.name)} ${p.score}</span>`).join('')}</div><small>Round ${Math.min(3, s.round + 1)}/3 · ${msg}</small>${meter}`;
+    if (hud.dataset.t !== html) { hud.innerHTML = html; hud.dataset.t = html; }
   }
   const esc = (s) => String(s).replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
   return api;

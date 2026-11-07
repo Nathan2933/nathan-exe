@@ -77,7 +77,7 @@ rect(14, -28, 22, -21, T.concrete); walkRect(10, -20, 11, -1); walkRect(10, -21,
 // grass dividers between the lands: a 2-tile strip of lighter lawn under hedges
 rect(-7, -38, -6, -8, T.lawn); rect(9, -36, 10, -22, T.lawn); rect(6, 20, 7, 30, T.lawn);
 // flowerbeds: Vanderlinde garden, fountain plaza ring
-rect(-22, -30, -20, -29, T.flowerbed); rect(-13, -30, -11, -29, T.flowerbed); rect(-17, -21, -15, -20, T.flowerbed);
+rect(-12, -28, -10, -28, T.flowerbed); rect(-14, -18, -12, -18, T.flowerbed);
 
 // ---- cleanup + borders ----
 const paved = new Set([T.path, T.plaza, T.concrete, T.terracotta]);
@@ -151,10 +151,10 @@ labels.push(point('label', 2, 38, { text: 'SOUTH BEACH', color: '#c4402f', heigh
 const hedgeRow = (x, z0, z1, gapEvery = 4) => { for (let z = z0; z < z1; z += gapEvery + 1.5) O('hedge', x, z + gapEvery / 2, { w: 1, d: gapEvery }); };
 hedgeRow(-6, -37, -9); hedgeRow(10, -35, -23); hedgeRow(7, 20.5, 30);
 // ---- Vanderlinde garden (north of the hideout): blossoms, picnics, flowers ----
-O('picnic_blanket', -18.0, -25.0); O('picnic_blanket', -14.0, -25.6);
-for (const [x, z] of [[-24, -27], [-10, -27], [-21, -20], [-9, -21], [-24, -22], [-12, -33], [-18, -33]]) O('tree_blossom', x, z, { scale: 0.9 + Math.abs(x % 3) * 0.06 });
-O('flower_patch', -16, -29.5, { w: 3, d: 1 }); O('lamp', -16, -22.4);
-labels.push(point('label', -16, -28, { text: 'VANDERLINDE GARDEN', color: '#5a3a26', height: 2.6 }));
+O('picnic_blanket', -11.5, -21.5); O('picnic_blanket', -9.0, -23.5);
+for (const [x, z] of [[-13.5, -19], [-8, -19], [-14, -26.5], [-8.5, -27.5], [-11, -30.5], [-20.5, -19.5]]) O('tree_blossom', x, z, { scale: 0.9 + Math.abs(x % 3) * 0.06 });
+O('flower_patch', -11.2, -25.8, { w: 3, d: 1 }); O('lamp', -11, -18.6);
+labels.push(point('label', -11, -24, { text: 'VANDERLINDE GARDEN', color: '#5a3a26', height: 2.6 }));
 // ---- Vanderlinde banyan hangout (west) ----
 O('banyan', -36.5, -1.5); O('bench', -36.5, 2.2, { rot: 180 }); O('lantern_post', -33.2, -3.2);
 for (const [x, z] of [[-38, -8], [-34, 6], [-39, 4], [-31, -9]]) O('tree_palm', x, z, { scale: 0.95 });
@@ -208,12 +208,15 @@ O('dj_booth', 21.5, -7.4, { lift: 1.4 }); A('dance', 21.5, -5.8, { title: 'Dance
 O('bbq_grill', 13.6, 9.6); A('food', 11.6, 9.0, { title: 'Eating contest' });
 // each gang's beach: speaker, string lights and its own party
 O('beach_speaker', -27.6, -18.6); O('party_lights', -31.6, -25.6, { len: 10, rot: -50, variant: 'vg' }); A('party', -28.8, -19.6, { id: 'party-vg', gang: 'vg', title: 'Vanderlinde beach party' });
-O('beach_speaker', 36.6, -5.4); O('party_lights', 42.2, 0, { len: 10, rot: 90, variant: 'ol' }); A('party', 35.8, -3.8, { id: 'party-ol', gang: 'ol', title: 'Outlaws beach party' });
+O('beach_speaker', 34.4, -2.0); O('party_lights', 42.2, 0, { len: 10, rot: 90, variant: 'ol' }); A('party', 35.8, -3.8, { id: 'party-ol', gang: 'ol', title: 'Outlaws beach party' });
 // neutral south beach: race and volleyball
 O('race_flag', -4.0, 38.4); O('race_flag', 9.0, 38.0, { color: '#2bb3a3' }); A('race', -3.4, 35.6, { title: 'Beach race' });
 // each gang's beach volleyball court (net spans the court's width)
-O('volley_net', -19.9, -30.1, { len: 4.6, rot: 129.7 }); A('volley', -23.2, -26.1, { id: 'volley-vg', gang: 'vg', title: 'Vanderlinde volleyball' });
-O('volley_net', 37.0, -10.0, { len: 4.6, rot: -90 }); A('volley', 37.0, -15.0, { id: 'volley-ol', gang: 'ol', title: 'Outlaws volleyball' });
+const COURTS = [{ c: [-17.95, -28.5], u: [0.638, -0.77], w: [-0.77, -0.638], rot: 129.7 }, { c: [35.3, -10], u: [0, 1], w: [1, 0], rot: -90 }];
+O('volley_net', ...COURTS[0].c, { len: 6.8, L: 11, rot: COURTS[0].rot }); A('volley', -22.3, -23.3, { id: 'volley-vg', gang: 'vg', title: 'Vanderlinde volleyball' });
+O('volley_net', ...COURTS[1].c, { len: 6.8, L: 11, rot: COURTS[1].rot }); A('volley', 35.3, -16.9, { id: 'volley-ol', gang: 'ol', title: 'Outlaws volleyball' });
+// basketball: one shooter at a time
+A('hoop', 18, -20.6, { id: 'hoop-ol', gang: 'ol', title: 'Shootout' });
 // treasure hunt: clue board at the junction, five chests hidden around the island
 O('clue_board', -4.4, -1.6); A('clues', -4.4, -0.6, { title: 'Treasure hunt clues' });
 for (const [id, x, z] of [['palm', -8.6, 0.8], ['beach', 11.6, 35.4], ['stairs', 21.6, 9.6], ['rock', -24.2, 8.2], ['hideout', -21.4, -9.0]]) { O('treasure_chest', x, z); A('treasure_item', x + 0.6, z + 0.6, { id: 'treasure-' + id, treasure: id, title: 'Something shiny' }); }
@@ -229,6 +232,11 @@ O('parking_pad', 11.6, 6.4); interact.push(point('vehicle', 11.6, 6.4, { id: 'mo
 spawn.push(point('spawn', -4.4, 14.8));
 
 const layer = (name, objs) => ({ id: nextId++, name, type: 'objectgroup', draworder: 'topdown', opacity: 1, visible: true, x: 0, y: 0, objects: objs });
+// courts get a clean sandy footprint: paint sand, drop any decor standing on it
+const inCourt = (x, z, m = 0) => COURTS.some(({ c, u, w }) => { const dx = x - c[0], dz = z - c[1]; return Math.abs(dx * u[0] + dz * u[1]) < 6.2 + m && Math.abs(dx * w[0] + dz * w[1]) < 4.2 + m; });
+for (let z = -HALF; z < HALF; z++) for (let x = -HALF; x < HALF; x++) if (ground[idx(x, z)] !== 0 && ground[idx(x, z)] !== T.water && inCourt(x + 0.5, z + 0.5)) ground[idx(x, z)] = T.sand;
+const DECOR = new Set(['tree_blossom', 'tree_palm', 'tree_round', 'rock', 'picnic_blanket', 'flower_patch', 'lamp', 'shrub', 'hedge', 'lantern_post', 'bench']);
+for (let i = objects.length - 1; i >= 0; i--) { const o = objects[i]; if (DECOR.has(o.type) && inCourt(o.x / PX - HALF, o.y / PX - HALF, 0.6)) objects.splice(i, 1); }
 const tmj = {
   type: 'map', version: '1.10', tiledversion: '1.10.2', orientation: 'orthogonal', renderorder: 'right-down',
   width: N, height: N, tilewidth: PX, tileheight: PX, infinite: false, compressionlevel: -1, backgroundcolor: '#2fc4c9',
