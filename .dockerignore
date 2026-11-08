@@ -1,0 +1,15 @@
+.git
+**/node_modules
+web/dist
+web/.vite
+web/.admin-auth.json
+web/content-backups
+web/public/maps/*.backup-*.tmj
+legacy
+design
+source
+docs
+.claude
+**/*.log
+.env
+.env.*

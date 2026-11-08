@@ -26,25 +26,47 @@ tools/build-map.mjs    Generates the starter Tiled map (only re-run to reset the
 tools/build_world.py   Old Blender generator (for the legacy layout)
 ```
 
-## Run
+## Run on another PC
+
+You need [Git](https://git-scm.com/) and [Node.js 20+](https://nodejs.org/) (LTS is fine).
 
 ```bash
-cd web
+git clone https://github.com/Nathan2933/nathan-exe.git
+cd nathan-exe/web
 npm install
 npm run dev
 ```
 
 - Game: http://localhost:5173/
 - Portfolio: http://localhost:5173/portfolio.html
-- **Admin: http://localhost:5173/admin.html**
+- **Admin: http://localhost:5173/admin.html** (see below)
+
+Production build to check before publishing: `npm run build` then `npm run preview`.
+
+### Or run it with Docker
+
+You only need [Docker Desktop](https://www.docker.com/products/docker-desktop/). From the repo root:
+
+```bash
+docker compose up --build
+```
+
+Open http://localhost:8080. This serves the production build with nginx (`Dockerfile`, `docker/nginx.conf`). The admin is not in the Docker image: content editing is a local `npm run dev` job by design.
 
 ## Editing content (admin)
 
-Open `/admin.html` while `npm run dev` is running on your computer. Edit profile/about, chapters, projects, skills, experience, achievements and links, then **Save** (or Ctrl+S). That writes `web/public/data/content.json`; the last 30 versions are backed up in `web/content-backups/`. Upload buttons store images/PDFs in `web/public/uploads/`.
+The admin password is never stored in the repo, so set one on each computer you edit from (once):
 
-To publish, commit and push. Your host rebuilds and the live site updates.
+```bash
+cd web
+npm run admin:password
+```
 
-Security model: saving only works from `localhost` in dev mode, and `admin.html` is excluded from the production build, so there's no admin login on the public site to attack.
+Then, with `npm run dev` running, open `/admin.html` and sign in. Edit profile, chapters, projects, skills, experience, achievements, links and their photos/videos, then **Save** (or Ctrl+S). That writes `web/public/data/content.json`; the last 30 versions are backed up in `web/content-backups/`. Uploads go to `web/public/uploads/`.
+
+To publish, commit and push (include `web/public/uploads/` and `content.json`). Your host rebuilds and the live site updates.
+
+Security model: the admin needs a username + password (scrypt-hashed in the git-ignored `web/.admin-auth.json`, HttpOnly session cookie, 10-minute lockout after 5 wrong tries), only answers requests from this computer addressed to `localhost`, and is left out of production builds and the Docker image. Netlify and nginx both return 404 for `/admin*`.
 
 ## Controls
 

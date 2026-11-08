@@ -1,14 +1,35 @@
+# ---- dependencies & build output ----
+node_modules/
 web/node_modules/
 web/dist/
 web/.vite/
+
+# ---- local-only admin data (never commit) ----
+# admin username + password hash
+web/.admin-auth.json
+# automatic content.json backups
+web/content-backups/
+.env
+.env.*
+!.env.example
+
+# ---- generated / temporary ----
+web/public/maps/*.backup-*.tmj
+tools/__pycache__/
+__pycache__/
+*.pyc
+*.log
+npm-debug.log*
+*.tmp
+
+# ---- 3D source autosaves ----
 source/*.blend1
 source/*.blend2
-tools/__pycache__/
+
+# ---- editor / OS / tooling ----
 .DS_Store
-web/content-backups/
-
-# admin password hash (local only)
-web/.admin-auth.json
-
-# map rebuild backups
-web/public/maps/*.backup-*.tmj
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+.claude/settings.local.json
