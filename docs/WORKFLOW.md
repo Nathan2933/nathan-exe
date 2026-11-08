@@ -4,7 +4,7 @@ Three tools, three jobs:
 
 | What you change | Tool | File(s) |
 |---|---|---|
-| Text: chapters, projects, memories, NPC dialogue | **Admin page** (`npm run dev` → `/admin.html`) | `web/public/data/content.json` |
+| Text: chapters, projects, memories, NPC dialogue | **Content editor** (local, `npm run dev`) | `web/public/data/content.json` |
 | Layout: roads, lots, where things stand, NPCs, memories, colliders | **Tiled** (free, mapeditor.org) | `web/public/maps/town.tmj` |
 | Looks: a building, prop or character model | **Blender** → `.glb` | `web/public/assets/kit/<piece>.glb` |
 
@@ -99,7 +99,7 @@ Each person is data, not code:
 
 ## 3. Story content (admin)
 
-`npm run dev`, then open `http://localhost:5173/admin.html`.
+Run `npm run dev` and use the local content editor.
 
 - **Story chapters**: one per district. The Lighthouse chapter is the contact/career ending; Signal Tower automatically lists skills, experience and achievements.
 - **Memories**: collectible ✦ items. Each needs an `id` that a `memory` point in Tiled refers to. The `transformation` memory is awarded by the lift minigame.

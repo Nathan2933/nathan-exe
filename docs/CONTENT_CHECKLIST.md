@@ -1,7 +1,7 @@
 # NATHAN.EXE: content checklist
 
 Fill this in (or send it back to me) and I'll put it into the game. You can also type
-everything straight into the admin page: `npm run dev` → http://localhost:5173/admin.html.
+everything straight into the content editor while running `npm run dev`.
 Leave anything blank that you don't want to share.
 
 ---

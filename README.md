@@ -2,24 +2,23 @@
 
 A retro-rendered 2.5D town (orthographic Three.js + pixel/dither pass). Visitors play Nathan's "save file": six chapters (Iron Yard → Winter Campus → Monsoon Campus → Garage → Signal Tower → Lighthouse), an optional Lake Park, collectible memories, NPC conversations and small story minigames. Recruiters can skip the game at any time.
 
-**Status:** all districts are built: plaza, Iron Yard, Winter Campus, Monsoon Campus (TCE Madurai), the Garage, Signal Tower, City Park, Lake Park and the Lighthouse finale, connected by the Memory Line railway. What's left is **your real content** (admin page) and, optionally, your own Blender models. See *What to provide* below.
+**Status:** all districts are built: plaza, Iron Yard, Winter Campus, Monsoon Campus (TCE Madurai), the Garage, Signal Tower, City Park, Lake Park and the Lighthouse finale, connected by the Memory Line railway. What's left is **your real content** and, optionally, your own Blender models. See *What to provide* below.
 
-**How to edit the map (Tiled), models (Blender) and story (admin): see [docs/WORKFLOW.md](docs/WORKFLOW.md).**
+**How to edit the map (Tiled), models (Blender) and story content: see [docs/WORKFLOW.md](docs/WORKFLOW.md).**
 
 ```
 web/
 ├─ index.html          The game
 ├─ portfolio.html      Classic portfolio (fallback / "Skip game"), same content
-├─ admin.html          Content editor (local dev only, not deployed)
 ├─ public/data/content.json   ← ALL text: profile, chapters, projects, skills, links, memories, NPC dialogue
 ├─ public/maps/town.tmj       ← the town layout (open in Tiled)
-├─ public/uploads/     Images/PDFs uploaded from the admin
+├─ public/uploads/     Images, PDFs and videos used by the site
 └─ src/
    ├─ game/            main.js (loop, input, UI) · world.js (builds town from the map) · kit.js (placeable pieces)
    │                   tiled.js (map loader) · player.js (characters + animation) · nav.js (A*) · retro.js (pixel pass)
    │                   dialogue.js · minigame.js · save.js · portrait.js
    ├─ shared/content.js
-   ├─ portfolio.js · admin.js
+   ├─ portfolio.js
    └─ styles/
 legacy/web-openworld/  The previous third-person starter, kept for reference
 tools/build-map.mjs    Generates the starter Tiled map (only re-run to reset the layout)
@@ -39,7 +38,6 @@ npm run dev
 
 - Game: http://localhost:5173/
 - Portfolio: http://localhost:5173/portfolio.html
-- **Admin: http://localhost:5173/admin.html** (see below)
 
 Production build to check before publishing: `npm run build` then `npm run preview`.
 
@@ -51,22 +49,11 @@ You only need [Docker Desktop](https://www.docker.com/products/docker-desktop/).
 docker compose up --build
 ```
 
-Open http://localhost:8080. This serves the production build with nginx (`Dockerfile`, `docker/nginx.conf`). The admin is not in the Docker image: content editing is a local `npm run dev` job by design.
+Open http://localhost:8080. This serves the production build with nginx (`Dockerfile`, `docker/nginx.conf`).
 
-## Editing content (admin)
+## Editing content
 
-The admin password is never stored in the repo, so set one on each computer you edit from (once):
-
-```bash
-cd web
-npm run admin:password
-```
-
-Then, with `npm run dev` running, open `/admin.html` and sign in. Edit profile, chapters, projects, skills, experience, achievements, links and their photos/videos, then **Save** (or Ctrl+S). That writes `web/public/data/content.json`; the last 30 versions are backed up in `web/content-backups/`. Uploads go to `web/public/uploads/`.
-
-To publish, commit and push (include `web/public/uploads/` and `content.json`). Your host rebuilds and the live site updates.
-
-Security model: the admin needs a username + password (scrypt-hashed in the git-ignored `web/.admin-auth.json`, HttpOnly session cookie, 10-minute lockout after 5 wrong tries), only answers requests from this computer addressed to `localhost`, and is left out of production builds and the Docker image. Netlify and nginx both return 404 for `/admin*`.
+Site content lives in `web/public/data/content.json` and media in `web/public/uploads/`. Edit, commit and push; the host rebuilds and the live site updates.
 
 ## Controls
 
@@ -89,15 +76,15 @@ Build command `npm run build`, base directory `web`, output `dist`. Works on Clo
 
 ## Next steps
 
-1. Fill in real content through the admin, and add `web/public/resume.pdf`.
+1. Fill in real content in `web/public/data/content.json`, and add `web/public/resume.pdf`.
 2. Replace placeholder districts and the character with Blender GLBs at the same anchor points (`ANCHORS` in `src/game/world.js`).
 3. Ambient audio (off by default), PQC lattice mini-interaction, OG image.
 
 ## What to provide
 
-Everything below is entered in the admin page (`npm run dev`, then `/admin.html`) unless noted:
+Everything below lives in `web/public/data/content.json` unless noted:
 
-- **Profile**: name, role, summary, about paragraphs, photo, resume PDF (upload in the admin, or put `resume.pdf` in `web/public/`).
+- **Profile**: name, role, summary, about paragraphs, photo, resume PDF (put `resume.pdf` in `web/public/`).
 - **Contact links**: real email, GitHub, LinkedIn.
 - **Projects** (up to 6 appear as benches in the Garage): title, pitch, description, stack, links, screenshot.
 - **Skills** (Garage pegboard), **Experience** (Signal Tower radio log), **Achievements** (trophy case).
