@@ -1,4 +1,4 @@
-# NATHAN.EXE — a playable portfolio
+# NATHAN.EXE - a playable portfolio
 
 A retro-rendered 2.5D town (orthographic Three.js + pixel/dither pass). Visitors play Nathan's "save file": six chapters (Iron Yard → Winter Campus → Monsoon Campus → Garage → Signal Tower → Lighthouse), an optional Lake Park, collectible memories, NPC conversations and small story minigames. Recruiters can skip the game at any time.
 
