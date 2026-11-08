@@ -41,7 +41,7 @@ img { max-width: 100%; display: block; }
 
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 
-/* Retro "program window" — shared by game panels and portfolio sections */
+/* Retro "program window" · shared by game panels and portfolio sections */
 .window {
   background: var(--paper);
   border: var(--border);

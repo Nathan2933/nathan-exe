@@ -4,7 +4,7 @@ import { applyPalette, SKY } from './palette.js';
 import { setGlowBoost } from './kit.js';
 import { sfx, setSound, setRain, setMusic, setTheme, setOcean, setEngine } from './audio.js';
 import { createTahiti } from './tahiti.js';
-import { buildWorld, loadKitOverrides, updateWalkers, updateNpcs, groundHeight } from './world.js';
+import { buildWorld, loadKitOverrides, updateWalkers, updateNpcs, groundHeight, markerMats, windowMats } from './world.js';
 import { loadTiledMap, tileAt } from './tiled.js';
 import { NavGrid } from './nav.js';
 import { Player } from './player.js';
@@ -305,6 +305,7 @@ async function init() {
   world.interactables.forEach((it) => { if (isDone(it)) markVisited(it, true); });
   state.complete = MAIN_DISTRICTS.every((d) => s.chapters.includes(d.id));
   if (s.chapters.includes('iron-yard') || s.minigames.includes('lift')) player.setBuff(true);
+  if (GYM_IDS.every((id) => (s.gym || []).includes(id))) player.setJacked(true);
   if (s.finale) world.apis.lighthouse?.setLit(true);
   setupUI();
   setupLabels();
@@ -366,6 +367,12 @@ function setupUI() {
     if (state.minigame && mgRoot()?.onkey && !e.repeat) { const k = e.key.length === 1 ? e.key.toLowerCase() : e.key; if (k.startsWith('Arrow') || k === ' ' || k === 'e' || k === 'Enter') { e.preventDefault(); mgRoot().onkey(k); return; } }
     if (!state.started || state.minigame) return;
     if (e.target.closest?.('input, textarea')) return;
+    if (state.gym) {
+      const k = e.key.toLowerCase();
+      if (k === 'escape' || ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) gymCancel();
+      else if (k === 'e' && !e.repeat) { e.preventDefault(); gymPush(); }
+      return;
+    }
     if (state.level === 'tahiti' && !e.repeat && !state.mount && ['r', 'f', 'g'].includes(e.key.toLowerCase()) && tahiti.key(e.key.toLowerCase())) { e.preventDefault(); return; }
     if (e.target.closest?.('input, textarea')) return;
     if (e.key === 'm' || e.key === 'M') { e.preventDefault(); toggleBigMap(); return; }
@@ -386,7 +393,7 @@ function setupUI() {
     if (e.key === 'Enter' && focused?.closest?.('a, button')) return; // let Enter press the focused button
     e.preventDefault();
     if (dialogue.open) dialogue.advance();
-    else if (state.nearby && !state.panelOpen) interact(state.nearby);
+    else if (state.nearby && !state.panelOpen && !(e.repeat && state.nearby.kind === 'gym')) interact(state.nearby);
   });
   dialogue.onClose = () => {
     const it = state.talkingTo;
@@ -434,6 +441,8 @@ function interact(it) {
   if (it.kind === 'station') return openStations(it);
   if (it.kind === 'panel') return openInfoPanel(it);
   if (it.kind === 'finale') return runFinale(it);
+  if (it.kind === 'gym') return interactGym(it);
+  if (it.kind === 'chapter' && it.district === 'iron-yard') return openDiscipline(it);
   openInteractable(it);
 }
 
@@ -473,23 +482,15 @@ function openInteractable(it) {
     html = `${chapterHeader(ch)}
       ${(ch.body || []).map((p) => `<p>${esc(p)}</p>`).join('')}
       ${ch.highlights?.length ? `<ul class="highlights">${ch.highlights.map((h) => `<li>${esc(h)}</li>`).join('')}</ul>` : ''}
-      ${mems.length ? `<p class="mem-hint">Memories here: <b>${found}/${mems.length}</b>${found < mems.length ? ' — look for the glowing ✦ nearby.' : ' — all found.'}</p>` : ''}`;
+      ${mems.length ? `<p class="mem-hint">Memories here: <b>${found}/${mems.length}</b>${found < mems.length ? ' · look for the glowing ✦ nearby.' : ' · all found.'}</p>` : ''}`;
     const edu = (c.education || []).find((e) => e.district === it.district);
     if (edu) html += educationExtras(edu);
     if (it.district === 'garage') {
       html += `<div class="panel-projects">${c.projects.map(projectCard).join('')}</div><a class="btn" href="./#projects">All projects →</a>`;
     }
-    if (it.district === 'iron-yard') {
-      const m = state.save.minigames;
-      html += `<p class="eyebrow" style="margin-top:14px">Training floor</p>
-        <div class="transmit">
-          <button class="btn primary" data-gym="lift">Lift · progressive overload${m.includes('lift') ? ' ✓' : ''}</button>
-          <button class="btn" data-gym="tempo">Tempo · rep rhythm${m.includes('tempo') ? ' ✓' : ''}</button>
-        </div>`;
-    }
     if (it.district === 'signal-tower') {
       html += (c.skills || []).map((g) => `<p class="eyebrow" style="margin-top:14px">${esc(g.group)}</p><ul class="chips">${(g.items || []).map((s) => `<li>${esc(s)}</li>`).join('')}</ul>`).join('');
-      if ((c.experience || []).length) html += `<p class="eyebrow" style="margin-top:18px">Experience</p><ul class="highlights">${c.experience.map((e) => `<li><b>${esc(e.role)}</b> · ${esc(e.org)} <span class="muted">${esc(e.period)}</span><br>${esc(e.summary)}</li>`).join('')}</ul>`;
+      if ((c.experience || []).length) html += `<p class="eyebrow" style="margin-top:18px">Experience</p><ul class="highlights">${c.experience.map((e) => `<li class="has-logo">${orgLogo(e)}<b>${esc(e.role)}</b> · ${esc(e.org)} <span class="muted">${esc(e.period)}</span><br>${esc(e.summary)}</li>`).join('')}</ul>`;
       if ((c.achievements || []).length) html += `<p class="eyebrow" style="margin-top:18px">Achievements</p><ul class="highlights">${c.achievements.map((a) => `<li><b>${esc(a.title)}</b>${a.org ? ` · ${esc(a.org)}` : ''} <span class="muted">${esc(a.year)}</span>${a.detail ? `<br>${esc(a.detail)}` : ''}</li>`).join('')}</ul>`;
     }
     if (it.district === 'lighthouse') {
@@ -503,6 +504,17 @@ function openInteractable(it) {
     }
   }
   showPanel(bar, html, it);
+  if (it.kind === 'chapter') mountChapterMedia(chapterFor(c, it.district));
+  if (it.kind === 'project') {
+    const p = c.projects.find((x) => x.id === it.projectId);
+    const box = document.createElement('div'); box.className = 'proj-media';
+    const media = [...new Set([...(p?.media || []), ...(p?.media?.length && p.image ? [p.image] : [])])];
+    mountPhotoViewer(box, media.map((src) => ({ src, caption: p.title })));
+    if (box.childElementCount) {
+      $('#panel-body').querySelector('.pd-shot')?.remove(); // the screenshot is already in the viewer
+      $('#panel-body').querySelector('h2')?.after(box);
+    }
+  }
   $('#panel-body').querySelectorAll('[data-gym]').forEach((b) => b.addEventListener('click', () => startMinigame({ ...it, game: b.dataset.gym })));
   const eduHere = it.kind === 'chapter' && (c.education || []).find((e) => e.district === it.district);
   if (eduHere && addUnique(state.save.stamps, eduHere.id)) {
@@ -569,7 +581,7 @@ function startMinigame(it) {
   const mem = (state.content.memories || []).find((m) => m.id === 'transformation');
   state.minigame = runLift($('#minigame'), {
     title: 'Progressive overload',
-    intro: 'Three clean reps. The groove gets tighter every set — just like it did in real life.',
+    intro: 'Three clean reps. The groove gets tighter every set, just like it did in real life.',
     onDone: ({ skipped }) => {
       state.minigame = null;
       player.play('flex');
@@ -623,6 +635,83 @@ function unlockMemory(id, it = world.interactables.find((i) => i.kind === 'memor
   if (isNew) { toast(`✦ Memory found: ${m.title}`); sfx.memory(); }
 }
 
+const orgLogo = (e) => e.logo ? `<img class="org-logo" src="${esc(safeUrl(e.logo))}" alt="" loading="lazy">` : '';
+const DEVICON = { Python: 'python', Java: 'java', JavaScript: 'javascript', TypeScript: 'typescript', C: 'c', 'C++': 'cplusplus', SQL: 'azuresqldatabase', Solidity: 'solidity',
+  HTML: 'html5', CSS: 'css3', React: 'react', 'Next.js': 'nextjs', Flask: 'flask', 'Node.js': 'nodejs', 'Tailwind CSS': 'tailwindcss', MySQL: 'mysql', MongoDB: 'mongodb', SQLite: 'sqlite',
+  Docker: 'docker', Kubernetes: 'kubernetes', Grafana: 'grafana', Git: 'git', GitHub: 'github', 'Blender (learning)': 'blender', 'Three.js': 'threejs', 'Ethereum / Ganache': 'ethereum' };
+const skillIcon = (name) => DEVICON[name]
+  ? `<img src="https://cdn.jsdelivr.net/gh/devicons/devicon@v2.16.0/icons/${DEVICON[name]}/${DEVICON[name]}-original.svg" alt="" crossorigin="anonymous" onerror="if(!this.dataset.p){this.dataset.p=1;this.src=this.src.replace('-original','-plain')}else{this.replaceWith(Object.assign(document.createElement('span'),{className:'sk-fallback',textContent:${'`'}${esc(name[0])}${'`'}}))}">`
+  : `<span class="sk-fallback">${esc(name[0])}</span>`;
+// Redraw a logo at 18×18 and scale it up with hard edges, so it reads as pixel art
+const PIXEL_CACHE = new Map();
+function pixelateIcon(img) {
+  const run = () => {
+    if (img.dataset.px) return;
+    const key = img.src;
+    const done = (url) => { img.dataset.px = 1; img.src = url; img.classList.add('px'); };
+    if (PIXEL_CACHE.has(key)) return done(PIXEL_CACHE.get(key));
+    try {
+      const cv = document.createElement('canvas'); cv.width = cv.height = 18;
+      const g = cv.getContext('2d'); g.imageSmoothingEnabled = true;
+      g.drawImage(img, 0, 0, 18, 18);
+      const url = cv.toDataURL('image/png'); PIXEL_CACHE.set(key, url); done(url);
+    } catch { img.classList.add('px'); }
+  };
+  if (img.complete && img.naturalWidth) run(); else img.addEventListener('load', run);
+}
+const achGallery = (a) => (a.images || []).length ? `<div class="ach-gallery">${a.images.map((u) => safeUrl(u)).filter(Boolean).map((u) => `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="${esc(a.title)}" loading="lazy"></a>`).join('')}</div>` : '';
+// Large photo viewer with ◀ ▶ arrows (achievement photos)
+// Album photo card: a pop-up over the game with the photo large, ◀ ▶ to browse, Esc / ✕ to close.
+function openPhotoCard(list, i) {
+  document.querySelector('.photo-card')?.remove();
+  const card = document.createElement('div');
+  card.className = 'photo-card'; card.setAttribute('role', 'dialog'); card.setAttribute('aria-modal', 'true'); card.setAttribute('aria-label', 'Photo');
+  card.innerHTML = `<div class="pc-box window"><div class="window-bar"><span class="title">tahiti/album</span><button type="button" class="panel-close pc-close" aria-label="Close photo">✕</button></div>
+    <div class="pc-body"><img alt=""><p class="pc-cap"><span></span><b></b></p>
+    <div class="pc-nav"><button type="button" class="btn" data-d="-1" aria-label="Previous photo">◀</button><a class="btn" download="tahiti-photo.jpg">Save ↓</a><button type="button" class="btn" data-d="1" aria-label="Next photo">▶</button></div></div></div>`;
+  const img = card.querySelector('img'), cap = card.querySelector('.pc-cap span'), cnt = card.querySelector('.pc-cap b'), dl = card.querySelector('a[download]');
+  const show = () => {
+    const p = list[i]; img.src = p.url; img.alt = p.gang || 'Tahiti photo'; dl.href = p.url;
+    cap.textContent = `${p.gang ? p.gang + ' · ' : ''}${new Date(p.at).toLocaleString()}`; cnt.textContent = `${i + 1} / ${list.length}`;
+    card.querySelectorAll('[data-d]').forEach((b) => { b.hidden = list.length < 2; });
+  };
+  const close = () => { card.remove(); removeEventListener('keydown', key, true); };
+  const key = (e) => {
+    if (e.key === 'Escape') { e.stopPropagation(); close(); }
+    else if (e.key === 'ArrowLeft') { i = (i - 1 + list.length) % list.length; show(); }
+    else if (e.key === 'ArrowRight') { i = (i + 1) % list.length; show(); }
+  };
+  card.querySelectorAll('[data-d]').forEach((b) => b.addEventListener('click', () => { i = (i + +b.dataset.d + list.length) % list.length; show(); }));
+  card.querySelector('.pc-close').addEventListener('click', close);
+  card.addEventListener('click', (e) => { if (e.target === card) close(); });
+  addEventListener('keydown', key, true);
+  document.body.append(card); show(); card.querySelector('.pc-close').focus();
+}
+const isVideoUrl = (u) => /\.(mp4|webm|mov|m4v)(\?|$)/i.test(u);
+function mountPhotoViewer(box, slides) {
+  slides = slides.map((x) => ({ ...x, src: safeUrl(x.src) })).filter((x) => x.src);
+  if (!slides.length) return;
+  let i = 0;
+  const v = document.createElement('div');
+  v.className = 'photo-viewer';
+  v.innerHTML = `<div class="pv-stage"><img alt=""><video controls playsinline preload="metadata" hidden></video><button type="button" class="pv-nav prev" aria-label="Previous photo">◀</button><button type="button" class="pv-nav next" aria-label="Next photo">▶</button></div><p class="pv-cap"><span class="pv-title"></span><span class="pv-count"></span></p>`;
+  const img = v.querySelector('img'), vid = v.querySelector('video'), title = v.querySelector('.pv-title'), count = v.querySelector('.pv-count');
+  const show = () => {
+    const s = slides[i];
+    const isVid = isVideoUrl(s.src);
+    vid.pause(); img.hidden = isVid; vid.hidden = !isVid;
+    if (isVid) { vid.src = s.src; vid.muted = false; vid.volume = 1; } else { img.src = s.src; img.alt = s.caption || ''; }
+    title.textContent = s.caption || ''; count.textContent = `${i + 1} / ${slides.length}`;
+    v.querySelectorAll('.pv-nav').forEach((b) => { b.hidden = slides.length < 2; });
+  };
+  v.querySelector('.prev').addEventListener('click', () => { i = (i - 1 + slides.length) % slides.length; show(); });
+  v.querySelector('.next').addEventListener('click', () => { i = (i + 1) % slides.length; show(); });
+  img.addEventListener('click', () => window.open(slides[i].src, '_blank', 'noopener'));
+  show();
+  box.append(v);
+}
+const allAchievementSlides = (list) => list.flatMap((a) => (a.images || []).map((src) => ({ src, caption: a.title })));
+
 // ---------------- Info panels: tech stack, trophy case, radio log ----------------
 function openInfoPanel(it) {
   face(it); player.play('interact');
@@ -634,17 +723,20 @@ function openInfoPanel(it) {
       ${(c.skills || []).map((g) => `<p class="eyebrow" style="margin-top:14px">${esc(g.group)}</p><ul class="chips">${(g.items || []).map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`).join('') || '<p>Add skills in the admin.</p>'}`;
   } else if (it.panel === 'achievements') {
     html = `<p class="eyebrow">SIGNAL TOWER · TROPHY CASE</p><h2 id="panel-title">Achievements</h2>
-      ${(c.achievements || []).length ? `<ul class="highlights">${c.achievements.map((a) => `<li><b>${esc(a.title)}</b>${a.org ? ` · ${esc(a.org)}` : ''} <span class="muted">${esc(a.year || '')}</span>${a.detail ? `<br>${esc(a.detail)}` : ''}</li>`).join('')}</ul>` : '<p>Add achievements in the admin.</p>'}`;
+      ${(c.achievements || []).length ? `<ul class="highlights">${c.achievements.map((a) => `<li><b>${esc(a.title)}</b>${a.org ? ` · ${esc(a.org)}` : ''} <span class="muted">${esc(a.year || '')}</span>${a.detail ? `<br>${esc(a.detail)}` : ''}${achGallery(a)}</li>`).join('')}</ul>` : '<p>Add achievements in the admin.</p>'}`;
   } else if (it.panel === 'experience') {
     html = `<p class="eyebrow">SIGNAL TOWER · RADIO LOG</p><h2 id="panel-title">Experience</h2>
-      ${(c.experience || []).length ? `<ul class="highlights">${c.experience.map((e) => `<li><b>${esc(e.role)}</b> · ${esc(e.org)} <span class="muted">${esc(e.period || '')}</span><br>${esc(e.summary || '')}</li>`).join('')}</ul>` : '<p>Add experience in the admin.</p>'}
+      ${(c.experience || []).length ? `<ul class="highlights">${c.experience.map((e) => `<li class="has-logo">${orgLogo(e)}<b>${esc(e.role)}</b> · ${esc(e.org)} <span class="muted">${esc(e.period || '')}</span><br>${esc(e.summary || '')}</li>`).join('')}</ul>` : '<p>Add experience in the admin.</p>'}
       ${c.profile?.resumeUrl ? `<div class="transmit"><a class="btn" href="${esc(safeUrl(c.profile.resumeUrl))}" target="_blank" rel="noopener">Full resume ↗</a></div>` : ''}`;
   } else if (it.panel === 'skilltree') {
     const groups = c.skills || [];
-    html = `<p class="eyebrow">GUILD HALL · SKILL TREE</p><h2 id="panel-title">Skill tree</h2>
-      <p class="subtitle">Pick a branch to see what's on it.</p>
-      <div class="gh-tree">${groups.map((g, i) => `<button type="button" class="gh-branch" data-branch="${i}" aria-expanded="false"><span class="gh-gem b${i % 5}"></span>${esc(g.group)}<em>${(g.items || []).length}</em></button>`).join('')}</div>
-      <div class="gh-nodes" id="gh-nodes" aria-live="polite"><p class="muted">No branch selected.</p></div>`;
+    const total = groups.reduce((n, g) => n + (g.items || []).length, 0);
+    html = `<div class="sk-fixed">
+      <header class="sk-hero"><img class="sk-hero-face" src="${portraitURL()}" alt=""><div><p class="eyebrow">GUILD HALL</p><h2 id="panel-title">Skill tree</h2><small>MY TECH STACK &amp; SKILLS</small></div></header>
+      <div class="sk-stats"><span><i>&lt;/&gt;</i><b>${total}</b>SKILLS</span><span><i>▤</i><b>${groups.length}</b>DOMAINS</span><span><i>♛</i><b>MAX</b>CURIOSITY</span></div>
+      <div class="sk-tabs"><button type="button" class="gh-branch" data-branch="all" aria-expanded="true">▦ All</button>${groups.map((g, i) => `<button type="button" class="gh-branch" data-branch="${i}" aria-expanded="false" style="--bc:var(--sk${i % 5})"><span class="gh-gem b${i % 5}"></span>${esc(g.group)} <em>${(g.items || []).length}</em></button>`).join('')}</div>
+    </div>
+    <div class="gh-nodes sk-scroll" id="gh-nodes" aria-live="polite"></div>`;
   } else if (it.panel === 'trophies') {
     const tier = (a) => /winner|first/i.test(a.title) ? 'gold' : /runner|second|third/i.test(a.title) ? 'silver' : 'bronze';
     html = `<p class="eyebrow">GUILD HALL · TROPHY COLLECTION</p><h2 id="panel-title">Trophies</h2>
@@ -654,7 +746,7 @@ function openInfoPanel(it) {
   } else if (it.panel === 'quests') {
     const exp = c.experience || [];
     const main = exp.filter((e) => /hewlett|hpe|sez/i.test(e.org)), side = exp.filter((e) => !main.includes(e));
-    const q = (e, kind) => `<details class="gh-quest ${kind}"${kind === 'main' ? ' open' : ''}><summary><span class="tag">${kind === 'main' ? 'MAIN QUEST' : 'SIDE QUEST'}</span><b>${esc(e.org)}</b><span class="muted">${esc(e.role)}${e.period ? ' · ' + esc(e.period) : ''}</span></summary><p>${esc(e.summary || '')}</p></details>`;
+    const q = (e, kind) => `<details class="gh-quest ${kind}"${kind === 'main' ? ' open' : ''}><summary><span class="quest-logo">${e.logo ? `<img src="${esc(safeUrl(e.logo))}" alt="${esc(e.org)} logo">` : esc((e.org || '?')[0])}</span><span class="quest-info"><span class="tag">${kind === 'main' ? '★ MAIN QUEST' : '◆ SIDE QUEST'}</span><b>${esc(e.org)}</b><span class="quest-role">${esc(e.role)}${e.period ? ` <i>${esc(e.period)}</i>` : ''}</span></span><span class="quest-caret">▾</span></summary><p>${esc(e.summary || '')}</p></details>`;
     html = `<p class="eyebrow">GUILD HALL · QUEST LOG</p><h2 id="panel-title">Quest log</h2>
       ${main.map((e) => q(e, 'main')).join('')}${side.map((e) => q(e, 'side')).join('')}`;
   } else if (it.panel === 'profile') {
@@ -665,6 +757,8 @@ function openInfoPanel(it) {
       ${p.summary ? `<p>${esc(p.summary)}</p>` : ''}
       <p class="eyebrow" style="margin-top:14px">EDUCATION</p>
       <ol class="gh-edu">${edu.map((ch) => `<li><b>${esc(ch.subtitle || ch.title)}</b>${ch.period ? `<span class="muted"> · ${esc(ch.period)}</span>` : ''}${(ch.highlights || [])[0] ? `<br><span class="muted">${esc(ch.highlights[0])}</span>` : ''}</li>`).join('')}</ol>
+      <p class="eyebrow" style="margin-top:14px">PROJECTS · ${(c.projects || []).length}</p>
+      <ul class="gh-proj">${(c.projects || []).map((pr) => `<li><b>${esc(pr.title)}</b>${pr.year ? `<span class="muted"> · ${esc(pr.year)}</span>` : ''}${pr.school ? ' <span class="gh-first">FIRST UI PROJECT</span>' : ''}<br><span class="muted">${esc(pr.pitch || '')}</span>${pr.github ? ` <a href="${esc(safeUrl(pr.github))}" target="_blank" rel="noopener">Code ↗</a>` : ''}</li>`).join('')}</ul>
       <div class="transmit">${p.resumeUrl ? `<a class="btn primary" href="${esc(safeUrl(p.resumeUrl))}" target="_blank" rel="noopener">Resume ↗</a>` : ''}${(c.links || []).filter((l) => !l.url.startsWith('mailto:')).map((l) => `<a class="btn" href="${esc(safeUrl(l.url))}" target="_blank" rel="noopener">${esc(l.label)} ↗</a>`).join('')}</div>`;
   } else if (it.panel === 'place') {
     const pl = state.tahiti?.places?.[it.place] || {};
@@ -681,24 +775,32 @@ function openInfoPanel(it) {
       ${it.interest === 'spider-man' ? '<div class="transmit"><button type="button" class="btn primary" id="pop-go">Start the challenge</button></div>' : ''}
       <p class="pop-note">A fan tribute made for this game. Not affiliated with or endorsed by the rights holders.</p>`;
   }
-  showPanel(`${it.district}/${it.panel}.txt`, html, it);
+  showPanel(`${it.district}/${it.panel}.txt`, html, it, it.panel === 'skilltree' ? 'sk-panel' : '');
   if (!it.visited) { markVisited(it); }
   const body = $('#panel-body');
   if (it.panel === 'skilltree') {
     const groups = c.skills || [];
     world.apis.guild_skill_tree?.trigger();
+    const drawSkills = (which) => {
+      const list = which === 'all' ? groups.map((g, i) => [g, i]) : [[groups[+which], +which]];
+      $('#gh-nodes').innerHTML = list.map(([g, gi]) => `<section class="sk-branch" style="--bc:var(--sk${gi % 5})"><h3><span class="gh-gem b${gi % 5}"></span>${esc(g.group)}<em>${(g.items || []).length} / ${(g.items || []).length}</em></h3>
+        <ul class="gh-node-list sk-grid">${(g.items || []).map((x, i) => `<li style="animation-delay:${i * 40}ms"><span class="sk-icon">${skillIcon(x)}</span><b>${esc(x)}</b></li>`).join('')}</ul></section>`).join('');
+      $('#gh-nodes').querySelectorAll('.sk-icon img').forEach(pixelateIcon);
+    };
+    drawSkills('all');
     body.querySelectorAll('[data-branch]').forEach((b) => b.addEventListener('click', () => {
       body.querySelectorAll('[data-branch]').forEach((x) => x.setAttribute('aria-expanded', String(x === b)));
-      const g = groups[+b.dataset.branch];
-      $('#gh-nodes').innerHTML = `<p class="eyebrow">${esc(g.group)}</p><ul class="gh-node-list">${(g.items || []).map((x, i) => `<li style="animation-delay:${i * 60}ms">${esc(x)}</li>`).join('')}</ul>`;
+      drawSkills(b.dataset.branch); $('#gh-nodes').scrollTop = 0;
       sfx.open();
     }));
   } else if (it.panel === 'trophies') {
     world.apis.guild_trophy_stand?.trigger();
+    mountPhotoViewer($('#gh-plaque'), allAchievementSlides(c.achievements || []));
     body.querySelectorAll('[data-trophy]').forEach((b) => b.addEventListener('click', () => {
       const a = c.achievements[+b.dataset.trophy];
       body.querySelectorAll('[data-trophy]').forEach((x) => x.classList.toggle('on', x === b));
       $('#gh-plaque').innerHTML = `<b>${esc(a.title)}</b>${a.org ? `<span class="muted"> · ${esc(a.org)}</span>` : ''}${a.year ? `<span class="muted"> · ${esc(a.year)}</span>` : ''}${a.detail ? `<p>${esc(a.detail)}</p>` : ''}`;
+      mountPhotoViewer($('#gh-plaque'), (a.images || []).map((src) => ({ src, caption: a.title })));
       sfx.open();
     }));
   } else if (it.panel === 'pop') {
@@ -714,7 +816,7 @@ function openInfoPanel(it) {
 function passportHTML() {
   const c = state.content, got = state.save.stamps || [];
   return `<div class="passport" aria-label="Education passport"><p class="eyebrow">EDUCATION PASSPORT · ${got.length}/${(c.education || []).length}</p>
-    <div class="stamps">${(c.education || []).map((e) => `<span class="stamp ${got.includes(e.id) ? 'on' : ''}" title="${got.includes(e.id) ? 'Stamped' : 'Visit the campus to stamp'}"><b>${esc(e.label)}</b><i>${got.includes(e.id) ? 'STAMPED' : '— — —'}</i></span>`).join('')}</div>
+    <div class="stamps">${(c.education || []).map((e) => `<span class="stamp ${got.includes(e.id) ? 'on' : ''}" title="${got.includes(e.id) ? 'Stamped' : 'Visit the campus to stamp'}"><b>${esc(e.label)}</b><i>${got.includes(e.id) ? 'STAMPED' : '· · ·'}</i></span>`).join('')}</div>
     <p class="muted passport-note">Optional. Stamps come from visiting each campus; everything here is open either way.</p></div>`;
 }
 function educationExtras(e) {
@@ -726,9 +828,11 @@ function educationExtras(e) {
   if (mems.length) h += `<p class="eyebrow" style="margin-top:12px">MEMORIES</p><ul class="highlights">${mems.map((m) => s.memories.includes(m.id) ? `<li><b>${esc(m.title)}</b><br>${esc(m.text)}</li>` : `<li class="muted">✦ ${esc(m.title)} · find it on campus</li>`).join('')}</ul>`;
   if (e.activities) {
     const acts = (c.experience || []).filter((x) => /tce/i.test(x.org));
-    if (acts.length) h += `<p class="eyebrow" style="margin-top:12px">COLLEGE ACTIVITIES</p><ul class="highlights">${acts.map((x) => `<li><b>${esc(x.role)}</b> · ${esc(x.org)}<br>${esc(x.summary || '')}</li>`).join('')}</ul>`;
+    if (acts.length) h += `<p class="eyebrow" style="margin-top:12px">COLLEGE ACTIVITIES</p><ul class="highlights">${acts.map((x) => `<li class="has-logo">${orgLogo(x)}<b>${esc(x.role)}</b> · ${esc(x.org)}<br>${esc(x.summary || '')}</li>`).join('')}</ul>`;
     if ((c.achievements || []).length) h += `<p class="eyebrow" style="margin-top:12px">ACHIEVEMENTS</p><ul class="highlights">${c.achievements.map((a) => `<li><b>${esc(a.title)}</b>${a.detail ? ` · <span class="muted">${esc(a.detail)}</span>` : ''}</li>`).join('')}</ul>`;
   }
+  const schoolProjects = (c.projects || []).filter((p) => p.school && e.id === 'montfort');
+  if (schoolProjects.length) h += `<p class="eyebrow" style="margin-top:12px">SCHOOL PROJECT</p><div class="panel-projects">${schoolProjects.map(projectCard).join('')}</div>`;
   if (npc) h += `<p class="muted" style="margin-top:10px">${esc(npc.name)} is around here. Say hi.</p>`;
   return h + '</div>';
 }
@@ -785,12 +889,264 @@ function standUp() {
   player.group.position.set(spot.x, heightAt(spot.x, spot.z), spot.z);
 }
 
+// ---------------- Iron Yard gym: three workout stations + Jacked Mode ----------------
+// One small state machine (state.gym) drives every station:
+// approach → setup → reps → finish. Nathan is placed directly (like benches),
+// the rig plays the matching workout pose, and the kit's bar / cable / stack
+// follow his hands. Esc or a movement key ends the set safely at any time.
+const GYM = {
+  bench: { name: 'Bench press', reps: 6, rep: 1.25 },
+  pulldown: { name: 'Lat pulldown', reps: 8, rep: 1.1 },
+  curl: { name: 'Dumbbell curls', reps: 8, rep: 0.95 },
+};
+const GYM_IDS = Object.keys(GYM);
+const THIANESH_LINES = ['Clean set. Same time tomorrow?', 'That is the habit. Rack it and breathe.', 'Small wins stack up.', 'Good tempo. No ego, just reps.'];
+const gymApi = () => world?.apis?.gym_building;
+const gv = new THREE.Vector3(), gv2 = new THREE.Vector3();
+const gymWorld = (p, out = new THREE.Vector3()) => gymApi().obj.localToWorld(out.set(p.x, 0, p.z));
+const smooth = (u) => u * u * (3 - 2 * u);
+
+function gymHud() {
+  const el = $('#gym-hud'), g = state.gym;
+  if (!g || !gymApi() || state.level === 'tahiti') { el.classList.add('hidden'); return; }
+  const done = (state.save.gym || []).length;
+  el.innerHTML = `<strong>${esc(GYM[g.station].name)}</strong><span class="reps">REP <b>${g.reps}</b>/${g.target}</span><small>${isTouch ? 'Tap for each rep' : 'Press <kbd>E</kbd> for each rep · <kbd>Esc</kbd> stop'} · Gym ${done}/3</small>`;
+  el.classList.remove('hidden');
+}
+
+function interactGym(it) {
+  if (it.station === 'discipline') return openDiscipline(it);
+  startWorkout(it.station);
+}
+
+function startWorkout(station) {
+  const api = gymApi();
+  // ignore the E presses still coming from the set that just ended (mashing power reps)
+  if (performance.now() < (state.gymCooldown || 0)) return;
+  if (!api || !GYM[station] || state.gym || dialogue.open || state.minigame || state.ko || state.mount) return;
+  if (state.seated) standUp();
+  closePanel();
+  state.path = []; state.pendingOpen = null; marker.visible = false;
+  const st = api.stations[station];
+  state.gym = {
+    station, st, phase: 'approach', t: 0, reps: 0, target: GYM[station].reps, u: 0, power: 0,
+    from: player.group.position.clone(), stand: gymWorld(st.stand), pos: gymWorld(st.pos),
+    heading: st.heading + api.obj.rotation.y,
+  };
+  state.nearby = null; $('#prompt').classList.add('hidden');
+  sfx.open(); gymHud();
+}
+
+function gymPush() { const g = state.gym; if (g?.phase === 'reps' && !g.active) { g.active = true; g.u = 0; } }
+function gymCancel() { const g = state.gym; if (!g || g.phase === 'finish') return; g.cancelled = true; g.phase = 'finish'; g.t = 0; }
+
+const handL = new THREE.Vector3(), handR = new THREE.Vector3();
+function handsMid(out) {
+  player.group.updateMatrixWorld(true);
+  player.arms[0].elbow.localToWorld(handL.set(0, -0.27, 0));
+  player.arms[1].elbow.localToWorld(handR.set(0, -0.27, 0));
+  return out.copy(handL).add(handR).multiplyScalar(0.5);
+}
+
+/** Runs before player.update: moves Nathan and sets the workout pose. */
+function gymUpdate(dt) {
+  const g = state.gym, api = gymApi(), pos = player.group.position;
+  if (!g || !api) return;
+  g.t += dt;
+  const W = player.work;
+  if (g.phase === 'approach') {
+    const d = Math.hypot(g.stand.x - g.from.x, g.stand.z - g.from.z), dur = Math.max(0.3, d / SPEED);
+    const u = Math.min(1, g.t / dur);
+    pos.x = g.from.x + (g.stand.x - g.from.x) * u; pos.z = g.from.z + (g.stand.z - g.from.z) * u;
+    if (u < 1 && d > 0.05) velocity.set((g.stand.x - g.from.x) / dur, 0, (g.stand.z - g.from.z) / dur);
+    if (u >= 1) {
+      g.phase = 'setup'; g.t = 0;
+      if (g.station === 'curl') { player.heading = g.heading + Math.PI; player.play('interact'); player.work = { type: 'curl', k: 0, k2: 0, hold: false }; }
+      else player.work = { type: g.station, k: g.station === 'bench' ? 1 : 0 };
+    }
+  } else if (g.phase === 'setup') {
+    const dur = g.station === 'curl' ? 1.0 : 0.8, u = Math.min(1, g.t / dur);
+    if (g.station === 'curl') {
+      if (g.t > 0.35 && !W.hold) { W.hold = true; api.setRackPair(false); sfx.rep(); }
+      if (g.t > 0.5) { const v = smooth(Math.min(1, (g.t - 0.5) / 0.5)); player.heading = lerpAngle(g.heading + Math.PI, g.heading, v); pos.x = g.stand.x + (g.pos.x - g.stand.x) * v; pos.z = g.stand.z + (g.pos.z - g.stand.z) * v; }
+    } else {
+      player.heading = lerpAngle(player.heading, g.heading, Math.min(1, dt * 12));
+      const v = smooth(u); pos.x = g.stand.x + (g.pos.x - g.stand.x) * v; pos.z = g.stand.z + (g.pos.z - g.stand.z) * v;
+    }
+    if (u >= 1) { g.phase = 'reps'; g.t = 0; g.u = 0; player.heading = g.heading; }
+  } else if (g.phase === 'reps') {
+    pos.x = g.pos.x; pos.z = g.pos.z; player.heading = g.heading;
+    if (g.active) g.u += dt / GYM[g.station].rep;   // a rep only moves while E was pressed for it
+    if (g.u >= 1) {
+      g.u = 0; g.active = false; g.reps++; sfx.rep(); gymHud();
+      if (g.reps >= g.target) { g.phase = 'finish'; g.t = 0; }
+    }
+    const c = 0.5 - 0.5 * Math.cos(g.u * Math.PI * 2);   // 0 → 1 → 0 through a rep
+    if (g.station === 'bench') W.k = 1 - c;              // lockout → chest → lockout
+    else if (g.station === 'pulldown') W.k = c;          // arms up → pulled → up
+    else { const s = Math.sin(g.u * Math.PI); if (g.reps % 2) { W.k = 0; W.k2 = s; } else { W.k = s; W.k2 = 0; } }
+  } else if (g.phase === 'finish') {
+    if (W) { W.k = g.station === 'bench' ? Math.min(1, W.k + dt * 3) : Math.max(0, W.k - dt * 3); if (W.k2) W.k2 = Math.max(0, W.k2 - dt * 3); }
+    if (g.station === 'curl') {
+      if (g.t > 0.2 && g.t < 0.3) { player.heading = g.heading + Math.PI; pos.x = g.stand.x; pos.z = g.stand.z; player.play('interact'); }
+      if (g.t > 0.55 && W?.hold) { W.hold = false; api.setRackPair(true); sfx.rep(); }
+      if (g.t > 0.75 && W) player.work = null;
+    } else {
+      if (g.t > 0.45 && W) player.work = null;
+      if (g.t > 0.55) { const v = smooth(Math.min(1, (g.t - 0.55) / 0.35)); pos.x = g.pos.x + (g.stand.x - g.pos.x) * v; pos.z = g.pos.z + (g.stand.z - g.pos.z) * v; }
+    }
+    if (g.t > 1.0) endWorkout();
+  }
+}
+
+/** Runs after player.update: equipment follows Nathan's hands. */
+function gymSync() {
+  const g = state.gym, api = gymApi();
+  if (!g || !api || g.station === 'curl') return;
+  const bar = g.station === 'bench' ? api.benchBar : api.latBar, rest = g.station === 'bench' ? api.benchRest : api.latRest;
+  let w = 0;   // 0 = on its rest, 1 = in Nathan's hands
+  if (g.phase === 'setup') w = smooth(Math.min(1, Math.max(0, (g.t - 0.25) / 0.5)));
+  else if (g.phase === 'reps') w = 1;
+  else if (g.phase === 'finish') w = 1 - smooth(Math.min(1, g.t / 0.4));
+  const target = gv.copy(rest);
+  if (w > 0) { api.obj.worldToLocal(handsMid(gv2)); target.lerp(gv2, w); }
+  if (g.station === 'bench') bar.position.copy(target); else api.setLat(target);
+}
+
+/**
+ * Tear down any active workout: state, pose, held dumbbells, equipment and the
+ * rep HUD. Safe to call any time (level switch, flight, errors); never throws.
+ * Only the completed-exercise list in the save survives.
+ */
+function resetGym({ place = false } = {}) {
+  const g = state.gym;
+  state.gym = null;
+  if (g) state.gymCooldown = performance.now() + 1500;
+  player.work = null; player.lastWork = null; player.workW = 0; player.lie = 0;
+  try { player.showBells(false); } catch { /* ignore */ }
+  const api = gymApi();
+  if (api) {
+    try {
+      api.setRackPair(true); api.benchBar.position.copy(api.benchRest); api.setLat(api.latRest);
+      if (g && place) { const spot = gymWorld(g.st.spot); player.group.position.set(spot.x, heightAt(spot.x, spot.z), spot.z); }
+    } catch { /* ignore */ }
+  }
+  $('#gym-hud')?.classList.add('hidden');
+  return g;
+}
+/** Leaving Island 01 (flight, level switch): end the set and drop Jacked Mode timers too. */
+function leaveGym() {
+  resetGym();
+  clearTimeout(jackedTimer); clearTimeout(zoomRestore); zoomRestore = 0;
+  if (gymZoom0) { setZoom(gymZoom0); gymZoom0 = 0; }
+  player.setJacked(false);
+  $('#gym-banner')?.classList.remove('show');
+}
+
+function endWorkout() {
+  if (!state.gym) return;
+  const g = resetGym({ place: true });
+  state.nearby = null;
+  state.gymCooldown = performance.now() + 1500;
+  if (g.cancelled || g.reps < g.target) { toast(`${GYM[g.station].name} stopped · ${g.reps}/${g.target} reps`); return; }
+  state.save.gym = state.save.gym || [];
+  const fresh = addUnique(state.save.gym, g.station);
+  persist();
+  const all = fresh && GYM_IDS.every((id) => state.save.gym.includes(id));
+  toast(`SET COMPLETE · ${GYM[g.station].name} · Gym ${state.save.gym.length}/3`);
+  if (all) jackedMode(true); else { player.play('flex'); sfx.chapter(); }
+  const th = world.npcs.find((n) => n.npcId === 'thianesh');
+  if (th && Math.hypot(th.x - player.group.position.x, th.z - player.group.position.z) < 10) {
+    th.character.play('cheer');
+    setTimeout(() => toast(`Thianesh: ${THIANESH_LINES[Math.floor(Math.random() * THIANESH_LINES.length)]}`), 4200);
+  }
+}
+
+// Jacked Mode: temporary, purely visual (never saved).
+const burst = new THREE.Mesh(new THREE.RingGeometry(0.5, 0.75, 16), new THREE.MeshBasicMaterial({ color: 0xffd257, transparent: true, depthWrite: false, side: THREE.DoubleSide }));
+burst.rotation.x = -Math.PI / 2; burst.visible = false; burst.renderOrder = 5;
+let burstT = 0, jackedTimer = 0, zoomRestore = 0, gymZoom0 = 0;
+function ringBurst(color = 0xffd257) {
+  if (!burst.parent) scene.add(burst);
+  burst.material.color.setHex(color); burstT = 0.0001; burst.visible = true;
+}
+function burstTick(dt) {
+  if (!burstT) return;
+  burstT += dt;
+  const p = player.group.position, u = burstT / 0.7;
+  burst.position.set(p.x, p.y + 0.08, p.z);
+  burst.scale.setScalar(Math.round((1 + u * 4) * 4) / 4);   // stepped growth reads as pixel-retro
+  burst.material.opacity = Math.max(0, 1 - u);
+  if (u >= 1) { burstT = 0; burst.visible = false; }
+}
+function jackedMode(big) {
+  clearTimeout(jackedTimer); clearTimeout(zoomRestore);
+  (big ? sfx.finale : sfx.chapter)();
+  const z0 = gymZoom0 || state.zoom; gymZoom0 = z0; setZoom(z0 * (big ? 1.3 : 1.18));
+  zoomRestore = setTimeout(() => { setZoom(z0); gymZoom0 = 0; }, big ? 2400 : 1600);
+  ringBurst(big ? 0xff6a3d : 0xffd257);
+  if (big) setTimeout(() => ringBurst(0xffd257), 280);
+  player.setJacked(true); player.play('flex');
+  const b = $('#gym-banner');
+  b.innerHTML = big ? 'JACKED MODE ACTIVATED!<small>Full session 3/3 · discipline unlocked</small>' : 'JACKED MODE ACTIVATED!';
+  b.classList.remove('hidden', 'big'); void b.offsetWidth; b.classList.add('show'); if (big) b.classList.add('big');
+  setTimeout(() => b.classList.remove('show'), 2600);
+  // after the full session Nathan stays jacked (restored on load from the save)
+}
+
+function mountChapterMedia(ch) {
+  if (!ch?.media?.length) return;
+  const box = document.createElement('div'); box.className = 'proj-media';
+  mountPhotoViewer(box, ch.media.map((src) => ({ src, caption: ch.title })));
+  if (box.childElementCount) $('#panel-body').querySelector('.chapter-head')?.after(box);
+}
+function openDiscipline(it, view = 'menu') {
+  if (view === 'menu') { face(it); player.play('interact'); }
+  const ch = (state.content.chapters || []).find((c) => c.id === 'fitness') || chapterFor(state.content, 'iron-yard') || { title: 'The Discipline', body: [], highlights: [] };
+  const done = state.save.gym || [];
+  const back = '<div class="transmit"><button class="btn" data-dz="menu">← Back</button></div>';
+  let html = '';
+  if (view === 'menu') {
+    html = `${chapterHeader({ ...ch, period: 'Iron Yard · story board' })}
+      <div class="gym-menu">
+        <button class="btn primary" data-dz="story">Read My Fitness Journey</button>
+        <button class="btn" data-dz="start">Start Workout</button>
+        <button class="btn" data-dz="progress">View Progress</button>
+        <button class="btn" data-dz="exit">Exit</button>
+      </div>`;
+  } else if (view === 'story') {
+    html = `${chapterHeader(ch)}
+      ${(ch.highlights || []).length ? `<ol class="gym-timeline">${ch.highlights.map((h) => `<li>${esc(h)}</li>`).join('')}</ol>` : ''}
+      ${(ch.body || []).map((p) => `<p>${esc(p)}</p>`).join('')}${back}`;
+  } else if (view === 'progress') {
+    html = `<p class="eyebrow">Iron Yard · this save file</p><h2 id="panel-title">Gym session ${done.length}/3</h2>
+      <ul class="gym-progress">${GYM_IDS.map((id) => `<li class="${done.includes(id) ? 'done' : ''}"><span>${done.includes(id) ? '✓' : '○'}</span>${esc(GYM[id].name)}</li>`).join('')}</ul>
+      <p class="muted">Only in-game sets are tracked here.</p>${back}`;
+  }
+  showPanel('iron-yard/the-discipline.txt', html, it);
+  if (view === 'menu') mountChapterMedia(ch);
+  $('#panel-body').querySelectorAll('[data-dz]').forEach((b) => b.addEventListener('click', () => {
+    const v = b.dataset.dz;
+    if (v === 'exit') return closePanel();
+    if (v === 'story') return openInteractable(it);   // the full chapter: story, highlights, lift + tempo
+    if (v === 'start') {
+      closePanel();
+      const next = GYM_IDS.find((id) => !done.includes(id)) || 'bench';
+      const target = world.interactables.find((i) => i.kind === 'gym' && i.station === next);
+      if (target) walkToInteractable(target);
+      return;
+    }
+    openDiscipline(it, v);
+  }));
+}
+
 // ---------------- Mounts: one controller for bicycles and the horse ----------------
 // Each vehicle type is just a config; on foot movement is untouched and comes
 // back as soon as Nathan gets off.
 const VEHICLES = {
   bike: { speed: 5.2, boost: 7.0, accel: 5, brake: 9, turn: 4.2, seatY: 0.3, pose: 'cycle', r: 0.42, yaw: 0, avoid: ['water'], label: 'bicycle' },
   moto: { speed: 7.0, boost: 9.5, accel: 6, brake: 10, turn: 3.6, seatY: 0.62, pose: 'ride', r: 0.5, yaw: 0, avoid: ['water'], label: 'motorcycle' },
+  scooty: { speed: 5.6, boost: 7.6, accel: 4.2, brake: 9, turn: 3.6, seatY: 0.15, pose: 'scooty', r: 0.45, yaw: 0, avoid: ['water'], label: 'scooty' },
   horse: { speed: 4.0, boost: 6.6, accel: 3.5, brake: 7, turn: 3.0, seatY: 0.7, pose: 'ride', r: 0.6, yaw: -Math.PI / 2, avoid: ['water'], label: 'horse' },
 };
 let railPts = null;
@@ -883,7 +1239,7 @@ function rideUpdate(dt, t, kx, kz, running) {
   const hop = Math.sin(m.lift * Math.PI) * 0.25;
   // model follows Nathan
   const g = it.model.group;
-  const back = it.vtype === 'moto' ? 0.28 : 0;                                  // bike sits a little behind the driver so the passenger fits
+  const back = it.vtype === 'moto' ? 0.28 : it.vtype === 'scooty' ? -0.36 : 0;   // scooty: its seat sits 0.36 m behind the model centre                                  // bike sits a little behind the driver so the passenger fits
   g.position.set(pos.x - Math.sin(m.heading) * back, ground, pos.z - Math.cos(m.heading) * back);
   g.rotation.y = m.heading + cfg.yaw;
   it.x = pos.x; it.z = pos.z;
@@ -895,8 +1251,9 @@ function rideUpdate(dt, t, kx, kz, running) {
     player.pedal = m.phase;
     g.rotation.z = Math.atan2(Math.sin(rideDir.x * 0), 1) * 0;                  // keep upright
     pos.y = ground + cfg.seatY * m.lift + hop;
-  } else if (it.vtype === 'moto') {
-    for (const w of it.model.wheels) w.rotation.x += (m.speed * dt) / 0.36;
+  } else if (it.vtype === 'moto' || it.vtype === 'scooty') {
+    for (const w of it.model.wheels) w.rotation.x += (m.speed * dt) / (it.vtype === 'scooty' ? 0.24 : 0.36);
+    if (it.model.bars) { const steer = want ? Math.atan2(Math.sin(Math.atan2(rideDir.x, rideDir.z) - m.heading), Math.cos(Math.atan2(rideDir.x, rideDir.z) - m.heading)) : 0; it.model.bars.rotation.y = Math.max(-0.5, Math.min(0.5, steer * 0.6)); player.steer = it.model.bars.rotation.y; }
     g.rotation.z = -Math.atan2(Math.sin(Math.atan2(rideDir.x, rideDir.z) - m.heading), 1) * Math.min(1, sp / 6) * 0.25 * (want ? 1 : 0);   // lean into turns
     pos.y = ground + cfg.seatY * m.lift + hop + (sp > 0.2 ? Math.sin(t * 40) * 0.006 : 0);
     setEngine(Math.min(1, sp / cfg.boost));
@@ -973,6 +1330,7 @@ async function loadTahitiData() {
 async function switchLevel(name) {
   if (name === 'tahiti') await loadTahitiData();
   const m = mapCache[name] || (mapCache[name] = await loadTiledMap(`${BASE}${LEVELS[name]}`));
+  leaveGym();
   if (state.level === 'tahiti') { tahiti.exit(); $('#tahiti-hints')?.classList.add('hidden'); hintKey = ''; }
   if (state.mount) dismount(true);
   setEngine(null);
@@ -1047,6 +1405,7 @@ function cineClouds(v) { const c = $('#cine .cine-clouds'); if (c) c.style.opaci
 
 async function startFlight(to) {
   if (state.cine || state.groupScene) return;
+  leaveGym();
   if (dialogue.open) dialogue.close();
   if (state.mount) dismount(true);
   if (state.seated) standUp();
@@ -1064,7 +1423,7 @@ async function startFlight(to) {
   state.minigame = 'flight';
   state.cine = { from, to, phase: 'board', t: 0, vel: new THREE.Vector3(), prev: { x: 0, y: 0, z: 0 }, zoom0: state.zoom };
   state.path = []; marker.visible = false;
-  cineUI(true); cineCaption(to === 'tahiti' ? 'Next stop: Tahiti' : 'Heading home to Island 01');
+  cineUI(true); cineCaption(to === 'tahiti' ? 'Next stop: Tahiti' : 'Heading home to Origin Isle');
 }
 function cineCamera(x, z, zoom) {
   state.camOverride = { x, z };
@@ -1190,7 +1549,7 @@ function endCine() {
   state.zoom = 1; resize();
   camTarget.copy(p);
   cineClouds(0); cineCaption(''); cineUI(false);
-  toast(state.level === 'tahiti' ? 'Welcome to Tahiti' : 'Back on Island 01');
+  toast(state.level === 'tahiti' ? 'Welcome to Tahiti' : 'Back on Island 01 · Origin Isle');
   if (state.level === 'tahiti') tahiti.onArrive();
 }
 
@@ -1271,10 +1630,10 @@ function runFinale(it) {
     const el = $('#finale');
     el.innerHTML = `
       <div class="finale-card window" role="dialog" aria-labelledby="finale-title">
-        <div class="window-bar"><span class="title">nathan.exe — process complete</span></div>
+        <div class="window-bar"><span class="title">nathan.exe · process complete</span></div>
         <div class="finale-body">
           <img class="mini-portrait" src="${portraitURL()}" alt="">
-          <p class="eyebrow">END OF ISLAND 01</p>
+          <p class="eyebrow">END OF ISLAND 01 · ORIGIN ISLE</p>
           <h2 id="finale-title">Thanks for playing my story.</h2>
           <p>${esc(chapterFor(c, 'lighthouse')?.body?.[0] || "If you'd like to build something together, I'd love to hear from you.")}</p>
           <div class="finale-stats"><span>◆ ${main}/${MAIN_DISTRICTS.length} chapters</span><span>✦ ${s.memories.length}/${mems} memories</span><span>⏱ ${formatTime(s.seconds)}</span></div>
@@ -1565,6 +1924,7 @@ function setZoom(z) {
 
 function handleTap(x, y) {
   if (!state.started || !world || state.minigame) return;
+  if (state.gym) return gymPush();
   if (dialogue.open) { dialogue.close(); }
   ndc.set((x / window.innerWidth) * 2 - 1, -(y / window.innerHeight) * 2 + 1);
   raycaster.setFromCamera(ndc, camera);
@@ -1616,6 +1976,7 @@ function start() {
   setTimeout(() => { stopBootHero(); boot.remove(); }, 600);
   document.body.classList.add('started');
   setSound(!!look.sound);
+  if (state.level !== 'tahiti') setTimeout(() => toast('ISLAND 01 · ORIGIN ISLE'), 900);
 }
 
 function update(dt, t) {
@@ -1630,7 +1991,7 @@ function update(dt, t) {
   const running = keys.has('shift');
   velocity.set(0, 0, 0);
   const pos = player.group.position;
-  const frozen = !!state.minigame || !!state.groupScene;
+  const frozen = !!state.minigame || !!state.groupScene || !!state.gym;
   if (state.cine) runCine(dt);
 
   if (state.seated && (kx || kz || state.path.length)) standUp();
@@ -1670,10 +2031,13 @@ function update(dt, t) {
     if (free(nx, pos.z)) pos.x = nx; else velocity.x = 0;
     if (free(pos.x, nz)) pos.z = nz; else velocity.z = 0;
   }
+  if (state.gym && (!gymApi() || state.level === 'tahiti' || state.cine)) resetGym();
+  if (state.gym) gymUpdate(dt);
   if (!state.ko && !state.joined) pos.y += (heightAt(pos.x, pos.z) - pos.y) * Math.min(1, dt * 18);
   if (!state.cine) checkHazards(dt);
   if (state.cine) velocity.copy(state.cine.vel);
   player.update(dt, velocity, t);
+  if (state.gym) gymSync();
   stepT -= dt * Math.hypot(velocity.x, velocity.z);
   if (stepT < 0) { stepT = 1.55; if (velocity.lengthSq() > 1) sfx.step(); }
   }
@@ -1687,6 +2051,8 @@ function update(dt, t) {
     if (d < it.radius && score < bestD) { best = it; bestD = score; }
   }
   if (state.mount) best = state.mount.it;
+  if (state.gym) best = null;
+  burstTick(dt);
   if (state.seated) { best = state.seated; player.group.position.set(state.seated.seat.x, heightAt(state.seated.seat.x, state.seated.seat.z), state.seated.seat.z); player.heading = state.seated.seat.heading; player.pose = 'sit'; } // while riding, the only action is getting off
   if (best && !dialogue.open) player.lookAt(lookV.set(best.x, 0, best.z)); else if (!dialogue.open) player.lookAt(null);
   if (dialogue.open && state.talkingTo) player.lookAt(lookV.set(state.talkingTo.x, 0, state.talkingTo.z));
@@ -1799,42 +2165,150 @@ function cycleTime() {
   applyLook();
   toast(look.time === 'auto' ? 'Time follows your clock' : look.time === 'night' ? 'Night mode: street lights on' : 'Day mode');
 }
-let night = -1;
-// Nathan's own warm light: only switched on after dark.
-const heroLight = new THREE.PointLight(0xffcf8f, 0, 10, 1.3);
-heroLight.position.set(0, 2.4, 0);
+let night = -1, heroIndoor = 0;
+
+// ============================================================================
+// Option C: Soft Balanced Night Vision Lighting (Among Us-inspired)
+// ============================================================================
+export const NIGHT_SETTINGS = {
+  // 1. Radius: ~3x original 4.2 radius -> 12.6, adjustable in NIGHT settings
+  radius: 15.0,
+  // 3D PointLight distance for radial reach across 3D environment
+  distance: 42.0,
+  decay: 0.8,
+  // 2. Neutral-white light (#FFFFFF): preserves natural colors of grass, roads, trees, buildings, NPCs
+  color: 0xffffff,
+  // 3. Center intensity: bright enough to reveal Nathan clearly without daytime blowout
+  intensity: 10.0,
+  // 4. Subtle independent neutral-white fill light for Nathan's face, hair, and clothes
+  fillIntensity: 1.1,
+  fillDistance: 4.2,
+  fillColor: 0xffffff,
+  // 5. Ground vision pool opacity for smooth Among Us-style floor illumination
+  groundOpacity: 0.3,
+  // Deep navy-blue nighttime surroundings colors
+  skyColor: new THREE.Color(0x101c36),
+  moonColor: new THREE.Color(0x7a94d0),
+  hemiSky: new THREE.Color(0x5a78c0),
+  hemiGround: new THREE.Color(0x26365e),
+};
+if (typeof window !== 'undefined') window.NIGHT_SETTINGS = NIGHT_SETTINGS;
+if (qs.get('nightRadius')) {
+  const nr = parseFloat(qs.get('nightRadius'));
+  if (nr > 0) NIGHT_SETTINGS.radius = nr;
+}
+
+// 6 & 1. Nathan's radial night vision light (moving radial PointLight, not a spotlight/flashlight)
+const heroLight = new THREE.PointLight(NIGHT_SETTINGS.color, 0, NIGHT_SETTINGS.distance, NIGHT_SETTINGS.decay);
+heroLight.position.set(0, 2.2, 0);
 player.group.add(heroLight);
+
+// 4. Subtle independent neutral-white fill light specifically for Nathan
+const heroFillLight = new THREE.PointLight(NIGHT_SETTINGS.fillColor, 0, NIGHT_SETTINGS.fillDistance, 2.0);
+heroFillLight.position.set(0.2, 1.4, 0.7);
+player.group.add(heroFillLight);
+
+// Large, soft, neutral-white (#FFFFFF) ground illumination radius inspired by Among Us player vision
 const heroPool = (() => {
-  const c = document.createElement('canvas'); c.width = c.height = 64;
-  const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
-  gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.5, 'rgba(255,255,255,.45)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
-  g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
-  const m = new THREE.Mesh(new THREE.CircleGeometry(3.4, 32), new THREE.MeshBasicMaterial({ color: 0xffc98a, map: new THREE.CanvasTexture(c), transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
-  m.rotation.x = -Math.PI / 2; m.position.y = 0.07; m.renderOrder = 1;
+  const c = document.createElement('canvas');
+  c.width = c.height = 256;
+  const g = c.getContext('2d');
+  const gr = g.createRadialGradient(128, 128, 0, 128, 128, 128);
+  // Multi-stop cubic falloff: bright center plateau, smooth feathering into navy darkness, no harsh circular borders
+  gr.addColorStop(0.00, 'rgba(255,255,255,0.42)');
+  gr.addColorStop(0.25, 'rgba(255,255,255,0.38)');
+  gr.addColorStop(0.50, 'rgba(255,255,255,0.26)');
+  gr.addColorStop(0.72, 'rgba(255,255,255,0.12)');
+  gr.addColorStop(0.88, 'rgba(255,255,255,0.035)');
+  gr.addColorStop(1.00, 'rgba(255,255,255,0.00)');
+  g.fillStyle = gr;
+  g.fillRect(0, 0, 256, 256);
+  const tex = new THREE.CanvasTexture(c);
+  // Unit geometry: scaled dynamically by NIGHT_SETTINGS.radius
+  const m = new THREE.Mesh(
+    new THREE.CircleGeometry(1.0, 48),
+    new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      map: tex,
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    })
+  );
+  m.rotation.x = -Math.PI / 2;
+  m.position.y = 0.07;
+  m.renderOrder = -1; // under glows, markers and characters
   scene.add(m);
   return m;
 })();
-const NIGHT_SKY = new THREE.Color(0x1c2246), MOON = new THREE.Color(0xa9b8ff), SUNC = new THREE.Color();
-const HEMI_SKY_DAY = new THREE.Color(0xfff6e6), HEMI_SKY_NIGHT = new THREE.Color(0x9aa6ee);
-const HEMI_GND_DAY = new THREE.Color(0x9aa6c8), HEMI_GND_NIGHT = new THREE.Color(0x2a2440);
+
+const WINDOW_WARM = new THREE.Color(0xffc46a);
+const MARKER_GOLD = new THREE.Color(0xffc93c);
+const SUN_DAY = new THREE.Color(0xfff1d2);
+const HEMI_SKY_DAY = new THREE.Color(0xfff6e6);
+const HEMI_GND_DAY = new THREE.Color(0x9aa6c8);
+
 function applyDayNight(dt) {
   const target = nightTarget();
   night = night < 0 ? target : night + (target - night) * Math.min(1, dt * 1.5);
   const n = night;
-  scene.background.lerp(NIGHT_SKY, n * 0.88);
+
+  // 5. Surrounding deep navy-blue nighttime atmosphere
+  scene.background.copy(SKY_START).lerp(NIGHT_SETTINGS.skyColor, n * 0.94);
   hemi.intensity = 1.7 - n * 0.95;
-  hemi.color.copy(HEMI_SKY_DAY).lerp(HEMI_SKY_NIGHT, n);
-  hemi.groundColor.copy(HEMI_GND_DAY).lerp(HEMI_GND_NIGHT, n);
-  SUNC.copy(sun.color).lerp(MOON, n);
-  sun.color.copy(SUNC);
-  sun.intensity = 2.5 - n * 1.6;
+  hemi.color.copy(HEMI_SKY_DAY).lerp(NIGHT_SETTINGS.hemiSky, n);
+  hemi.groundColor.copy(HEMI_GND_DAY).lerp(NIGHT_SETTINGS.hemiGround, n);
+  sun.color.copy(SUN_DAY).lerp(NIGHT_SETTINGS.moonColor, n);
+  sun.intensity = 2.5 - n * 1.85;
+
+  // 7. Preserve existing warm streetlights, campfires, window lights and environmental glows
   setGlowBoost(1 + n * 1.8);
-  for (const p of world.nightGlow) { p.visible = n > 0.03; p.material.opacity = 0.62 * n; }
-  heroLight.intensity = 13 * n * n;
-  heroPool.visible = n > 0.03;
-  heroPool.material.opacity = 0.55 * n;
+  // Orange checkpoint markers (activities, NPCs) turn gold at night
+  // Building windows glow warm at night
+  for (const w of windowMats) { w.mat.emissive.copy(w.emissive).lerp(WINDOW_WARM, n); w.mat.emissiveIntensity = w.ei + (0.95 - w.ei) * n; }
+  for (const m of markerMats) m.mat.color.copy(m.day).lerp(MARKER_GOLD, n);
+  for (const p of world.nightGlow) {
+    p.visible = n > 0.03;
+    p.material.opacity = 0.62 * n;
+  }
+
+  // 1 & 6. Player vision radius dynamically adjusted from NIGHT_SETTINGS
+  const r = NIGHT_SETTINGS.radius;
+  heroPool.scale.set(r, r, 1);
+  heroLight.distance = NIGHT_SETTINGS.distance * (r / 15.0);
+  heroLight.decay = NIGHT_SETTINGS.decay;
+  heroLight.color.set(NIGHT_SETTINGS.color);
+  heroFillLight.color.set(NIGHT_SETTINGS.fillColor);
+
+  // 8. Activate only during nighttime and fade smoothly during dawn and dusk
+  // Step back gently indoors so rooms maintain their own warm interior lighting
   const hp = player.group.position;
-  heroPool.position.set(hp.x, Math.max(0, heroLight.parent ? heightAt(hp.x, hp.z) : 0) + 0.07, hp.z);
+  const indoorT = world && onFloor(hp.x, hp.z) ? 1 : 0;
+  heroIndoor += (indoorT - heroIndoor) * Math.min(1, dt * 4);
+
+  // 3. Balanced brightness
+  heroLight.intensity = NIGHT_SETTINGS.intensity * n * n * (1 - heroIndoor * 0.7);
+  // 4. Subtle fill light on Nathan
+  heroFillLight.intensity = NIGHT_SETTINGS.fillIntensity * n * (1 - heroIndoor * 0.3);
+
+  heroPool.visible = n > 0.02 && heroIndoor < 0.95;
+  heroPool.material.opacity = NIGHT_SETTINGS.groundOpacity * n * (1 - heroIndoor);
+
+  // 6. Follow Nathan's world position smoothly across walking, running, mounts, vehicles and islands
+  const distToHero = Math.hypot(hp.x - heroPool.position.x, hp.z - heroPool.position.z);
+  if (!heroPool.userData.set || distToHero > 14) {
+    heroPool.position.x = hp.x;
+    heroPool.position.z = hp.z;
+    heroPool.userData.set = true;
+  } else {
+    const followRate = Math.min(1, dt * 16);
+    heroPool.position.x += (hp.x - heroPool.position.x) * followRate;
+    heroPool.position.z += (hp.z - heroPool.position.z) * followRate;
+  }
+  const groundY = heightAt(heroPool.position.x, heroPool.position.z);
+  heroPool.position.y = Math.max(0, groundY) + 0.07;
+
   document.body.classList.toggle('is-night', n > 0.5);
 }
 let hintHidden = false;
@@ -2295,9 +2769,10 @@ function updatePrompt() {
     group: ['Group', best.title || 'Join in'],
     activity: ['Tahiti', best.title],
     seat: ['Bench', state.seated ? 'Stand up' : 'Sit down'],
-    vehicle: [{ horse: 'Horse', moto: 'Motorcycle' }[best.vtype] || 'Bicycle', state.mount ? 'Dismount' : { horse: 'Ride horse', moto: 'Ride motorcycle' }[best.vtype] || 'Ride bicycle'],
-    finale: ['Departures', state.save.finale ? 'See the whole island again' : 'End of Island 01'],
+    vehicle: [{ horse: 'Horse', moto: 'Motorcycle', scooty: best.label || "Guru's Scooty" }[best.vtype] || 'Bicycle', state.mount ? 'Dismount' : { horse: 'Ride horse', moto: 'Ride motorcycle', scooty: 'RIDE SCOOTY' }[best.vtype] || 'Ride bicycle'],
+    finale: ['Departures', state.save.finale ? 'See the whole island again' : 'End of Origin Isle'],
     chapter: ['Open chapter', chapterFor(c, best.district)?.title],
+    gym: [best.station === 'discipline' ? 'Story' : 'Workout', (best.title || '').toUpperCase()],
   }[best.kind] || ['Open', best.id];
   $('#prompt-kind').textContent = kind;
   $('#prompt-title').textContent = title || best.id;
@@ -2329,9 +2804,14 @@ const tahiti = createTahiti({
     el.textContent = text; document.body.append(el);
     setTimeout(() => el.remove(), white ? 700 : 850);
   },
-  capture() {
+  capture(view) {
     try {
-      retro.render(scene, camera);
+      let cam = camera;
+      if (view) {
+        cam = new THREE.PerspectiveCamera(view.fov || 42, renderer.domElement.width / renderer.domElement.height, 0.1, 300);
+        cam.position.set(view.from.x, view.from.y, view.from.z); cam.lookAt(view.at.x, view.at.y, view.at.z); cam.updateMatrixWorld();
+      }
+      retro.render(scene, cam);
       const src = renderer.domElement, w = 480, h = Math.round((src.height / src.width) * w);
       const c = document.createElement('canvas'); c.width = w; c.height = h;
       c.getContext('2d').drawImage(src, 0, 0, w, h);
@@ -2341,8 +2821,9 @@ const tahiti = createTahiti({
   openGallery() {
     let list = []; try { list = JSON.parse(localStorage.getItem('nathan-exe:tahiti-photos') || '[]'); } catch { /* ignore */ }
     showPanel('tahiti/photos', `<p class="eyebrow">TAHITI · GROUP PHOTOS</p><h2 id="panel-title">Photo board</h2>
-      ${list.length ? `<div class="tahiti-gallery">${list.map((p) => `<figure><img src="${p.url}" alt="Group photo"><figcaption>${p.gang ? esc(p.gang) + ' · ' : ''}${new Date(p.at).toLocaleString()}</figcaption></figure>`).join('')}</div>` : '<p class="subtitle">No photos yet. Stand near your friends and press G.</p>'}
-      <p class="muted">Photos stay on this device.</p>`);
+      ${list.length ? `<div class="tahiti-gallery">${list.map((p, i) => `<figure><button type="button" class="album-open" data-photo="${i}" aria-label="Open photo ${i + 1}"><img src="${p.url}" alt="${esc(p.gang || 'Tahiti photo')}"></button><figcaption>${p.gang ? esc(p.gang) + ' · ' : ''}${new Date(p.at).toLocaleString()}</figcaption></figure>`).join('')}</div>` : '<p class="subtitle">No photos yet. Pose for a photograph at the photography session, or take a group photo at a gang tripod.</p>'}
+      <p class="muted">Photos stay on this device. Click a photo to open it.</p>`);
+    $('#panel-body').querySelectorAll('[data-photo]').forEach((b) => b.addEventListener('click', () => openPhotoCard(list, +b.dataset.photo)));
   },
   giveBandana: () => giveBandana(true),
   minigame(html, setup) {
@@ -2396,7 +2877,8 @@ function updateDebug(dt) {
 function loop() {
   const dt = Math.min(0.05, clock.getDelta());
   const t = clock.elapsedTime;
-  if (world) update(dt, t);
+  // one bad frame (e.g. a workout edge case) must never stop the game loop
+  if (world) { try { update(dt, t); } catch (err) { console.error(err); if (state.gym) resetGym({ place: true }); } }
   renderer.info.reset();
   retro.render(scene, camera);
   requestAnimationFrame(loop);
@@ -2405,7 +2887,7 @@ function loop() {
 if (import.meta.env.DEV) {
   // Dev-only hook for automated testing: step the simulation without rAF.
   window.__game = {
-    state, player, camera, get world() { return world; }, renderer, dialogue,
+    state, player, camera, get world() { return world; }, renderer, dialogue, nightSettings: NIGHT_SETTINGS,
     step(frames = 60) { for (let i = 0; i < frames; i++) update(1 / 60, clock.elapsedTime + i / 60); retro.render(scene, camera); },
     tap: handleTap, walkTo, interact, knockout, startFlight, skipCine, switchLevel, get map() { return map; }, tahiti: () => tahiti, keys,
   };
@@ -2414,7 +2896,7 @@ if (import.meta.env.DEV) {
 // After a mouse/touch click on HUD buttons, give keyboard control back to the game.
 document.addEventListener('pointerup', (e) => { const b = e.target.closest?.('button, a'); if (b && !b.closest('.travel')) setTimeout(() => b.blur(), 0); });
 window.addEventListener('resize', resize);
-window.addEventListener('pagehide', persist);
+window.addEventListener('pagehide', () => { resetGym(); persist(); });
 resize();
 const loaded = init();
 runBoot(loaded);

@@ -3,120 +3,76 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#1e1b2e" />
-    <title>NATHAN.EXE</title>
-    <meta name="description" content="NATHAN.EXE — the playable portfolio of Nathan, software developer. Explore the island, or skip straight to projects, resume and contact." />
-    <meta property="og:title" content="NATHAN.EXE — a playable portfolio" />
-    <meta property="og:description" content="Walk through my story: discipline, a chapter in Russia, a new start in India, and the things I've built." />
-    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <title>Nathan Jerald · Player Archive</title>
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32" />
+    <link rel="icon" href="/favicon-192.png" type="image/png" sizes="192x192" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#101F45" />
+    <meta name="description" content="Nathan Jerald · IT undergraduate and full-stack & cloud-native developer. Projects, skills, experience, achievements, resume and contact." />
+
     <meta property="og:type" content="website" />
     <meta property="og:image" content="uploads/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:image" content="uploads/og-image.png" />
+    <meta property="og:title" content="Nathan: Portfolio" />
+    <meta property="og:description" content="Projects, skills, experience, resume and contact." />
     <link rel="stylesheet" href="/src/styles/base.css" />
-    <link rel="stylesheet" href="/src/styles/game.css" />
-    <noscript><meta http-equiv="refresh" content="0; url=portfolio.html" /></noscript>
+    <link rel="stylesheet" href="/src/styles/portfolio.css" />
   </head>
-  <body class="game">
-    <canvas id="world" aria-label="Interactive island. Click or tap the ground to walk. Use the menu at the top to skip the game."></canvas>
-
-    <header class="hud-top">
-      <a class="logo" href="./" aria-label="NATHAN.EXE home">
-        <span class="logo-mark">N.</span>
-        <span class="logo-text">NATHAN<b>.EXE</b></span>
-      </a>
-      <nav class="recruiter-bar" id="recruiter-bar" aria-label="Quick links">
-        <a class="btn" id="nav-resume" href="#" target="_blank" rel="noopener">Resume</a>
-        <a class="btn" id="nav-education" href="#education">Education</a>
-        <a class="btn" href="portfolio.html#projects">Projects</a>
-        <a class="btn" href="portfolio.html#contact">Contact</a>
-        <a class="btn dark" href="portfolio.html">Skip game →</a>
+  <body class="portfolio">
+    <a class="skip" href="#main">Skip to content</a>
+    <header class="site-head">
+      <a class="logo-small" href="#top" aria-label="NATHAN.EXE, back to top"><img class="logo-icon" src="/assets/logos/nat_log.png" alt="" aria-hidden="true" width="40" height="40" />NATHAN<b>.EXE</b></a>
+      <nav class="top-nav" aria-label="Sections">
+        <a href="#about">About</a><a href="#projects">Projects</a><a href="#skills">Skills</a><a href="#experience">Experience</a><a href="#contact">Contact</a>
       </nav>
-      <button class="btn menu-toggle" id="menu-toggle" aria-expanded="false" aria-controls="recruiter-bar">Menu</button>
+      <a class="btn primary play" href="./play.html"><span aria-hidden="true">▶</span> Play Game</a>
     </header>
 
-    <aside class="journey" aria-label="Save file">
-      <div class="player-card">
-        <canvas id="portrait" width="32" height="32" aria-hidden="true"></canvas>
-        <div class="save-meta">
-          <small>Save file · <span id="play-time">00:00:00</span></small>
-          <strong id="player-name">NATHAN</strong>
-          <div class="save-stats"><span title="Chapters">◆ <b id="journey-count">0/6</b></span><button type="button" id="album-btn" title="Memory album">✦ <b id="mem-count">0/0</b></button></div>
+    <div class="shell" id="top">
+      <aside class="side" aria-label="Player card">
+        <div class="side-card">
+          <div class="side-id">
+            <img class="portrait" id="portrait" alt="Pixel portrait of Nathan" width="96" height="96" />
+            <div class="side-meta">
+              <p class="p-label">PLAYER 01</p>
+              <p class="p-name" id="side-name">NATHAN JERALD</p>
+            </div>
+            <button class="menu-btn" id="menu-btn" type="button" aria-expanded="false" aria-controls="side-nav">Menu</button>
+          </div>
+          <nav class="side-nav" id="side-nav" aria-label="Archive">
+            <a href="#about"><i aria-hidden="true"></i>Profile</a>
+            <a href="#journey"><i aria-hidden="true"></i>Journey</a>
+            <a href="#discipline"><i aria-hidden="true"></i>Discipline</a>
+            <a href="#projects"><i aria-hidden="true"></i>Missions</a>
+            <a href="#skills"><i aria-hidden="true"></i>Skills</a>
+            <a href="#experience"><i aria-hidden="true"></i>Career</a>
+            <a href="#contact"><i aria-hidden="true"></i>Contact</a>
+          </nav>
+          <div class="side-actions">
+            <a class="btn primary" href="./play.html"><span aria-hidden="true">▶</span> Play Game</a>
+            <a class="btn" id="side-resume" href="/resume.pdf" target="_blank" rel="noopener">Resume ↗</a>
+          </div>
         </div>
-        <button type="button" class="journey-toggle" id="journey-toggle" aria-label="Show or hide chapters">▾</button>
-      </div>
-      <ol id="journey-list"></ol>
-      <div class="look" role="group" aria-label="Look">
-        <span>Look</span>
-        <button type="button" data-look="palette" id="look-palette">Bright</button>
-        <button type="button" data-look="pixels" id="look-pixels">Smooth</button>
-        <button type="button" data-look="time" id="look-time" aria-label="Time of day">◐ Auto</button>
-        <button type="button" data-look="motion" id="look-motion" aria-pressed="true" aria-label="Exhibit animations" title="Exhibit animations on/off">▶ Motion</button>
-        <button type="button" data-look="sound" id="look-sound" aria-pressed="false" aria-label="Sound">♪ Off</button>
-        <button type="button" data-look="music" id="look-music" aria-pressed="true" aria-label="Character music">♫ Music</button>
-        <label class="music-vol"><span class="sr-only">Music volume</span><input type="range" id="music-vol" min="0" max="100" value="60" aria-label="Music volume"></label>
-      </div>
-    </aside>
+      </aside>
 
-    <div class="minimap-wrap" title="Map: click to travel, M for the full map">
-      <canvas id="minimap" aria-label="Island map. Click a spot to walk there."></canvas>
-      <button type="button" class="map-btn" id="map-btn" aria-label="Open full map (M)">M</button>
-    </div>
-    <button type="button" class="help-btn" id="help-btn" aria-label="Controls (H)" aria-expanded="false">?</button>
-    <section class="controls window hidden" id="controls" aria-label="Controls">
-      <div class="window-bar"><span class="title">controls.cfg</span><button class="panel-close" id="controls-close" aria-label="Close">✕</button></div>
-      <dl class="controls-list">
-        <dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / click</dt><dd>Walk</dd>
-        <dt><kbd>Shift</kbd></dt><dd>Run</dd>
-        <dt><kbd>Space</kbd></dt><dd>Jump</dd>
-        <dt><kbd>E</kbd></dt><dd>Interact · talk · next line</dd>
-        <dt><kbd>M</kbd></dt><dd>Full map</dd>
-        <dt><kbd>N</kbd></dt><dd>Day / night / auto</dd>
-        <dt><kbd>H</kbd></dt><dd>This help</dd>
-        <dt><kbd>Esc</kbd></dt><dd>Close window</dd>
-        <dt>Scroll / pinch</dt><dd>Zoom</dd>
-      </dl>
-    </section>
-    <section class="bigmap hidden" id="bigmap" role="dialog" aria-label="Island map">
-      <div class="bigmap-card window">
-        <div class="window-bar"><span class="title">island.map · click to travel</span><button class="panel-close" id="bigmap-close" aria-label="Close map">✕</button></div>
-        <canvas id="bigmap-canvas"></canvas>
-        <div class="bigmap-legend"><span><i class="lg-ch"></i>Chapter</span><span><i class="lg-done"></i>Visited</span><span><i class="lg-st"></i>Station</span><span><i class="lg-you"></i>You</span></div>
-      </div>
-    </section>
-
-    <div class="hint" id="hint"></div>
-
-    <button class="prompt hidden" id="prompt" type="button">
-      <kbd>E</kbd><span><small id="prompt-kind">Open</small><strong id="prompt-title">Chapter</strong></span>
-    </button>
-
-    <section class="panel window hidden" id="panel" role="dialog" aria-modal="false" aria-labelledby="panel-title">
-      <div class="window-bar"><span class="title" id="panel-bar">chapter.txt</span>
-        <button class="panel-close" id="panel-close" aria-label="Close">✕</button></div>
-      <div class="panel-body" id="panel-body"></div>
-    </section>
-
-    <section class="dialogue hidden" id="dialogue" role="dialog" aria-label="Conversation"></section>
-    <section class="minigame window hidden" id="minigame" role="dialog" aria-label="Minigame"></section>
-    <div class="travel hidden" id="travel" role="dialog" aria-label="Travelling on the Memory Line"></div>
-    <div class="finale hidden" id="finale"></div>
-    <div class="ko hidden" id="ko" role="alert"></div>
-
-    <div class="toast hidden" id="toast" role="status"></div>
-
-    <div class="boot" id="boot" aria-live="polite">
-      <pre id="boot-text"></pre>
-      <div class="boot-hero">
-        <h1 class="boot-title" aria-label="Nathan">NATHAN</h1>
-        <canvas id="boot-hero" aria-hidden="true"></canvas>
-      </div>
-      <button class="boot-start hidden" id="boot-start">Press any key or tap to start</button>
-      <a class="boot-skip" href="portfolio.html">Skip to portfolio</a>
+      <main id="main" aria-busy="true">
+        <div class="notice hidden" id="notice" role="status"></div>
+        <p class="loading">Loading archive…</p>
+      </main>
     </div>
 
-    <script type="module" src="/src/game/main.js"></script>
+    <footer class="site-foot">
+      <span id="foot-name">NATHAN.EXE</span> · <a href="./play.html">Play the interactive version</a>
+    </footer>
+
+    <dialog class="mission-dialog" id="mission-dialog" aria-labelledby="md-title">
+      <div class="window-bar"><span class="title" id="md-file">mission.log</span><button class="md-close" id="md-close" type="button" aria-label="Close details">✕</button></div>
+      <div class="md-body" id="md-body"></div>
+    </dialog>
+    <script type="module" src="/src/portfolio.js"></script>
   </body>
 </html>

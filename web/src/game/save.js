@@ -3,7 +3,7 @@ const KEY = 'nathan-exe:save';
 const LEGACY_KEY = 'nathan-exe:visited';
 const VERSION = 1;
 
-const blank = () => ({ v: VERSION, chapters: [], memories: [], minigames: [], talked: [], stamps: [], seconds: 0, pos: null, created: Date.now() });
+const blank = () => ({ v: VERSION, chapters: [], memories: [], minigames: [], talked: [], stamps: [], gym: [], seconds: 0, pos: null, created: Date.now() });
 
 export function loadSave() {
   try {

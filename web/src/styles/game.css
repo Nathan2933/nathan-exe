@@ -48,6 +48,7 @@ body.started .hint { opacity: 1; }
   background: var(--ink); color: var(--accent);
   font-family: var(--font-pixel); font-size: 16px;
 }
+img.logo-mark, body.game img.logo-mark { width: 40px; height: 40px; display: block; background: none; image-rendering: pixelated; }
 .logo-text { font-family: var(--font-pixel); font-size: 15px; letter-spacing: .02em; }
 .logo-text b { color: var(--accent-ink); font-weight: 400; }
 .recruiter-bar { display: flex; gap: 8px; }
@@ -713,6 +714,8 @@ body.game .passport-note { margin: 8px 0 0; font-size: 12px; }
 #cine .cine-skip { position: absolute; right: 16px; bottom: calc(9vh + 12px); pointer-events: auto; }
 
 body.cine-on .journey, body.cine-on .minimap-wrap, body.cine-on #prompt, body.cine-on .hud-top, body.cine-on #map-btn { visibility: hidden; }
+/* no message card during flights/cut-scenes */
+body.cine-on .toast { display: none; }
 
 /* Boot screen: character-select hero */
 .boot { position: fixed; }
@@ -844,3 +847,175 @@ body.cine-on .tahiti-hints, body.cine-on .tahiti-bubbles { display: none; }
 .mg-plate.gone { opacity: .25; }
 .mg-reps i.bad { background: #3a2f4f; }
 body.game .mg-line { background: #fff6e6; }
+
+/* ---------- Iron Yard gym: rep counter, Jacked Mode banner, Discipline menu ---------- */
+.gym-hud {
+  position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%); z-index: 6;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  background: var(--hud-bg, var(--ink)); color: var(--hud-text, var(--cream));
+  font-family: var(--font-pixel); font-size: 12px; padding: 10px 18px; border-radius: var(--radius);
+  pointer-events: none; text-align: center;
+}
+.gym-hud .reps { font-size: 18px; letter-spacing: .06em; }
+.gym-hud .reps b { color: #009FA9; }
+.gym-hud small { font-family: var(--font-mono); font-size: 11px; opacity: .8; }
+.gym-hud kbd { font-size: 10px; }
+.gym-banner {
+  position: absolute; left: 50%; top: 34%; transform: translate(-50%, -50%) scale(.6); z-index: 7;
+  font-family: var(--font-pixel); font-size: clamp(18px, 4.4vw, 34px); color: #ffd257; text-align: center;
+  text-shadow: 3px 3px 0 #2a2440, -2px -2px 0 #2a2440, 2px -2px 0 #2a2440, -2px 2px 0 #2a2440;
+  opacity: 0; pointer-events: none; transition: opacity .18s steps(3), transform .18s steps(3);
+  max-width: calc(100vw - 32px);
+}
+.gym-banner.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+.gym-banner.big { color: #ff8a5c; }
+.gym-banner small { display: block; font-size: .42em; margin-top: 8px; color: #fff1d6; }
+.gym-menu { display: grid; gap: 8px; margin-top: 14px; }
+.gym-menu .btn { justify-content: flex-start; text-align: left; }
+.gym-timeline { list-style: none; display: flex; gap: 8px; padding: 0; margin: 14px 0; counter-reset: ms; }
+.gym-timeline li { flex: 1; border: var(--border); border-radius: var(--radius); padding: 8px; font-family: var(--font-pixel); font-size: 11px; text-align: center; }
+.gym-timeline li::before { counter-increment: ms; content: "0" counter(ms); display: block; color: #009FA9; margin-bottom: 4px; }
+.gym-progress { list-style: none; padding: 0; margin: 12px 0; display: grid; gap: 6px; }
+.gym-progress li { display: flex; gap: 10px; align-items: center; font-family: var(--font-pixel); font-size: 12px; opacity: .65; }
+.gym-progress li.done { opacity: 1; }
+.gym-progress li span { color: #009FA9; width: 1em; }
+@media (max-width: 560px) { .gym-timeline { flex-direction: column; } }
+
+/* Achievement photos (set in the admin) */
+.ach-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 6px; margin-top: 8px; }
+.ach-gallery a { display: block; border-radius: 4px; overflow: hidden; border: 1px solid rgba(255,255,255,.15); }
+.ach-gallery img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
+
+/* Achievement photo viewer: large, uncropped, arrows to browse */
+.photo-viewer { margin-top: 10px; }
+.pv-stage { position: relative; display: flex; justify-content: center; }
+.pv-stage img { display: block; max-width: 100%; height: auto; max-height: 52vh; border-radius: 6px; border: 1px solid rgba(255,255,255,.15); box-shadow: 0 6px 18px rgba(0,0,0,.35); cursor: zoom-in; image-rendering: auto; }
+.pv-nav { position: absolute; top: 50%; transform: translateY(-50%); width: 40px; height: 40px; border: 1.5px solid rgba(255,255,255,.6); border-radius: 50%; background: rgba(14,11,26,.7); color: #fff; font-size: 14px; cursor: pointer; display: grid; place-items: center; }
+.pv-nav:hover, .pv-nav:focus-visible { background: #009FA9; border-color: #009FA9; }
+.pv-nav.prev { left: 8px; } .pv-nav.next { right: 8px; }
+.pv-nav[hidden] { display: none; }
+.pv-cap { display: flex; justify-content: space-between; gap: 8px; margin: 6px 2px 0; font-size: 13px; }
+.pv-count { opacity: .7; font-variant-numeric: tabular-nums; }
+
+/* Career logos next to experience entries */
+.has-logo { position: relative; padding-left: 46px !important; min-height: 38px; }
+.org-logo { position: absolute; left: 0; top: 2px; width: 36px; height: 36px; object-fit: contain; background: #fff; border-radius: 6px; padding: 3px; box-shadow: 0 0 0 2px rgba(0,159,169,.6); }
+ul.highlights li.has-logo::before { display: none; }
+
+/* Skill tree: icon tiles */
+body.game .gh-node-list.sk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; }
+body.game .gh-node-list.sk-grid li { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 6px 8px; text-align: center; background: linear-gradient(180deg, rgba(0,159,169,.18), rgba(0,159,169,.04)); border: 2px solid #009fa9; box-shadow: 3px 3px 0 rgba(0,0,0,.35); transition: transform .12s; }
+body.game .gh-node-list.sk-grid li:hover { transform: translateY(-3px); box-shadow: 3px 6px 0 rgba(0,0,0,.35), 0 0 14px rgba(56,228,228,.35); }
+.sk-icon { width: 44px; height: 44px; display: grid; place-items: center; background: #fff; border-radius: 10px; padding: 6px; }
+.sk-icon img { width: 100%; height: 100%; object-fit: contain; }
+.sk-fallback { font-family: var(--font-pixel); font-size: 18px; color: #101f45; }
+body.game .sk-grid b { font-size: 13px; line-height: 1.2; }
+body.game .sk-grid em { font-style: normal; font-family: var(--font-mono); font-size: 10px; letter-spacing: .08em; color: #38e4e4; }
+
+/* ---- Arcade quest log ---- */
+body.game .gh-quest { background: linear-gradient(90deg, rgba(0,159,169,.16), rgba(16,31,69,.35)); border: 2px solid #4b5a8a; box-shadow: 4px 4px 0 rgba(0,0,0,.35); margin: 10px 0; padding: 0 14px; }
+body.game .gh-quest.main { border-color: #38e4e4; }
+body.game .gh-quest summary { display: grid; grid-template-columns: 64px 1fr auto; align-items: center; gap: 14px; padding: 14px 0; }
+body.game .quest-logo { width: 64px; height: 64px; display: grid; place-items: center; background: #fff; border: 3px solid #38e4e4; box-shadow: 3px 3px 0 #101f45; font-family: var(--font-pixel); font-size: 26px; color: #101f45; }
+body.game .gh-quest.side .quest-logo { border-color: #9aa6c8; }
+body.game .quest-logo img { width: 100%; height: 100%; object-fit: contain; padding: 5px; }
+body.game .quest-info { display: grid; gap: 3px; min-width: 0; }
+body.game .quest-info b { font-size: 18px; line-height: 1.2; }
+body.game .gh-quest .tag { color: #fff02a; }
+body.game .gh-quest.side .tag { color: #38e4e4; }
+body.game .quest-role { font-family: var(--font-mono); font-size: 12px; opacity: .85; }
+body.game .quest-role i { font-style: normal; margin-left: 6px; padding: 1px 6px; background: #009fa9; color: #fff; }
+body.game .quest-caret { color: #38e4e4; transition: transform .15s; }
+body.game .gh-quest[open] .quest-caret { transform: rotate(180deg); }
+body.game .gh-quest p { margin: 0 0 14px 78px; }
+@media (max-width: 480px) { body.game .gh-quest summary { grid-template-columns: 48px 1fr auto; } body.game .quest-logo { width: 48px; height: 48px; } body.game .gh-quest p { margin-left: 0; } }
+
+/* ---- Arcade skill tree ---- */
+body.game { --sk0: #e8a54b; --sk1: #6fbf9a; --sk2: #7ea6d8; --sk3: #c49bd3; --sk4: #e07a5f; }
+.sk-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0; }
+.sk-stats span { display: grid; place-items: center; padding: 8px 4px; background: #101f45; border: 2px solid #38e4e4; box-shadow: 3px 3px 0 rgba(0,0,0,.35); font-family: var(--font-mono); font-size: 10px; letter-spacing: .12em; color: #38e4e4; }
+.sk-stats b { font-family: var(--font-pixel); font-size: 22px; color: #fff02a; letter-spacing: 0; }
+body.game .sk-tabs { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 6px; }
+body.game .sk-tabs .gh-branch { padding: 8px; font-size: 13px; background: #101f45; color: #fff5dd; border-color: #4b5a8a; }
+body.game .sk-tabs .gh-branch[aria-expanded="true"], body.game .sk-tabs .gh-branch:hover { border-color: var(--bc, #fff02a); box-shadow: 0 0 0 1px var(--bc, #fff02a), 3px 3px 0 rgba(0,0,0,.4); }
+.sk-branch { margin-top: 14px; }
+.sk-branch h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; padding: 6px 10px; background: linear-gradient(90deg, color-mix(in srgb, var(--bc) 35%, transparent), transparent); border-left: 4px solid var(--bc); font-size: 15px; }
+.sk-branch h3 em { margin-left: auto; font-style: normal; font-family: var(--font-mono); font-size: 10px; letter-spacing: .12em; color: var(--bc); }
+body.game .sk-branch .gh-node-list.sk-grid { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+body.game .sk-branch .gh-node-list.sk-grid li { padding: 10px 4px 8px; background: linear-gradient(180deg, color-mix(in srgb, var(--bc) 22%, transparent), rgba(16,31,69,.4)); border-color: var(--bc); }
+body.game .sk-branch .gh-node-list.sk-grid li:hover { box-shadow: 3px 6px 0 rgba(0,0,0,.35), 0 0 14px color-mix(in srgb, var(--bc) 60%, transparent); }
+body.game .sk-branch .sk-icon { width: 40px; height: 40px; }
+
+/* Skill tiles: calm cartridge look, one accent strip per branch */
+body.game .sk-branch .gh-node-list.sk-grid li { background: #18223f; border: 2px solid #2d3a63; border-top: 4px solid var(--bc); box-shadow: 3px 3px 0 #0b1128; }
+body.game .sk-branch .gh-node-list.sk-grid li:hover { border-color: #3d4c7c; border-top-color: var(--bc); box-shadow: 3px 5px 0 #0b1128; }
+.sk-branch h3 { background: #18223f; border-left-color: var(--bc); }
+body.game .sk-branch .sk-icon { background: #f3ead7; border-radius: 0; box-shadow: inset -3px -3px 0 rgba(0,0,0,.12), 2px 2px 0 #0b1128; }
+.sk-icon img.px { image-rendering: pixelated; image-rendering: crisp-edges; }
+body.game .sk-tabs .gh-branch[aria-expanded="true"], body.game .sk-tabs .gh-branch:hover { border-color: var(--bc, #e8a54b); box-shadow: 3px 3px 0 #0b1128; }
+
+/* ================= Skill tree: compact GTA-style overlay ================= */
+body.game .panel.sk-panel { width: min(400px, calc(100vw - 2 * var(--gutter))); background: #0d1530; border: 2px solid #c9a24a; box-shadow: 0 0 0 2px #0b1128, 6px 6px 0 rgba(0,0,0,.45); }
+body.game .panel.sk-panel .window-bar { background: #0b1128; border-bottom: 1px solid #c9a24a; }
+body.game .panel.sk-panel .window-bar .title { color: #f2c94c; }
+body.game .sk-panel .panel-body { display: flex; flex-direction: column; overflow: hidden; padding: 0; flex: 1; min-height: 0; }
+.sk-fixed { flex: none; padding: 10px 10px 8px; display: grid; gap: 8px; border-bottom: 1px solid rgba(201,162,74,.45); }
+.sk-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 10px 14px; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #c9a24a #0b1128; }
+
+.sk-hero { position: relative; display: flex; align-items: center; gap: 10px; padding: 8px 10px; overflow: hidden; border: 1px solid #c9a24a;
+  background:
+    linear-gradient(to top, #0b1128 0 10px, transparent 10px),
+    repeating-linear-gradient(90deg, #0b1128 0 7px, transparent 7px 11px, #0b1128 11px 15px, transparent 15px 26px) bottom / 100% 26px no-repeat,
+    radial-gradient(circle at 82% 70%, #ffd25e 0 16px, #ff8a3d 17px 22px, transparent 23px),
+    linear-gradient(180deg, #2b1b5a 0%, #8a3f8f 55%, #f07a4a 100%); }
+.sk-hero-face { width: 44px; height: 44px; image-rendering: pixelated; border: 2px solid #f2c94c; background: #0b1128; flex: none; }
+body.game .sk-hero .eyebrow { margin: 0; font-size: 9px; color: #f2c94c; }
+body.game .sk-hero h2 { margin: 0; font-size: 22px; color: #fff5dd; text-shadow: 2px 2px 0 #0b1128; }
+.sk-hero small { font-family: var(--font-mono); font-size: 9px; letter-spacing: .1em; color: #ffe7b0; }
+
+body.game .sk-panel .sk-stats { margin: 0; gap: 6px; }
+body.game .sk-panel .sk-stats span { grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 6px; place-items: center start; padding: 5px 7px; background: #111b3a; border: 1px solid #c9a24a; box-shadow: none; color: #c9d3ee; font-size: 8.5px; letter-spacing: .08em; }
+.sk-stats i { grid-row: span 2; font-style: normal; font-family: var(--font-mono); font-size: 15px; color: #f2c94c; }
+body.game .sk-panel .sk-stats b { font-size: 17px; line-height: 1; color: #f2c94c; }
+
+body.game .sk-panel .sk-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin: 0; }
+body.game .sk-panel .sk-tabs .gh-branch { gap: 5px; padding: 5px 6px; min-height: 0; font-size: 11px; line-height: 1.15; background: #111b3a; color: #e6ecff; border: 1px solid #34406b; box-shadow: none; }
+body.game .sk-panel .sk-tabs .gh-branch em { font-size: 10px; color: #9aa6c8; }
+body.game .sk-panel .sk-tabs .gh-branch[aria-expanded="true"] { background: #f2c94c; color: #0b1128; border-color: #f2c94c; }
+body.game .sk-panel .sk-tabs .gh-branch[aria-expanded="true"] em { color: #0b1128; }
+body.game .sk-panel .sk-tabs .gh-branch:hover { border-color: #c9a24a; box-shadow: none; }
+body.game .sk-panel .gh-gem { width: 8px; height: 8px; flex: none; }
+
+body.game .sk-panel .sk-branch { margin-top: 10px; }
+body.game .sk-panel .sk-branch h3 { margin: 0 0 6px; padding: 5px 8px; font-size: 13px; background: #111b3a; border: 1px solid #c9a24a; border-left: 1px solid #c9a24a; color: #fff5dd; }
+body.game .sk-panel .sk-branch h3 em { color: #f2c94c; font-size: 11px; letter-spacing: .04em; }
+body.game .sk-panel .sk-branch .gh-node-list.sk-grid { grid-template-columns: repeat(3, 1fr); gap: 5px; }
+body.game .sk-panel .sk-branch .gh-node-list.sk-grid li { gap: 4px; padding: 7px 2px 6px; background: #111b3a; border: 1px solid #2a3560; border-top: 1px solid #2a3560; box-shadow: none; }
+body.game .sk-panel .sk-branch .gh-node-list.sk-grid li:hover { transform: none; border-color: #c9a24a; box-shadow: none; }
+body.game .sk-panel .sk-branch .sk-icon { width: 32px; height: 32px; padding: 4px; box-shadow: none; background: #f3ead7; }
+body.game .sk-panel .sk-grid b { font-size: 11px; color: #e6ecff; font-weight: 600; }
+@media (max-width: 700px) {
+  body.game .panel.sk-panel { width: 100%; }
+}
+
+.pv-stage video { display: block; max-width: 100%; max-height: 52vh; border-radius: 6px; border: 1px solid rgba(255,255,255,.15); background: #000; }
+.pv-stage img[hidden], .pv-stage video[hidden] { display: none; }
+.proj-media { margin: 0 0 12px; }
+body.game .gh-proj { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+body.game .gh-proj li { padding: 8px 10px; background: rgba(16,31,69,.45); border-left: 3px solid #009fa9; }
+body.game .gh-first { font-family: var(--font-mono); font-size: 10px; padding: 1px 6px; background: #f2c94c; color: #101f45; letter-spacing: .06em; }
+
+/* Pixel Defenders: one centred row of three buttons */
+.tahiti-mg .dance-pad.pd-pad { grid-template-columns: repeat(3, 1fr); max-width: 480px; margin: 8px auto 0; }
+
+/* Album: clickable photos + pop-up photo card */
+.tahiti-gallery .album-open { all: unset; display: block; cursor: zoom-in; }
+.tahiti-gallery .album-open:focus-visible { outline: 3px solid #38e4e4; outline-offset: 2px; }
+.tahiti-gallery .album-open:hover img { filter: brightness(1.08); }
+.photo-card { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: 16px; background: rgba(8, 10, 24, .72); animation: winopen .16s steps(4); }
+.photo-card .pc-box { width: min(760px, 100%); max-height: calc(100vh - 32px); display: flex; flex-direction: column; }
+.photo-card .pc-body { padding: 12px; overflow: auto; background: var(--cream); }
+.photo-card img { display: block; width: 100%; max-height: 66vh; object-fit: contain; background: #0d0f24; border: 2px solid var(--ink); image-rendering: auto; }
+.photo-card .pc-cap { display: flex; justify-content: space-between; gap: 10px; margin: 8px 2px; font: 12px var(--font-mono); color: var(--ink-2); }
+.photo-card .pc-nav { display: flex; justify-content: center; gap: 10px; }
+.photo-card .pc-nav [hidden] { display: none; }

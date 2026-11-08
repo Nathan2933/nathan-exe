@@ -5,16 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex" />
     <title>NATHAN.EXE Admin</title>
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32" />
+    <link rel="icon" href="/favicon-192.png" type="image/png" sizes="192x192" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#101F45" />
     <link rel="stylesheet" href="/src/styles/base.css" />
     <link rel="stylesheet" href="/src/styles/admin.css" />
   </head>
   <body class="admin">
     <header class="admin-head">
-      <div class="brand"><span>N.</span> NATHAN.EXE <b>/ admin</b></div>
+      <div class="brand"><img src="/favicon-192.png" alt="" width="28" height="28" style="image-rendering:pixelated;border-radius:4px"> NATHAN.EXE <b>/ admin</b></div>
       <div class="admin-actions">
         <span class="status" id="status" role="status"></span>
-        <a class="btn" href="./" target="_blank">Game ↗</a>
-        <a class="btn" href="portfolio.html" target="_blank">Portfolio ↗</a>
+        <a class="btn" href="play.html" target="_blank">Game ↗</a>
+        <a class="btn" href="./" target="_blank">Portfolio ↗</a>
         <label class="btn">Import<input type="file" id="import" accept="application/json" hidden></label>
         <button class="btn" id="download">Download JSON</button>
         <button class="btn primary" id="save" disabled>Save</button>

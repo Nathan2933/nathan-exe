@@ -6,3 +6,9 @@ source/*.blend2
 tools/__pycache__/
 .DS_Store
 web/content-backups/
+
+# admin password hash (local only)
+web/.admin-auth.json
+
+# map rebuild backups
+web/public/maps/*.backup-*.tmj

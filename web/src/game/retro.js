@@ -4,12 +4,12 @@ import * as THREE from 'three';
  * Render pipeline: draw the scene into an offscreen target, then present it
  * through a colour-grade pass. Two independent switches:
  *
- *   pixels  'smooth' — full resolution, 4× MSAA, no dithering (clean low-poly)
- *           'retro'  — small target upscaled with nearest filtering, 1-pixel
+ *   pixels  'smooth' · full resolution, 4× MSAA, no dithering (clean low-poly)
+ *           'retro'  · small target upscaled with nearest filtering, 1-pixel
  *                      depth outlines, gentle ordered dither + colour quantize
  *                      (clean pixel-art look)
- *   palette 'bright' — saturated, sunny grade
- *           'pastel' — softened saturation, lifted shadows, warm cream tint
+ *   palette 'bright' · saturated, sunny grade
+ *           'pastel' · softened saturation, lifted shadows, warm cream tint
  */
 const PALETTES = {
   bright: { sat: 1.14, contrast: 1.06, bright: 1.03, lift: 0.0, tint: [1, 1, 1] },

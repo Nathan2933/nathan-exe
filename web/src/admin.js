@@ -26,7 +26,7 @@ const SCHEMA = [
     ],
   },
   {
-    key: 'chapters', label: 'Story chapters', type: 'array', itemTitle: (c) => `${c.title || 'Chapter'} — ${districtName(c.district)}`,
+    key: 'chapters', label: 'Story chapters', type: 'array', itemTitle: (c) => `${c.title || 'Chapter'} · ${districtName(c.district)}`,
     blank: () => ({ id: uid('chapter'), district: 'iron-yard', title: '', subtitle: '', period: '', body: [], highlights: [] }),
     note: 'Each island district shows the chapter linked to it. The Garage chapter also lists all projects; the Signal Tower chapter shows contact links.',
     fields: [
@@ -36,6 +36,7 @@ const SCHEMA = [
       { key: 'period', label: 'Period', type: 'text', hint: 'e.g. 2021 – 2022' },
       { key: 'body', label: 'Story paragraphs', type: 'lines', hint: 'One paragraph per line.' },
       { key: 'highlights', label: 'Highlights', type: 'lines', hint: 'One bullet per line.' },
+      { key: 'media', label: 'Images & videos', type: 'gallery', accept: 'image/*,video/mp4,video/webm,video/quicktime', hint: 'Shown at the top of this chapter in the game (e.g. The Discipline gym photos). Arrows reorder, click a tile to replace.' },
       { key: 'id', label: 'ID', type: 'text', advanced: true },
     ],
   },
@@ -55,6 +56,7 @@ const SCHEMA = [
       { key: 'github', label: 'Code URL', type: 'url' },
       { key: 'demo', label: 'Live demo URL', type: 'url' },
       { key: 'image', label: 'Screenshot', type: 'file' },
+      { key: 'media', label: 'Images & videos', type: 'gallery', accept: 'image/*,video/mp4,video/webm,video/quicktime', hint: 'Shown in a viewer when the project is opened. Images up to 8 MB, videos (mp4/webm/mov) up to 60 MB. Use the arrows to reorder, click a tile to replace it.' },
       { key: 'featured', label: 'Featured', type: 'checkbox' },
       { key: 'id', label: 'ID', type: 'text', advanced: true },
     ],
@@ -71,6 +73,7 @@ const SCHEMA = [
     key: 'experience', label: 'Experience', type: 'array', itemTitle: (e) => `${e.role || 'Role'}${e.org ? ' · ' + e.org : ''}`,
     blank: () => ({ role: '', org: '', period: '', summary: '' }),
     fields: [
+      { key: 'logo', label: 'Logo', type: 'file', hint: 'Company / club logo shown next to this role.' },
       { key: 'role', label: 'Role', type: 'text' },
       { key: 'org', label: 'Organisation', type: 'text' },
       { key: 'period', label: 'Period', type: 'text' },
@@ -79,12 +82,13 @@ const SCHEMA = [
   },
   {
     key: 'achievements', label: 'Achievements', type: 'array', itemTitle: (a) => a.title || 'Achievement',
-    blank: () => ({ title: '', org: '', year: '', detail: '' }),
+    blank: () => ({ title: '', org: '', year: '', detail: '', images: [] }),
     fields: [
       { key: 'title', label: 'Title', type: 'text' },
       { key: 'org', label: 'Event / organisation', type: 'text' },
       { key: 'year', label: 'Year', type: 'text' },
       { key: 'detail', label: 'Detail', type: 'textarea' },
+      { key: 'images', label: 'Images', type: 'gallery', hint: 'Upload one or more photos. Use ◀ ▶ to reorder, click a photo to replace it.' },
     ],
   },
   {
@@ -96,7 +100,7 @@ const SCHEMA = [
     ],
   },
   {
-    key: 'memories', label: 'Memories', type: 'array', itemTitle: (m) => `${m.title || 'Memory'} — ${districtName(m.district)}`,
+    key: 'memories', label: 'Memories', type: 'array', itemTitle: (m) => `${m.title || 'Memory'} · ${districtName(m.district)}`,
     blank: () => ({ id: uid('memory'), district: 'iron-yard', title: '', year: '', text: '', image: '' }),
     note: 'Hidden collectibles in the game. Each one is placed on the map in Tiled (interact layer, type "memory", property id = this ID). The "transformation" memory is unlocked by the Iron Yard lift.',
     fields: [
@@ -109,7 +113,7 @@ const SCHEMA = [
     ],
   },
   {
-    key: 'npcs', label: 'NPCs', type: 'array', itemTitle: (n) => `${n.name || 'NPC'} — ${districtName(n.district)}`,
+    key: 'npcs', label: 'NPCs', type: 'array', itemTitle: (n) => `${n.name || 'NPC'} · ${districtName(n.district)}`,
     blank: () => ({ id: uid('npc'), name: '', role: '', district: 'iron-yard', species: 'human', skin: 'tan', hair: 'short', hairColor: '#1b1716', top: 'tee', topColor: '#6fa8dc', pants: 'jeans', shoes: '#f6f3ec', beard: 'none', glasses: false, build: 1, height: 1, color: '#2a2440', scripted: true, lines: [], topics: [] }),
     note: 'People in the town. Where each one walks is a route on the "paths" layer in Tiled (type "npc_route", property npc = this ID); see docs/WORKFLOW.md. Lines are shown as scripted game dialogue.',
     fields: [
@@ -172,7 +176,7 @@ function setStatus(msg, kind = '') {
 function markDirty() {
   dirty = true;
   $('#save').disabled = !canSave;
-  setStatus(canSave ? 'Unsaved changes' : 'Unsaved — download JSON to keep changes', 'warn');
+  setStatus(canSave ? 'Unsaved changes' : 'Unsaved: download JSON to keep changes', 'warn');
 }
 
 // ---------- Rendering ----------
@@ -270,6 +274,34 @@ function field(f, obj, onChange) {
       input.value = obj[f.key] ?? f.options[0][0];
       input.addEventListener('change', () => { obj[f.key] = input.value; changed(); });
       break;
+    case 'gallery': {
+      const list = (obj[f.key] ||= []);
+      const grid = el('div', { class: 'gallery' });
+      const many = el('input', { type: 'file', accept: f.accept || 'image/*', multiple: true, hidden: true });
+      const one = el('input', { type: 'file', accept: f.accept || 'image/*', hidden: true });
+      let replaceAt = -1;
+      const draw = () => {
+        grid.replaceChildren(...list.map((src, i) => el('div', { class: 'thumb' },
+          el(/\.(mp4|webm|mov|m4v)$/i.test(src) ? 'video' : 'img', { src, alt: '', muted: true, title: 'Click to replace', onclick: () => { if (!canSave) return; replaceAt = i; one.click(); } }),
+          el('div', { class: 'thumb-tools' },
+            el('button', { class: 'icon', type: 'button', title: 'Move left', disabled: i === 0, onclick: () => { [list[i - 1], list[i]] = [list[i], list[i - 1]]; changed(); draw(); } }, '◀'),
+            el('button', { class: 'icon', type: 'button', title: 'Move right', disabled: i === list.length - 1, onclick: () => { [list[i + 1], list[i]] = [list[i], list[i + 1]]; changed(); draw(); } }, '▶'),
+            el('button', { class: 'icon danger', type: 'button', title: 'Remove', onclick: () => { list.splice(i, 1); changed(); draw(); } }, '✕')))));
+      };
+      many.addEventListener('change', async () => {
+        for (const file of many.files) { try { list.push(await upload(file)); changed(); draw(); } catch (e) { alert(`${file.name}: ${e.message}`); } }
+        many.value = '';
+      });
+      one.addEventListener('change', async () => {
+        const file = one.files[0];
+        if (file && replaceAt >= 0) { try { list[replaceAt] = await upload(file); changed(); draw(); } catch (e) { alert(e.message); } }
+        one.value = ''; replaceAt = -1;
+      });
+      draw();
+      return el('div', { class: 'field' }, el('label', {}, f.label), grid,
+        el('button', { class: 'btn', type: 'button', disabled: !canSave, title: canSave ? '' : 'Uploads work when running locally', onclick: () => many.click() }, f.accept ? '+ Add images / videos' : '+ Add images'), many, one,
+        f.hint ? el('small', {}, f.hint) : null);
+    }
     case 'file': {
       input = el('input', { id, type: 'text', placeholder: '/uploads/file.png or https://…' });
       input.value = obj[f.key] ?? '';
@@ -297,13 +329,14 @@ function field(f, obj, onChange) {
 
 // ---------- Persistence ----------
 async function upload(file) {
-  if (file.size > 8_000_000) throw new Error('File too large (max 8 MB).');
-  const buf = new Uint8Array(await file.arrayBuffer());
-  let bin = '';
-  for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode(...buf.subarray(i, i + 0x8000));
-  const res = await fetch('/__admin/upload', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: file.name, data: btoa(bin) }) });
+  const isVideo = file.type.startsWith('video/');
+  const max = isVideo ? 60_000_000 : 8_000_000;
+  if (file.size > max) throw new Error(`File too large (max ${max / 1_000_000} MB).`);
+  setStatus(`Uploading ${file.name}...`, 'warn');
+  const res = await fetch(`/__admin/upload?name=${encodeURIComponent(file.name)}`, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream', 'X-Admin': '1' }, body: file });
   const out = await res.json();
   if (!res.ok) throw new Error(out.error || 'Upload failed');
+  setStatus(`Uploaded ${file.name}. Click Save to keep it.`, 'warn');
   return out.url;
 }
 
@@ -312,7 +345,7 @@ async function save() {
   $('#save').disabled = true;
   setStatus('Saving…');
   try {
-    const res = await fetch('/__admin/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    const res = await fetch('/__admin/save', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Admin': '1' }, body: JSON.stringify(data) });
     const out = await res.json();
     if (!res.ok) throw new Error(out.error || 'Save failed');
     dirty = false;
@@ -330,13 +363,42 @@ function download() {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
+// ---------- Sign in ----------
+async function adminStatus() {
+  try { const r = await fetch('/__admin/status', { cache: 'no-store' }); return r.ok ? await r.json() : null; } catch { return null; }
+}
+function loginScreen(st) {
+  document.body.classList.add('locked');
+  const box = el('form', { class: 'login card', autocomplete: 'on' },
+    el('h1', {}, 'Admin sign in'),
+    st?.configured === false
+      ? el('p', { class: 'note' }, 'No admin password is set yet. In a terminal in the web folder run: npm run admin:password, then reload this page.')
+      : el('p', { class: 'note' }, 'This page only works on this computer. Sign in to edit the portfolio.'),
+    el('label', { class: 'field' }, 'Username', el('input', { name: 'user', type: 'text', autocomplete: 'username', required: true })),
+    el('label', { class: 'field' }, 'Password', el('input', { name: 'pass', type: 'password', autocomplete: 'current-password', required: true })),
+    el('p', { class: 'login-err', role: 'alert' }),
+    el('button', { class: 'btn primary', type: 'submit', disabled: st?.configured === false }, 'Sign in'));
+  box.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const err = box.querySelector('.login-err'); err.textContent = '';
+    const res = await fetch('/__admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Admin': '1' }, body: JSON.stringify({ user: box.user.value, pass: box.pass.value }) }).catch(() => null);
+    if (res?.ok) { location.reload(); return; }
+    err.textContent = (await res?.json().catch(() => null))?.error || 'Sign-in failed.';
+    box.pass.value = ''; box.pass.focus();
+  });
+  document.querySelector('.admin-wrap').replaceChildren(box);
+  document.querySelector('.admin-actions').hidden = true;
+  box.user.focus();
+}
+
 async function init() {
-  try {
-    const res = await fetch('/__admin/status');
-    canSave = res.ok && (await res.json()).canSave;
-  } catch { canSave = false; }
+  const st = await adminStatus();
+  if (!st) { setStatus('Admin is only available while running `npm run dev` on your computer.', 'err'); document.querySelector('.admin-wrap').replaceChildren(); return; }
+  if (!st.authed) return loginScreen(st);
+  canSave = !!st.canSave;
+  document.querySelector('.admin-actions').prepend(el('button', { class: 'btn', type: 'button', onclick: async () => { if (dirty && !confirm('Discard unsaved changes and sign out?')) return; dirty = false; await fetch('/__admin/logout', { method: 'POST', headers: { 'X-Admin': '1' } }); location.reload(); } }, 'Sign out'));
   data = await loadContent();
-  setStatus(canSave ? 'Connected — changes save to public/data/content.json' : 'Read-only: run `npm run dev` on your computer to save', canSave ? 'ok' : 'warn');
+  setStatus(canSave ? 'Connected: changes save to public/data/content.json' : 'Read-only: run `npm run dev` on your computer to save', canSave ? 'ok' : 'warn');
   $('#save').addEventListener('click', save);
   $('#download').addEventListener('click', download);
   $('#import').addEventListener('change', async (e) => {

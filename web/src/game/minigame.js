@@ -75,3 +75,78 @@ export function runLift(root, { title = 'Progressive overload', intro = '', onDo
   }
   return { close: () => finish(false) };
 }
+
+// Iron Yard "Tempo" minigame: a rep-rhythm set. Eight plates slide along a
+// lane toward the bar line in a steady 2-1 lifting tempo; press E / Space /
+// tap as each plate crosses the line. Land 6 of 8 to finish the set; a short
+// set just restarts. Always skippable.
+export function runTempo(root, { title = 'Tempo set', intro = '', onDone, onClose }) {
+  const beats = [0, 0.75, 1.5, 2.25, 3.0, 3.375, 3.75, 4.5]; // seconds; the double-time pair is the "pause rep"
+  const LEAD = 1.6, WIN = 0.16, NEED = 6;
+  let t0 = 0, raf = 0, done = false, hits, judged;
+  root.innerHTML = `
+    <div class="window-bar"><span class="title">iron-yard/tempo.exe</span><button class="panel-close mg-x" aria-label="Close">✕</button></div>
+    <div class="mg-body">
+      <h2>${esc(title)}</h2>
+      <p class="mg-intro">${esc(intro)}</p>
+      <div class="mg-bar mg-lane"><div class="mg-line"></div></div>
+      <div class="mg-reps">${beats.map(() => '<i></i>').join('')}</div>
+      <p class="mg-msg" aria-live="polite">Press <kbd>E</kbd> / <kbd>Space</kbd> or tap as each plate hits the line.</p>
+      <div class="mg-actions"><button class="btn primary mg-lift">Rep</button><button class="btn mg-skip">Skip</button></div>
+    </div>`;
+  root.classList.remove('hidden');
+  const lane = root.querySelector('.mg-lane'), msg = root.querySelector('.mg-msg'), pips = root.querySelectorAll('.mg-reps i');
+  const plates = beats.map(() => { const p = document.createElement('b'); p.className = 'mg-plate'; lane.appendChild(p); return p; });
+  const LINE = 0.12; // bar line position across the lane
+
+  const start = () => {
+    hits = 0; judged = beats.map(() => false);
+    pips.forEach((p) => p.classList.remove('ok', 'bad'));
+    plates.forEach((p) => p.classList.remove('hit', 'gone'));
+    t0 = performance.now() / 1000 + 0.8;
+  };
+  const now = () => performance.now() / 1000 - t0;
+  const frame = () => {
+    const t = now();
+    beats.forEach((b, i) => {
+      const x = LINE + (b - t) / LEAD * (1 - LINE);
+      plates[i].style.left = Math.max(-0.1, Math.min(1.05, x)) * 100 + '%';
+      if (!judged[i] && t > b + WIN) { judged[i] = true; pips[i].classList.add('bad'); plates[i].classList.add('gone'); sfx.miss(); }
+    });
+    if (!done && judged.every(Boolean)) {
+      if (hits >= NEED) { done = true; msg.textContent = `${hits}/8 on tempo. Set complete.`; setTimeout(() => finish(true), 700); }
+      else { msg.textContent = `${hits}/8 on tempo. Need ${NEED}. Rest, then go again.`; start(); }
+    }
+    raf = requestAnimationFrame(frame);
+  };
+  const attempt = () => {
+    if (done) return;
+    const t = now();
+    let best = -1;
+    beats.forEach((b, i) => { if (!judged[i] && Math.abs(b - t) <= WIN && (best < 0 || Math.abs(b - t) < Math.abs(beats[best] - t))) best = i; });
+    if (best < 0) { msg.textContent = 'Off beat. Breathe and wait for the plate.'; lane.classList.add('shake'); setTimeout(() => lane.classList.remove('shake'), 300); return; }
+    judged[best] = true; hits++;
+    pips[best].classList.add('ok'); plates[best].classList.add('hit'); sfx.rep();
+    msg.textContent = best === 4 || best === 5 ? 'Pause rep. Nice control.' : ['Up.', 'Smooth.', 'Drive.', 'On tempo.'][hits % 4];
+  };
+  const key = (e) => {
+    if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+    else if (e.key === ' ' || e.key === 'e' || e.key === 'E' || e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); if (!e.repeat) attempt(); }
+  };
+  window.addEventListener('keydown', key, true);
+  root.querySelector('.mg-lift').addEventListener('click', attempt);
+  lane.addEventListener('pointerdown', attempt);
+  root.querySelector('.mg-skip').addEventListener('click', () => finish(true, true));
+  root.querySelector('.mg-x').addEventListener('click', () => finish(false));
+  start();
+  raf = requestAnimationFrame(frame);
+
+  function finish(success, skipped = false) {
+    cancelAnimationFrame(raf);
+    window.removeEventListener('keydown', key, true);
+    root.classList.add('hidden');
+    root.innerHTML = '';
+    if (success) onDone?.({ skipped, hits }); else onClose?.();
+  }
+  return { close: () => finish(false) };
+}

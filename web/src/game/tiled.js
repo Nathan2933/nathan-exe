@@ -2,14 +2,14 @@
 // into world-space data (1 tile = 1 metre, origin at the map centre).
 //
 // Conventions (see docs/WORKFLOW.md):
-//   tile layer  "ground"     — tile class/type = ground material (grass, road, …)
-//   object layer "objects"   — point = kit piece (type = piece name), rect "hedge" = hedge run
-//   object layer "interact"  — chapter / memory / npc / minigame / project / about
-//   object layer "collision" — extra rectangles / ellipses that block movement
-//   object layer "labels"    — floating district names
-//   object layer "paths"     — polylines for ambient NPC walkers
-//   object layer "spawn"     — player start point
-//   object layer "rail"      — one closed polygon: the Memory Line track
+//   tile layer  "ground"     · tile class/type = ground material (grass, road, …)
+//   object layer "objects"   · point = kit piece (type = piece name), rect "hedge" = hedge run
+//   object layer "interact"  · chapter / memory / npc / minigame / project / about
+//   object layer "collision" · extra rectangles / ellipses that block movement
+//   object layer "labels"    · floating district names
+//   object layer "paths"     · polylines for ambient NPC walkers
+//   object layer "spawn"     · player start point
+//   object layer "rail"      · one closed polygon: the Memory Line track
 
 export async function loadTiledMap(url) {
   const res = await fetch(url, { cache: 'no-store' });

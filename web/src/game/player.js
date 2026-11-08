@@ -364,6 +364,22 @@ export class Character {
 
   /** Fitness chapter easter egg: a little more muscle after the gym. */
   setBuff(on) { this.buffTarget = on ? 1 : 0; }
+  setJacked(on) { this.jackedTarget = on ? 1 : 0; }
+  /** A dumbbell in each hand (attached to the forearm pivots, so they always follow the hands). */
+  showBells(on) {
+    if (!on && !this.bells) return;
+    if (!this.bells) {
+      const hm = new THREE.MeshLambertMaterial({ color: 0x2bb3a3, flatShading: true }), bm = new THREE.MeshLambertMaterial({ color: 0xc6d2e0, flatShading: true });
+      this.bells = this.arms.map((arm) => {
+        const g = new THREE.Group(); g.position.set(0, -0.28, 0.02);
+        const bar = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.04, 0.04), bm); g.add(bar);
+        for (const s of [-1, 1]) { const h = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.13, 0.13), hm); h.position.x = s * 0.13; g.add(h); }
+        g.traverse((o) => { if (o.isMesh) { o.renderOrder = 30; o.castShadow = true; } });
+        arm.elbow.add(g); return g;
+      });
+    }
+    for (const b of this.bells) b.visible = on;
+  }
   /** One-shot action: 'interact' | 'flex' | 'wave' | 'nod' */
   play(name) { if (ACTIONS[name]) { this.action = name; this.actionT = 0; } }
   /** World-space point to look at (or null). */
@@ -498,13 +514,43 @@ export class Character {
         pm('th0', -1.05 + Math.sin(ph) * 0.42); pm('th1', -1.05 - Math.sin(ph) * 0.42);
         pm('kn0', 1.15 + Math.cos(ph) * 0.4); pm('kn1', 1.15 - Math.cos(ph) * 0.4);
         pm('sx0', -1.1); pm('sx1', -1.1); pm('el0', -0.35); pm('el1', -0.35);
+      } else if (P === 'scooty') {
+        // upright scooter seat: feet forward on the floorboard, both hands on the bars (turn with the steering)
+        const st = this.steer || 0;
+        pm('hipY', -0.12); pm('th0', -1.25); pm('th1', -1.25); pm('kn0', 1.05); pm('kn1', 1.05); pm('spineX', 0.25); pm('spineY', st * 0.3);
+        pm('sx0', -1.05 + st * 0.25); pm('sx1', -1.05 - st * 0.25); pm('el0', -0.35); pm('el1', -0.35); pm('sz0', -0.08); pm('sz1', 0.08);
       } else if (P === 'ride') {
         pm('hipY', -0.12); pm('th0', -0.95); pm('th1', -0.95); pm('kn0', 1.0); pm('kn1', 1.0); pm('spineX', 0.08);
         pm('sx0', -0.7); pm('sx1', -0.7); pm('el0', -0.9); pm('el1', -0.9); pm('hipX', 0);
+      } else if (P === 'curl') {
+        const a = Math.max(0, Math.sin(t * 2.4)), b = Math.max(0, Math.sin(t * 2.4 + Math.PI));
+        pm('sx0', -0.15 - 0.25 * a); pm('el0', -0.15 - 2.0 * a); pm('sx1', -0.15 - 0.25 * b); pm('el1', -0.15 - 2.0 * b); pm('sz0', -0.12); pm('sz1', 0.12);
       } else if (P === 'gaze') {
         pm('headX', -0.38); this.arms.forEach((a, i) => { pm(`sx${i}`, 0.4); pm(`el${i}`, -0.5); pm(`sz${i}`, a.side * 0.05); });
       }
     } else if (!this.pose) this.lastPose = null;
+
+    // --- Iron Yard workouts: whole-body poses driven by this.work.k (0..1 through a rep) ---
+    this.workW = damp(this.workW || 0, this.work ? 1 : 0, 7, dt);
+    if (this.work) this.lastWork = this.work; else if (this.workW < 0.01) this.lastWork = null;
+    const WK = this.lastWork, ww = WK ? this.workW : 0;
+    if (WK && ww > 0.001) {
+      const wm = (k, v) => (J[k] = J[k] * (1 - ww) + v * ww), k = WK.k ?? 0;
+      wm('spineY', 0); wm('headY', 0); wm('hipX', 0);
+      if (WK.type === 'bench') {
+        wm('hipY', -0.09); wm('spineX', 0); wm('headX', 0);
+        wm('th0', 0.45); wm('th1', 0.45); wm('kn0', 1.12); wm('kn1', 1.12);
+        for (let i = 0; i < 2; i++) { wm(`sx${i}`, -0.6 - 0.97 * k); wm(`el${i}`, -1.9 * (1 - k)); wm(`sz${i}`, 0); wm(`ez${i}`, 0); }
+      } else if (WK.type === 'pulldown') {
+        wm('hipY', -0.3); wm('th0', -1.45); wm('th1', -1.45); wm('kn0', 1.45); wm('kn1', 1.45); wm('spineX', -0.12 + 0.08 * k); wm('headX', -0.12);
+        for (let i = 0; i < 2; i++) { wm(`sx${i}`, -2.45 + 1.55 * k); wm(`el${i}`, -1.7 * k); wm(`sz${i}`, this.arms[i].side * (0.28 - 0.08 * k)); wm(`ez${i}`, 0); }
+      } else if (WK.type === 'curl') {
+        [k, WK.k2 ?? k].forEach((kk, i) => { wm(`sx${i}`, -0.15 - 0.25 * kk); wm(`el${i}`, -0.15 - 2.0 * kk); wm(`sz${i}`, this.arms[i].side * 0.12); wm(`ez${i}`, 0); });
+        wm('headX', 0.1);
+      }
+    }
+    this.lie = WK?.type === 'bench' ? ww : 0;
+    this.showBells((WK?.type === 'curl' && WK.hold && ww > 0.2) || (this.lastPose === 'curl' && this.poseW > 0.3));
 
     // --- actions (override with fade) ---
     if (this.action) {
@@ -549,6 +595,7 @@ export class Character {
     this.hips.position.y = 0.62 + J.hipY;
     this.hips.position.x = J.hipX;
     this.hips.rotation.z = this.lean;
+    this.hips.rotation.x = -(this.lie || 0) * Math.PI / 2;
     this.spine.rotation.x = J.spineX;
     this.spine.rotation.y = J.spineY;
     this.neck.rotation.x = -J.spineX * 0.6;
@@ -570,7 +617,13 @@ export class Character {
 
     this.buff = damp(this.buff, this.buffTarget, 2, dt);
     const b = 1 + this.buff * 0.14;
-    this.spine.scale.set(b * J.chest, 1, (1 + this.buff * 0.06) * J.chest);
+    // Jacked Mode: a temporary, exaggerated upper-body power-up. The head is
+    // counter-scaled so face, glasses and hair stay exactly the same.
+    this.jacked = damp(this.jacked || 0, this.jackedTarget || 0, 4, dt);
+    const jk = this.jacked, jx = 1 + 0.42 * jk, jy = 1 + 0.05 * jk, jz = 1 + 0.32 * jk;
+    this.spine.scale.set(b * J.chest * jx, jy, (1 + this.buff * 0.06) * J.chest * jz);
+    this.neck.scale.set(1 / jx, 1 / jy, 1 / jz);
+    for (const a of this.arms) { a.shoulder.scale.set(1 + 0.1 * jk, 1, 1 + 0.2 * jk); a.elbow.scale.set(1 - 0.15 * jk, 1, 1 - 0.12 * jk); }
   }
 }
 

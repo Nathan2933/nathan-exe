@@ -79,6 +79,10 @@ walkRect(RING.x0, -23, RING.x0 + 1, RING.z0 - 1);        // Vanderlinde beach
 walkRect(-34, -2, RING.x0 - 1, -1);                      // banyan hangout
 walkRect(RING.x1 + 2, RING.z1, 34, RING.z1 + 1);         // Outlaws beach
 walkRect(1, RING.z1 + 2, 2, 34);                         // south beach
+// Outlaws yard north of the villa (photo corner + food contest), joined to the north ring
+rect(11, -15, 21, -11, T.plaza); walkRect(15, -17, 16, -16);
+// Akshay's gaming corner pad, west of the villa
+rect(4, -7, 7, -3, T.plaza);
 // flowerbeds (garden, kept off the road)
 rect(-12, -28, -10, -28, T.flowerbed);
 
@@ -101,6 +105,18 @@ for (let b = 0; b < BORDER; b++) {
   }
   for (const i of mark) ground[i] = T.grass_edge;
 }
+
+// zone edging: one dark-green ring round each activity area (only on plain grass, so
+// paths and sand pass straight through the openings and nothing is ever blocked)
+const zoneBorder = (x0, z0, x1, z1) => {
+  for (let x = x0; x <= x1; x++) for (const z of [z0, z1]) if (at(x, z) === T.grass) ground[idx(x, z)] = T.grass_edge;
+  for (let z = z0; z <= z1; z++) for (const x of [x0, x1]) if (at(x, z) === T.grass) ground[idx(x, z)] = T.grass_edge;
+};
+zoneBorder(-23, -18, -4, 1);     // hideout + front courtyard
+zoneBorder(-16, -31, -6, -20);   // Vanderlinde garden
+zoneBorder(12, -30, 24, -20);    // Outlaws court
+zoneBorder(9, -17, 23, -9);      // Outlaws yard (photo + food)
+zoneBorder(2, -9, 26, 6);        // villa grounds + gaming corner
 
 let nextId = 1;
 const toPx = (v) => (v + HALF) * PX;
@@ -129,13 +145,13 @@ route('tahiti_sf3', [[-19.25, -13.0]], { idles: 'lean', faces: '90' });         
 route('tahiti_sf4', [[-7.6, -7.35]], { idles: 'sit', faces: '180' });                           // at the small table
 interact.push(point('group', -13.0, -10.6, { id: 'vanderlinde', title: 'Join the gang' }));
 // personal corners: Jeswin's drafting desk, Arok's stream desk, Prince's game corner (inside),
-// Guru's laptop + blue scooter (outside, south-west), Shabeer's memory table (courtyard)
+// Guru's laptop + blue scooter (his own corner outside the east wall), Shabeer's photo table (his own corner outside the west wall)
 O('drafting_desk', -17.6, -14.9);
 O('stream_desk', -19.2, -7.4);
 O('game_setup', -16.6, -9.9);
-O('laptop_table', -23.5, -6.6); O('scooty', -21.3, -6.9, { rot: 25 });
-O('photo_table', -8.0, -1.6);
-route('tahiti_sf5', [[-8.8, -2.4]], { idles: 'film', faces: '45' });
+O('laptop_table', -2.5, -10.5); O('scooty', -1.0, -8.6, { rot: 15 });
+O('photo_table', -23.6, -6.0);
+route('tahiti_sf5', [[-22.2, -5.4]], { idles: 'film', faces: '-90' });   // at his photo table, west of the hideout
 interact.push(point('panel', 17.6, 8.4, { id: 'place-villa', panel: 'place', place: 'villa', title: "The Outlaws' Villa" }));
 
 // ---- The Outlaws' Villa (E) ----
@@ -187,14 +203,19 @@ for (const [x, z] of [[-30, 22], [-24, 26], [-34, 16], [-18, 28], [-36, 24], [24
 for (const [x, z] of [[-28, 28], [20, 28]]) O('rock', x, z, { scale: 1 });
 // ---- centre: kept simple so the junction reads clearly ----
 O('bench', -2.6, -5.6, { rot: 0 }); O('bench', 3.8, -1.2, { rot: -90 });
-for (const [x, z, sc] of [[-5.5, 2.4, 1], [6.2, -2.4, 0.9], [0.5, -7.2, 1.05], [-8.6, -0.4, 0.95], [8.4, 6.2, 1], [-4.2, 7.4, 0.9]]) O('tree_palm', x, z, { scale: sc });
+for (const [x, z, sc] of [[-5.5, 2.4, 1], [6.2, -2.4, 0.9], [0.5, -7.2, 1.05], [-8.6, -0.4, 0.95], [4.4, 8.6, 1], [-4.2, 7.4, 0.9]]) O('tree_palm', x, z, { scale: sc });
 // path lights along each walk (warm bollards, outside the walking width)
 for (const [x, z] of [[-5.5, -4.9], [-3.2, 5.0], [-3.2, 8.0], [5.5, 1.4], [9.5, 1.4], [12.2, 5.0], [16.5, 8.4]]) O('path_light', x, z);
 
 // ---- hideout courtyard: paved, a bench, plants, warm lantern posts, open middle ----
 O('lantern_post', -17.6, -1.4); O('lantern_post', -8.4, -1.4);
 O('bench', -16.2, -1.6, { rot: 0 });
-O('shrub', -17.6, -4.8); O('shrub', -8.4, -4.8); O('shrub', -10.6, -5.6, { scale: 0.7 }); O('shrub', -15.4, -5.6, { scale: 0.7 });
+O('shrub', -17.6, -4.8);
+// clubhouse exterior: string lights, wall lamps and potted plants on the front wall,
+// an illuminated gang sign at the west entrance, low edging stones along the courtyard
+O('clubhouse_front', -13, -5.6, { w: 14 });
+O('club_sign', -19.4, -1.0, { rot: 0 });
+O('curb', -13, 0.15, { len: 10.4 });
 interact.push(point('panel', -11.2, -3.0, { id: 'place-hideout', panel: 'place', place: 'hideout', title: 'Vanderlinde Gang Hideout' }));
 
 // ---- villa surroundings ----
@@ -225,8 +246,13 @@ O('race_flag', -4.0, 38.4); O('race_flag', 9.0, 38.0, { color: '#2bb3a3' }); A('
 const COURTS = [{ c: [-17.95, -28.5], u: [0.638, -0.77], w: [-0.77, -0.638], rot: 129.7 }, { c: [35.3, -10], u: [0, 1], w: [1, 0], rot: -90 }];
 O('volley_net', ...COURTS[0].c, { len: 6.8, L: 11, rot: COURTS[0].rot }); A('volley', -22.3, -23.3, { id: 'volley-vg', gang: 'vg', title: 'Vanderlinde volleyball' });
 O('volley_net', ...COURTS[1].c, { len: 6.8, L: 11, rot: COURTS[1].rot }); A('volley', 35.3, -16.9, { id: 'volley-ol', gang: 'ol', title: 'Outlaws volleyball' });
+// Outlaws yard: Sathesh + Shabesh's photo corner, Thianish's food contest; Akshay's TV corner
+O('photo_station', 13.0, -13.4); A('photosession', 13.9, -14.5, { id: 'photosession', gang: 'ol', title: 'Photography session' });
+O('contest_table', 18.6, -13.2); A('foodcontest', 19.6, -14.2, { id: 'foodcontest', gang: 'ol', title: 'Food challenge' });
+O('tv_corner', 8.4, 3.0); A('tvgame', 9.9, 5.8, { id: 'tvgame', gang: 'ol', title: 'Play with Akshay' });
+A('anuhoop', 15.2, -21.4, { id: 'anuhoop', gang: 'ol', title: 'Play basketball with Anu' });
 // basketball: one shooter at a time
-A('hoop', 18, -20.6, { id: 'hoop-ol', gang: 'ol', title: 'Shootout' });
+// (group shootout removed: basketball is Anu's one-on-one only)
 // treasure hunt: clue board at the junction, five chests hidden around the island
 O('clue_board', -4.4, -1.6); A('clues', -4.4, -0.6, { title: 'Treasure hunt clues' });
 for (const [id, x, z] of [['palm', -8.6, 0.8], ['beach', 11.6, 35.4], ['stairs', 21.6, 9.6], ['rock', -24.2, 8.2], ['hideout', -21.4, -9.0]]) { O('treasure_chest', x, z); A('treasure_item', x + 0.6, z + 0.6, { id: 'treasure-' + id, treasure: id, title: 'Something shiny' }); }
@@ -236,8 +262,8 @@ O('photo_tripod', -11.0, -0.4); A('photo', -13.4, -2.8, { id: 'photo-vg', gang: 
 O('photo_tripod', 22.2, 0.6, { lift: 1.4 }); A('photo', 20.0, -1.6, { id: 'photo-ol', gang: 'ol', title: 'Outlaws photo' });
 O('photo_board', -9.4, -0.6); A('gallery', -9.4, 0.4, { title: 'Tahiti photos' });
 // motorcycles: two parking spots (central junction, villa)
-O('parking_pad', -4.8, 4.8); interact.push(point('vehicle', -4.8, 4.8, { id: 'moto-centre', vtype: 'moto', rot: 0, color: '#c4302b' }));
-O('parking_pad', 11.6, 6.4); interact.push(point('vehicle', 11.6, 6.4, { id: 'moto-villa', vtype: 'moto', rot: 0, color: '#2f6fc6' }));
+O('parking_pad', -4.8, 4.8); O('scooty', -4.8, 4.8, { rot: 0, color: '#1c1c22', name: 'Black Zest' });   // Vanderlinde gang's black Zest scooty
+O('parking_pad', 11.6, 6.4); interact.push(point('vehicle', 11.6, 6.4, { id: 'moto-villa', vtype: 'moto', rot: 0, color: '#2f6fc6', style: 'shine' }));   // Honda Shine 125-style commuter
 
 spawn.push(point('spawn', -4.4, 14.8));
 

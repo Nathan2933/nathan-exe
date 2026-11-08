@@ -120,7 +120,7 @@ rect(3, -24, 9, -18, T.rubber);           //   Hell's Kitchen alley floor
 disc(9.5, -11.5, 3.2, T.plaza);
 rect(-21, 4, -4, 25, T.lawn);             // Guild Hall lot (was Signal Tower), down to the south ring road
 rect(-6, 4, -4, 14, T.path); rect(-14, 12, -4, 14, T.path); rect(-14, 14, -12, 24, T.path); // entrance walk, front walk, courtyard walk
-rect(3, 3, 17, 24, T.concrete);           // Garage: big open lot
+rect(3, 3, 21, 24, T.concrete);           // Garage: big open lot (widened east for the 6th exhibit)
 rect(-14, -49, 13, -35, T.snow);          // Winter Campus
 rect(-2, -39, 2, -35, T.concrete);        //   cleared entrance walk
 rect(-21, -37, -11, -35, T.concrete);     //   station forecourt (west of the university, with open ground between)
@@ -210,10 +210,11 @@ for (const z of [-17.5, -13.5, -9, -5.5]) O('tree_round', -20.2, z, { scale: 0.9
 O('tree_round', -5.2, -17.6); O('tree_round', -8.6, -17.8, { scale: 0.85 });
 O('lot_sign', -11, -2.9, { text: 'IRON YARD', color: '#ff6a3d', rot: 0 });
 labels.push(point('label', -14.5, -16, { text: 'IRON YARD', color: '#1e1b2e', height: 7.2 }));
-interact.push(point('chapter', -8.5, -5.6, { id: 'iron-yard', district: 'iron-yard' }));
-interact.push(point('minigame', -8.5, -8.2, { id: 'lift', district: 'iron-yard' }));
+interact.push(point('chapter', -18.6, -10.3, { id: 'iron-yard', district: 'iron-yard' }));  // THE DISCIPLINE: outside, in front of the yard chalk board
+// gym interior stations (local spots from kit gym_building, offset by the gym at -14.5, -16)
+for (const [st, x, z, title] of [['bench', -2.25, -0.6, 'Bench press'], ['pulldown', -0.2, 0.15, 'Lat pulldown'], ['curl', 3.4, -0.55, 'Dumbbell curls']]) interact.push(point('gym', -14.5 + x, -16 + z, { station: st, title }));
 interact.push(point('memory', -18.6, -10.6, { id: 'starting-line' }));
-interact.push(point('memory', -11.8, -12.6, { id: 'checkpoint-60' }));
+interact.push(point('memory', -8.5, -5.6, { id: 'checkpoint-60' }));
 interact.push(point('memory', -5.6, -5.2, { id: 'fitness-chapter' }));
 
 // --- Pop Culture Park (was City Park) ---
@@ -254,8 +255,8 @@ labels.push(point('label', 9.5, -15.5, { text: 'POP CULTURE PARK', color: '#3b6d
 // Freed strips beside the moved roads: tree-lined greenways
 for (let x = -19; x <= -6; x += 4.3) O('tree_round', x, -24.6, { scale: 0.9 });
 O('bench', -12.6, -22.6, { rot: 180 });
-for (let z = 5; z <= 23; z += 4.5) O('tree_round', 21.6, z, { scale: 0.9 });
-O('bench', 20.2, 11.6, { rot: -90 }); O('lamp', 22.8, 9.2); O('lamp', 22.8, 18.2);
+for (let z = 5; z <= 23; z += 4.5) O('tree_round', 23.2, z, { scale: 0.7 });
+O('lamp', 23.4, 9.2); O('lamp', 23.4, 18.2);
 
 // --- Guild Hall (was Signal Tower): skills, trophies, quests, profile ---
 // The lot runs from the plaza road down to the south ring road. The walk-in hall
@@ -288,7 +289,7 @@ interact.push(point('memory', -10.4, 9.0, { id: 'cluster-alert' }));   // inside
 // The north-west corner stays open as the entrance from the plaza.
 // Five handcrafted exhibits sit around a central aisle and wake up on approach.
 // Project index = order in content.json projects.
-hedge(17, 3, 18, 25.2); hedge(3, 24.4, 17, 25.2);
+hedge(21, 3, 22, 25.2); hedge(3, 24.4, 21, 25.2);
 O('workshop_shed', 13.1, 4.45, { len: 7.4, depth: 2.2, pillars: [-3.7, -0.7, 3.7], sign: 'GARAGE', rot: 0 });   // north roof, x 9.4..16.8
 O('workshop_shed', 3.85, 17.5, { len: 13, depth: 1.7, pillars: [-6.5, -1, 6.5], rot: -90 });                       // west roof, z 11..24
 O('tool_wall', 10.9, 3.55, { len: 2.4, rot: 0 });
@@ -296,12 +297,13 @@ O('skills_board', 13.6, 4.4, { rot: 0 });
 O('server_rack', 15.4, 4.2);
 O('tool_wall', 3.6, 18.6, { len: 8, rot: -90 });
 const EXHIBITS = [
-  // [piece, x, z, interact x, interact z]
-  ['exhibit_aratro', 6.6, 8.6, 6.6, 11.0],            // 0 Aratro
-  ['exhibit_microservices', 14.0, 9.2, 14.0, 11.5],   // 1 Microservices Security
-  ['exhibit_scheduler', 6.6, 15.4, 6.6, 17.7],        // 2 TCE Event Scheduler
-  ['exhibit_cauverysite', 14.0, 15.4, 14.0, 17.7],    // 3 CauverySite
-  ['exhibit_nathanexe', 10.3, 21.0, 13.0, 21.0],      // 4 NATHAN.EXE (centre workbench)
+  // [piece, x, z, interact x, interact z]  Two columns (x 8.8 / 16.4), three rows, aisle at x 12.6
+  ['exhibit_aratro', 8.8, 8.8, 8.8, 11.0],            // 0 Aratro
+  ['exhibit_microservices', 16.4, 8.8, 16.4, 11.0],   // 1 Microservices Security
+  ['exhibit_scheduler', 8.8, 14.6, 8.8, 16.8],        // 2 TCE Event Scheduler
+  ['exhibit_cauverysite', 16.4, 14.6, 16.4, 16.8],    // 3 CauverySite
+  ['exhibit_nathanexe', 8.8, 20.4, 8.8, 22.6],        // 4 NATHAN.EXE
+  ['exhibit_hospital', 16.4, 20.4, 16.4, 22.6],       // 5 Hospital Management (first UI project, school)
 ];
 EXHIBITS.forEach(([piece, x, z, ix, iz], i) => {
   O(piece, x, z, { index: i });
@@ -321,6 +323,7 @@ for (const z of [-46, -42.8, -39.6]) { O('birch', -10.2, z, { scale: 1.05 }); O(
 O('birch', -12.4, -41.2, { scale: 0.9 }); O('birch', 12.3, -44.4, { scale: 1.1 });
 O('lamp', -2.9, -37.6); O('lamp', 2.9, -37.6);
 O('bench', 7, -36.4, { rot: 0, snow: true });
+O('laptop_table', -6.5, -38.5); O('scooty', -5.0, -36.6, { rot: 15 });   // Guru's outdoor desk + blue scooty
 O('notice_board', 9.8, -39, { rot: 0, text: 'EXAMS' });
 O('snow_pile', -12.6, -38.4); O('snow_pile', 12.4, -36.6, { scale: 0.8 }); O('snow_pile', 5.2, -39.6, { scale: 0.7 });
 interact.push(point('memory', 7.9, -35.8, { id: 'new-campus' }));
@@ -419,8 +422,9 @@ for (let a = 0; a < Math.PI * 2; a += 0.085) {
 // district and on walkable ground; edit them in Tiled to change where people roam.
 // loop: true walks the polyline as a circuit, otherwise back and forth.
 const route = (npc, pts, loop = false, extra = {}) => paths.push(line('npc_route', pts, { npc, loop, ...extra }));
-route('thianesh', [[-17, -9.0], [-11.5, -8.0], [-10.5, -5.5], [-16.5, -5.5]], true);     // Iron Yard
-route('guru', [[-3.4, -38.2], [-8.6, -38.4], [-7.8, -36.0]]);                              // Winter Campus (west)
+route('thianesh', [[-11.0, -8.6], [-17.0, -8.8], [-17.0, -5.4], [-9.5, -5.2], [-7.2, -7.6]], true, { idles: 'look,,cheer,curl,look', faces: ',,,,' });     // Iron Yard: loops the outdoor yard, never inside the gym
+route('guru', [[-6.5, -37.72]], false, { idles: 'sittype', faces: '180' });                // Winter Campus: coding at his laptop, blue scooty parked beside
+route('prince', [[4.2, -38.6], [6.2, -37.8]], false, { idles: 'phone,look', faces: '180,200' });   // outside Tomsk State University
 route('shabeer', [[-33.4, 2.6], [-33.0, 5.6], [-33.8, 7.6]]);                              // Montfort, the childhood hangout
 route('anu', [[39.0, 7.6], [39.0, 10.2]], false, { idles: 'look,look', faces: '-90,-90' });   // by the tea stall                  // TCE forecourt
 route('harris', [[-4.6, 38.6], [0.8, 39.3], [4.0, 39.3], [5.8, 37.8]], false, { idles: ',look,check,check', faces: ',,0,-90' });                     // Airport, terminal to the jet
@@ -430,10 +434,10 @@ route('vesper', [[13.5, -8.2], [13.5, -5.0], [11.0, -5.0]], false, { idles: 'gaz
 route('skip', [[12.0, -21.6], [15.6, -20.4], [13.6, -18.2]], false, { idles: 'look,check,look', faces: '0,180,' });               // rooftop
 route('hale', [[5.4, -23.0], [7.6, -23.0], [6.4, -19.4]], false, { idles: 'lean,look,gaze', faces: '0,45,' });                     // red alley
 route('ollie', [[20.6, -6.6], [18.4, -6.0], [18.4, -9.0]], false, { idles: 'type,look,gaze', faces: '180,,90' });               // startup desk
-route('akshai', [[10.3, 5.8], [10.3, 12.2], [10.3, 17.9]]);                                // Garage, centre aisle past the exhibits
-route('naveen', [[4.8, 23.3], [7.6, 23.3], [7.6, 18.6]]);                                  // Garage, tool wall to the centre bench
+route('akshai', [[12.6, 5.8], [12.6, 12.2], [12.6, 17.9]]);                                // Garage, centre aisle past the exhibits
+route('naveen', [[4.8, 23.3], [12.6, 23.3], [12.6, 18.6]]);                                  // Garage, tool wall to the centre bench
 route('shabesh', [[38.4, -2.4], [42.8, -2.4]], false, { idles: 'film,film', faces: '180,180' });   // TCE, filming the college
-route('logeshwaran', [[11.6, 12.3], [16.4, 12.3]], false, { idles: 'look,check', faces: ',180' });   // Garage, between the exhibit rows
+route('logeshwaran', [[11.6, 11.9], [19.6, 11.9]], false, { idles: 'look,check', faces: ',180' });   // Garage, between the exhibit rows
 route('piranav', [[43.6, 7.15], [43.62, 7.16]], false, { idles: 'sittype,sittype', faces: '180,180' });   // seated at the laptop table           // TCE, laptop table
 // (Shabesh moved from the Garage)                        // Garage, east side by the exhibits
 

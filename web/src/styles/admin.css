@@ -62,3 +62,51 @@ body.admin { background: var(--cream); }
   .tabs { position: static; flex-direction: row; overflow-x: auto; padding-bottom: 4px; }
   .tab { white-space: nowrap; }
 }
+
+.gallery { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 8px; }
+.thumb { width: 120px; border: 1.5px solid var(--ink); border-radius: var(--radius); background: var(--cream); overflow: hidden; }
+.thumb img { display: block; width: 100%; height: 84px; object-fit: cover; cursor: pointer; }
+.thumb-tools { display: flex; justify-content: space-between; padding: 4px; }
+.thumb-tools .icon { width: 30px; height: 26px; }
+.thumb-tools .icon:disabled { opacity: .3; cursor: default; }
+
+/* ---- Arcade blue theme (matches the portfolio About page) ---- */
+body.admin {
+  --ocean: #073B78; --navy: #101F45; --turq: #009FA9; --cyan: #38E4E4; --sun: #FFF02A; --ivory: #FFF5DD; --blue: #0879B8;
+  --ink: var(--navy); --ink-2: #33406a; --ink-3: #6a7aa6;
+  --cream: var(--ivory); --cream-2: #e9f6f8; --paper: #ffffff;
+  --accent: var(--sun); --border: 3px solid var(--navy);
+  color: var(--navy);
+  background: radial-gradient(rgba(56, 228, 228, .16) 1.2px, transparent 1.4px) 0 0 / 22px 22px, var(--ocean);
+  min-height: 100vh;
+}
+body.admin .admin-head { background: var(--navy); border-bottom: 3px solid var(--cyan); box-shadow: 0 4px 0 rgba(0,0,0,.25); }
+body.admin .brand span { background: var(--sun); color: var(--navy); }
+body.admin .brand b { color: var(--cyan); }
+body.admin .admin-actions .btn { background: var(--ivory); border: 2px solid var(--navy); box-shadow: 2px 2px 0 var(--cyan); }
+body.admin .admin-actions .btn.primary { background: var(--sun); }
+body.admin .tab { color: var(--ivory); }
+body.admin .tab:hover { background: rgba(56, 228, 228, .15); }
+body.admin .tab.active { background: var(--sun); color: var(--navy); border-color: var(--navy); box-shadow: 3px 3px 0 var(--navy); }
+body.admin .editor h1 { color: var(--sun); text-shadow: 3px 3px 0 var(--navy); }
+body.admin .note { color: #cfe9f2; }
+body.admin .card { background: var(--ivory); border: 3px solid var(--navy); box-shadow: 4px 4px 0 var(--navy); }
+body.admin .item-body { border-top-color: var(--turq); }
+body.admin input, body.admin textarea, body.admin select { background: #fff; border-color: var(--navy); color: var(--navy); }
+body.admin input:focus, body.admin textarea:focus, body.admin select:focus { outline: 3px solid var(--cyan); outline-offset: 1px; }
+body.admin .field label { color: var(--blue); }
+body.admin .btn.add { background: var(--sun); color: var(--navy); border: 3px solid var(--navy); box-shadow: 3px 3px 0 var(--navy); }
+body.admin .icon { background: #fff; border-color: var(--navy); }
+body.admin .icon:hover { background: var(--cyan); }
+body.admin .thumb { border-color: var(--navy); background: #fff; }
+.thumb video { display: block; width: 100%; height: 84px; object-fit: cover; cursor: pointer; background: #000; }
+
+/* Sign-in screen */
+body.admin.locked .admin-wrap { grid-template-columns: 1fr; place-items: start center; }
+.login { width: min(380px, 100%); margin-top: 40px; }
+.login h1 { font-family: var(--font-pixel); font-weight: 400; font-size: 22px; margin: 0; }
+.login .field { display: grid; gap: 6px; font-family: var(--font-mono); font-size: 12px; text-transform: uppercase; }
+.login input { min-height: 40px; padding: 0 10px; border: 2px solid var(--ink); border-radius: var(--radius); font: inherit; text-transform: none; font-size: 15px; }
+.login-err { min-height: 1.2em; margin: 0; color: var(--danger); font-size: 13px; }
+body.admin.locked .admin-actions { display: none; }
+body.admin .login .note { color: var(--ink-2); }

@@ -1,10 +1,35 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'node:path';
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 
 const ROOT = __dirname;
 const CONTENT_FILE = resolve(ROOT, 'public/data/content.json');
 const BACKUP_DIR = resolve(ROOT, 'content-backups');
+const AUTH_FILE = resolve(ROOT, '.admin-auth.json');   // created by `npm run admin:password`, git-ignored
+
+// ---- admin sign-in: scrypt-hashed password, HttpOnly session cookie, lockout on repeated failures ----
+const sessions = new Map();                 // token -> expiry (ms)
+const SESSION_MS = 8 * 60 * 60 * 1000;
+let fails = 0, lockedUntil = 0;
+const readAuth = () => { try { return JSON.parse(fs.readFileSync(AUTH_FILE, 'utf8')); } catch { return null; } };
+const safeEq = (a, b) => { const x = Buffer.from(String(a)), y = Buffer.from(String(b)); return x.length === y.length && crypto.timingSafeEqual(x, y); };
+function checkLogin(user, pass) {
+  const a = readAuth();
+  if (!a) return false;
+  const h = crypto.scryptSync(String(pass), a.salt, 64, { N: 16384, r: 8, p: 1 }).toString('hex');
+  return safeEq(user, a.user) & safeEq(h, a.hash);   // both always evaluated (no early exit timing)
+}
+const tokenOf = (req) => (/(?:^|;\s*)nx_admin=([a-f0-9]{64})/.exec(req.headers.cookie || '') || [])[1];
+function authed(req) {
+  const t = tokenOf(req), exp = t && sessions.get(t);
+  if (!exp) return false;
+  if (Date.now() > exp) { sessions.delete(t); return false; }
+  return true;
+}
+// Only accept requests addressed to this machine (blocks DNS-rebinding tricks from other sites)
+const localHost = (req) => /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i.test(req.headers.host || '');
+const sameOrigin = (req) => !req.headers.origin || /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i.test(req.headers.origin);
 
 /**
  * Dev-only admin API. Lets /admin.html save content.json to disk.
@@ -20,18 +45,57 @@ function adminApi() {
     name: 'nathan-admin-api',
     apply: 'serve',
     configureServer(server) {
+      // The admin page and its script are only served to this computer
+      server.middlewares.use((req, res, next) => {
+        const u = (req.url || '').split('?')[0];
+        if (/^\/(admin(\.html)?|src\/admin\.js|src\/styles\/admin\.css)$/.test(u) && (!isLoopback(req.socket.remoteAddress) || !localHost(req))) {
+          res.statusCode = 404; return res.end('Not found');
+        }
+        next();
+      });
       server.middlewares.use('/__admin', (req, res) => {
+        if (req.method === 'POST' && req.headers['x-admin'] !== '1') {
+          res.statusCode = 403; return res.end('{"error":"Missing admin header"}');
+        }
         const send = (code, body) => {
           res.statusCode = code;
           res.setHeader('Content-Type', 'application/json');
           res.end(JSON.stringify(body));
         };
-        if (!isLoopback(req.socket.remoteAddress)) {
-          return send(403, { error: 'Admin saving is only allowed from this computer (localhost).' });
+        if (!isLoopback(req.socket.remoteAddress) || !localHost(req) || !sameOrigin(req)) {
+          return send(403, { error: 'Admin is only available on this computer (localhost).' });
         }
+        res.setHeader('Cache-Control', 'no-store');
         if (req.method === 'GET' && req.url.startsWith('/status')) {
-          return send(200, { ok: true, canSave: true });
+          return send(200, { ok: true, configured: !!readAuth(), authed: authed(req), canSave: authed(req) });
         }
+        if (req.method === 'POST' && req.url.startsWith('/login')) {
+          let raw = '';
+          req.on('data', (c) => { raw += c; if (raw.length > 4000) req.destroy(); });
+          req.on('end', () => {
+            if (!readAuth()) return send(409, { error: 'No admin password set yet. Run: npm run admin:password' });
+            const now = Date.now();
+            if (now < lockedUntil) return send(429, { error: `Too many attempts. Try again in ${Math.ceil((lockedUntil - now) / 60000)} min.` });
+            let body = {}; try { body = JSON.parse(raw); } catch { /* empty */ }
+            if (!checkLogin(body.user || '', body.pass || '')) {
+              fails++;
+              if (fails >= 5) { lockedUntil = now + 10 * 60 * 1000; fails = 0; }
+              return setTimeout(() => send(401, { error: 'Wrong username or password.' }), 600);   // slow down guessing
+            }
+            fails = 0;
+            const token = crypto.randomBytes(32).toString('hex');
+            sessions.set(token, now + SESSION_MS);
+            res.setHeader('Set-Cookie', `nx_admin=${token}; HttpOnly; SameSite=Strict; Path=/__admin; Max-Age=${SESSION_MS / 1000}`);
+            send(200, { ok: true });
+          });
+          return;
+        }
+        if (req.method === 'POST' && req.url.startsWith('/logout')) {
+          const t = tokenOf(req); if (t) sessions.delete(t);
+          res.setHeader('Set-Cookie', 'nx_admin=; HttpOnly; SameSite=Strict; Path=/__admin; Max-Age=0');
+          return send(200, { ok: true });
+        }
+        if (!authed(req)) return send(401, { error: 'Please sign in to the admin.' });
         if (req.method === 'POST' && req.url.startsWith('/save')) {
           let raw = '';
           req.on('data', (c) => {
@@ -60,21 +124,24 @@ function adminApi() {
           return;
         }
         if (req.method === 'POST' && req.url.startsWith('/upload')) {
-          let raw = '';
+          const name = new URL(req.url, 'http://x').searchParams.get('name') || '';
+          const ext = String(name).toLowerCase().match(/\.(png|jpe?g|webp|gif|svg|pdf|mp4|webm|mov|m4v)$/)?.[0];
+          if (!ext) return send(400, { error: 'Allowed: png, jpg, webp, gif, svg, pdf, mp4, webm, mov' });
+          const limit = /mp4|webm|mov|m4v/.test(ext) ? 60_000_000 : 8_000_000;
+          const chunks = []; let size = 0, tooBig = false;
           req.on('data', (c) => {
-            raw += c;
-            if (raw.length > 12_000_000) req.destroy();
+            size += c.length;
+            if (size > limit) { if (!tooBig) { tooBig = true; send(413, { error: 'File too large' }); } }
+            else chunks.push(c);
           });
           req.on('end', () => {
+            if (tooBig) return;
             try {
-              const { name, data } = JSON.parse(raw);
-              const ext = String(name).toLowerCase().match(/\.(png|jpe?g|webp|gif|svg|pdf)$/)?.[0];
-              if (!ext) return send(400, { error: 'Allowed: png, jpg, webp, gif, svg, pdf' });
               const base = String(name).toLowerCase().replace(/\.[^.]+$/, '').replace(/[^a-z0-9-_]+/g, '-').slice(0, 60) || 'file';
-              const fileName = `${base}${ext}`;
+              const fileName = `${base}-${Date.now().toString(36)}${ext}`;
               const dir = resolve(ROOT, 'public/uploads');
               fs.mkdirSync(dir, { recursive: true });
-              fs.writeFileSync(resolve(dir, fileName), Buffer.from(String(data), 'base64'));
+              fs.writeFileSync(resolve(dir, fileName), Buffer.concat(chunks));
               send(200, { ok: true, url: `/uploads/${fileName}` });
             } catch (err) {
               send(400, { error: 'Upload failed: ' + err.message });
@@ -99,6 +166,7 @@ export default defineConfig(({ command }) => ({
     rollupOptions: {
       input: {
         main: resolve(ROOT, 'index.html'),
+        play: resolve(ROOT, 'play.html'),
         portfolio: resolve(ROOT, 'portfolio.html'),
         // admin.html is intentionally left out of production builds.
         ...(command === 'serve' ? { admin: resolve(ROOT, 'admin.html') } : {}),

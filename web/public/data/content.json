@@ -46,6 +46,9 @@
         "Starting line: ~100 kg",
         "Checkpoint: ~60 kg",
         "Today: ~75 kg"
+      ],
+      "media": [
+        "/uploads/transformation-mw7qwdag.mp4"
       ]
     },
     {
@@ -61,7 +64,8 @@
       "highlights": [
         "Tomsk State University, Russia",
         "Two semesters"
-      ]
+      ],
+      "media": []
     },
     {
       "id": "india",
@@ -77,7 +81,8 @@
         "B.Tech, Information Technology",
         "Hack Odyssey 2K25 winner with Aratro",
         "IT Association office bearer · E-Cell"
-      ]
+      ],
+      "media": []
     },
     {
       "id": "projects",
@@ -88,7 +93,8 @@
       "body": [
         "The Garage is where prototypes become something you can click, test and question. There are projects here about agriculture, cloud security, web systems and new ways to tell a story, each with the problem, the build and what it taught me."
       ],
-      "highlights": []
+      "highlights": [],
+      "media": []
     },
     {
       "id": "skills",
@@ -99,7 +105,8 @@
       "body": [
         "No one builds alone, and no one knows every tool. Signal Tower is a map of the languages, systems and teams I've worked with, from web development and cloud security to project competitions and testing."
       ],
-      "highlights": []
+      "highlights": [],
+      "media": []
     },
     {
       "id": "career",
@@ -111,7 +118,8 @@
         "This save file isn't finished. I want to keep building dependable software, learning from good teams, and making ideas that are useful as well as memorable.",
         "If one of these projects sparks a conversation, I'd love to hear from you. The game ends here, but the next collaboration could start with a message."
       ],
-      "highlights": []
+      "highlights": [],
+      "media": []
     },
     {
       "id": "reflection",
@@ -124,7 +132,8 @@
       ],
       "highlights": [
         "Class XII, 2021"
-      ]
+      ],
+      "media": []
     }
   ],
   "projects": [
@@ -153,7 +162,12 @@
       ],
       "github": "https://github.com/Nathan2933/aratro",
       "demo": "",
-      "image": ""
+      "image": "/uploads/hack_odyssey-mw7lnuhf.jpg",
+      "media": [
+        "/uploads/hack_odyssey-mw7lnrsg.jpg",
+        "/uploads/research2-mw7lo0jo.jpg",
+        "/uploads/research1-mw7lodpp.jpg"
+      ]
     },
     {
       "id": "microservices-security",
@@ -178,7 +192,8 @@
       ],
       "github": "",
       "demo": "",
-      "image": ""
+      "image": "/uploads/hpe-mw7kealy.jpg",
+      "media": []
     },
     {
       "id": "tce-event-scheduler",
@@ -202,7 +217,8 @@
       ],
       "github": "https://github.com/Nathan2933/TCE-scheduler",
       "demo": "",
-      "image": ""
+      "image": "/uploads/tce_event_scheduler-mw7mskzt.jpg",
+      "media": []
     },
     {
       "id": "cauverysite",
@@ -223,7 +239,8 @@
       ],
       "github": "",
       "demo": "",
-      "image": ""
+      "image": "/uploads/plotcr-mw7n21h0.jpg",
+      "media": []
     },
     {
       "id": "nathan-exe",
@@ -247,7 +264,37 @@
       ],
       "github": "",
       "demo": "",
-      "image": ""
+      "image": "/uploads/nathanexe-mw7mud6g.png",
+      "media": []
+    },
+    {
+      "id": "hospital-management",
+      "title": "Hospital Management System",
+      "year": "2021",
+      "featured": false,
+      "school": true,
+      "pitch": "My first UI project: a desktop app for managing hospital patient records, built in school.",
+      "description": "Built in Class XII at St. Montfort as my first project with a real user interface. A Python desktop app made with Tkinter that lets hospital staff log in, add and search patient records, and keep the data saved between sessions in binary files. It was where I first learned to think about screens, buttons and how someone actually uses software.",
+      "architecture": [
+        "Tkinter windows: login, patient records, search",
+        "Python logic for adding, finding and updating records",
+        "Records stored on disk in binary files so data persists between runs",
+        "Custom icons and background images for the interface"
+      ],
+      "contribution": "Designed and built the whole app on my own, from the login screen and icons to the record storage.",
+      "stack": [
+        "Python",
+        "Tkinter"
+      ],
+      "tags": [
+        "Desktop app",
+        "School project",
+        "First UI"
+      ],
+      "github": "https://github.com/Nathan2933/Hospital-Management",
+      "demo": "",
+      "image": "/uploads/hc-mw7lm19h.png",
+      "media": []
     }
   ],
   "skills": [
@@ -258,8 +305,6 @@
         "Java",
         "JavaScript",
         "TypeScript",
-        "C",
-        "C++",
         "SQL",
         "Solidity"
       ]
@@ -314,25 +359,29 @@
       "role": "Career Preview Program Intern",
       "org": "Hewlett Packard Enterprise (remote)",
       "period": "Feb – Jun 2026",
-      "summary": "Contributed to a team-built Kubernetes security logging and monitoring project, integrating Falco event detection and Grafana dashboards for better cluster visibility."
+      "summary": "Contributed to a team-built Kubernetes security logging and monitoring project, integrating Falco event detection and Grafana dashboards for better cluster visibility.",
+      "logo": "/assets/logos/career_logos/hpe.png"
     },
     {
       "role": "Testing Intern",
       "org": "SEZ US (remote)",
       "period": "Jun – Oct 2025",
-      "summary": "Tested web and mobile functionality, documented defects, verified fixes and gave usability feedback, using tools including Reflect and BugBug.io."
+      "summary": "Tested web and mobile functionality, documented defects, verified fixes and gave usability feedback, using tools including Reflect and BugBug.io.",
+      "logo": "/assets/logos/career_logos/sez-us.jpg"
     },
     {
       "role": "Office Bearer",
       "org": "TCE IT Association",
       "period": "",
-      "summary": "Supported volunteer coordination for technical and cultural events."
+      "summary": "Supported volunteer coordination for technical and cultural events.",
+      "logo": "/assets/logos/tce.png"
     },
     {
       "role": "Member",
       "org": "Entrepreneurship Cell, TCE",
       "period": "",
-      "summary": "Helped organise events and activities, including flagship events with 800+ participants, and hosted \"The Good, The Bad & The Ugly\", a survival-themed entrepreneurship event."
+      "summary": "Helped organise events and activities, including flagship events with 800+ participants, and hosted \"The Good, The Bad & The Ugly\", a survival-themed entrepreneurship event.",
+      "logo": "/assets/logos/career_logos/ecell_tce_logo.jpg"
     }
   ],
   "achievements": [
@@ -340,61 +389,87 @@
       "title": "Hack Odyssey 2K25: Winner",
       "org": "External · with Aratro",
       "year": "2025",
-      "detail": "24-hour hackathon, ₹15,000 prize money."
+      "detail": "24-hour hackathon, ₹15,000 prize money.",
+      "images": [
+        "/uploads/hack_odyssey-mw7jqglv.jpg"
+      ]
     },
     {
       "title": "Product Pulse 2025: Winner",
       "org": "E-Cell",
       "year": "2025",
-      "detail": ""
+      "detail": "",
+      "images": [
+        "/uploads/ecell-mw7jqnn4.jpg"
+      ]
     },
     {
       "title": "Stake'25: Winner",
       "org": "E-Cell",
       "year": "2025",
-      "detail": ""
+      "detail": "",
+      "images": [
+        "/uploads/s-mw7k7gq2.jpg"
+      ]
     },
     {
       "title": "E-Cell Week Overall: Winner",
       "org": "E-Cell",
       "year": "2025",
-      "detail": ""
+      "detail": "",
+      "images": [
+        "/uploads/ecell-overall-mw7k5mh7.jpg"
+      ]
     },
     {
       "title": "Pitch Perfect: Runner-up",
       "org": "Inceptra VI",
       "year": "2025",
-      "detail": ""
+      "detail": "",
+      "images": []
     },
     {
       "title": "HackFest 2025: Runner-up",
       "org": "IT Events · TCE Event Scheduler",
       "year": "2025",
-      "detail": "Six-hour hackathon."
+      "detail": "Six-hour hackathon.",
+      "images": [
+        "/uploads/tce_event_scheduler-mw7jr3gu.jpg"
+      ]
     },
     {
       "title": "Content Creation 2025: Winner",
       "org": "IT Events",
       "year": "2025",
-      "detail": ""
+      "detail": "",
+      "images": [
+        "/uploads/content_creation-mw7jr735.jpg"
+      ]
     },
     {
       "title": "Web Design Contest 2024: Second Runner-up",
       "org": "IT Events",
       "year": "2024",
-      "detail": ""
+      "detail": "",
+      "images": [
+        "/uploads/web_athon-mw7jrbzj.jpg"
+      ]
     },
     {
       "title": "Blind Coding 2023: Runner-up",
       "org": "IT Events",
       "year": "2023",
-      "detail": ""
+      "detail": "",
+      "images": [
+        "/uploads/1747070354127-mw7js9jg.jpg"
+      ]
     },
     {
       "title": "CaseLabs 2023: Second Runner-up",
       "org": "E-Cell",
       "year": "2023",
-      "detail": ""
+      "detail": "",
+      "images": []
     }
   ],
   "memories": [
@@ -1053,6 +1128,35 @@
       "topics": [
         "What are you working on? :: A bit of everything. Deadlines, mostly."
       ]
+    },
+    {
+      "id": "prince",
+      "name": "Prince",
+      "role": "School friend · Developer & Gamer",
+      "district": "winter-campus",
+      "color": "#4a5a7a",
+      "skin": "tan",
+      "build": 1,
+      "height": 1,
+      "hair": "curly",
+      "hairColor": "#1b1716",
+      "top": "hoodie",
+      "topColor": "#4a5a7a",
+      "pants": "jeans",
+      "pantsColor": "#2a2730",
+      "shoes": "#1a1418",
+      "glasses": false,
+      "beard": "none",
+      "species": "human",
+      "accessory": null,
+      "lines": [
+        "Cold out here, right? Tomsk does not do half measures."
+      ],
+      "topics": [
+        "What are you doing here? :: Visiting the old campus. Figured Nathan would show up eventually.",
+        "What are you playing? :: Something on my phone until my fingers freeze."
+      ],
+      "scripted": true
     }
   ],
   "interests": [

@@ -168,7 +168,36 @@ function boardSign(text, SW, SH, { size = 0, w = 0, h = 0, fg = '#fff1d6', bg = 
 }
 
 /** Retro motorcycle facing +z: rolling wheels, chrome tank, two-up seat. */
-export function buildMotorbike(color = 0xc4302b) {
+/** Guru's blue Scooty (rideable): same look as the kit 'scooty' piece, with spinning wheels. Faces +z. */
+export function buildScooty(color = 0x1f6fe0) {
+  const g = new THREE.Group(), k = kit(g), blue = color;
+  g.userData.dynamic = true;   // moves with the rider: keep it out of the static mesh merge
+  const wheels = [];
+  for (const z of [-0.5, 0.55]) {
+    const w = new THREE.Group(); w.position.set(0, 0.24, z); g.add(w);
+    const tyre = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.12, 12), mat(0x1e1b2e)); tyre.rotation.z = Math.PI / 2; tyre.castShadow = true; w.add(tyre);
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.13, 10), mat(0xc6d2e0)); hub.rotation.z = Math.PI / 2; w.add(hub);
+    const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.04, 0.26), mat(0x7d8fa8)); w.add(spoke);   // shows the wheel turning
+    wheels.push(w);
+  }
+  k.box(0.36, 0.32, 0.62, blue, 0, 0.32, -0.38);
+  k.box(0.3, 0.06, 0.5, 0x1e1b2e, 0, 0.64, -0.36);
+  k.box(0.26, 0.08, 0.5, color === 0x1f6fe0 ? 0x14365f : 0x2b2b33, 0, 0.2, 0.08);
+  if (color !== 0x1f6fe0) { k.box(0.37, 0.04, 0.5, 0xc6d2e0, 0, 0.46, -0.38, { shadow: false }); k.box(0.33, 0.05, 0.04, 0xc6d2e0, 0, 0.6, 0.52, { shadow: false }); }   // chrome trim on the black Zest
+  k.box(0.32, 0.62, 0.18, blue, 0, 0.3, 0.42);
+  const bars = new THREE.Group(); bars.position.set(0, 0, 0.47); g.add(bars);   // steers
+  const bk = kit(bars);
+  bk.box(0.06, 0.3, 0.06, 0xc6d2e0, 0, 0.84, 0.01);
+  bk.box(0.6, 0.06, 0.08, blue, 0, 1.0, -0.01);
+  bk.box(0.14, 0.1, 0.06, 0xfff1c0, 0, 0.98, 0.05, { shadow: false });
+  for (const x of [-0.26, 0.26]) { bk.box(0.02, 0.16, 0.02, 0x3a3a46, x, 1.04, -0.03); bk.box(0.1, 0.06, 0.02, 0xc6d2e0, x, 1.2, -0.03); }
+  k.box(0.16, 0.06, 0.04, 0xe0202a, 0, 0.5, -0.7, { shadow: false });
+  k.box(0.38, 0.06, 0.66, blue, 0, 0.52, 0.55);
+  return { group: g, wheels, bars };
+}
+
+export function buildMotorbike(color = 0xc4302b, style = '') {
+  if (style === 'shine') return buildShine(color);
   const g = new THREE.Group(), k = kit(g);
   const wheels = [];
   for (const z of [-0.62, 0.66]) {
@@ -187,6 +216,40 @@ export function buildMotorbike(color = 0xc4302b) {
   k.box(0.7, 0.05, 0.05, 0x2a2440, 0, 0.98, 0.56);                                // handlebar
   k.box(0.2, 0.18, 0.12, 0xfff1c0, 0, 0.82, 0.78);                                // headlight
   k.box(0.4, 0.06, 0.4, color, 0, 0.58, -0.68);                                   // rear fender
+  g.userData.dynamic = true;
+  return { group: g, wheels };
+}
+
+/** Honda Shine 125-style commuter facing +z: slim tank with side shrouds, flat single
+ *  seat, round headlamp with a small visor, black alloys, upswept chrome silencer, grab rail. */
+function buildShine(color = 0x2f6fc6) {
+  const g = new THREE.Group(), k = kit(g), black = 0x1b1b22, chrome = 0xd8dee8;
+  const wheels = [];
+  for (const z of [-0.64, 0.68]) {
+    const w = new THREE.Group(); w.position.set(0, 0.33, z); g.add(w);
+    const tyre = new THREE.Mesh(new THREE.CylinderGeometry(0.33, 0.33, 0.11, 16), mat(0x15151a)); tyre.rotation.z = Math.PI / 2; tyre.castShadow = true; w.add(tyre);
+    const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.12, 12), mat(0x2a2a30)); rim.rotation.z = Math.PI / 2; w.add(rim);
+    for (const a of [0, Math.PI / 3, (2 * Math.PI) / 3]) { const sp = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.44, 0.04), mat(black)); sp.rotation.x = a; w.add(sp); }
+    wheels.push(w);
+  }
+  k.box(0.26, 0.26, 0.48, 0x4a4a52, 0, 0.3, 0.02);                                  // engine
+  k.box(0.2, 0.08, 0.36, 0x7d8088, 0, 0.24, 0.02);                                  // crankcase fins
+  k.box(0.07, 0.07, 0.72, chrome, 0.17, 0.3, -0.36, { rx: -0.12 });                 // upswept silencer
+  k.box(0.1, 0.1, 0.2, black, 0.17, 0.38, -0.66, { rx: -0.12 });                    // silencer guard
+  k.box(0.3, 0.22, 0.46, color, 0, 0.64, 0.26);                                     // slim tank
+  for (const x of [-0.17, 0.17]) { k.box(0.04, 0.2, 0.36, color, x, 0.5, 0.36, { shadow: false }); k.box(0.045, 0.03, 0.34, chrome, x, 0.64, 0.3, { shadow: false }); }   // shrouds + chrome stripe
+  k.box(0.24, 0.2, 0.3, color, 0, 0.5, -0.24);                                      // side panel
+  k.box(0.3, 0.08, 0.72, black, 0, 0.73, -0.24);                                    // flat single seat
+  k.box(0.34, 0.04, 0.18, chrome, 0, 0.74, -0.66);                                  // grab rail
+  k.box(0.32, 0.05, 0.36, black, 0, 0.62, -0.66);                                   // rear fender
+  k.box(0.18, 0.08, 0.04, 0xe0202a, 0, 0.62, -0.86, { shadow: false });            // tail lamp
+  k.box(0.06, 0.5, 0.06, chrome, 0, 0.44, 0.66, { rx: 0.3 });                       // fork
+  k.box(0.36, 0.04, 0.3, black, 0, 0.66, 0.7);                                      // front mudguard
+  k.box(0.64, 0.05, 0.05, black, 0, 1.0, 0.52);                                     // handlebar
+  for (const x of [-0.24, 0.24]) k.box(0.03, 0.18, 0.03, black, x, 1.04, 0.5);      // mirrors
+  k.cyl(0.13, 0.13, 0.1, black, 0, 0.84, 0.74, 12, { rx: Math.PI / 2 });            // round headlamp shell
+  k.cyl(0.1, 0.1, 0.02, 0xfff1c0, 0, 0.84, 0.8, 12, { rx: Math.PI / 2 });
+  k.box(0.22, 0.12, 0.04, color, 0, 0.98, 0.72, { rx: -0.4 });                      // small visor
   g.userData.dynamic = true;
   return { group: g, wheels };
 }
@@ -442,68 +505,249 @@ export const KIT = {
   gym_building() {
     // 11 m × 7 m warehouse gym, front faces +z. Designed to read at retro
     // resolution: light walls, one strong orange band, a big high-contrast
-    // sign, a lit open door and a giant rooftop dumbbell as the landmark.
+    // sign, the roll-up door and a giant rooftop dumbbell as the landmark.
+    // Walk-in: the roll-up door is open. When Nathan steps inside, the roof,
+    // front wall and east wall (the camera side) fade so the interior shows:
+    // bench press, lat pulldown, dumbbell rack and THE DISCIPLINE board.
     const g = new THREE.Group(), k = kit(g);
-    const W = 11, D = 7, H = 4.6;
-    const wall = 0xf3ece0, band = C.accent, roofC = 0xa9b7cc;
-    k.box(W + 0.5, 0.3, D + 0.5, C.plinth, 0, 0, 0);
-    k.box(W, 1.2, D, 0xd9694c, 0, 0.3, 0);                                   // brick base
-    for (let y = 0.6; y < 1.5; y += 0.3) k.box(W + 0.02, 0.04, D + 0.02, 0xb85540, 0, y, 0, { shadow: false });
-    k.box(W, H - 1.5, D, wall, 0, 1.5, 0);                                    // light upper walls
-    k.box(W + 0.06, 0.55, D + 0.06, band, 0, 2.15, 0);                        // orange band wraps the building
-    k.box(W + 0.3, 0.3, D + 0.3, C.ink, 0, H, 0);                             // roof edge
-    // shallow sawtooth roof in light steel with sky-blue skylights
+    const W = 11, D = 7, H = 4.6, B = 0.3, T = 0.3, hw = W / 2, hd = D / 2;
+    const wall = 0xf3ece0, band = C.accent, roofC = 0xa9b7cc, brickC = 0xd9694c;
+    const DX = 2.3, DW = 4.0, DH = 3.2, EX = -3.4;
+    k.box(W + 0.5, B, D + 0.5, C.plinth, 0, 0, 0);
+    // ---- interior floor: rubber tiles ----
+    k.box(W - 2 * T, 0.03, D - 2 * T, 0x3d4058, 0, B, 0, { shadow: false });
+    for (let x = -hw + 1.3; x < hw - 0.5; x += 1.0) k.box(0.03, 0.035, D - 2 * T, 0x4c5070, x, B, 0, { shadow: false });
+    for (let z = -hd + 1.3; z < hd - 0.5; z += 1.0) k.box(W - 2 * T, 0.035, 0.03, 0x4c5070, 0, B, z, { shadow: false });
+    k.box(DW, 0.03, 0.9, 0x6f7fa0, DX, B, hd - 0.1, { shadow: false });            // threshold plate
+    // ---- static walls (back + west: never between the camera and Nathan) ----
+    const wallRun = (w2, d2, x, z, kk = k) => {
+      kk.box(w2, 1.2, d2, brickC, x, B, z);
+      kk.box(w2, H - 1.5, d2, wall, x, 1.5, z);
+      kk.box(w2 + (d2 > w2 ? 0.06 : 0), 0.55, d2 + (w2 > d2 ? 0.06 : 0), band, x, 2.15, z);
+    };
+    wallRun(W, T, 0, -hd + T / 2);
+    wallRun(T, D, -hw + T / 2, 0);
+    for (let y = 0.6; y < 1.5; y += 0.3) { k.box(W + 0.02, 0.04, T + 0.02, 0xb85540, 0, y, -hd + T / 2, { shadow: false }); k.box(T + 0.02, 0.04, D + 0.02, 0xb85540, -hw + T / 2, y, 0, { shadow: false }); }
+    // wall mirrors (simple pale panels with a highlight stripe) on the back wall
+    const bz = -hd + T;
+    const mirrorM = mat(0xcfe9f5, { emissive: 0x7fb7d6, emissiveIntensity: 0.25 });
+    for (const [x, w2] of [[-3.4, 2.4], [-0.2, 1.4]]) {
+      k.box(w2 + 0.12, 1.9, 0.04, C.ink, x, B + 0.75, bz + 0.02, { shadow: false });
+      k.box(w2, 1.78, 0.04, mirrorM, x, B + 0.81, bz + 0.05, { shadow: false });
+      k.box(0.08, 1.5, 0.02, 0xffffff, x - w2 / 2 + 0.35, B + 0.95, bz + 0.08, { shadow: false, rz: 0.35 });
+    }
+    // motivational stripe + clock on the back wall (no text claims)
+    k.box(W - 2 * T, 0.12, 0.03, C.yellow, 0, B + 3.0, bz + 0.02, { shadow: false });
+    k.cyl(0.3, 0.3, 0.05, C.cream, 1.6, 0, bz + 0.05, 12, { rx: Math.PI / 2 }).position.y = B + 3.45;
+    // plate tree + a couple of plates leaning on the wall
+    k.cyl(0.32, 0.36, 0.08, C.ink, 1.75, B, -2.55, 10);
+    k.cyl(0.04, 0.04, 1.1, C.steel, 1.75, B, -2.55, 6);
+    for (const [y, r, c] of [[0.35, 0.32, band], [0.6, 0.28, C.ink], [0.85, 0.22, band]]) { const p = k.cyl(r, r, 0.07, c, 1.75, 0, -2.55 + 0.02, 12, { rx: Math.PI / 2 }); p.position.y = B + y; }
+    for (const [x, r, c] of [[-5.0, 0.32, C.ink], [-4.82, 0.26, band]]) { const p = k.cyl(r, r, 0.07, c, x, 0, -2.4, 12, { rz: Math.PI / 2 - 0.15 }); p.position.y = B + r; }
+    // warm hanging lamps over each station + night pools
+    const lampM = mat(C.amber, { emissive: C.amber, emissiveIntensity: 0.85 });
+    const pools = [];
+    for (const [x, z] of [[-3.4, -0.8], [-0.2, -1.6], [3.4, -1.8]]) {
+      k.box(0.03, 0.7, 0.03, C.ink, x, H - 0.75, z, { shadow: false });
+      k.box(0.36, 0.14, 0.36, lampM, x, H - 0.9, z, { shadow: false });
+      const p = lightPool(2.2, 0xffd08a); p.position.set(x, B + 0.06, z); g.add(p); pools.push(p);
+    }
+    const steel = C.steelDark;
+
+    // ---- Station 1: bench press (bench along z, lifter lies head toward -z) ----
+    const BX = -3.4, BHZ = -0.4;   // hips spot when lying
+    k.box(0.5, 0.12, 1.5, C.ink, BX, B + 0.33, BHZ - 0.6);                       // pad
+    k.box(0.44, 0.04, 1.44, band, BX, B + 0.45, BHZ - 0.6, { shadow: false });   // pad top stripe
+    for (const z of [BHZ + 0.0, BHZ - 1.2]) k.box(0.1, 0.33, 0.1, steel, BX, B, z);
+    k.box(0.5, 0.05, 0.12, steel, BX, B, BHZ + 0.0); k.box(0.5, 0.05, 0.12, steel, BX, B, BHZ - 1.2);
+    const RZ = BHZ - 0.95, RY = B + 1.25;                                         // rack hooks
+    for (const s of [-1, 1]) {
+      k.box(0.08, 1.35, 0.08, C.ink, BX + s * 0.62, B, RZ - 0.15);
+      k.box(0.3, 0.05, 0.3, steel, BX + s * 0.62, B, RZ - 0.15);
+      k.box(0.1, 0.08, 0.16, band, BX + s * 0.62, RY - 0.08, RZ - 0.07);
+    }
+    const plateBar = (len, plates) => {
+      const bar = new THREE.Group(); bar.userData.dynamic = true;
+      const bk = kit(bar);
+      bk.cyl(0.028, 0.028, len, C.steel, 0, -len / 2, 0, 6, { rz: Math.PI / 2 }).position.set(0, 0, 0);
+      for (const [x, r, c] of plates) for (const s of [-1, 1]) { const p = bk.cyl(r, r, 0.07, c, s * x, 0, 0, 12, { rz: Math.PI / 2 }); p.position.y = 0; }
+      return bar;
+    };
+    const benchBar = plateBar(1.9, [[0.74, 0.27, band], [0.82, 0.22, C.ink]]);
+    const benchRest = new THREE.Vector3(BX, RY + 0.03, RZ);
+    benchBar.position.copy(benchRest); g.add(benchBar);
+
+    // ---- Station 2: lat pulldown (lifter sits facing +z, stack behind) ----
+    const LX = -0.2, LHZ = -1.3, SZ = -2.75, TOP = B + 2.75, PZ = -1.15;
+    for (const s of [-1, 1]) k.box(0.1, TOP - B, 0.1, C.ink, LX + s * 0.36, B, SZ);
+    k.box(0.9, 0.06, 0.5, steel, LX, B, SZ);
+    k.box(0.12, 0.12, PZ - SZ + 0.2, C.ink, LX, TOP, (SZ + PZ) / 2);   // top beam
+    k.box(0.82, 0.12, 0.12, C.ink, LX, TOP - 0.06, SZ);
+    for (const z of [SZ, PZ]) k.cyl(0.09, 0.09, 0.08, C.steel, LX, 0, z, 10, { rz: Math.PI / 2 }).position.y = TOP - 0.1;
+    for (const s of [-1, 1]) k.box(0.025, TOP - B - 0.2, 0.025, C.steel, LX + s * 0.2, B + 0.05, SZ);   // guide rods
+    k.box(0.38, 0.45, 0.22, C.ink, LX, B + 0.06, SZ);                             // resting plates
+    const stack = new THREE.Group(); stack.userData.dynamic = true; g.add(stack);
+    kit(stack).box(0.38, 0.3, 0.22, band, 0, 0, 0); kit(stack).box(0.4, 0.04, 0.24, C.cream, 0, 0.13, 0, { shadow: false });
+    const stackBase = new THREE.Vector3(LX, B + 0.52, SZ); stack.position.copy(stackBase);
+    k.box(0.1, 0.38, 0.1, steel, LX, B, LHZ - 0.05);                              // seat post
+    k.box(0.52, 0.08, 0.46, C.ink, LX, B + 0.3, LHZ - 0.05);                      // seat
+    k.box(0.1, 0.06, 1.3, steel, LX, B, (LHZ + SZ) / 2);                          // floor rail to the frame
+    const cableM = mat(C.ink);
+    const cable = new THREE.Mesh(new THREE.BoxGeometry(0.025, 1, 0.025), cableM); cable.userData.dynamic = true; g.add(cable);
+    const cableBack = new THREE.Mesh(new THREE.BoxGeometry(0.025, 1, 0.025), cableM); cableBack.userData.dynamic = true; g.add(cableBack);
+    const latBar = new THREE.Group(); latBar.userData.dynamic = true; g.add(latBar);
+    const lk = kit(latBar);
+    lk.cyl(0.026, 0.026, 1.2, C.steel, 0, -0.6, 0, 6, { rz: Math.PI / 2 }).position.set(0, 0, 0);
+    for (const s of [-1, 1]) lk.box(0.1, 0.06, 0.06, C.ink, s * 0.6, -0.03, 0, { rz: s * 0.5 });
+    const latRest = new THREE.Vector3(LX, B + 1.95, PZ);
+    const setLat = (p) => {
+      latBar.position.copy(p);
+      const top = new THREE.Vector3(LX, TOP - 0.1, PZ), d = top.clone().sub(p), len = d.length();
+      cable.position.copy(p).addScaledVector(d, 0.5); cable.scale.y = Math.max(0.01, len);
+      cable.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize());
+      const lift = Math.max(0, Math.min(0.55, (latRest.y - p.y) * 0.8));
+      stack.position.set(stackBase.x, stackBase.y + lift, stackBase.z);
+      const sTop = stack.position.y + 0.3, bl = TOP - 0.1 - sTop;
+      cableBack.position.set(LX, sTop + bl / 2, SZ); cableBack.scale.y = Math.max(0.01, bl);
+    };
+    setLat(latRest);
+
+    // ---- Station 3: dumbbell rack + mat ----
+    const DBX = 3.4, DRZ = -2.75;
+    k.box(1.8, 0.06, 0.55, C.ink, DBX, B + 0.42, DRZ); k.box(1.8, 0.06, 0.45, C.ink, DBX, B + 0.82, DRZ - 0.05);
+    for (const s of [-1, 1]) k.box(0.07, 0.9, 0.55, steel, DBX + s * 0.86, B, DRZ);
+    const bell = (parent, x, y, z, c, s = 1) => {
+      const bkk = kit(parent);
+      bkk.cyl(0.025, 0.025, 0.26 * s, C.steel, x, 0, z, 6, { rz: Math.PI / 2 }).position.y = y;
+      for (const sx of [-1, 1]) bkk.box(0.09 * s, 0.13 * s, 0.13 * s, c, x + sx * 0.13 * s, y - 0.065 * s, z);
+    };
+    const rackColors = [C.ink, band, 0x2bb3a3, C.ink, band];
+    rackColors.forEach((c, i) => { if (i !== 2) for (const dz of [-0.12, 0.12]) bell(g, DBX - 0.64 + i * 0.32, B + 0.55, DRZ + dz, c); });
+    for (let i = 0; i < 4; i++) bell(g, DBX - 0.5 + i * 0.33, B + 0.95, DRZ - 0.05, i % 2 ? C.ink : band, 0.8);
+    const rackPair = new THREE.Group(); rackPair.userData.dynamic = true; g.add(rackPair);
+    for (const dz of [-0.12, 0.12]) bell(rackPair, DBX, B + 0.55, DRZ + dz, 0x2bb3a3);   // the pair Nathan uses
+    k.box(1.3, 0.025, 1.7, 0x2bb3a3, DBX, B + 0.01, -1.35, { shadow: false });            // exercise mat
+    k.box(1.1, 0.03, 0.06, C.cream, DBX, B + 0.01, -0.55, { shadow: false });
+
+    // ---- THE DISCIPLINE board on the west wall (faces +x) ----
+    const WX = -hw + T;
+    k.box(0.06, 1.7, 2.4, C.ink, WX + 0.03, B + 0.9, 1.7, { shadow: false });
+    k.box(0.04, 1.56, 2.26, C.paper, WX + 0.07, B + 0.97, 1.7, { shadow: false });
+    const dSign = signMesh('THE DISCIPLINE', 2.1, 0.32, { fg: '#fff1d6', bg: '#2a2440', size: 22, w: 256, h: 40 });
+    dSign.rotation.y = Math.PI / 2; dSign.position.set(WX + 0.1, B + 2.3, 1.7); g.add(dSign);
+    // three milestone bars: ~100 → ~60 → ~75 (bar height ∝ the story's numbers)
+    [[1.0, band], [0.6, 0x2bb3a3], [0.75, C.yellow]].forEach(([v, c], i) => {
+      k.box(0.05, v * 1.05, 0.38, c, WX + 0.1, B + 1.05, 1.0 + i * 0.7, { shadow: false });
+      k.box(0.05, 0.06, 0.38, C.ink, WX + 0.1, B + 1.05 + v * 1.05, 1.0 + i * 0.7, { shadow: false });
+    });
+    k.box(0.05, 0.03, 1.9, C.ink, WX + 0.11, B + 1.03, 1.7, { shadow: false });
+    k.box(0.5, 0.05, 0.5, band, WX + 0.6, B, 1.7, { shadow: false });              // floor marker
+
+    // ---- fading shell: front wall (around the open door), east wall, roof ----
+    const shell = new THREE.Group(); shell.userData.dynamic = true; g.add(shell);
+    const fmats = new Map();
+    const fm = (color, emissive = 0, ei = 0.55) => { const key = `${color}|${emissive}|${ei}`; if (!fmats.has(key)) fmats.set(key, new THREE.MeshLambertMaterial({ color, emissive, emissiveIntensity: emissive ? ei : 0, flatShading: true, transparent: true, opacity: 1 })); return fmats.get(key); };
+    const sk = {
+      box(w2, h2, d2, color, x, y, z, o = {}) { const m = new THREE.Mesh(new THREE.BoxGeometry(w2, h2, d2), typeof color === 'number' ? fm(color) : color); m.position.set(x, y + h2 / 2, z); if (o.rz) m.rotation.z = o.rz; m.castShadow = o.shadow !== false; shell.add(m); return m; },
+      cyl(r, h2, color, x, y, z, o = {}) { const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h2, 14), fm(color)); m.position.set(x, y, z); if (o.rz) m.rotation.z = o.rz; m.castShadow = true; shell.add(m); return m; },
+    };
+    // front wall pieces: left of the door, right of the door, above the door
+    const L0 = -hw, L1 = DX - DW / 2, R0 = DX + DW / 2, R1 = hw, fz = hd - T / 2;
+    for (const [a, b2] of [[L0, L1], [R0, R1]]) {
+      const w2 = b2 - a, cx = (a + b2) / 2;
+      sk.box(w2, 1.2, T, brickC, cx, B, fz); sk.box(w2, H - 1.5, T, wall, cx, 1.5, fz); sk.box(w2, 0.55, T + 0.06, band, cx, 2.15, fz);
+      for (let y = 0.6; y < 1.5; y += 0.3) sk.box(w2, 0.04, T + 0.02, 0xb85540, cx, y, fz, { shadow: false });
+    }
+    sk.box(DW, H - B - DH, T, wall, DX, B + DH, fz);
+    // east wall + painted dumbbell mural (faces +x)
+    sk.box(T, 1.2, D, brickC, hw - T / 2, B, 0); sk.box(T, H - 1.5, D, wall, hw - T / 2, 1.5, 0); sk.box(T + 0.06, 0.55, D, band, hw - T / 2, 2.15, 0);
+    for (let y = 0.6; y < 1.5; y += 0.3) sk.box(T + 0.02, 0.04, D, 0xb85540, hw - T / 2, y, 0, { shadow: false });
+    sk.box(0.08, 0.3, 2.6, band, hw + 0.05, 3.1, 0);
+    for (const z of [-1.4, 1.4]) sk.box(0.1, 1.2, 0.4, C.ink, hw + 0.06, 2.65, z);
+    for (const z of [-1.8, 1.8]) sk.box(0.1, 0.8, 0.3, band, hw + 0.07, 2.85, z);
+    // roll-up door frame + rolled shutter above the opening
+    sk.box(0.2, DH + 0.2, 0.2, C.ink, DX - DW / 2 - 0.1, B, hd + 0.02); sk.box(0.2, DH + 0.2, 0.2, C.ink, DX + DW / 2 + 0.1, B, hd + 0.02);
+    sk.box(DW + 0.4, 0.2, 0.2, C.ink, DX, B + DH, hd + 0.02);
+    for (let i = 0; i < 3; i++) sk.box(DW, 0.2, 0.08, i % 2 ? C.steel : 0xe3e8ef, DX, B + DH - 0.25 - i * 0.2 + 0.25, hd + 0.14);
+    // glass entrance + orange canopy (the canopy posts stay solid outside)
+    sk.box(1.7, 2.5, 0.1, C.ink, EX, 0.3, hd + 0.03);
+    sk.box(1.4, 2.2, 0.06, fm(0xbfe6ff, 0x3a6f88, 0.45), EX, 0.4, hd + 0.08, { shadow: false });
+    sk.box(0.06, 0.45, 0.05, C.steel, EX + 0.45, 1.3, hd + 0.12);
+    sk.box(2.6, 0.14, 1.4, band, EX, 3.0, hd + 0.65);
+    for (const x of [EX - 1.15, EX + 1.15]) k.box(0.09, 2.7, 0.09, C.ink, x, 0.3, hd + 1.25);
+    // windows above the band
+    for (const x of [-4.2, -1.6, 4.4]) {
+      if (x > L1 && x < R0) continue;
+      sk.box(1.2, 0.8, 0.08, C.ink, x, 2.95, hd + 0.03);
+      sk.box(1.0, 0.62, 0.06, fm(C.amber, C.amber), x, 3.04, hd + 0.07, { shadow: false });
+    }
+    sk.box(6.2, 1.05, 0.16, C.ink, -1.1, 3.55 + 0.02, hd + 0.12);
+    for (const x of [EX, DX]) sk.box(0.32, 0.16, 0.26, fm(C.amber, C.amber), x, 2.9, hd + 0.16, { shadow: false });
+    for (const [x, z] of [[-hw - 0.06, hd - 0.1], [hw + 0.06, hd - 0.1]]) sk.box(0.12, H, 0.12, C.steelDark, x, 0.3, z);
+    // roof edge + shallow sawtooth roof with skylights
+    sk.box(W + 0.3, 0.3, D + 0.3, C.ink, 0, H, 0);
     const tooth = new THREE.Shape(); tooth.moveTo(0, 0); tooth.lineTo(2.75, 0); tooth.lineTo(0, 0.9); tooth.closePath();
     const tgeo = new THREE.ExtrudeGeometry(tooth, { depth: D, bevelEnabled: false });
     for (let i = 0; i < 4; i++) {
-      k.mesh(tgeo, roofC, -W / 2 + i * 2.75, H + 0.3, -D / 2);
-      k.box(0.06, 0.75, D - 0.4, glow(0x9fdcff), -W / 2 + i * 2.75 + 0.05, H + 0.35, 0, { shadow: false });
+      const m = new THREE.Mesh(tgeo, fm(roofC)); m.position.set(-hw + i * 2.75, H + 0.3, -hd); m.castShadow = true; shell.add(m);
+      sk.box(0.06, 0.75, D - 0.4, fm(0x9fdcff, 0x9fdcff), -hw + i * 2.75 + 0.05, H + 0.35, 0, { shadow: false });
     }
     // giant rooftop dumbbell: the Iron Yard landmark
-    for (const x of [-1.6, 1.6]) k.box(0.3, 1.1, 0.3, C.ink, x, H + 0.3, D / 2 - 1.2);
-    const bar = k.cyl(0.16, 0.16, 6.2, C.steel, 0, 0, D / 2 - 1.2, 8, { rz: Math.PI / 2 }); bar.position.y = H + 1.6;
-    for (const s of [-1, 1]) {
-      for (const [dx, r, c] of [[2.15, 1.15, band], [2.55, 1.0, C.ink], [2.9, 0.8, band]]) {
-        const p = k.cyl(r, r, 0.34, c, s * dx, 0, D / 2 - 1.2, 14, { rz: Math.PI / 2 }); p.position.y = H + 1.6;
-      }
-    }
-    // big open roll-up door with a warmly lit interior
-    const DX = 2.3, DW = 4.0, DH = 3.2;
-    k.box(DW + 0.4, DH + 0.2, 0.16, C.ink, DX, 0.3, D / 2 + 0.02);
-    k.box(DW, DH, 0.1, mat(0xffd9a0, { emissive: 0xffb04d, emissiveIntensity: 0.55 }), DX, 0.3, D / 2 - 0.4, { shadow: false }); // lit back wall
-    k.box(DW, 0.06, 0.6, 0x6f7fa0, DX, 0.32, D / 2 - 0.15, { shadow: false });
-    for (let i = 0; i < 3; i++) k.box(DW, 0.2, 0.08, i % 2 ? C.steel : 0xe3e8ef, DX, 0.3 + DH - 0.25 - i * 0.2, D / 2 + 0.1);
-    // silhouettes inside: squat rack + punch bag against the glow
-    for (const x of [DX - 1.2, DX - 0.4]) k.box(0.1, 2.0, 0.1, C.ink, x, 0.3, D / 2 - 0.25);
-    k.box(1.0, 0.08, 0.08, C.ink, DX - 0.8, 1.7, D / 2 - 0.2);
-    k.box(0.04, 0.5, 0.04, C.ink, DX + 1.1, 2.6, D / 2 - 0.25);
-    k.cyl(0.26, 0.26, 1.0, C.accent, DX + 1.1, 1.6, D / 2 - 0.25, 8);
-    // glass entrance + orange canopy
-    const EX = -3.4;
-    k.box(1.7, 2.5, 0.1, C.ink, EX, 0.3, D / 2 + 0.03);
-    k.box(1.4, 2.2, 0.06, mat(0xbfe6ff, { emissive: 0x3a6f88, emissiveIntensity: 0.45 }), EX, 0.4, D / 2 + 0.08, { shadow: false });
-    k.box(0.06, 0.45, 0.05, C.steel, EX + 0.45, 1.3, D / 2 + 0.12);
-    k.box(2.6, 0.14, 1.4, band, EX, 3.0, D / 2 + 0.65);
-    for (const x of [EX - 1.15, EX + 1.15]) k.box(0.09, 2.7, 0.09, C.ink, x, 0.3, D / 2 + 1.25);
-    // windows above the band
-    for (const x of [-4.2, -1.6, 4.4]) {
-      k.box(1.2, 0.8, 0.08, C.ink, x, 2.95, D / 2 + 0.03);
-      k.box(1.0, 0.62, 0.06, glow(C.amber), x, 3.04, D / 2 + 0.07, { shadow: false });
-    }
-    // high-contrast sign: cream panel, dark letters, sized to read at low resolution
-    k.box(6.2, 1.05, 0.16, C.ink, -1.1, 3.55 + 0.02, D / 2 + 0.12);
+    for (const x of [-1.6, 1.6]) sk.box(0.3, 1.1, 0.3, C.ink, x, H + 0.3, hd - 1.2);
+    sk.cyl(0.16, 6.2, C.steel, 0, H + 1.6, hd - 1.2, { rz: Math.PI / 2 });
+    for (const s of [-1, 1]) for (const [dx, r, c] of [[2.15, 1.15, band], [2.55, 1.0, C.ink], [2.9, 0.8, band]]) sk.cyl(r, 0.34, c, s * dx, H + 1.6, hd - 1.2, { rz: Math.PI / 2 });
+    // high-contrast sign: steps aside while Nathan is indoors
     const sign = signMesh('IRON YARD', 5.9, 0.85, { fg: '#2a2440', bg: '#fff1d6', size: 30, w: 256, h: 40, icon: 'dumbbell' });
-    sign.position.set(-1.1, 4.1, D / 2 + 0.22); g.add(sign);
-    // side wall: big painted dumbbell mural (faces +x, the camera side)
-    k.box(0.08, 0.3, 2.6, band, W / 2 + 0.05, 3.1, 0);
-    for (const z of [-1.4, 1.4]) k.box(0.1, 1.2, 0.4, C.ink, W / 2 + 0.06, 2.65, z);
-    for (const z of [-1.8, 1.8]) k.box(0.1, 0.8, 0.3, band, W / 2 + 0.07, 2.85, z);
-    // details: wall lamps, AC unit, downpipes, plate stack by the door
-    for (const x of [EX, DX]) k.box(0.32, 0.16, 0.26, glow(C.amber), x, 3.9 - 1.0, D / 2 + 0.16, { shadow: false });
-    k.box(1.2, 0.8, 0.8, C.steel, -W / 2 - 0.5, 0.3, -1.6); k.box(0.9, 0.06, 0.6, C.steelDark, -W / 2 - 0.5, 1.1, -1.6);
-    for (const [x, z] of [[-W / 2 - 0.06, D / 2 - 0.1], [W / 2 + 0.06, D / 2 - 0.1]]) k.box(0.12, H, 0.12, C.steelDark, x, 0.3, z);
-    for (let i = 0; i < 4; i++) k.cyl(0.42, 0.42, 0.1, i % 2 ? C.ink : band, 5.0, 0.3 + i * 0.1, D / 2 + 0.75, 12);
-    return { obj: g, colliders: [{ x: 0, z: 0, w: W + 0.6, d: D + 0.6 }, { x: -W / 2 - 0.5, z: -1.6, w: 1.3, d: 0.9 }, { x: EX, z: D / 2 + 1.25, w: 2.5, d: 0.2 }, { x: 5.0, z: D / 2 + 0.75, r: 0.45 }] };
+    sign.position.set(-1.1, 4.1, hd + 0.22); sign.userData.dynamic = true; g.add(sign);
+    // outside details: AC unit, plate stack by the door
+    k.box(1.2, 0.8, 0.8, C.steel, -hw - 0.5, 0.3, -1.6); k.box(0.9, 0.06, 0.6, C.steelDark, -hw - 0.5, 1.1, -1.6);
+    for (let i = 0; i < 4; i++) k.cyl(0.42, 0.42, 0.1, i % 2 ? C.ink : band, 5.0, 0.3 + i * 0.1, hd + 0.75, 12);
+    const porch = lightPool(3, 0xffd08a); porch.position.set(DX, 0.09, hd + 1.4); g.add(porch); pools.push(porch);
+
+    const v = new THREE.Vector3();
+    let fade = 1, shadowsOn = true;
+    const api = {
+      obj: g,
+      // Workout spots in local space (front = +z). stand: where Nathan steps to
+      // before the exercise; pos: where his hips go during it; heading in radians.
+      stations: {
+        bench: { spot: { x: BX + 1.15, z: BHZ - 0.2 }, stand: { x: BX, z: BHZ + 0.55 }, pos: { x: BX, z: BHZ }, heading: 0 },
+        pulldown: { spot: { x: LX, z: 0.15 }, stand: { x: LX, z: LHZ + 0.55 }, pos: { x: LX, z: LHZ }, heading: 0 },
+        curl: { spot: { x: DBX, z: -0.55 }, stand: { x: DBX, z: DRZ + 0.75 }, pos: { x: DBX, z: -1.45 }, heading: 0 },
+        discipline: { spot: { x: WX + 1.0, z: 1.7 } },
+      },
+      benchBar, benchRest, latBar, latRest, setLat,
+      setRackPair(on) { rackPair.visible = on; },
+      isInside: () => fade < 0.6,
+    };
+    return {
+      obj: g,
+      api,
+      colliders: [
+        { x: 0, z: -hd + T / 2, w: W, d: T + 0.2 },                                  // back wall
+        { x: -hw + T / 2, z: 0, w: T + 0.2, d: D },                                  // west wall
+        { x: hw - T / 2, z: 0, w: T + 0.2, d: D },                                   // east wall
+        { x: (L0 + L1) / 2, z: fz, w: L1 - L0, d: T + 0.2 },                         // front wall either side of the door
+        { x: (R0 + R1) / 2, z: fz, w: R1 - R0, d: T + 0.2 },
+        { x: BX, z: BHZ - 0.75, w: 1.45, d: 1.75 },                                  // bench + rack
+        { x: LX, z: (LHZ + SZ) / 2 - 0.05, w: 0.95, d: 1.95 },                       // lat pulldown
+        { x: DBX, z: DRZ, w: 1.9, d: 0.6 },                                          // dumbbell rack
+        { x: 1.75, z: -2.55, r: 0.4 },                                               // plate tree
+        { x: -hw - 0.5, z: -1.6, w: 1.3, d: 0.9 }, { x: EX, z: hd + 1.25, w: 2.5, d: 0.2 }, { x: 5.0, z: hd + 0.75, r: 0.45 },
+      ],
+      floors: [{ x: 0, z: 0, w: W - 2 * T, d: D - 2 * T, h: B }, { x: DX, z: hd, w: DW, d: 1.0, h: B }],
+      nightGlow: pools,
+      animate: (t, state) => {
+        const p = state.playerPos;
+        let inside = false;
+        if (p) { v.set(p.x, 0, p.z); g.worldToLocal(v); inside = Math.abs(v.x) < hw + 0.2 && v.z > -hd && v.z < hd + 0.45; }
+        fade += ((inside ? 0.1 : 1) - fade) * 0.12;
+        for (const m of fmats.values()) { m.opacity = fade; m.depthWrite = fade > 0.95; }
+        sign.visible = fade > 0.55;
+        const sh = fade > 0.5;
+        if (sh !== shadowsOn) { shadowsOn = sh; shell.traverse((o) => { if (o.isMesh) o.castShadow = sh; }); }
+      },
+    };
   },
   squat_rack() {
     const g = new THREE.Group(), k = kit(g);
@@ -1514,6 +1758,50 @@ export const KIT = {
     };
   },
 
+  exhibit_hospital() {
+    // Nathan's first UI project (Class XII): a Python/Tkinter hospital desk.
+    // A beige CRT shows the login window, patient files and a floppy (records
+    // were saved to binary files), a little clinic with a pulsing red cross.
+    const g = new THREE.Group(), k = kit(g);
+    const TW = 4.0, TD = 3.0, y = exhibitTable(k, TW, TD, 0xe9eef2);
+    const dyn = new THREE.Group(); dyn.userData.dynamic = true; g.add(dyn);
+    // CRT monitor + keyboard
+    k.box(0.9, 0.7, 0.75, 0xd9cfb4, -0.6, y, -0.55);
+    k.box(0.5, 0.1, 0.4, 0xd9cfb4, -0.6, y, -0.55);
+    const scr = signMesh('LOGIN ▸ PATIENTS', 0.74, 0.5, { fg: '#bff7ff', bg: '#123a5a', size: 13, w: 160, h: 108 });
+    scr.position.set(-0.6, y + 0.36, -0.17); dyn.add(scr);
+    k.box(0.8, 0.05, 0.3, 0xcfc6ab, -0.6, y, 0.2);
+    for (let i = 0; i < 5; i++) k.box(0.1, 0.02, 0.08, 0x8f8a7a, -0.92 + i * 0.16, y + 0.05, 0.2, { shadow: false });
+    // patient files and a floppy disk
+    [[0xf2c14e, 0], [0x7fb3e0, 0.05], [0xf28b82, 0.1]].forEach(([c, h]) => k.box(0.5, 0.05, 0.36, c, 0.45, y + h, 0.55, { ry: 0.12 }));
+    k.box(0.28, 0.02, 0.28, 0x2d3440, 1.1, y, 0.75);
+    k.box(0.16, 0.025, 0.08, 0xc8ccd4, 1.1, y + 0.005, 0.66, { shadow: false });
+    // mini clinic with a red cross on the roof
+    k.box(1.0, 0.6, 0.7, 0xffffff, 0.95, y, -0.6);
+    k.box(1.1, 0.06, 0.8, 0x9fb6c8, 0.95, y + 0.6, -0.6);
+    for (const x of [0.65, 0.95, 1.25]) k.box(0.16, 0.16, 0.02, glow(0x9fd8ff), x, y + 0.3, -0.24, { shadow: false });
+    k.box(0.2, 0.28, 0.02, 0x4f7fe0, 0.95, y, -0.24, { shadow: false });
+    const crossMat = mat(0xe53935, { emissive: 0xe53935, emissiveIntensity: 0.4, keep: true });
+    const cross = new THREE.Group(); cross.position.set(0.95, y + 0.9, -0.6);
+    cross.add(new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.1, 0.1), crossMat), new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.34, 0.1), crossMat));
+    dyn.add(cross);
+    // pill bottle + stethoscope coil
+    k.cyl(0.07, 0.07, 0.18, 0xf2a93b, -1.4, y, 0.7, 8);
+    k.cyl(0.075, 0.075, 0.04, 0xffffff, -1.4, y + 0.18, 0.7, 8);
+    k.mesh(new THREE.TorusGeometry(0.16, 0.025, 6, 16), 0x2d3440, -1.25, y + 0.03, 0.2, { rx: Math.PI / 2 });
+    nameSign(g, k, 'HOSPITAL MGMT', -0.8, 1.35, y);
+    const near = nearness(g);
+    return {
+      obj: g,
+      colliders: [{ x: 0, z: 0, w: TW, d: TD }],
+      animate: (t, state) => {
+        const live = near(state), beat = Math.max(0, Math.sin(t * 6)) ** 6;
+        cross.scale.setScalar(1 + beat * 0.25 * live);
+        cross.rotation.y = t * 0.8 * live;
+        crossMat.emissiveIntensity = 0.4 + beat * 1.2 * live;
+      },
+    };
+  },
   exhibit_cauverysite() {
     // Real-estate development model: a grid of plots along a lane, finished
     // houses, a house under construction, a tower crane and a map pin that hops
@@ -3079,6 +3367,122 @@ export const KIT = {
     k.box(0.16, 0.06, 0.04, 0xe0202a, 0, 0.5, -0.7, { shadow: false });  // tail lamp
     k.box(0.38, 0.06, 0.66, blue, 0, 0.52, 0.55);                  // front mudguard
     return { obj: g, colliders: [{ x: 0, z: 0, w: 0.45, d: 1.35 }] };
+  },
+  clubhouse_front({ w = 14 } = {}) {
+    // Outside dressing for the Vanderlinde hideout's front (south) wall: warm string
+    // lights under the eave, two retro wall lamps by the door and potted tropical
+    // plants. Purely exterior; the lights step aside while Nathan is indoors so the
+    // roof cutaway still shows the bedroom.
+    const g = new THREE.Group(), k = kit(g), hw = w / 2;
+    const lights = new THREE.Group(); lights.userData.dynamic = true; g.add(lights);
+    k.box(w - 0.6, 0.03, 0.03, 0x3a2a20, 0, 2.62, 0.16, { parent: lights, shadow: false });
+    const warm = [0xffd08a, 0xffb36b, 0xfff1c0, 0xff8fb1];
+    for (let i = 0; i <= 26; i++) { const u = i / 26, x = -hw + 0.3 + (w - 0.6) * u; k.box(0.1, 0.12, 0.1, glow(warm[i % 4]), x, 2.5 - Math.sin(u * Math.PI * 3) ** 2 * 0.18, 0.18, { parent: lights, shadow: false }); }
+    const pools = [];
+    for (const x of [-1.3, 1.3]) {
+      k.box(0.08, 0.08, 0.26, 0x2a2440, x, 1.95, 0.12, { parent: lights });
+      k.box(0.22, 0.3, 0.22, 0x2a2440, x, 1.86, 0.3, { parent: lights });
+      k.box(0.16, 0.2, 0.16, glow(0xffd08a), x, 1.9, 0.3, { parent: lights, shadow: false });
+      const p = lightPool(1.5, 0xffc46a); p.position.set(x, 0.08, 1.0); g.add(p); pools.push(p);
+    }
+    const leaf = 0x3f9a4a, leafD = 0x2f7a3a;
+    for (const x of [-5.9, -2.3, 2.3, 6.6]) {
+      k.cyl(0.26, 0.2, 0.42, 0xc4683a, x, 0, 0.55, 8); k.cyl(0.27, 0.27, 0.05, 0xa8552e, x, 0.4, 0.55, 8);
+      for (let i = 0; i < 5; i++) { const a = (i / 5) * Math.PI * 2 + x; k.box(0.12, 0.62, 0.05, i % 2 ? leaf : leafD, x + Math.cos(a) * 0.1, 0.42, 0.55 + Math.sin(a) * 0.1, { rz: Math.cos(a) * 0.5, rx: Math.sin(a) * 0.5 }); }
+    }
+    const v = new THREE.Vector3();
+    return {
+      obj: g, nightGlow: pools,
+      colliders: [-5.9, -2.3, 2.3, 6.6].map((x) => ({ x, z: 0.55, r: 0.3 })),
+      animate: (t, state) => {
+        const p = state.playerPos; if (!p) return;
+        v.set(p.x, 0, p.z); g.worldToLocal(v);
+        lights.visible = !(Math.abs(v.x) < hw + 0.2 && v.z < 0.6 && v.z > -10.5);
+      },
+    };
+  },
+  club_sign({ text = 'VANDERLINDE GANG' } = {}) {
+    // freestanding illuminated clubhouse sign with marquee bulbs round the board
+    const g = new THREE.Group(), k = kit(g);
+    for (const x of [-0.9, 0.9]) k.box(0.1, 1.9, 0.1, 0x5a3a26, x, 0, 0);
+    k.box(2.0, 0.66, 0.08, 0x3a2418, 0, 1.3, 0);
+    const face = new THREE.Mesh(new THREE.PlaneGeometry(1.84, 0.46), new THREE.MeshBasicMaterial({ map: signTexture(text, { fg: '#ffd08a', bg: '#5a3a26', w: 192, h: 48, size: 18 }) }));
+    face.position.set(0, 1.63, 0.05); g.add(face);
+    const back = face.clone(); back.rotation.y = Math.PI; back.position.z = -0.05; g.add(back);
+    const bulbs = [0xff8fb1, 0xffd257, 0x8fe0ff];
+    let i = 0;
+    for (let x = -0.95; x <= 0.96; x += 0.19) for (const y of [1.3, 1.96]) k.box(0.06, 0.06, 0.06, glow(bulbs[i++ % 3]), x, y - 0.03, 0.06, { shadow: false });
+    const pool = lightPool(1.8, 0xffd08a); pool.position.set(0, 0.08, 0.7); g.add(pool);
+    return { obj: g, nightGlow: [pool], colliders: [{ x: -0.9, z: 0, r: 0.1 }, { x: 0.9, z: 0, r: 0.1 }] };
+  },
+  curb({ len = 6 } = {}) {
+    // low pale edging stones along a path border (no collider: never blocks a walk)
+    const g = new THREE.Group(), k = kit(g);
+    for (let x = -len / 2 + 0.2; x <= len / 2 - 0.2; x += 0.42) k.box(0.36, 0.1, 0.16, 0xd9cfbc, x, 0, 0, { shadow: false });
+    return { obj: g, colliders: [] };
+  },
+  photo_station() {
+    // Sathesh + Shabesh's camera corner: table with a retro camera and lenses, a little
+    // preview display that flicks through shots, a camera bag and a tripod camera.
+    const g = new THREE.Group(), k = kit(g);
+    k.box(1.1, 0.68, 0.6, 0x6f4a30, 0, 0, 0); k.box(1.16, 0.04, 0.66, C.woodLight, 0, 0.68, 0);
+    k.box(0.3, 0.18, 0.16, 0x1e1b2e, -0.28, 0.72, 0.05); k.cyl(0.07, 0.07, 0.14, 0x7d8fa8, -0.28, 0.8, 0.16, 8, { rx: Math.PI / 2 });
+    k.box(0.08, 0.04, 0.05, 0xc4302b, -0.2, 0.9, 0.0, { shadow: false });
+    for (const x of [0.05, 0.16]) k.cyl(0.05, 0.05, 0.12, 0x2a2440, x, 0.72, 0.18, 8);
+    k.box(0.06, 0.3, 0.06, 0x2a2440, 0.36, 0.72, -0.12);
+    const screen = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.3, 0.03), new THREE.MeshBasicMaterial({ color: 0x9fe6f2 }));
+    screen.position.set(0.36, 1.16, -0.1); screen.userData.dynamic = true; g.add(screen);
+    k.box(0.48, 0.34, 0.02, 0x1e1b2e, 0.36, 0.99, -0.12);
+    k.box(0.4, 0.3, 0.24, 0x3d4058, -0.75, 0, 0.35); k.box(0.42, 0.04, 0.26, 0xc4302b, -0.75, 0.3, 0.35);
+    // tripod with a camera, aimed out over the yard
+    const tx = 0.95, tz = -0.15;
+    for (const a of [0, 2.1, 4.2]) k.box(0.04, 1.3, 0.04, 0x2a2440, tx + Math.cos(a) * 0.2, 0, tz + Math.sin(a) * 0.2, { rz: Math.cos(a) * 0.15, rx: -Math.sin(a) * 0.15 });
+    k.box(0.28, 0.2, 0.18, 0x1e1b2e, tx, 1.3, tz); k.cyl(0.06, 0.06, 0.14, 0x7d8fa8, tx, 1.38, tz + 0.14, 8, { rx: Math.PI / 2 });
+    const shots = [0x9fe6f2, 0xffd08a, 0xb5e48c, 0xff8fb1];
+    return { obj: g, colliders: [{ x: 0, z: 0, w: 1.1, d: 0.6 }, { x: tx, z: tz, r: 0.25 }], animate: (t) => screen.material.color.setHex(shots[Math.floor(t / 2.5) % 4]) };
+  },
+  contest_table() {
+    // Thianish's food-contest station: long table, plates of snacks, two stools, a sign
+    const g = new THREE.Group(), k = kit(g);
+    k.box(1.8, 0.7, 0.8, 0xb07a4a, 0, 0, 0); k.box(1.86, 0.04, 0.86, 0xfff6e6, 0, 0.7, 0);
+    k.box(1.86, 0.02, 0.1, 0xc4302b, 0, 0.72, 0, { shadow: false });
+    for (const [x, z] of [[-0.5, 0.22], [0.5, 0.22], [-0.5, -0.22], [0.5, -0.22]]) {
+      k.cyl(0.17, 0.15, 0.03, C.white, x, 0.74, z, 10, { shadow: false });
+      [0xffd257, 0xe0702a, 0x6fbf4a].forEach((c, i) => k.box(0.09, 0.07, 0.09, c, x - 0.07 + i * 0.07, 0.77 + (i % 2) * 0.05, z, { ry: i, shadow: false }));
+    }
+    k.cyl(0.14, 0.12, 0.18, 0xffd08a, 0, 0.74, 0, 8);
+    for (const z of [0.85, -0.85]) { k.cyl(0.22, 0.2, 0.42, 0x3d4058, 0, 0, z, 10); k.cyl(0.24, 0.24, 0.05, 0x2f8f9a, 0, 0.42, z, 10); }
+    k.box(0.08, 1.5, 0.08, 0x6f4a30, 1.25, 0, 0);
+    const s = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.3), new THREE.MeshBasicMaterial({ map: signTexture('FOOD CONTEST', { fg: '#ffd257', bg: '#c4302b', w: 128, h: 40, size: 16 }), side: THREE.DoubleSide }));
+    s.position.set(1.25, 1.42, 0); s.rotation.y = Math.PI / 2; g.add(s);
+    return { obj: g, colliders: [{ x: 0, z: 0, w: 1.8, d: 0.8 }, { x: 1.25, z: 0, r: 0.1 }] };
+  },
+  tv_corner() {
+    // Akshay's gaming corner: rug, TV on a stand (screen animates), console,
+    // low table with two controllers, two bean bags and a shade umbrella. TV faces +z.
+    const g = new THREE.Group(), k = kit(g);
+    k.box(2.6, 0.02, 2.6, 0x2f8f9a, 0, 0, 0.2, { shadow: false }); k.box(2.2, 0.025, 2.2, 0xe8d6b0, 0, 0, 0.2, { shadow: false });
+    k.box(1.5, 0.5, 0.45, 0x3a2418, 0, 0, -1.1);
+    k.box(1.5, 0.86, 0.08, 0x1e1b2e, 0, 0.55, -1.15);
+    const px = [];
+    for (let r = 0; r < 3; r++) for (let c = 0; c < 5; c++) { const m = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.24, 0.02), new THREE.MeshBasicMaterial({ color: 0x1c2246 })); m.position.set(-0.56 + c * 0.28, 0.7 + r * 0.26, -1.1); m.userData.dynamic = true; g.add(m); px.push(m); }
+    k.box(0.36, 0.08, 0.24, 0xf4efe4, 0.45, 0.5, -1.05);
+    k.box(0.9, 0.3, 0.5, 0x6f4a30, 0, 0, 0.1);
+    for (const [x, c] of [[-0.18, 0x1e1b2e], [0.2, 0xc4302b]]) { k.box(0.2, 0.05, 0.12, c, x, 0.3, 0.1, { shadow: false }); }
+    for (const [x, c] of [[-0.6, 0xff6a3d], [0.6, 0x2f6fc6]]) { k.cyl(0.38, 0.42, 0.34, c, x, 0, 1.15, 10); k.box(0.5, 0.32, 0.18, c, x, 0.3, 1.42); }
+    k.cyl(0.04, 0.04, 2.3, 0xc6d2e0, -1.25, 0, 0.6, 6);
+    k.cyl(0.05, 1.3, 0.35, 0xff6a3d, -1.25, 2.2, 0.6, 8, { shadow: false });
+    const pal = [0x1c2246, 0xff6a3d, 0x9fe6f2, 0xffd257, 0x6fbf4a];
+    let busy = 0;
+    return {
+      obj: g, api: { setBusy(v) { busy = v ? 1 : 0; } },
+      colliders: [{ x: 0, z: -1.1, w: 1.5, d: 0.45 }, { x: 0, z: 0.1, w: 0.9, d: 0.5 }, { x: -1.25, z: 0.6, r: 0.1 }],
+      animate: (t) => {
+        // a tiny pixel "game" on the TV: ships drift, shots pop; brighter while Nathan plays
+        const f = Math.floor(t * (busy ? 8 : 4));
+        px.forEach((m, i) => { const r = Math.floor(i / 5), c = i % 5; const on = (r === 0 && c === f % 5) || (r === 2 && (c + f) % 4 === 0) || (r === 1 && (c * 3 + f) % 7 === 0); m.material.color.setHex(on ? pal[1 + ((i + f) % 4)] : pal[0]); });
+      },
+    };
   },
   photo_table() {
     // Shabeer's memory corner: little table with a retro camera, a photo stack and a pinned board

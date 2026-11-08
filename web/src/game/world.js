@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { KIT, buildHorse, buildBicycle, buildMotorbike, mat, C } from './kit.js';
+import { KIT, buildHorse, buildBicycle, buildMotorbike, buildScooty, mat, C, lightPool } from './kit.js';
 import { tileAt } from './tiled.js';
 import { Character, OUTFITS, appearanceToOutfit } from './player.js';
 import { buildRailway } from './railway.js';
@@ -127,6 +127,31 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
     }
     if (piece.api) apis[props.variant ? `${type}_${props.variant}` : type] = piece.api;
     if (piece.nightGlow) nightGlow.push(...piece.nightGlow);
+    // Night dressing for buildings: lit windows + a pair of street lamps (no floor glow)
+    {
+      const bb = new THREE.Box3().setFromObject(piece.obj), sz = bb.getSize(new THREE.Vector3());
+      if (sz.y > 2.2 && sz.x * sz.z > 6 && sz.x < 40 && sz.z < 40) {
+        piece.obj.traverse((o) => {
+          if (!o.isMesh || !o.material || Array.isArray(o.material) || !o.material.color || !o.geometry) return;
+          o.geometry.computeBoundingBox?.();
+          const gs = o.geometry.boundingBox?.getSize(new THREE.Vector3()).multiply(o.scale);
+          if (!gs || Math.min(gs.x, gs.y, gs.z) > 0.12 || Math.max(gs.x, gs.y, gs.z) > 2.2) return;
+          const c = o.material.color;
+          if (!(c.b > c.r + 0.12 && c.b > 0.45)) return; // blue glass panes
+          o.material = o.material.clone();
+          if (!o.material.emissive) return;
+          windowMats.push({ mat: o.material, emissive: o.material.emissive.clone(), ei: o.material.emissiveIntensity });
+        });
+        if (sz.x * sz.z > 30 && sz.y > 3.2) for (const [px, pz] of [[bb.max.x + 0.8, bb.max.z + 0.8]]) {
+          if (tileAt(map, px, pz) == null) continue;
+          const lamp = KIT.lamp();
+          for (const gp of lamp.nightGlow) lamp.obj.remove(gp);
+          lamp.obj.position.set(px, bb.min.y, pz);
+          root.add(lamp.obj);
+          colliders.push({ x: px, z: pz, r: 0.2 });
+        }
+      }
+    }
     if (piece.screen && props.index !== undefined) bayScreens[props.index] = piece.screen;
     for (const c of piece.colliders || []) colliders.push(transformCollider(c, x, z, rot));
     for (const f of piece.floors || []) {
@@ -135,8 +160,11 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
     }
     return piece;
   };
+  const scooties = [];
   for (const o of map.objects) {
     if (o.type === 'rain_zone') { if (o.w) weather.push(buildRain(root, o, animated)); continue; }
+    // Guru's scooty is rideable: it becomes a vehicle below instead of a static prop
+    if (o.type === 'scooty') { scooties.push(o); continue; }
     if (o.type === 'hedge') place('hedge', o.x, o.z, { ...o.props, w: o.w, d: o.d });
     else place(o.type, o.x, o.z, o.props);
   }
@@ -153,7 +181,7 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
     const R = small ? 0.62 : 0.95;
     const tile = tileAt(map, x, z);
     g.position.set(x, (tile ? Math.max(0, groundHeight(tile.type)) : 0) + 0.04, z);
-    const add = (m) => { m.renderOrder = 2; g.add(m); return m; };
+    const add = (m) => { m.renderOrder = 2; g.add(m); if (m.material?.color) markerMats.push({ mat: m.material, day: m.material.color.clone() }); return m; };
     const glowMat = (opacity, map2 = null, additive = true) => new THREE.MeshBasicMaterial({ color: 0xffa040, map: map2, transparent: true, opacity, depthWrite: false, blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending, side: THREE.DoubleSide });
     const disc = add(new THREE.Mesh(new THREE.CircleGeometry(R * 1.25, 32), glowMat(0.75, radialTex(), false)));
     disc.rotation.x = -Math.PI / 2;
@@ -199,6 +227,15 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
     root.add(hit); it.hit = hit;
   };
 
+  scooties.forEach((o, si) => {
+    const col = o.props?.color ? parseInt(String(o.props.color).replace('#', ''), 16) : undefined;
+    const model = buildScooty(col), heading = (-(o.props?.rot || 0) * Math.PI) / 180;
+    const tile = tileAt(map, o.x, o.z);
+    model.group.position.set(o.x, tile ? Math.max(0, groundHeight(tile.type)) : 0, o.z); model.group.rotation.y = heading;
+    root.add(model.group);
+    const it = { x: o.x, z: o.z, visited: false, id: si ? `vehicle:scooty-${si}` : 'vehicle:scooty', kind: 'vehicle', vtype: 'scooty', label: o.props?.name || "Guru's Scooty", model, heading, home: { x: o.x, z: o.z, heading }, district: 'tahiti', radius: 1.4 };
+    it.beacon = beacon(o.x, 1.6, o.z, { small: true }); hitBox(it, 1.2, 2, 1.4); interactables.push(it);
+  });
   for (const it of seats) { it.beacon = beacon(it.x, 1.2, it.z, { small: true }); hitBox(it, 1.4, 1.6, 1.4); interactables.push(it); }
   for (const o of map.interact) {
     const pr = o.props;
@@ -223,6 +260,10 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
     } else if (o.type === 'panel') {
       const it = { ...base, id: `panel:${pr.id}`, kind: 'panel', panel: pr.panel, title: pr.title || pr.panel, district: pr.district, attraction: pr.attraction, interest: pr.interest, place: pr.place, radius: 1.8 };
       it.beacon = beacon(o.x, 2.2, o.z, { small: true }); hitBox(it, 2, 3, 2); interactables.push(it);
+    } else if (o.type === 'gym') {
+      // Iron Yard interior: workout machines and THE DISCIPLINE board
+      const it = { ...base, id: `gym:${pr.station}`, kind: 'gym', station: pr.station, title: pr.title, district: 'iron-yard', radius: 1.25 };
+      it.beacon = beacon(o.x, 1.6, o.z, { small: true }); hitBox(it, 1.2, 2, 1.2); interactables.push(it);
     } else if (o.type === 'finale') {
       const it = { ...base, id: 'finale', kind: 'finale', district: 'lighthouse', radius: 2.0 };
       it.beacon = beacon(o.x, 2.6, o.z); hitBox(it); interactables.push(it);
@@ -237,7 +278,7 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
     } else if (o.type === 'vehicle') {
       // rideable bicycle / horse, parked at its rack or post
       const vt = pr.vtype === 'horse' ? 'horse' : pr.vtype === 'moto' ? 'moto' : 'bike';
-      const model = vt === 'horse' ? buildHorse(0x8a5a36, 0x2a1a12) : vt === 'moto' ? buildMotorbike(pr.color ? parseInt(String(pr.color).replace('#', ''), 16) : 0xc4302b) : buildBicycle(pr.color ? parseInt(String(pr.color).replace('#', ''), 16) : 0x2f5fb0);
+      const model = vt === 'horse' ? buildHorse(0x8a5a36, 0x2a1a12) : vt === 'moto' ? buildMotorbike(pr.color ? parseInt(String(pr.color).replace('#', ''), 16) : 0xc4302b, pr.style) : buildBicycle(pr.color ? parseInt(String(pr.color).replace('#', ''), 16) : 0x2f5fb0);
       const heading = ((pr.rot ?? 0) * Math.PI) / 180;
       const tile = tileAt(map, o.x, o.z);
       model.group.position.set(o.x, tile ? Math.max(0, groundHeight(tile.type)) : 0, o.z);
@@ -325,6 +366,10 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
 }
 
 let _radial = null, _pillar = null;
+// Checkpoint marker materials with their daytime colour, tinted gold at night by main.js
+export const markerMats = [];
+// Window panes on buildings, lit warm at night by main.js
+export const windowMats = [];
 function radialTex() {
   if (_radial) return _radial;
   const c = document.createElement('canvas'); c.width = c.height = 64;
@@ -499,6 +544,31 @@ export function updateNpcs(npcs, dt, t, heightAt, player, talkingTo) {
     it.x = gp.x; it.z = gp.z;
     it.beacon.group.position.set(gp.x, heightAt(gp.x, gp.z) + 0.04, gp.z);
     it.hit.position.set(gp.x, 1.3, gp.z);
+  }
+  // personal space between the island's route NPCs (Tahiti brains do their own)
+  separateNpcs(npcs.filter((it) => !it.frozen && !it.brain && !it.passenger), () => 1, dt);
+}
+
+export const NPC_SPACE = 1.0;   // metres kept between two characters: close enough to chat, never overlapping
+/**
+ * Gently pushes overlapping characters apart. share(it) is how much this one may
+ * move (0 = holds its spot, e.g. seated at a station); free(x, z) rejects pushes
+ * into water or buildings.
+ */
+export function separateNpcs(list, share, dt, free = () => true) {
+  const k = Math.min(1, dt * 6);
+  for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) {
+    const a = list[i].character.group.position, b = list[j].character.group.position;
+    let dx = b.x - a.x, dz = b.z - a.z, d = Math.hypot(dx, dz);
+    if (d >= NPC_SPACE) continue;
+    const sa = share(list[i]), sb = share(list[j]), tot = sa + sb;
+    if (!tot) continue;
+    if (d < 1e-3) { dx = 1; dz = 0.3; d = Math.hypot(dx, dz); }
+    const push = (NPC_SPACE - d) * k / d;
+    const ax = a.x - dx * push * (sa / tot), az = a.z - dz * push * (sa / tot);
+    const bx = b.x + dx * push * (sb / tot), bz = b.z + dz * push * (sb / tot);
+    if (sa && free(ax, az)) { a.x = ax; a.z = az; }
+    if (sb && free(bx, bz)) { b.x = bx; b.z = bz; }
   }
 }
 

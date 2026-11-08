@@ -92,7 +92,7 @@ function characterFile(c) {
           ${paras(p.about)}
         </details>
         </div>
-        <img class="name-tag" src="assets/hello-name.png" alt="Hello, my name is Nathan Jerald" width="859" height="544">
+        <img class="name-tag hero-portrait" src="assets/nat.png" alt="Pixel-art portrait of Nathan Jerald" width="1254" height="1254">
       </div>
     </section>`;
 }
@@ -113,7 +113,7 @@ function journey(c) {
           <template class="ch-body">
             <p class="m-id">${esc(e.tagline)} · ${esc(e.place)}</p>
             <h2 id="md-title">${esc(e.institution)}</h2>
-            ${ch.title ? `<h3>${esc(ch.title)}${ch.subtitle ? ` — ${esc(ch.subtitle)}` : ''}</h3>` : ''}
+            ${ch.title ? `<h3>${esc(ch.title)}${ch.subtitle ? ` · ${esc(ch.subtitle)}` : ''}</h3>` : ''}
             ${paras(ch.body)}
             ${chips(ch.highlights)}
             ${mems.length ? `<ul class="mem-list">${mems.map((m) => `<li><b>${esc(m.title)}</b>${m.year ? ` <span>${esc(m.year)}</span>` : ''}<p>${esc(m.text)}</p></li>`).join('')}</ul>` : ''}
@@ -189,7 +189,7 @@ function missionDetails(c, p) {
     ${arch.length ? `<section><h3>Approach</h3><ol class="arch">${arch.map((a) => `<li>${esc(a)}</li>`).join('')}</ol></section>` : ''}
     ${p.contribution ? `<section><h3>My contribution</h3><p>${esc(p.contribution)}</p></section>` : ''}
     ${p.stack?.length ? `<section><h3>Tech</h3>${chips(p.stack)}</section>` : ''}
-    ${results.length ? `<section><h3>Results</h3><ul class="results">${results.map((a) => `<li><b>${esc(a.title)}</b>${a.detail ? ` — ${esc(a.detail)}` : ''}</li>`).join('')}</ul></section>` : ''}
+    ${results.length ? `<section><h3>Results</h3><ul class="results">${results.map((a) => `<li><b>${esc(a.title)}</b>${a.detail ? ` · ${esc(a.detail)}` : ''}</li>`).join('')}</ul></section>` : ''}
     ${links ? `<div class="md-links">${links}</div>` : ''}`;
 }
 
@@ -306,7 +306,7 @@ async function loadShots() {
 // ---------- render + behaviour ----------
 function render(c) {
   const p = c.profile || {};
-  document.title = `${p.name || 'Nathan'} — Player Archive`;
+  document.title = `${p.name || 'Nathan'} · Player Archive`;
   document.getElementById('foot-name').textContent = `© ${new Date().getFullYear()} ${p.name || 'Nathan'}`;
   document.getElementById('side-name').textContent = (p.name || 'Nathan').toUpperCase();
   const resume = safeUrl(p.resumeUrl);
