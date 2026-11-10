@@ -98,7 +98,7 @@ for (let z = -HALF; z < HALF; z++) {
 // Roads: two avenues + a deliberately irregular ring (west/north sit further out).
 const ROADS = [
   [-2, -36, 2, 30],    // north–south avenue (5 m)
-  [-30, -2, 31, 2],    // east–west avenue (ends at the Memory Line crossing)
+  [-27, -2, 31, 2],    // east–west avenue (joins the west ring road)
   [-27, -31, -24, 28], // ring: west
   [-27, -31, 28, -28], // ring: north (moved 6 m out so the Pop Culture Park block is big)
   [25, -31, 28, 29],   // ring: east (moved 6 m out)
@@ -107,7 +107,7 @@ const ROADS = [
 for (const [x0, z0, x1, z1] of ROADS) rect(x0, z0, x1, z1, T.road);
 // Centre dashes on the avenues
 for (let z = -36; z <= 30; z++) if (Math.abs(z) > 9 && z % 3 !== 0) set(0, z, T.road_line);
-for (let x = -30; x <= 31; x++) if (Math.abs(x) > 9 && x % 3 !== 0) set(x, 0, T.road_line);
+for (let x = -26; x <= 31; x++) if (Math.abs(x) > 9 && x % 3 !== 0) set(x, 0, T.road_line);
 
 // District grounds (before sidewalks so sidewalks wrap them cleanly)
 rect(-21, -19, -4, -4, T.lawn);           // Iron Yard lot
@@ -129,8 +129,6 @@ rect(32, -1, 46, 1, T.terracotta);        //   main red-earth walk from the arch
 rect(35, -5, 47, -3, T.terracotta);       //   veranda forecourt
 disc(40, 3.6, 3.3, T.terracotta);         //   small paved court
 rect(35, 1, 37, 8, T.terracotta);         //   path to the tea stall
-for (let a = 0; a < Math.PI * 2; a += 0.05) set(Math.round(-35 + Math.cos(a) * 7.4), Math.round(-2 + Math.sin(a) * 8.4), T.path);
-rect(-30, -1, -28, 1, T.path);
 rect(-1, 30, 1, 34, T.path);              // path down to the airport
 rect(-12, 34, 10, 39, T.concrete);        // airport apron
 rect(-8, 39, 8, 42, T.concrete);          // runway strip
@@ -138,6 +136,15 @@ rect(-35, -11, -31, 0, T.concrete);       // Montfort schoolyard
 rect(-34, -15, -32, -11, T.path);         //   path from the station
 disc(0, 0, 8.5, T.plaza);                 // Central plaza (paints over the avenue ends)
 disc(0, 0, 9.5, T.plaza);
+// Pop Culture Park: restore lawn and border sidewalk so the central plaza disc does not bite into the park
+for (const [x, z] of [
+  [4, -8], [5, -8],
+  [4, -7], [5, -7], [6, -7],
+  [4, -6], [5, -6], [6, -6], [7, -6],
+  [4, -5], [5, -5], [6, -5], [7, -5],
+  [4, -4], [5, -4], [6, -4], [7, -4], [8, -4],
+]) set(x, z, T.lawn);
+for (let x = 4; x <= 8; x++) set(x, -3, T.sidewalk);
 
 // Sidewalks: any walkable non-road tile touching a road becomes pavement
 const isRoad = (t) => t === T.road || t === T.road_line;
@@ -177,7 +184,7 @@ O('crt_monument', 0, 0);
 for (let i = 0; i < 4; i++) {
   const a = Math.PI / 4 + i * Math.PI / 2, cx = Math.cos(a), sz = Math.sin(a);
   if (i === 0) continue; // south-east diagonal belongs to the Garage lot
-  O('bench', +(cx * 5.6).toFixed(2), +(sz * 5.6).toFixed(2), { rot: Math.round((a * 180) / Math.PI + 90) });
+  if (i !== 1) O('bench', +(cx * 5.6).toFixed(2), +(sz * 5.6).toFixed(2), { rot: Math.round((a * 180) / Math.PI + 90) }); // i===1 is the Guild Hall entrance diagonal — no bench there
   if (i !== 1) O('planter', +(cx * 7.2).toFixed(2), +(sz * 7.2).toFixed(2));
   O('lamp', +(cx * 8.7).toFixed(2), +(sz * 8.7).toFixed(2));
 }
@@ -200,6 +207,8 @@ hedge(-4, -19, -3, -4);                  // east
 hedge(-22, -4, -10, -3);                 // south, left of gate
 hedge(-7, -4, -3, -3);                   // south, right of gate
 O('gym_building', -14.5, -16, { rot: 0 });
+// Add interior floor for gym (visible surface)
+rect(-16.5, -18, -12.5, -14, T.rubber); // gym interior floor
 O('squat_rack', -8.5, -9.5, { rot: 0 });
 O('pullup_rig', -6, -11.2, { rot: 90 });
 O('plyo_boxes', -14.6, -7.2, { rot: 0 });
@@ -222,8 +231,8 @@ interact.push(point('memory', -5.6, -5.2, { id: 'fitness-chapter' }));
 // Six themed areas around a central arcade, one character each:
 //   NW Hell's Kitchen alley (Daredevil) · N rooftop (Spider-Man) · NE camp + paddock (Arthur Morgan)
 //   SW basement (Tyler Durden) · S moonlit court (Moon Knight) · SE Pied Piper (Richard Hendricks)
-hedge(2.2, -27.8, 24.9, -27); hedge(24.2, -27, 24.9, -2.1); hedge(2.2, -27, 2.9, -16.5); hedge(2.2, -13, 2.9, -5.2);
-hedge(5.2, -2.9, 8, -2.1);   // corner cut back: a clear walk around the CRT plinth hedge(11, -2.9, 24.9, -2.1);
+hedge(2.2, -27.8, 24.9, -27); hedge(24.2, -27, 24.9, -2.1); hedge(2.2, -27, 2.9, -16.5); hedge(2.2, -13, 2.9, -2.1);
+hedge(2.2, -2.9, 8, -2.1); hedge(11, -2.9, 24.9, -2.1);
 O('pop_arcade', 9.5, -15.5);
 // Hell's Kitchen alley + rooftop signal
 O('pop_rooftop', 5.0, -25.4, { variant: 'signal' });
@@ -265,12 +274,13 @@ O('lamp', 23.4, 9.2); O('lamp', 23.4, 18.2);
 // training yard, joined by stone walks.
 hedge(-22, 3, -3, 4); hedge(-22, 4, -21, 24.6); hedge(-4, 7, -3, 24.6); hedge(-22, 24.6, -3, 25.4);
 O('guild_hall', -13.0, 8.2, { rot: 0, w: 12.4, d: 7 });
+// Add interior floor for guild hall (visible surface)
+rect(-19.0, 4.0, -7.0, 13.0, T.rubber); // guild hall interior floor
 O('guild_quest_board', -17.8, 14.8, { rot: 0 });
 O('guild_trophy_stand', -8.2, 14.8, { rot: 0 });
 O('guild_skill_tree', -13.0, 18.4);
 O('guild_profile_stand', -17.8, 21.2, { rot: 0 });
 O('training_dummy', -8.0, 21.0); O('training_dummy', -6.2, 22.6);
-O('bench', -10.0, 23.6, { rot: 0 });
 O('lamp', -5.2, 16.0); O('lamp', -20.2, 13.0); O('lamp', -15.4, 23.6);
 labels.push(point('label', -13.0, 8.2, { text: 'GUILD HALL', color: '#2a2440', height: 9.6 }));
 interact.push(point('chapter', -14.6, 8.9, { id: 'signal-tower', district: 'signal-tower' }));   // the Toolbox, inside the hall
