@@ -4,12 +4,14 @@ import { applyPalette, SKY } from './palette.js';
 import { setGlowBoost } from './kit.js';
 import { sfx, setSound, setRain, setMusic, setTheme, setOcean, setEngine } from './audio.js';
 import { createTahiti } from './tahiti.js';
+import { createGuruRoutine } from './guru.js';
 import { buildWorld, loadKitOverrides, updateWalkers, updateNpcs, groundHeight, markerMats, windowMats } from './world.js';
 import { loadTiledMap, tileAt } from './tiled.js';
 import { NavGrid } from './nav.js';
 import { Player } from './player.js';
 import { drawPortrait, portraitURL } from './portrait.js';
 import { Dialogue } from './dialogue.js';
+import { conversationSystem } from './conversation.js';
 import { runLift, runTempo } from './minigame.js';
 import { loadSave, writeSave, resetSave, addUnique, formatTime } from './save.js';
 import { loadContent, esc, safeUrl, chapterFor, projectCard, projectDetails, DISTRICTS, MAIN_DISTRICTS } from '../shared/content.js';
@@ -19,6 +21,7 @@ const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const isTouch = matchMedia('(pointer: coarse)').matches;
 const BASE = import.meta.env.BASE_URL || '/';
 const DEBUG = new URLSearchParams(location.search).has('debug');
+let debugOn = DEBUG;
 
 const state = {
   content: null,
@@ -31,6 +34,8 @@ const state = {
   minigame: null,
   complete: false,
   started: false,
+  bootWarmed: false,
+  bootFading: false,
   zoom: 1,
   intro: 0,
 };
@@ -141,7 +146,7 @@ function bootHero() {
     // jump the intro straight to the idle loop (input during the opening)
     skip() { if (T < 2.8) { T = 2.8; waved = true; hero.action = null; hero.heading = 0; hero.group.position.x = 0; $('#boot').classList.add('title-skip'); if (readyRes) { readyRes(); readyRes = null; } } },
     confirm() { this.skip(); hero.play('cheer'); if (!reducedMotion) dolly = 0; },
-    stop() { alive = false; cancelAnimationFrame(raf); window.removeEventListener('resize', onResize); r.dispose(); },
+    stop() { alive = false; cancelAnimationFrame(raf); window.removeEventListener('resize', onResize); hero.dispose?.(); r.dispose(); },
   };
 }
 let stopBootHero = () => {};
@@ -167,6 +172,7 @@ async function runBoot(loaded) {
     $('#boot').removeEventListener('click', onClick);
     try { setSound(!!look.sound); sfx.select(); } catch { /* audio is optional */ }
     btn.classList.add('chosen');
+    state.bootFading = true;
     title.confirm();
     setTimeout(start, reducedMotion ? 120 : 650);
   }
@@ -206,9 +212,11 @@ if (qs.get('time')) look.time = qs.get('time');
 if (!look.motion) look.motion = matchMedia('(prefers-reduced-motion: reduce)').matches ? 'off' : 'on';
 if (!look.music) look.music = 'on';
 if (typeof look.musicVol !== 'number') look.musicVol = 0.6;
+let _nightDirty = true;
 function applyLook() {
   retro.setMode(look);
   applyPalette(look.palette);
+  _nightDirty = true;
   const sky = SKY[look.palette] || SKY.bright;
   SKY_START.setHex(sky.start); SKY_END.setHex(sky.end); scene.background.copy(SKY_START);
   document.body.classList.toggle('look-retro', look.pixels === 'retro');
@@ -253,15 +261,18 @@ const CAM_DIR = new THREE.Vector3(Math.sin(Math.PI / 4) * Math.cos(0.58), Math.s
 const camTarget = new THREE.Vector3();
 const camVel = new THREE.Vector3();
 
-function resize() {
+function updateCameraFrustum() {
   const w = window.innerWidth, h = window.innerHeight;
-  retro.setSize(w, h);
-  const aspect = w / h;
+  const aspect = w / Math.max(1, h);
   const base = aspect >= 1 ? 21 : 19 / aspect;
   const view = base / state.zoom / introZoom();
   camera.top = view / 2; camera.bottom = -view / 2;
   camera.left = (-view * aspect) / 2; camera.right = (view * aspect) / 2;
   camera.updateProjectionMatrix();
+}
+function resize() {
+  retro.setSize(window.innerWidth, window.innerHeight);
+  updateCameraFrustum();
 }
 const introZoom = () => (reducedMotion ? 1 : 0.32 + 0.68 * easeOutCubic(state.intro));
 const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
@@ -272,7 +283,10 @@ const player = new Player();
 scene.add(player.group);
 const velocity = new THREE.Vector3();
 const heightAt = (x, z) => {
-  if (world) for (const f of world.floors) if (x >= f.minX && x <= f.maxX && z >= f.minZ && z <= f.maxZ) return f.h;
+  if (world) {
+    const fh = world.floorAt(x, z);
+    if (fh !== null) return fh;
+  }
   const t = map && tileAt(map, x, z);
   return t ? Math.max(0, groundHeight(t.type)) : 0;
 };
@@ -312,7 +326,13 @@ async function init() {
   setupMinimap();
   resize();
   camTarget.copy(player.group.position);
-  if (DEBUG) setupDebug();
+  if (state.level === 'island1') guruRoutine.enter();
+  if (debugOn) setupDebug();
+  update(0, 0);
+  renderer.compile(scene, camera);
+  renderer.info.reset();
+  retro.render(scene, camera);
+  state.bootWarmed = true;
 }
 
 function isDone(it) {
@@ -352,8 +372,8 @@ function setupUI() {
 
   $('#prompt').addEventListener('click', () => state.nearby && interact(state.nearby));
   $('#panel-close').addEventListener('click', closePanel);
-  $('#album-btn').addEventListener('click', openAlbum);
-  $('#look-palette').addEventListener('click', () => { look.palette = look.palette === 'pastel' ? 'bright' : 'pastel'; applyLook(); resize(); });
+  $('#album-btn')?.addEventListener('click', openAlbum);
+  $('#look-palette').addEventListener('click', () => { look.palette = look.palette === 'pastel' ? 'bright' : 'pastel'; applyLook(); });
   $('#look-pixels').addEventListener('click', () => { look.pixels = look.pixels === 'retro' ? 'smooth' : 'retro'; applyLook(); resize(); });
   $('#look-time').addEventListener('click', cycleTime);
   $('#look-motion')?.addEventListener('click', () => { look.motion = look.motion === 'off' ? 'on' : 'off'; applyLook(); });
@@ -364,8 +384,9 @@ function setupUI() {
   applyLook();
   $('#journey-toggle').addEventListener('click', () => $('.journey').classList.toggle(innerWidth <= 760 ? 'open-m' : 'collapsed'));
   window.addEventListener('keydown', (e) => {
+    if (e.key === 'F3' && !e.repeat) { e.preventDefault(); toggleDebug(); return; }
     if (state.minigame && mgRoot()?.onkey && !e.repeat) { const k = e.key.length === 1 ? e.key.toLowerCase() : e.key; if (k.startsWith('Arrow') || k === ' ' || k === 'e' || k === 'Enter') { e.preventDefault(); mgRoot().onkey(k); return; } }
-    if (!state.started || state.minigame) return;
+    if (!state.started || state.minigame || state.ko) return;
     if (e.target.closest?.('input, textarea')) return;
     if (state.gym) {
       const k = e.key.toLowerCase();
@@ -399,12 +420,166 @@ function setupUI() {
     const it = state.talkingTo;
     state.talkingTo = null;
     if (it) { it.character.talking = false; it.character.lookAt(null); player.talking = false; }
+    if (state.level === 'island1') guruRoutine.resumeFromDialogue();
   };
+  dialogue.setConversationSystem(conversationSystem, state.save);
   dialogue.onMemory = (id) => unlockMemory(id);
   dialogue.onAction = (name) => {
-    if (name === 'fly-tahiti') return void setTimeout(() => startFlight('tahiti'), 900);
-    if (name === 'fly-home') { if (!tahiti.harrisNearJet()) { tahiti.callHarrisToJet(); toast('Harris will meet you at the jet.'); return; } return void setTimeout(() => startFlight('island1'), 900); }
-    world.apis[name]?.trigger({ toast, sfx }); state.talkingTo?.character.play('nod');
+    state.talkingTo?.character.play('nod');
+    if (name === 'fly-tahiti') {
+      conversationSystem.recordEvent(state.save, 'harris', 'flight_tahiti');
+      persist();
+      return void setTimeout(() => startFlight('tahiti'), 900);
+    }
+    if (name === 'fly-home') {
+      if (!tahiti.harrisNearJet()) {
+        tahiti.callHarrisToJet();
+        toast('Harris will meet you at the jet.');
+        return;
+      }
+      conversationSystem.recordEvent(state.save, 'harris', 'flight_home');
+      persist();
+      return void setTimeout(() => startFlight('island1'), 900);
+    }
+    if (name === 'scooter-ride' || name === 'join-guru-ride') {
+      dialogue.close();
+      if (state.level === 'island1') {
+        guruRoutine.triggerRideTogether();
+        conversationSystem.recordEvent(state.save, 'guru', 'scooter_ride');
+        persist();
+      } else {
+        const scooty = world.interactables.find((i) => i.kind === 'vehicle' && i.vtype === 'scooty');
+        if (scooty) {
+          const p = player.group.position;
+          scooty.x = p.x;
+          scooty.z = p.z;
+          scooty.model.group.position.set(p.x, heightAt(p.x, p.z), p.z);
+          mount(scooty);
+          conversationSystem.recordEvent(state.save, 'guru', 'scooter_ride');
+          persist();
+          toast("Riding Guru's Scooty! WASD to steer, Shift for speed.");
+        } else {
+          toast("Guru's Scooty is parked nearby.");
+        }
+      }
+      return;
+    }
+    if (name === 'tahiti-moto') {
+      const moto = world.interactables.find((i) => i.kind === 'vehicle' && i.vtype === 'moto');
+      if (moto) {
+        dialogue.close();
+        const p = player.group.position;
+        moto.x = p.x;
+        moto.z = p.z;
+        moto.model.group.position.set(p.x, heightAt(p.x, p.z), p.z);
+        mount(moto);
+        conversationSystem.recordEvent(state.save, 'jeswin', 'motorcycle_ride');
+        persist();
+        toast("Cruising on the motorcycle with Jeswin!");
+      } else {
+        toast("The motorcycle is ready on the island path.");
+      }
+      return;
+    }
+    if (name === 'tahiti-basket') {
+      dialogue.close();
+      conversationSystem.recordEvent(state.save, 'anu', 'anu_hoops');
+      persist();
+      if (state.level === 'tahiti') {
+        tahiti.leaveJoin();
+        tahiti.interact({ kind: 'activity', act: 'anuhoop' });
+      } else {
+        toast("Basketball challenge is on the Tahiti court!");
+      }
+      return;
+    }
+    if (name === 'tahiti-feast') {
+      dialogue.close();
+      conversationSystem.recordEvent(state.save, 'thianesh', 'eating_contest');
+      persist();
+      if (state.level === 'tahiti') {
+        tahiti.leaveJoin();
+        tahiti.interact({ kind: 'activity', act: 'foodcontest' });
+      } else {
+        toast("The feast challenge is waiting on Tahiti!");
+      }
+      return;
+    }
+    if (name === 'tahiti-tvgame') {
+      dialogue.close();
+      conversationSystem.recordEvent(state.save, 'akshai', 'pixel_defenders');
+      conversationSystem.recordEvent(state.save, 'prince', 'pixel_defenders');
+      persist();
+      if (state.level === 'tahiti') {
+        tahiti.leaveJoin();
+        tahiti.interact({ kind: 'activity', act: 'tvgame' });
+      } else {
+        toast("Pixel Defenders arcade game is in the Tahiti villa!");
+      }
+      return;
+    }
+    if (name === 'tahiti-photo') {
+      dialogue.close();
+      conversationSystem.recordEvent(state.save, 'shabesh', 'photo_session');
+      conversationSystem.recordEvent(state.save, 'sathesh', 'photo_session');
+      persist();
+      if (state.level === 'tahiti') {
+        tahiti.leaveJoin();
+        tahiti.interact({ kind: 'activity', act: 'photosession' });
+      } else {
+        toast("Photo shoot session is set up on Tahiti!");
+      }
+      return;
+    }
+    if (name === 'tahiti-volley-vg' || name === 'tahiti-volley-ol') {
+      dialogue.close();
+      const gang = name === 'tahiti-volley-vg' ? 'vg' : 'ol';
+      conversationSystem.recordEvent(state.save, 'volleyball', 'match');
+      persist();
+      if (state.level === 'tahiti') {
+        tahiti.leaveJoin();
+        tahiti.interact({ kind: 'activity', act: 'volley', gang });
+      } else {
+        toast("Beach volleyball courts are waiting on Tahiti!");
+      }
+      return;
+    }
+    if (name === 'gym-lift') {
+      dialogue.close();
+      conversationSystem.recordEvent(state.save, 'thianesh', 'gym_lift');
+      persist();
+      startMinigame({ kind: 'minigame', game: 'lift' });
+      return;
+    }
+    if (name === 'open-album') {
+      dialogue.close();
+      openAlbum();
+      return;
+    }
+    if (name === 'project-aratro') {
+      dialogue.close();
+      const it = world.interactables.find((i) => i.kind === 'project' && i.projectId === 'aratro');
+      if (it) interact(it);
+      return;
+    }
+    if (name === 'project-scheduler') {
+      dialogue.close();
+      const it = world.interactables.find((i) => i.kind === 'project' && i.projectId?.includes('schedule'));
+      if (it) interact(it);
+      return;
+    }
+    if (name === 'project-microservices') {
+      dialogue.close();
+      const it = world.interactables.find((i) => i.kind === 'project' && i.projectId?.includes('security'));
+      if (it) interact(it);
+      return;
+    }
+    if (name === 'pop_cinema') {
+      world.apis.pop_cinema?.trigger?.({ toast, sfx });
+      toast("Outdoor cinema projector is rolling! Marvel movie marathon.");
+      return;
+    }
+    world.apis[name]?.trigger({ toast, sfx });
   };
 }
 
@@ -424,16 +599,23 @@ function renderJourney() {
   const main = MAIN_DISTRICTS.filter((d) => s.chapters.includes(d.id)).length;
   const totalMem = (state.content.memories || []).length;
   $('#journey-count').textContent = `${main}/${MAIN_DISTRICTS.length}`;
-  $('#mem-count').textContent = `${s.memories.length}/${totalMem}`;
+  const memCount = $('#mem-count');
+  if (memCount) memCount.textContent = `${s.memories.length}/${totalMem}`;
 }
 
 // ---------------- Interactions ----------------
 function interact(it) {
   if (state.mount) return dismount();
+  if (state.passengerOf === 'guru') return guruRoutine.dismountNathanPassenger();
   if (state.seated) return standUp();
   if (it.kind === 'group') return runGroupScene(it);
   if (it.kind === 'activity') { tahiti.leaveJoin(); return void tahiti.interact(it); }
-  if (it.kind === 'vehicle') return mount(it);
+  if (it.kind === 'vehicle') {
+    if (it.vtype === 'scooty' && state.level === 'island1' && guruRoutine.isGuruMounted()) {
+      return guruRoutine.boardNathanAsPassenger();
+    }
+    return mount(it);
+  }
   if (it.kind === 'seat') return sitDown(it);
   if (it.kind === 'npc') return talkTo(it);
   if (it.kind === 'minigame') return startMinigame(it);
@@ -555,7 +737,10 @@ function closePanel() {
   state.nearby = null; // re-evaluate prompt next frame
 }
 
-function talkTo(it) {
+async function talkTo(it) {
+  if (it.npcId === 'guru' && state.level === 'island1') {
+    guruRoutine.pauseForDialogue();
+  }
   const base = (state.content.npcs || []).find((n) => n.id === it.npcId);
   const over = state.level === 'tahiti' && state.tahiti?.overrides?.[it.npcId];
   const def = base && over ? { ...base, ...over } : base;
@@ -568,9 +753,29 @@ function talkTo(it) {
   ch.heading = Math.atan2(p.x - it.x, p.z - it.z);
   ch.play('wave');
   ch.talking = true;
-  dialogue.start(def, { asked: it.asked || (it.asked = new Set()) });
   $('#prompt').classList.add('hidden');
   if (addUnique(state.save.talked, it.npcId)) { markVisited(it); persist(); }
+
+  dialogue.setConversationSystem(conversationSystem, state.save);
+
+  const ctx = {
+    npcId: it.npcId,
+    level: state.level,
+    district: it.district,
+    it,
+    timeOfDay: state.timeOfDay || 'day',
+    weather: state.weather,
+    mount: state.mount ? state.mount.cfg.label : null,
+    activity: state.level === 'tahiti' ? tahiti.getNpcActivity?.(it.npcId) : (it.npcId === 'guru' ? guruRoutine.getRoutinePhase() : null),
+    routinePhase: it.npcId === 'guru' && state.level === 'island1' ? guruRoutine.getRoutinePhase() : null,
+    save: state.save,
+  };
+
+  const conversation = await conversationSystem.buildConversation(def, ctx);
+  dialogue.start(def, {
+    conversation,
+    asked: it.asked || (it.asked = new Set()),
+  });
 }
 
 function startMinigame(it) {
@@ -1149,19 +1354,23 @@ const VEHICLES = {
   scooty: { speed: 5.6, boost: 7.6, accel: 4.2, brake: 9, turn: 3.6, seatY: 0.15, pose: 'scooty', r: 0.45, yaw: 0, avoid: ['water'], label: 'scooty' },
   horse: { speed: 4.0, boost: 6.6, accel: 3.5, brake: 7, turn: 3.0, seatY: 0.7, pose: 'ride', r: 0.6, yaw: -Math.PI / 2, avoid: ['water'], label: 'horse' },
 };
+const _qBuf = [];
 let railPts = null;
 function vehicleFree(x, z, cfg) {
   const r = cfg.r;
-  for (const c of world.colliders) {
+  const near = world.queryColliders(x, z, r + 0.5, _qBuf);
+  for (let i = 0; i < near.length; i++) {
+    const c = near[i];
     if (c.r !== undefined) { if (Math.hypot(x - c.cx, z - c.cz) < c.r + r) return false; }
     else if (x > c.minX - r && x < c.maxX + r && z > c.minZ - r && z < c.maxZ + r) return false;
   }
-  for (const f of world.floors) if (x >= f.minX && x <= f.maxX && z >= f.minZ && z <= f.maxZ) return false;   // no riding indoors or onto platforms
+  if (world.floorAt(x, z) !== null) return false;   // no riding indoors or onto platforms
   const tile = tileAt(map, x, z);
   if (!tile || !tile.walkable || cfg.avoid.includes(tile.type)) return false;
   if (Math.hypot(x, z) > (map.props.navRadius || (map.props.islandRadius || 44) - 2.5) - 0.5) return false;
-  for (const n of world.npcs) { if (n.passenger) continue; const p = n.character.group.position; if (Math.hypot(p.x - x, p.z - z) < r + 0.45) return false; }
-  for (const it of world.interactables) if (it.kind === 'vehicle' && it !== state.mount?.it && Math.hypot(it.x - x, it.z - z) < r + 0.6) return false;
+  for (let i = 0; i < world.npcs.length; i++) { const n = world.npcs[i]; if (n.passenger) continue; const p = n.character.group.position; if (Math.hypot(p.x - x, p.z - z) < r + 0.45) return false; }
+  const vehicles = world.vehicles || [];
+  for (let i = 0; i < vehicles.length; i++) { const it = vehicles[i]; if (it !== state.mount?.it && Math.hypot(it.x - x, it.z - z) < r + 0.6) return false; }
   // the railway is just ground to roll over, but never through a train
   if (world.railway) {
     if (!railPts) railPts = world.railway.curve.getSpacedPoints(500);
@@ -1276,9 +1485,10 @@ function rideUpdate(dt, t, kx, kz, running) {
 const zeroV = new THREE.Vector3();
 // little sand puffs behind the motorcycle
 const dustPool = [];
+let dustGeo = null;
 function dust(x, z) {
   let d = dustPool.find((q) => !q.m.visible);
-  if (!d) { if (dustPool.length > 40) return; const m = new THREE.Mesh(new THREE.IcosahedronGeometry(0.14, 0), new THREE.MeshBasicMaterial({ color: 0xe9d6a8, transparent: true, depthWrite: false })); scene.add(m); d = { m }; dustPool.push(d); }
+  if (!d) { if (dustPool.length > 40) return; if (!dustGeo) dustGeo = new THREE.IcosahedronGeometry(0.14, 0); const m = new THREE.Mesh(dustGeo, new THREE.MeshBasicMaterial({ color: 0xe9d6a8, transparent: true, depthWrite: false })); scene.add(m); d = { m }; dustPool.push(d); }
   d.t = 0; d.m.visible = true; d.m.position.set(x + (Math.random() - 0.5) * 0.3, heightAt(x, z) + 0.12, z + (Math.random() - 0.5) * 0.3);
 }
 function dustTick(dt) { for (const d of dustPool) if (d.m.visible) { d.t += dt; d.m.position.y += dt * 0.5; d.m.scale.setScalar(1 + d.t * 2.5); d.m.material.opacity = 0.55 * (1 - d.t / 0.8); if (d.t > 0.8) d.m.visible = false; } }
@@ -1291,9 +1501,11 @@ const mapCache = {};
 let kitOverrides = null;
 function makeNav() {
   return new NavGrid({
-    size: map.width, cell: 0.5, islandRadius: map.props.navRadius || (map.props.islandRadius || 44) - 2.5, colliders: world.colliders,
+    size: map.width, cell: 0.5, islandRadius: map.props.navRadius || (map.props.islandRadius || 44) - 2.5,
+    colliders: world.colliders,
+    queryColliders: (x, z, r, out) => world.queryColliders(x, z, r, out),
     blocked: (x, z) => {
-      for (const f of world.floors) if (x >= f.minX && x <= f.maxX && z >= f.minZ && z <= f.maxZ) return false;
+      if (world.floorAt(x, z) !== null) return false;
       const t = tileAt(map, x, z); return !t || !t.walkable;
     },
   });
@@ -1322,7 +1534,9 @@ async function loadTahitiData() {
     // same person as on Island 01: same model (appearance), Tahiti name and lines
     const src = n.sameAs && state.content.npcs.find((x) => x.id === n.sameAs);
     const look = src ? Object.fromEntries(Object.entries(src).filter(([k]) => !SKIP.has(k))) : {};
-    state.content.npcs.push({ ...look, ...n });
+    const merged = { ...look, ...n };
+    if (n.id === 'tahiti_cf2' && !n.extras && look.extras) merged.extras = look.extras;
+    state.content.npcs.push(merged);
   }
   state.tahiti = data;
   return data;
@@ -1332,9 +1546,13 @@ async function switchLevel(name) {
   const m = mapCache[name] || (mapCache[name] = await loadTiledMap(`${BASE}${LEVELS[name]}`));
   leaveGym();
   if (state.level === 'tahiti') { tahiti.exit(); $('#tahiti-hints')?.classList.add('hidden'); hintKey = ''; }
+  if (state.level === 'island1') { guruRoutine.exit(); }
   if (state.mount) dismount(true);
   setEngine(null);
   scene.remove(world.root);
+  world.dispose?.();
+  for (const d of dustPool) d.m.visible = false;
+  _nightDirty = true;
   map = m; state.level = name;
   world = buildWorld(scene, state.content, map, kitOverrides);
   nav = makeNav();
@@ -1345,6 +1563,7 @@ async function switchLevel(name) {
   setupLabels(); setupMinimap();
   state.nearby = null; state.talkingTo = null; state.path = [];
   if (name === 'tahiti') tahiti.enter();
+  if (name === 'island1') guruRoutine.enter();
 }
 
 // ---------------- Flight cinematic ----------------
@@ -1427,7 +1646,7 @@ async function startFlight(to) {
 }
 function cineCamera(x, z, zoom) {
   state.camOverride = { x, z };
-  if (Math.abs(state.zoom - zoom) > 0.002) { state.zoom = zoom; resize(); }
+  if (Math.abs(state.zoom - zoom) > 0.002) { state.zoom = zoom; updateCameraFrustum(); }
 }
 async function cineSwap(c) {
   c.swapping = true;
@@ -1546,7 +1765,7 @@ function endCine() {
   player.group.visible = true;
   const p = player.group.position; p.y = heightAt(p.x, p.z);
   state.cine = null; state.minigame = null; state.camOverride = null;
-  state.zoom = 1; resize();
+  state.zoom = 1; updateCameraFrustum();
   camTarget.copy(p);
   cineClouds(0); cineCaption(''); cineUI(false);
   toast(state.level === 'tahiti' ? 'Welcome to Tahiti' : 'Back on Island 01 · Origin Isle');
@@ -1567,7 +1786,7 @@ function runGroupScene(it) {
   for (const n of members) n.focus = new THREE.Vector3(cx, 0, cz);
   state.groupScene = { g, members, i: -1, prevClose: dialogue.onClose, centre: { x: cx, z: cz } };
   $('#prompt').classList.add('hidden');
-  state.camOverride = { x: cx, z: cz }; state.zoom = g.zoom || 1.35; resize();
+  state.camOverride = { x: cx, z: cz }; state.zoom = g.zoom || 1.35; updateCameraFrustum();
   cineUI(true, { bars: false }); cineCaption('');
   dialogue.onClose = () => nextGroupLine();
   nextGroupLine();
@@ -1593,7 +1812,7 @@ function endGroupScene() {
   if (dialogue.open) dialogue.close();
   for (const n of s.members) { n.focus = null; n.character.talking = false; }
   player.talking = false;
-  state.camOverride = null; state.zoom = 1; resize();
+  state.camOverride = null; state.zoom = 1; updateCameraFrustum();
   cineUI(false);
 }
 
@@ -1617,7 +1836,7 @@ function runFinale(it) {
       const k = Math.min(1, (performance.now() - t0) / dur), e = easeOutCubic(k);
       state.zoom = from.zoom + (to.zoom - from.zoom) * e;
       state.camOverride = { x: from.x + (to.x - from.x) * e, z: from.z + (to.z - from.z) * e };
-      resize();
+      updateCameraFrustum();
       if (k < 1) requestAnimationFrame(tick); else showCredits();
     };
     requestAnimationFrame(tick);
@@ -1653,7 +1872,7 @@ function runFinale(it) {
   function endFinale() {
     $('#finale').classList.add('hidden');
     state.camOverride = null;
-    state.zoom = 1; resize();
+    state.zoom = 1; updateCameraFrustum();
     state.minigame = null;
   }
 }
@@ -1860,18 +2079,22 @@ function setupLabels() {
     d.textContent = l.text;
     d.style.setProperty('--c', l.color);
     layer.append(d);
-    labelEls.push({ el: d, pos: l.pos });
+    labelEls.push({ el: d, pos: l.pos, disp: null, tf: '' });
   }
 }
 const projV = new THREE.Vector3();
 function updateLabels() {
   const w = window.innerWidth, h = window.innerHeight;
-  for (const { el, pos } of labelEls) {
-    projV.copy(pos).project(camera);
+  for (let i = 0; i < labelEls.length; i++) {
+    const lbl = labelEls[i];
+    projV.copy(lbl.pos).project(camera);
     const x = (projV.x * 0.5 + 0.5) * w, y = (-projV.y * 0.5 + 0.5) * h;
-    const off = x < -100 || x > w + 100 || y < -40 || y > h + 40;
-    el.style.display = off ? 'none' : '';
-    if (!off) el.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px) translate(-50%, -100%)`;
+    const disp = x < -100 || x > w + 100 || y < -40 || y > h + 40 ? 'none' : '';
+    if (lbl.disp !== disp) { lbl.el.style.display = disp; lbl.disp = disp; }
+    if (!disp) {
+      const tf = `translate(${Math.round(x)}px, ${Math.round(y)}px) translate(-50%, -100%)`;
+      if (lbl.tf !== tf) { lbl.el.style.transform = tf; lbl.tf = tf; }
+    }
   }
 }
 
@@ -1919,11 +2142,11 @@ canvas.addEventListener('wheel', (e) => { e.preventDefault(); setZoom(state.zoom
 
 function setZoom(z) {
   state.zoom = Math.max(0.7, Math.min(1.7, z));
-  resize();
+  updateCameraFrustum();
 }
 
 function handleTap(x, y) {
-  if (!state.started || !world || state.minigame) return;
+  if (!state.started || !world || state.minigame || state.ko) return;
   if (state.gym) return gymPush();
   if (dialogue.open) { dialogue.close(); }
   ndc.set((x / window.innerWidth) * 2 - 1, -(y / window.innerHeight) * 2 + 1);
@@ -1979,8 +2202,11 @@ function start() {
   if (state.level !== 'tahiti') setTimeout(() => toast('ISLAND 01 · ORIGIN ISLE'), 900);
 }
 
+const _camR = new THREE.Vector3(), _camU = new THREE.Vector3();
+let _lastChapLen = -1, _cachedProgress = 0;
+
 function update(dt, t) {
-  if (state.intro < 1 && state.started) { state.intro = Math.min(1, state.intro + dt / 2.2); resize(); }
+  if (state.intro < 1 && state.started) { state.intro = Math.min(1, state.intro + dt / 2.2); updateCameraFrustum(); }
   if (state.started) {
     state.save.seconds += dt;
     if (t - lastPersist > 5) { lastPersist = t; persist(); $('#play-time').textContent = formatTime(state.save.seconds); }
@@ -1991,14 +2217,27 @@ function update(dt, t) {
   const running = keys.has('shift');
   velocity.set(0, 0, 0);
   const pos = player.group.position;
+  if (state.freezeUntil && performance.now() < state.freezeUntil) {
+    if (shakeT > 0) {
+      shakeT -= dt;
+      const a = Math.max(0, shakeT) * 0.9;
+      camera.position.x += (Math.random() - 0.5) * a;
+      camera.position.z += (Math.random() - 0.5) * a;
+      camera.updateMatrixWorld();
+    }
+    return;
+  }
   const frozen = !!state.minigame || !!state.groupScene || !!state.gym;
   if (state.cine) runCine(dt);
 
   if (state.seated && (kx || kz || state.path.length)) standUp();
   if (state.joined && (kx || kz || state.path.length)) tahiti.leaveJoin();
-  const keyboardMove = !state.mount && state.started && !frozen && !state.ko && !!(kx || kz);
+  if (state.passengerOf === 'guru' && (kx || kz || state.path.length)) guruRoutine.dismountNathanPassenger();
+  const keyboardMove = !state.mount && !state.passengerOf && state.started && !frozen && !state.ko && !!(kx || kz);
   if (state.mount) {
     rideUpdate(dt, t, kx, kz, running);
+  } else if (state.passengerOf === 'guru') {
+    /* Nathan is riding as passenger on Guru's scooty */
   } else {
   if (keyboardMove) {
     state.path = []; state.pendingOpen = null; marker.visible = false;
@@ -2013,6 +2252,7 @@ function update(dt, t) {
       state.path.shift();
       if (!state.path.length) {
         marker.visible = false;
+        state.photoPath = false;
         if (state.pendingOpen) { const it = state.pendingOpen; state.pendingOpen = null; interact(it); }
       }
     } else {
@@ -2025,7 +2265,7 @@ function update(dt, t) {
   // Move with axis-separated sliding (feels better than stopping dead on walls).
   // Keyboard movement only respects solid things, so you *can* walk into the
   // lake or off the island (and pay for it); click-to-move uses the nav grid.
-  const free = keyboardMove ? solidFree : (x, z) => nav.isWalkable(x, z, 0.32) && !charBlocks(x, z);
+  const free = keyboardMove ? solidFree : (state.photoPath ? (x, z) => nav.isWalkable(x, z, 0.32) : (x, z) => nav.isWalkable(x, z, 0.32) && !charBlocks(x, z));
   if (velocity.lengthSq() > 0 && !state.ko) {
     const nx = pos.x + velocity.x * dt, nz = pos.z + velocity.z * dt;
     if (free(nx, pos.z)) pos.x = nx; else velocity.x = 0;
@@ -2051,11 +2291,16 @@ function update(dt, t) {
     if (d < it.radius && score < bestD) { best = it; bestD = score; }
   }
   if (state.mount) best = state.mount.it;
+  if (state.passengerOf === 'guru') {
+    best = { kind: 'passenger', id: 'passenger:guru', x: pos.x, z: pos.z, radius: 2.0 };
+  }
   if (state.gym) best = null;
   burstTick(dt);
   if (state.seated) { best = state.seated; player.group.position.set(state.seated.seat.x, heightAt(state.seated.seat.x, state.seated.seat.z), state.seated.seat.z); player.heading = state.seated.seat.heading; player.pose = 'sit'; } // while riding, the only action is getting off
-  if (best && !dialogue.open) player.lookAt(lookV.set(best.x, 0, best.z)); else if (!dialogue.open) player.lookAt(null);
-  if (dialogue.open && state.talkingTo) player.lookAt(lookV.set(state.talkingTo.x, 0, state.talkingTo.z));
+  const lockHead = player.pose === 'photo' || state.joined?.photo;
+  if (lockHead) player.lookAt(null);
+  else if (best && !dialogue.open) player.lookAt(lookV.set(best.x, 0, best.z)); else if (!dialogue.open) player.lookAt(null);
+  if (!lockHead && dialogue.open && state.talkingTo) player.lookAt(lookV.set(state.talkingTo.x, 0, state.talkingTo.z));
   if (best !== state.nearby) {
     state.nearby = best;
     updatePrompt();
@@ -2089,9 +2334,10 @@ function update(dt, t) {
   if (dialogue.open && state.talkingTo && Math.hypot(pos.x - state.talkingTo.x, pos.z - state.talkingTo.z) > 4) dialogue.close();
 
   // Named NPCs roam their district routes, stop for Nathan, then carry on
-  updateNpcs(world.npcs, dt, t, heightAt, state.ko ? null : pos, state.talkingTo);
-  updateWalkers(world.walkers, dt, t, heightAt, state.ko ? null : pos);
+  updateNpcs(world.npcs, dt, t, heightAt, state.ko ? null : pos, state.talkingTo, camera);
+  updateWalkers(world.walkers, dt, t, heightAt, state.ko ? null : pos, camera);
   if (state.level === 'tahiti') { tahiti.update(dt, t); tahitiHints(); }
+  if (state.level === 'island1') { guruRoutine.update(dt, t); }
   dustTick(dt);
 
   for (const it of world.interactables) {
@@ -2104,13 +2350,13 @@ function update(dt, t) {
   state.reduceMotion = look.motion === 'off';
   world.animated.forEach((fn) => fn(t, state));
   checkTrain();
-  marker.scale.setScalar(1 + Math.sin(t * 6) * 0.15);
+  if (marker.visible) marker.scale.setScalar(1 + Math.sin(t * 6) * 0.15);
 
-  // Camera: critically-damped follow with a little look-ahead, snapped to the
-  // retro pixel grid so edges don't shimmer while moving.
-  const goal = state.camOverride ? lookV.set(state.camOverride.x, 0, state.camOverride.z) : lookV.copy(pos).addScaledVector(velocity, 0.28);
+  // Camera: crisp follow with light look-ahead, snapped to the retro pixel grid
+  // when retro pixel mode is active so pixel edges stay steady while moving.
+  const goal = state.camOverride ? lookV.set(state.camOverride.x, 0, state.camOverride.z) : lookV.copy(pos).addScaledVector(velocity, 0.08);
   goal.y = 0;
-  const k = 1 - Math.exp(-dt * 5.5);
+  const k = 1 - Math.exp(-dt * 13);
   camVel.subVectors(goal, camTarget).multiplyScalar(k);
   camTarget.add(camVel);
   // pull the camera back when zoomed out so the near clip plane never eats the island
@@ -2120,11 +2366,14 @@ function update(dt, t) {
   camera.lookAt(camTarget);
   if (shakeT > 0) { shakeT -= dt; const a = Math.max(0, shakeT) * 0.5; camera.position.x += (Math.random() - 0.5) * a; camera.position.z += (Math.random() - 0.5) * a; }
   camera.updateMatrixWorld();
-  const wpp = (camera.top - camera.bottom) / retro.target.height;
-  const r = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 0), u = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 1);
-  const pr = camera.position.dot(r), pu = camera.position.dot(u);
-  camera.position.addScaledVector(r, Math.round(pr / wpp) * wpp - pr).addScaledVector(u, Math.round(pu / wpp) * wpp - pu);
-  camera.updateMatrixWorld();
+  if (look.pixels === 'retro') {
+    const wpp = (camera.top - camera.bottom) / retro.target.height;
+    _camR.setFromMatrixColumn(camera.matrixWorld, 0);
+    _camU.setFromMatrixColumn(camera.matrixWorld, 1);
+    const pr = camera.position.dot(_camR), pu = camera.position.dot(_camU);
+    camera.position.addScaledVector(_camR, Math.round(pr / wpp) * wpp - pr).addScaledVector(_camU, Math.round(pu / wpp) * wpp - pu);
+    camera.updateMatrixWorld();
+  }
 
   sun.position.copy(camTarget).add(SUN_OFFSET);
   sun.target.position.copy(camTarget);
@@ -2133,10 +2382,17 @@ function update(dt, t) {
   placePrompt();
   if (state.started && !hintHidden && (t > 14 || state.save.chapters.length)) { hintHidden = true; $('#hint').classList.add('faded'); }
 
-  const progress = MAIN_DISTRICTS.filter((d) => state.save.chapters.includes(d.id)).length / MAIN_DISTRICTS.length;
+  if (state.save.chapters.length !== _lastChapLen) {
+    _lastChapLen = state.save.chapters.length;
+    let cnt = 0;
+    for (let i = 0; i < MAIN_DISTRICTS.length; i++) if (state.save.chapters.includes(MAIN_DISTRICTS[i].id)) cnt++;
+    _cachedProgress = cnt / MAIN_DISTRICTS.length;
+  }
+  const progress = _cachedProgress;
   scene.background.lerpColors(SKY_START, SKY_END, progress);
   // Standing in a monsoon shower greys the sky a little
-  const rain = world.weather.find((wz) => wz.contains(pos.x, pos.z));
+  let rain = null;
+  for (let i = 0; i < world.weather.length; i++) if (world.weather[i].contains(pos.x, pos.z)) { rain = world.weather[i]; break; }
   rainMix += ((rain ? rain.intensity(t) : 0) - rainMix) * Math.min(1, dt * 2);
   if (rainMix > 0.01) scene.background.lerp(RAIN_SKY, rainMix * 0.55);
   if (state.level === 'tahiti') scene.background.lerp(TAHITI_SKY, 0.55);
@@ -2144,7 +2400,6 @@ function update(dt, t) {
   setRain(rainMix);
   sun.color.setHSL(0.11, 0.7 + progress * 0.25, 0.9 - progress * 0.08);
   applyDayNight(dt);
-  if (DEBUG) updateDebug(dt);
 }
 const ZERO = new THREE.Vector3();
 
@@ -2249,29 +2504,54 @@ const SUN_DAY = new THREE.Color(0xfff1d2);
 const HEMI_SKY_DAY = new THREE.Color(0xfff6e6);
 const HEMI_GND_DAY = new THREE.Color(0x9aa6c8);
 
+let _prevNight = -1, _heroNightOn = false;
+
 function applyDayNight(dt) {
   const target = nightTarget();
   night = night < 0 ? target : night + (target - night) * Math.min(1, dt * 1.5);
   const n = night;
 
-  // 5. Surrounding deep navy-blue nighttime atmosphere
-  scene.background.copy(SKY_START).lerp(NIGHT_SETTINGS.skyColor, n * 0.94);
-  hemi.intensity = 1.7 - n * 0.95;
-  hemi.color.copy(HEMI_SKY_DAY).lerp(NIGHT_SETTINGS.hemiSky, n);
-  hemi.groundColor.copy(HEMI_GND_DAY).lerp(NIGHT_SETTINGS.hemiGround, n);
-  sun.color.copy(SUN_DAY).lerp(NIGHT_SETTINGS.moonColor, n);
-  sun.intensity = 2.5 - n * 1.85;
-
-  // 7. Preserve existing warm streetlights, campfires, window lights and environmental glows
-  setGlowBoost(1 + n * 1.8);
-  // Orange checkpoint markers (activities, NPCs) turn gold at night
-  // Building windows glow warm at night
-  for (const w of windowMats) { w.mat.emissive.copy(w.emissive).lerp(WINDOW_WARM, n); w.mat.emissiveIntensity = w.ei + (0.95 - w.ei) * n; }
-  for (const m of markerMats) m.mat.color.copy(m.day).lerp(MARKER_GOLD, n);
-  for (const p of world.nightGlow) {
-    p.visible = n > 0.03;
-    p.material.opacity = 0.62 * n;
+  // 5. Surrounding deep navy-blue nighttime atmosphere (blend over daytime/sunset sky)
+  if (n > 0.0005) {
+    scene.background.lerp(NIGHT_SETTINGS.skyColor, n * 0.94);
+    sun.color.lerp(NIGHT_SETTINGS.moonColor, n);
   }
+
+  if (Math.abs(n - _prevNight) >= 0.0005 || _nightDirty) {
+    _prevNight = n;
+    _nightDirty = false;
+    hemi.intensity = 1.7 - n * 0.95;
+    hemi.color.copy(HEMI_SKY_DAY).lerp(NIGHT_SETTINGS.hemiSky, n);
+    hemi.groundColor.copy(HEMI_GND_DAY).lerp(NIGHT_SETTINGS.hemiGround, n);
+    sun.intensity = 2.5 - n * 1.85;
+
+    // 7. Preserve existing warm streetlights, campfires, window lights and environmental glows
+    setGlowBoost(1 + n * 1.8);
+    // Orange checkpoint markers (activities, NPCs) turn gold at night
+    // Building windows glow warm at night
+    for (let i = 0; i < windowMats.length; i++) { const w = windowMats[i]; w.mat.emissive.copy(w.emissive).lerp(WINDOW_WARM, n); w.mat.emissiveIntensity = w.ei + (0.95 - w.ei) * n; }
+    for (let i = 0; i < markerMats.length; i++) { const m = markerMats[i]; m.mat.color.copy(m.day).lerp(MARKER_GOLD, n); }
+    for (let i = 0; i < world.nightGlow.length; i++) {
+      const p = world.nightGlow[i];
+      p.visible = n > 0.03;
+      p.material.opacity = 0.62 * n;
+    }
+    document.body.classList.toggle('is-night', n > 0.5);
+  }
+
+  // Daytime early-out for player night-vision lights and ground pool
+  if (n <= 0.005) {
+    if (_heroNightOn) {
+      heroLight.intensity = 0;
+      heroFillLight.intensity = 0;
+      heroPool.visible = false;
+      heroPool.material.opacity = 0;
+      heroIndoor = 0;
+      _heroNightOn = false;
+    }
+    return;
+  }
+  _heroNightOn = true;
 
   // 1 & 6. Player vision radius dynamically adjusted from NIGHT_SETTINGS
   const r = NIGHT_SETTINGS.radius;
@@ -2308,20 +2588,22 @@ function applyDayNight(dt) {
   }
   const groundY = heightAt(heroPool.position.x, heroPool.position.z);
   heroPool.position.y = Math.max(0, groundY) + 0.07;
-
-  document.body.classList.toggle('is-night', n > 0.5);
 }
 let hintHidden = false;
 
 // The interaction prompt floats above the thing you can interact with (desktop);
 // on touch screens it stays a big tappable button at the bottom.
 const promptV = new THREE.Vector3();
+let _promptTf = '';
 function placePrompt() {
   const pr = $('#prompt');
-  if (isTouch || !state.nearby || pr.classList.contains('hidden')) return;
-  promptV.set(state.nearby.x, (state.nearby.kind === 'npc' ? 2.9 : 3.1), state.nearby.z).project(camera);
+  if (isTouch || !state.nearby || pr.classList.contains('hidden')) { _promptTf = ''; return; }
+  const nx = state.nearby.kind === 'passenger' ? player.group.position.x : state.nearby.x;
+  const nz = state.nearby.kind === 'passenger' ? player.group.position.z : state.nearby.z;
+  promptV.set(nx, (state.nearby.kind === 'npc' ? 2.9 : 3.1), nz).project(camera);
   const x = (promptV.x * 0.5 + 0.5) * innerWidth, y = (-promptV.y * 0.5 + 0.5) * innerHeight;
-  pr.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px) translate(-50%, -100%)`;
+  const tf = `translate(${Math.round(x)}px, ${Math.round(y)}px) translate(-50%, -100%)`;
+  if (tf !== _promptTf) { pr.style.transform = tf; _promptTf = tf; }
 }
 
 function toggleControls(force) {
@@ -2411,17 +2693,23 @@ function onBigMapClick(e) {
 
 // ---------------- Collisions with characters + hazards ----------------
 function charBlocks(x, z) {
-  for (const it of world.interactables) if (it.kind === 'vehicle' && it !== state.mount?.it && Math.hypot(it.x - x, it.z - z) < 0.7) return true;
+  const vehicles = world.vehicles || [];
+  for (let i = 0; i < vehicles.length; i++) {
+    const it = vehicles[i];
+    if (it !== state.mount?.it && Math.hypot(it.x - x, it.z - z) < 0.7) return true;
+  }
   // people block you, but never trap you: moving away from someone you overlap is always allowed
   const me = player.group.position;
   const blocks = (p) => { const d = Math.hypot(p.x - x, p.z - z); return d < 0.62 && d < Math.hypot(p.x - me.x, p.z - me.z) - 0.001; };
-  for (const w of world.walkers) if (blocks(w.ch.group.position)) return true;
-  for (const n of world.npcs) if (!n.passenger && blocks(n.character.group.position)) return true;
+  for (let i = 0; i < world.walkers.length; i++) if (blocks(world.walkers[i].ch.group.position)) return true;
+  for (let i = 0; i < world.npcs.length; i++) { const n = world.npcs[i]; if (!n.passenger && blocks(n.character.group.position)) return true; }
   return false;
 }
 function solidFree(x, z) {
   const r = 0.32;
-  for (const c of world.colliders) {
+  const near = world.queryColliders(x, z, r + 0.5, _qBuf);
+  for (let i = 0; i < near.length; i++) {
+    const c = near[i];
     if (c.r !== undefined) { if (Math.hypot(x - c.cx, z - c.cz) < c.r + r) return false; }
     else if (x > c.minX - r && x < c.maxX + r && z > c.minZ - r && z < c.maxZ + r) return false;
   }
@@ -2430,7 +2718,7 @@ function solidFree(x, z) {
   if (world.railway && world.railway.speed < 0.5 && trainNear(x, z, 0.3)) return false;
   return !charBlocks(x, z);
 }
-function onFloor(x, z) { return world.floors.some((f) => x >= f.minX && x <= f.maxX && z >= f.minZ && z <= f.maxZ); }
+function onFloor(x, z) { return world ? world.floorAt(x, z) !== null : false; }
 function isWet(x, z) {
   if (onFloor(x, z)) return false;
   const t = tileAt(map, x, z);
@@ -2470,38 +2758,47 @@ const trainPrev = [];
 const trainLocal2 = new THREE.Vector3();
 const prevPlayer = new THREE.Vector3();
 let prevPlayerOk = false;
-function boxHit(x, z, cx, cz, ry, pad) {
+function boxHit(x, z, cx, cz, ry, padX, padZ) {
   trainLocal2.set(x - cx, 0, z - cz).applyAxisAngle(UP, -ry);
-  return Math.abs(trainLocal2.z) < 1.45 + pad && Math.abs(trainLocal2.x) < 0.85 + pad;
+  return Math.abs(trainLocal2.z) < (1.35 + padZ) && Math.abs(trainLocal2.x) < (0.75 + padX);
 }
 function lerpAngle(a, b, k) { return a + Math.atan2(Math.sin(b - a), Math.cos(b - a)) * k; }
 function checkTrain() {
   const rw = world?.railway; if (!rw) return;
   const cars = rw.train, p = player.group.position;
   while (trainPrev.length < cars.length) trainPrev.push({ x: 0, z: 0, ry: 0, ok: false });
-  const moving = rw.speed > 0.5;
-  const pad = state.mount ? state.mount.cfg.r * (state.mount.it.vtype === 'horse' ? 1.3 : 1) : 0.3;
+  const moving = rw.speed >= 1.0;
+  const charR = state.mount ? state.mount.cfg.r * (state.mount.it.vtype === 'horse' ? 1.25 : 1) : 0.24;
+  const now = performance.now();
+  const invulnerable = state.trainGuard || (state.invulnerableUntil && now < state.invulnerableUntil);
+  if (invulnerable && !trainNear(p.x, p.z, 2.2) && (!state.invulnerableUntil || now >= state.invulnerableUntil)) {
+    state.trainGuard = false;
+  }
   const canHit = state.started && !state.ko && !state.cine && !state.seated && moving
-    && (state.mount || player.jumpY < 1.1);
-  if (state.trainGuard && !trainNear(p.x, p.z, 1.0)) state.trainGuard = false;   // RECOVERING -> NORMAL
+    && (state.mount || player.jumpY < 1.15);
   let hit = null;
-  if (canHit && !state.trainGuard) {
-    // broad phase: skip entirely when nowhere near the train
-    const head = cars[0].position;
-    if (Math.abs(p.x - head.x) < 14 && Math.abs(p.z - head.z) < 14) {
+  if (canHit && !invulnerable) {
+    let nearTrain = false;
+    for (let i = 0; i < cars.length; i++) {
+      if (Math.hypot(p.x - cars[i].position.x, p.z - cars[i].position.z) < 6.5) {
+        nearTrain = true;
+        break;
+      }
+    }
+    if (nearTrain) {
       for (let i = 0; i < cars.length && !hit; i++) {
         const c = cars[i], q = trainPrev[i];
-        if (boxHit(p.x, p.z, c.position.x, c.position.z, c.rotation.y, pad)) hit = c;
+        if (boxHit(p.x, p.z, c.position.x, c.position.z, c.rotation.y, charR, charR)) hit = c;
         else if (q.ok && prevPlayerOk) {
           const px = (p.x + prevPlayer.x) / 2, pz = (p.z + prevPlayer.z) / 2;
-          if (boxHit(px, pz, (c.position.x + q.x) / 2, (c.position.z + q.z) / 2, lerpAngle(q.ry, c.rotation.y, 0.5), pad)) hit = c;
+          if (boxHit(px, pz, (c.position.x + q.x) / 2, (c.position.z + q.z) / 2, lerpAngle(q.ry, c.rotation.y, 0.5), charR, charR)) hit = c;
         }
       }
     }
   }
   cars.forEach((c, i) => { const q = trainPrev[i]; q.x = c.position.x; q.z = c.position.z; q.ry = c.rotation.y; q.ok = true; });
   prevPlayer.copy(p); prevPlayerOk = true;
-  if (hit) trainKnock(hit);
+  if (hit) trainCollisionDeath(hit);
 }
 // nearest distance from (x, z) to the rail line
 function railDist(x, z) {
@@ -2549,75 +2846,405 @@ function impactStars(at) {
   runParticles(parts, 900);
 }
 let shakeT = 0;
-function trainKnock(car) {
-  const m = state.mount, p = player.group.position;
-  state.ko = 'train';                                                     // HIT: input disabled
-  state.path = []; state.pendingOpen = null; marker.visible = false;
-  closePanel(); dialogue.close();
-  // knocked forward along the train's travel and out to the side it hit
-  const fling = new THREE.Vector3(Math.sin(car.rotation.y), 0, Math.cos(car.rotation.y));
-  const side = new THREE.Vector3(-fling.z, 0, fling.x);
-  if (side.dot(new THREE.Vector3().subVectors(p, car.position)) < 0) side.negate();
-  fling.multiplyScalar(1.2).add(side.clone().multiplyScalar(2.2));
-  // end the mounted state cleanly: the mount gets clear of the train on its own
-  let ride = null;
-  if (m) {
-    const it = m.it;
-    state.mount = null; state.nearby = null;
-    player.pose = null; player.pedal = 0;
-    if (it.vtype === 'moto') { setEngine(null); tahiti.onMotoDismount({ x: p.x + side.x, z: p.z + side.z }); }
-    ride = { it, g: it.model.group, from: it.model.group.position.clone(), dir: side.clone().normalize() };
-    it.beacon.group.visible = false;
+let currentRagdoll = null;
+const activeDeathDecals = [];
+const activeDeathParticles = [];
+
+function createRagdollPieces(p) {
+  p.group.updateMatrixWorld(true);
+
+  // Upper section: Spine (contains torso, arms, neck, head, hair, glasses)
+  const upperGroup = new THREE.Group();
+  const upperSpine = p.spine.clone(true);
+
+  const spinePos = new THREE.Vector3();
+  const spineQuat = new THREE.Quaternion();
+  const spineScale = new THREE.Vector3();
+  p.spine.getWorldPosition(spinePos);
+  p.spine.getWorldQuaternion(spineQuat);
+  p.spine.getWorldScale(spineScale);
+
+  upperGroup.position.copy(spinePos);
+  upperGroup.quaternion.copy(spineQuat);
+  upperGroup.scale.copy(spineScale);
+
+  upperSpine.position.set(0, 0, 0);
+  upperSpine.quaternion.identity();
+  upperSpine.scale.set(1, 1, 1);
+  upperGroup.add(upperSpine);
+
+  // Lower section: Hips (contains thighs, knees, shoes), remove cloned spine
+  const lowerGroup = new THREE.Group();
+  const lowerHips = p.hips.clone(true);
+
+  const spineIdx = p.hips.children.indexOf(p.spine);
+  if (spineIdx !== -1 && lowerHips.children[spineIdx]) {
+    lowerHips.remove(lowerHips.children[spineIdx]);
+  } else {
+    const sp = lowerHips.children.find((c) => c !== lowerHips.children[0] && c !== lowerHips.children[1]);
+    if (sp) lowerHips.remove(sp);
   }
-  player.heading = Math.atan2(-fling.x, -fling.z);
-  sfx.bonk();
-  impactStars(p);
-  shakeT = reducedMotion ? 0 : 0.45;
-  const el = $('#ko');
-  el.innerHTML = '<div class="ko-card"><b>WATCH THE TRACKS!</b><span>That train isn’t stopping for you.</span></div>';
-  setTimeout(() => el.classList.remove('hidden'), reducedMotion ? 0 : 350);
-  const t0 = performance.now(), start = p.clone();
-  const DUR = 750;
-  const fall = () => {
-    const k = Math.min(1, (performance.now() - t0) / DUR), e = 1 - (1 - k) * (1 - k);
-    p.x = start.x + fling.x * e; p.z = start.z + fling.z * e;
-    p.y = heightAt(p.x, p.z) + Math.sin(k * Math.PI) * 1.1;
-    // cartoon tumble: one flip, ending flat on his back
-    player.group.rotation.x = reducedMotion ? -1.45 * k : -(Math.PI * 2 * Math.min(1, k * 1.2)) - 1.45 * k;
-    if (ride) {
-      const r = ride;
-      if (r.it.vtype === 'horse') {
-        // the horse spooks, rears a little and trots clear of the rails
-        r.g.position.set(r.from.x + r.dir.x * 3.5 * e, heightAt(r.from.x, r.from.z) + Math.abs(Math.sin(k * Math.PI * 3)) * 0.25, r.from.z + r.dir.z * 3.5 * e);
-        r.g.rotation.z = -Math.sin(Math.min(1, k * 2) * Math.PI) * 0.25;
-      } else {
-        // bikes skid sideways and tip over
-        r.g.position.set(r.from.x + r.dir.x * 2.2 * e, heightAt(r.from.x, r.from.z), r.from.z + r.dir.z * 2.2 * e);
-        r.g.rotation.z = 1.35 * e;
+
+  const hipsPos = new THREE.Vector3();
+  const hipsQuat = new THREE.Quaternion();
+  const hipsScale = new THREE.Vector3();
+  p.hips.getWorldPosition(hipsPos);
+  p.hips.getWorldQuaternion(hipsQuat);
+  p.hips.getWorldScale(hipsScale);
+
+  lowerGroup.position.copy(hipsPos);
+  lowerGroup.quaternion.copy(hipsQuat);
+  lowerGroup.scale.copy(hipsScale);
+
+  lowerHips.position.set(0, 0, 0);
+  lowerHips.quaternion.identity();
+  lowerHips.scale.set(1, 1, 1);
+  lowerGroup.add(lowerHips);
+
+  // Stylized red pixel cut caps (arcade style cross-section)
+  const cutGeo = new THREE.BoxGeometry(0.56, 0.08, 0.36);
+  const cutMat = new THREE.MeshLambertMaterial({ color: 0x8a0e20, flatShading: true });
+  const upperCap = new THREE.Mesh(cutGeo, cutMat);
+  upperCap.position.set(0, -0.02, 0);
+  upperGroup.add(upperCap);
+
+  const lowerCap = new THREE.Mesh(cutGeo, cutMat);
+  lowerCap.position.set(0, 0.02, 0);
+  lowerGroup.add(lowerCap);
+
+  scene.add(upperGroup);
+  scene.add(lowerGroup);
+
+  return { upperGroup, lowerGroup, cutGeo, cutMat };
+}
+
+function stepRagdollPiece(piece, dt) {
+  piece.vel.y -= 19 * dt;
+  piece.group.position.addScaledVector(piece.vel, dt);
+
+  const angSpeed = piece.rotVel.length();
+  if (angSpeed > 0.02) {
+    const axis = piece.rotVel.clone().normalize();
+    const q = new THREE.Quaternion().setFromAxisAngle(axis, angSpeed * dt);
+    piece.group.quaternion.premultiply(q);
+  }
+
+  const pos = piece.group.position;
+  const floor = heightAt(pos.x, pos.z) + piece.floorOffset;
+  if (pos.y <= floor) {
+    pos.y = floor;
+    if (piece.vel.y < -1.1) {
+      piece.vel.y = -piece.vel.y * 0.32;
+      piece.vel.x *= 0.62;
+      piece.vel.z *= 0.62;
+      piece.rotVel.multiplyScalar(0.55);
+      spawnGroundBloodDecal(pos.x, pos.z, 0.2 + Math.random() * 0.2);
+    } else {
+      piece.vel.set(0, 0, 0);
+      piece.rotVel.set(0, 0, 0);
+    }
+  }
+}
+
+function spawnGroundBloodDecal(x, z, r = 0.25) {
+  const d = new THREE.Mesh(new THREE.CircleGeometry(r, 6), fxMat(Math.random() < 0.5 ? 0x8a0e20 : 0xb3122a, 0.85));
+  d.rotation.x = -Math.PI / 2;
+  d.rotation.z = Math.random() * 6;
+  d.position.set(x, heightAt(x, z) + 0.035, z);
+  d.renderOrder = 2;
+  scene.add(d);
+  activeDeathDecals.push(d);
+}
+
+function spawnTrailPixel(pos) {
+  const reds = [0xb3122a, 0x8a0e20, 0xd6233a];
+  const s = 0.06 + Math.random() * 0.06;
+  const m = new THREE.Mesh(new THREE.BoxGeometry(s, s, s), fxMat(reds[Math.floor(Math.random() * reds.length)]));
+  m.position.set(pos.x + (Math.random() - 0.5) * 0.1, pos.y, pos.z + (Math.random() - 0.5) * 0.1);
+  scene.add(m);
+  activeDeathParticles.push(m);
+  const part = {
+    m,
+    v: new THREE.Vector3((Math.random() - 0.5) * 0.8, -0.5 - Math.random() * 1.5, (Math.random() - 0.5) * 0.8),
+    g: 14,
+    floor: heightAt(pos.x, pos.z) + 0.03
+  };
+  runParticles([part], 1200, (k) => {
+    if (k >= 1) {
+      m.geometry?.dispose();
+      m.material?.dispose();
+      const idx = activeDeathParticles.indexOf(m);
+      if (idx !== -1) activeDeathParticles.splice(idx, 1);
+    }
+  });
+}
+
+function spawnPixelBloodBurst(at, dir) {
+  const parts = [];
+  const reds = [0xb3122a, 0x8a0e20, 0xd6233a, 0xff2a45, 0x6e0816];
+  for (let i = 0; i < 42; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const sp = 2.0 + Math.random() * 4.0;
+    const s = 0.08 + Math.random() * 0.09;
+    const m = new THREE.Mesh(new THREE.BoxGeometry(s, s, s), fxMat(reds[i % reds.length]));
+    m.position.set(
+      at.x + (Math.random() - 0.5) * 0.25,
+      at.y + 0.85 + (Math.random() - 0.5) * 0.25,
+      at.z + (Math.random() - 0.5) * 0.25
+    );
+    scene.add(m);
+    activeDeathParticles.push(m);
+    parts.push({
+      m,
+      v: new THREE.Vector3(
+        Math.cos(a) * sp + dir.x * 3.0,
+        3.5 + Math.random() * 4.5,
+        Math.sin(a) * sp + dir.z * 3.0
+      ),
+      g: 17,
+      floor: heightAt(at.x, at.z) + 0.04
+    });
+  }
+  runParticles(parts, 1800, (k) => {
+    if (k >= 1) {
+      for (const p of parts) {
+        p.m.geometry?.dispose();
+        p.m.material?.dispose();
+        const idx = activeDeathParticles.indexOf(p.m);
+        if (idx !== -1) activeDeathParticles.splice(idx, 1);
       }
     }
-    if (k < 1) requestAnimationFrame(fall);
-  };
-  requestAnimationFrame(fall);
-  setTimeout(() => {
-    el.classList.add('dark');
-    setTimeout(() => {
-      const spawn = offTrackSpot(start, fling);
-      p.set(spawn.x, heightAt(spawn.x, spawn.z), spawn.z);
-      player.group.rotation.set(0, 0, 0);
-      player.pose = null; player.action = null; player.jumpY = 0; player.jumpV = 0;
-      player.heading = Math.atan2(fling.x, fling.z);
-      if (ride) {
-        try { parkVehicle(ride.it, ride.it.home, ride.it.home.heading, true); } catch (err) { console.warn(err); }
-        toast(`Your ${VEHICLES[ride.it.vtype].label} is back at its ${ride.it.vtype === 'horse' ? 'post' : 'rack'}.`);
+  });
+
+  // Ground splatters
+  for (let i = 0; i < 8; i++) {
+    const r = 0.22 + Math.random() * 0.45;
+    const d = new THREE.Mesh(new THREE.CircleGeometry(r, 6), fxMat(i % 2 ? 0x8a0e20 : 0xb3122a, 0.88));
+    d.rotation.x = -Math.PI / 2;
+    d.rotation.z = Math.random() * 6;
+    const sx = at.x + dir.x * (0.3 + Math.random() * 1.6) + (Math.random() - 0.5) * 1.3;
+    const sz = at.z + dir.z * (0.3 + Math.random() * 1.6) + (Math.random() - 0.5) * 1.3;
+    d.position.set(sx, heightAt(sx, sz) + 0.03 + i * 0.002, sz);
+    d.renderOrder = 2;
+    scene.add(d);
+    activeDeathDecals.push(d);
+  }
+}
+
+function respawnNathanAfterDeath(prevZoom = 1.0) {
+  // Clean up ragdoll, decals, and any leftover particles
+  if (currentRagdoll) {
+    if (currentRagdoll.upperGroup) scene.remove(currentRagdoll.upperGroup);
+    if (currentRagdoll.lowerGroup) scene.remove(currentRagdoll.lowerGroup);
+    currentRagdoll.cutGeo?.dispose();
+    currentRagdoll.cutMat?.dispose();
+    currentRagdoll = null;
+  }
+  activeDeathDecals.forEach((d) => {
+    scene.remove(d);
+    d.geometry?.dispose();
+    d.material?.dispose();
+  });
+  activeDeathDecals.length = 0;
+  activeDeathParticles.forEach((m) => {
+    scene.remove(m);
+    m.geometry?.dispose();
+    m.material?.dispose();
+  });
+  activeDeathParticles.length = 0;
+
+  // Respawn at central plaza
+  const plaza = map?.spawn ? { x: map.spawn.x, z: map.spawn.z } : { x: 0, z: 5.4 };
+  const py = heightAt(plaza.x, plaza.z);
+  player.group.position.set(plaza.x, py, plaza.z);
+  player.group.rotation.set(0, 0, 0);
+  player.heading = Math.PI; // Face the central plaza CRT
+  player.group.visible = true;
+  lastSafe.set(plaza.x, py, plaza.z);
+
+  // Reset animations and movement
+  player.pose = null;
+  player.action = null;
+  player.actionT = 0;
+  player.actionW = 0;
+  player.jumpY = 0;
+  player.jumpV = 0;
+  player.speed = 0;
+  player.talking = false;
+  player.lookAt(null);
+  velocity.set(0, 0, 0);
+  state.path = [];
+  state.pendingOpen = null;
+  state.nearby = null;
+  marker.visible = false;
+
+  // Reset camera & effects
+  shakeT = 0;
+  state.freezeUntil = 0;
+  camVel.set(0, 0, 0);
+  camTarget.set(plaza.x, 0, plaza.z);
+  state.camOverride = null;
+  setZoom(prevZoom || 1.0);
+
+  // Clear WASTED and un-fade
+  const el = $('#ko');
+  if (el) {
+    el.classList.remove('dark');
+    el.classList.add('hidden');
+    el.innerHTML = '';
+  }
+
+  // Restore state
+  state.ko = null;
+  state.trainGuard = true;
+  state.invulnerableUntil = performance.now() + 2500;
+  prevPlayerOk = false;
+  persist();
+}
+
+function trainCollisionDeath(car) {
+  if (state.ko) return;
+  const rw = world?.railway;
+  const hitPos = player.group.position.clone();
+  const m = state.mount;
+
+  state.ko = 'train';
+  state.path = [];
+  state.pendingOpen = null;
+  state.nearby = null;
+  marker.visible = false;
+  $('#prompt')?.classList.add('hidden');
+  closePanel();
+  dialogue.close();
+
+  if (state.passengerOf === 'guru') {
+    guruRoutine?.dismountNathanPassenger?.(true);
+    player.group.position.copy(hitPos);
+  }
+  const p = player.group.position;
+
+  // If riding a mount, park vehicle at home
+  if (m) {
+    const it = m.it;
+    state.mount = null;
+    state.nearby = null;
+    player.pose = null;
+    player.pedal = 0;
+    if (it.vtype === 'moto') {
+      setEngine(null);
+      if (state.level === 'tahiti') tahiti.onMotoDismount({ x: p.x, z: p.z });
+    }
+    parkVehicle(it, it.home, it.home.heading, true);
+    toast(`Your ${VEHICLES[it.vtype]?.label || 'ride'} is back at its parking spot.`);
+  }
+
+  // Calculate impact kinematics from train car
+  const carRot = car ? car.rotation.y : (rw?.train?.[0]?.rotation.y ?? 0);
+  const carPos = car ? car.position : (rw?.train?.[0]?.position ?? p);
+  const trainSpeed = Math.max(3.8, rw?.speed || 5.2);
+
+  const trainFwd = new THREE.Vector3(Math.sin(carRot), 0, Math.cos(carRot)).normalize();
+  const toPlayer = new THREE.Vector3().subVectors(p, carPos);
+  const lateral = new THREE.Vector3(-trainFwd.z, 0, trainFwd.x);
+  if (lateral.dot(toPlayer) < 0) lateral.negate();
+
+  const impactDir = trainFwd.clone().multiplyScalar(0.85).addScaledVector(lateral, 1.35).normalize();
+  player.heading = Math.atan2(-impactDir.x, -impactDir.z);
+
+  // 1. Audio impact sound
+  sfx.trainCrash();
+
+  // 2. Screen shake
+  shakeT = reducedMotion ? 0 : 0.65;
+
+  // 3. Camera zoom out
+  const prevZoom = state.zoom;
+  setZoom(Math.min(prevZoom, Math.max(0.7, prevZoom * 0.78)));
+
+  // 4. Impact freeze-frame (short pause before release)
+  const t0 = performance.now();
+  const freezeDur = reducedMotion ? 0 : 110;
+  state.freezeUntil = t0 + freezeDur;
+
+  // 5. Create ragdoll split pieces and blood burst
+  const ragdoll = createRagdollPieces(player);
+  currentRagdoll = ragdoll;
+  player.group.visible = false;
+
+  spawnPixelBloodBurst(p, impactDir);
+
+  // Ragdoll velocities
+  const upperVel = impactDir.clone().multiplyScalar(trainSpeed * 1.55);
+  upperVel.y = 7.0 + Math.random() * 1.5;
+  const upperRotVel = new THREE.Vector3((Math.random() - 0.5) * 8, 10 + Math.random() * 6, (Math.random() - 0.5) * 8);
+
+  const lowerVel = impactDir.clone().multiplyScalar(trainSpeed * 1.15).addScaledVector(lateral, -0.6);
+  lowerVel.y = 3.6 + Math.random() * 1.2;
+  const lowerRotVel = new THREE.Vector3(12 + Math.random() * 4, (Math.random() - 0.5) * 4, (Math.random() - 0.5) * 6);
+
+  const upperPiece = { group: ragdoll.upperGroup, vel: upperVel, rotVel: upperRotVel, floorOffset: 0.38 };
+  const lowerPiece = { group: ragdoll.lowerGroup, vel: lowerVel, rotVel: lowerRotVel, floorOffset: 0.28 };
+
+  const el = $('#ko');
+  let wastedShown = false;
+  let trailTimer = 0;
+  let lastTime = t0;
+
+  const stepDeath = () => {
+    if (!state.ko || state.ko !== 'train') return;
+    const now = performance.now();
+    const elapsed = now - t0;
+    const dt = Math.min(0.05, Math.max(0.001, (now - lastTime) / 1000));
+    lastTime = now;
+
+    if (now >= state.freezeUntil) {
+      stepRagdollPiece(upperPiece, dt);
+      stepRagdollPiece(lowerPiece, dt);
+
+      // Camera smoothly tracks between pieces
+      const midX = (upperPiece.group.position.x + lowerPiece.group.position.x) / 2;
+      const midZ = (upperPiece.group.position.z + lowerPiece.group.position.z) / 2;
+      state.camOverride = { x: midX, z: midZ };
+
+      // Mid-air red pixel trail
+      trailTimer += dt;
+      if (trailTimer > 0.06 && elapsed < 1300) {
+        trailTimer = 0;
+        if (upperPiece.vel.lengthSq() > 1.8) spawnTrailPixel(upperPiece.group.position);
+        if (lowerPiece.vel.lengthSq() > 1.8) spawnTrailPixel(lowerPiece.group.position);
       }
-      camTarget.set(p.x, 0, p.z);
-      el.classList.remove('dark'); el.classList.add('hidden');
-      state.ko = null; state.trainGuard = true;                         // RECOVERING
-      prevPlayerOk = false;
-      persist();
-    }, reducedMotion ? 50 : 420);
-  }, reducedMotion ? 500 : 1500);
+    }
+
+    // Display WASTED overlay (text only)
+    if (!wastedShown && elapsed >= (reducedMotion ? 100 : 380)) {
+      wastedShown = true;
+      sfx.wasted();
+      if (el) {
+        el.innerHTML = `
+          <div class="wasted-screen">
+            <div class="wasted-banner">
+              <h1 class="wasted-text">WASTED</h1>
+              <p class="wasted-sub">Hit by the Memory Line train</p>
+            </div>
+          </div>`;
+        el.classList.remove('hidden');
+      }
+    }
+
+    // Fade the scene after animation completes
+    if (elapsed >= (reducedMotion ? 400 : 2100) && el && !el.classList.contains('dark')) {
+      el.classList.add('dark');
+    }
+
+    // Respawn after ~3 seconds
+    if (elapsed < (reducedMotion ? 700 : 3000)) {
+      requestAnimationFrame(stepDeath);
+    } else {
+      respawnNathanAfterDeath(prevZoom);
+    }
+  };
+
+  requestAnimationFrame(stepDeath);
 }
 
 // ---------------- Death effects ----------------
@@ -2691,6 +3318,7 @@ function deathBlood(at, dir) {
 }
 
 function knockout(kind) {
+  if (kind === 'train') return trainCollisionDeath(world?.railway?.train?.[0]);
   state.ko = kind;
   state.path = []; state.pendingOpen = null; marker.visible = false;
   closePanel(); dialogue.close();
@@ -2754,10 +3382,18 @@ let stepT = 0;
 
 function updatePrompt() {
   const best = state.nearby, pr = $('#prompt');
-  if (!best || state.panelOpen || dialogue.open || state.minigame || state.groupScene) { pr.classList.add('hidden'); return; }
+  if (!best || state.ko || state.panelOpen || dialogue.open || state.minigame || state.groupScene) { pr.classList.add('hidden'); return; }
+  if (best.kind === 'passenger') {
+    $('#prompt-kind').textContent = "Guru's Scooty";
+    $('#prompt-title').textContent = 'Dismount';
+    pr.querySelector('kbd').textContent = isTouch ? '◆' : 'E';
+    pr.classList.remove('hidden');
+    return;
+  }
   const c = state.content;
   const npc = best.kind === 'npc' && (c.npcs || []).find((n) => n.id === best.npcId);
   const mem = best.kind === 'memory' && (c.memories || []).find((m) => m.id === best.memoryId);
+  const isGuruScootyRide = best.kind === 'vehicle' && best.vtype === 'scooty' && state.level === 'island1' && guruRoutine.isGuruMounted();
   const [kind, title] = {
     project: ['Inspect project', c.projects.find((p) => p.id === best.projectId)?.title],
     about: ['NATHAN.EXE', `About ${c.profile?.name || 'me'}`],
@@ -2769,7 +3405,7 @@ function updatePrompt() {
     group: ['Group', best.title || 'Join in'],
     activity: ['Tahiti', best.title],
     seat: ['Bench', state.seated ? 'Stand up' : 'Sit down'],
-    vehicle: [{ horse: 'Horse', moto: 'Motorcycle', scooty: best.label || "Guru's Scooty" }[best.vtype] || 'Bicycle', state.mount ? 'Dismount' : { horse: 'Ride horse', moto: 'Ride motorcycle', scooty: 'RIDE SCOOTY' }[best.vtype] || 'Ride bicycle'],
+    vehicle: [{ horse: 'Horse', moto: 'Motorcycle', scooty: best.label || "Guru's Scooty" }[best.vtype] || 'Bicycle', state.mount ? 'Dismount' : isGuruScootyRide ? 'Ride along with Guru' : { horse: 'Ride horse', moto: 'Ride motorcycle', scooty: 'RIDE SCOOTY' }[best.vtype] || 'Ride bicycle'],
     finale: ['Departures', state.save.finale ? 'See the whole island again' : 'End of Origin Isle'],
     chapter: ['Open chapter', chapterFor(c, best.district)?.title],
     gym: [best.station === 'discipline' ? 'Story' : 'Workout', (best.title || '').toUpperCase()],
@@ -2786,7 +3422,9 @@ const tahiti = createTahiti({
   state, player, camera, heightAt, toast, sfx, dialogue, solidFree,
   get world() { return world; }, get nav() { return nav; },
   isNight: () => night > 0.5,
-  setView(v) { if (v) { state.camOverride = { x: v.x, z: v.z }; state.zoom = v.zoom; } else { state.camOverride = null; state.zoom = 1; } resize(); },
+  aspect: () => renderer.domElement.width / Math.max(1, renderer.domElement.height),
+  clearMarker() { marker.visible = false; },
+  setView(v) { if (v) { state.camOverride = { x: v.x, z: v.z }; state.zoom = v.zoom; } else { state.camOverride = null; state.zoom = 1; } updateCameraFrustum(); },
   persist,
   jetPoint() { const j = world.apis.private_jet; return j ? j.doorPoint() : { x: 0, z: 0 }; },
   hasMoto() { return world.interactables.some((i) => i.kind === 'vehicle' && i.vtype === 'moto'); },
@@ -2805,18 +3443,57 @@ const tahiti = createTahiti({
     setTimeout(() => el.remove(), white ? 700 : 850);
   },
   capture(view) {
+    const hiddenMats = [];
+    const hiddenObjs = [];
+    const bubbleLayer = document.querySelector('.tahiti-bubbles');
+    const prevBubbleVis = bubbleLayer ? bubbleLayer.style.visibility : '';
     try {
+      if (bubbleLayer) bubbleLayer.style.visibility = 'hidden';
+      // Hide all orange lights, beacons, X-ray ghosts and destination markers during photo capture
+      for (const m of markerMats) {
+        if (m.mat && m.mat.visible !== false) {
+          m.mat.visible = false;
+          hiddenMats.push(m.mat);
+        }
+      }
+      scene.traverse((obj) => {
+        if (obj.visible && (obj.userData?.isBeacon || obj.userData?.xray || obj === marker)) {
+          obj.visible = false;
+          hiddenObjs.push(obj);
+        }
+      });
+      if (world?.interactables) {
+        for (const it of world.interactables) {
+          if (it.beacon?.group?.visible) {
+            it.beacon.group.visible = false;
+            hiddenObjs.push(it.beacon.group);
+          }
+          if (it.ground?.group?.visible) {
+            it.ground.group.visible = false;
+            hiddenObjs.push(it.ground.group);
+          }
+        }
+      }
       let cam = camera;
       if (view) {
-        cam = new THREE.PerspectiveCamera(view.fov || 42, renderer.domElement.width / renderer.domElement.height, 0.1, 300);
-        cam.position.set(view.from.x, view.from.y, view.from.z); cam.lookAt(view.at.x, view.at.y, view.at.z); cam.updateMatrixWorld();
+        const asp = renderer.domElement.width / Math.max(1, renderer.domElement.height);
+        cam = new THREE.PerspectiveCamera(view.fov || 64, asp, 0.1, 300);
+        cam.position.set(view.from.x, view.from.y, view.from.z);
+        cam.lookAt(view.at.x, view.at.y, view.at.z);
+        cam.updateMatrixWorld(true);
       }
       retro.render(scene, cam);
       const src = renderer.domElement, w = 480, h = Math.round((src.height / src.width) * w);
       const c = document.createElement('canvas'); c.width = w; c.height = h;
       c.getContext('2d').drawImage(src, 0, 0, w, h);
-      return c.toDataURL('image/jpeg', 0.72);
+      return c.toDataURL('image/jpeg', 0.78);
     } catch { return null; }
+    finally {
+      for (const mat of hiddenMats) mat.visible = true;
+      for (const obj of hiddenObjs) obj.visible = true;
+      if (bubbleLayer) bubbleLayer.style.visibility = prevBubbleVis;
+      retro.render(scene, camera);
+    }
   },
   openGallery() {
     let list = []; try { list = JSON.parse(localStorage.getItem('nathan-exe:tahiti-photos') || '[]'); } catch { /* ignore */ }
@@ -2839,10 +3516,10 @@ const tahiti = createTahiti({
 });
 function giveBandana(fresh) {
   if (player.bandana) return;
-  const m = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.1, 0.48), new THREE.MeshLambertMaterial({ color: 0xd83a3a }));
-  m.position.set(0, 0.5, 0); player.head.add(m);
-  const knot = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.16, 0.06), m.material); knot.position.set(0, 0.46, -0.26); player.head.add(knot);
-  player.bandana = m;
+  // Do not attach a head-box bandana mesh: the old box sat inside the skull
+  // while its knot Z-fought with the back hair plane at z = -0.29. Keep the
+  // unlock state and celebration flex without altering Nathan's black hair.
+  player.bandana = true;
   if (fresh) player.play('flex');
 }
 // context hints (R/F/G) under the prompt, plus touch buttons on phones
@@ -2859,28 +3536,83 @@ function tahitiHints() {
   el.classList.toggle('hidden', !h.length);
 }
 
-// ---------------- Debug overlay (?debug) ----------------
-let dbg, fpsAcc = 0, fpsN = 0;
+/* Guru Island 01 Activity Cycle */
+const guruRoutine = createGuruRoutine({
+  state,
+  player,
+  camera,
+  heightAt,
+  toast,
+  sfx,
+  dialogue,
+  solidFree,
+  get world() { return world; },
+  get nav() { return nav; },
+  velocity
+});
+
+// === Debug overlay (?debug or F3) ===
+let dbg = null, dbgLastMs = 0, dbgLastHud = 0;
+const dbgSamples = new Float32Array(120);
+const dbgSort = new Float32Array(120);
+let dbgHead = 0, dbgCount = 0;
 function setupDebug() {
-  dbg = document.createElement('pre');
-  dbg.className = 'debug';
-  document.body.append(dbg);
+  if (!dbg) {
+    dbg = document.createElement('pre');
+    dbg.className = 'debug hidden';
+    document.body.append(dbg);
+  }
+  dbg.classList.toggle('hidden', !debugOn);
 }
-function updateDebug(dt) {
-  fpsAcc += dt; fpsN++;
-  if (fpsAcc < 0.5) return;
+function toggleDebug() {
+  debugOn = !debugOn;
+  if (!dbg) setupDebug();
+  else dbg.classList.toggle('hidden', !debugOn);
+  dbgLastHud = 0;
+}
+function recordDebugSample(ms, now) {
+  dbgSamples[dbgHead] = ms;
+  dbgHead = (dbgHead + 1) % dbgSamples.length;
+  if (dbgCount < dbgSamples.length) dbgCount++;
+  if (!debugOn) return;
+  if (!dbg) setupDebug();
+  if (now - dbgLastHud < 400) return;
+  dbgLastHud = now;
+  let sum = 0;
+  for (let i = 0; i < dbgCount; i++) {
+    const v = dbgSamples[i];
+    sum += v;
+    dbgSort[i] = v;
+  }
+  dbgSort.subarray(0, dbgCount).sort();
+  const avgMs = sum / dbgCount;
+  const slowN = Math.max(1, Math.ceil(dbgCount * 0.01));
+  let slowSum = 0;
+  for (let i = dbgCount - slowN; i < dbgCount; i++) slowSum += dbgSort[i];
+  const fps1Low = 1000 / (slowSum / slowN);
+  const p95 = dbgSort[Math.min(dbgCount - 1, Math.floor(dbgCount * 0.95))];
   const info = renderer.info.render;
-  dbg.textContent = `fps ${(fpsN / fpsAcc).toFixed(0)}  draw ${info.calls}  tris ${(info.triangles / 1000).toFixed(1)}k\nrt ${retro.target.width}×${retro.target.height} px${retro.pixelSize}  pos ${player.group.position.x.toFixed(1)},${player.group.position.z.toFixed(1)}`;
-  fpsAcc = 0; fpsN = 0;
+  const mem = renderer.info.memory;
+  dbg.textContent =
+    `FPS ${(1000 / avgMs).toFixed(0)} (1% low ${fps1Low.toFixed(0)}) · ${avgMs.toFixed(1)}ms (p95 ${p95.toFixed(1)}ms)\n` +
+    `draw ${info.calls}  tris ${(info.triangles / 1000).toFixed(1)}k  geo ${mem.geometries}  tex ${mem.textures}\n` +
+    `rt ${retro.target.width}×${retro.target.height}  pos ${player.group.position.x.toFixed(1)},${player.group.position.z.toFixed(1)}`;
 }
 
 function loop() {
+  const now = performance.now();
+  const rawMs = dbgLastMs ? now - dbgLastMs : 16.67;
+  dbgLastMs = now;
   const dt = Math.min(0.05, clock.getDelta());
   const t = clock.elapsedTime;
+  const active = state.started || state.bootFading;
   // one bad frame (e.g. a workout edge case) must never stop the game loop
-  if (world) { try { update(dt, t); } catch (err) { console.error(err); if (state.gym) resetGym({ place: true }); } }
-  renderer.info.reset();
-  retro.render(scene, camera);
+  if (world && active) {
+    try { update(dt, t); } catch (err) { console.error(err); if (state.gym) resetGym({ place: true }); }
+    renderer.info.reset();
+    retro.render(scene, camera);
+    if (rawMs > 0 && rawMs < 500) recordDebugSample(rawMs, now);
+  }
   requestAnimationFrame(loop);
 }
 
@@ -2889,7 +3621,7 @@ if (import.meta.env.DEV) {
   window.__game = {
     state, player, camera, get world() { return world; }, renderer, dialogue, nightSettings: NIGHT_SETTINGS,
     step(frames = 60) { for (let i = 0; i < frames; i++) update(1 / 60, clock.elapsedTime + i / 60); retro.render(scene, camera); },
-    tap: handleTap, walkTo, interact, knockout, startFlight, skipCine, switchLevel, get map() { return map; }, tahiti: () => tahiti, keys,
+    tap: handleTap, walkTo, interact, knockout, trainCrash: trainCollisionDeath, respawn: respawnNathanAfterDeath, startFlight, skipCine, switchLevel, get map() { return map; }, tahiti: () => tahiti, guru: () => guruRoutine, keys,
   };
 }
 

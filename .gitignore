@@ -21,6 +21,9 @@ __pycache__/
 *.log
 npm-debug.log*
 *.tmp
+*.patch
+*.bak
+.vite/
 
 # ---- 3D source autosaves ----
 source/*.blend1

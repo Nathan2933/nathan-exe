@@ -6,14 +6,13 @@
       "name": "Guru",
       "role": "Vanderlinde Gang · The Developer",
       "district": "tahiti",
-      "scripted": true,
       "lines": [
-        "Took you long enough."
+        "Took you long enough, Nathan. Scooty is parked and ready."
       ],
       "topics": [
-        "Who are you? :: A developer who always has something to build, fix, or figure out.",
-        "What's the plan today? :: Same as always. Hang out, talk, lose track of time.",
-        "Still coding out here? :: Scooty, laptop, fresh air. Best office on the island."
+        "Let's take the scooty for a spin! :: Keys are in the ignition! Watch the tight corners. [action:scooter-ride]",
+        "Still coding out here? :: Scooty, laptop, ocean breeze. Best office on the island.",
+        "Remember our road trips? :: Endless highways and roadside chai that tasted like victory."
       ],
       "sameAs": "guru",
       "extras": ""
@@ -23,14 +22,13 @@
       "name": "Prince",
       "role": "Vanderlinde Gang · Developer & Gamer",
       "district": "tahiti",
-      "scripted": true,
       "lines": [
-        "Oh hey, you made it."
+        "Oh hey Nathan, you made it! Grab player two controller."
       ],
       "topics": [
-        "Who are you? :: One of the original crew. Code, conversations, and the usual chaos.",
-        "What's the plan today? :: Same as always. Hang out, talk, lose track of time.",
-        "What are you playing? :: Whatever Arok is losing at on stream."
+        "Pass me a controller, let's play! :: Player two is live! Let's take the high score. [action:tahiti-tvgame]",
+        "Up for beach volleyball? :: Footwork and fast reflexes! Vanderlinde squad on serve. [action:tahiti-volley-vg]",
+        "Crack any security flags lately? :: Pwned a binary exploitation box yesterday. Pure dopamine."
       ],
       "species": "human",
       "skin": "tan",
@@ -54,14 +52,13 @@
       "name": "Jeswin",
       "role": "Vanderlinde Gang · The Architect",
       "district": "tahiti",
-      "scripted": true,
       "lines": [
-        "Careful, I just worked out where everything goes."
+        "Careful, fresh ink drying on the villa schematics."
       ],
       "topics": [
-        "Who are you? :: The architect of the gang. While everyone else talks about ideas, he's thinking about how to build them.",
-        "What's the plan today? :: Same as always. Hang out, talk, lose track of time.",
-        "What are you designing? :: Something that won't collapse after one update."
+        "Want to take the motorcycle for a run? :: Helmet on, throttle open! Let's cruise the coast. [action:tahiti-moto]",
+        "What are you designing right now? :: A timber pavilion that catches the sea breeze naturally.",
+        "How's the sand holding up on the beach? :: Moist packed sand makes a solid tiered arch."
       ],
       "species": "human",
       "skin": "fair",
@@ -85,14 +82,13 @@
       "name": "Arok",
       "role": "Vanderlinde Gang · Developer & Streamer",
       "district": "tahiti",
-      "scripted": true,
       "lines": [
-        "Pull up a stool."
+        "Nathan, lean into the webcam! Chat, say hi to the protagonist!"
       ],
       "topics": [
-        "Who are you? :: Another developer in the crew. A familiar face whenever the gang gets together.",
-        "What's the plan today? :: Same as always. Hang out, talk, lose track of time.",
-        "Are you live? :: Always. Say hi to chat."
+        "Let's hop on the arcade machine together! :: Chat is going to love this co-op run! Booting it up now. [action:tahiti-tvgame]",
+        "How is the stream chat behaving? :: High energy and demanding an island tour! W's in chat.",
+        "What are you editing right now? :: A highlight reel of the gang's funniest beach clips."
       ],
       "species": "human",
       "skin": "brown",
@@ -116,13 +112,13 @@
       "name": "Anu",
       "role": "The Outlaws · The Close Companion",
       "district": "tahiti",
-      "scripted": true,
       "lines": [
-        "You found the good spot."
+        "You found the good spot! Told you the view was worth the climb."
       ],
       "topics": [
-        "Who are you? :: A familiar presence in the college chapter. Usually somewhere close to Nathan when the crew gets together.",
-        "What's the plan today? :: Same as always. Hang out, talk, lose track of time."
+        "You and me, five shots challenge on the hoop! :: Game on! Step onto the ring, release in the green! [action:tahiti-basket]",
+        "Remember that hackathon crunch night? :: Coding until sunrise, then cheering when the demo ran.",
+        "How does it feel seeing everyone here? :: It feels like all the hard work paid off. Pure joy."
       ],
       "sameAs": "anu",
       "extras": ""
@@ -132,13 +128,13 @@
       "name": "Shabesh",
       "role": "The Outlaws · The Teammate",
       "district": "tahiti",
-      "scripted": true,
       "lines": [
-        "Grab a chair."
+        "Nathan, hold that frame! The natural rim lighting is cinematic perfection."
       ],
       "topics": [
-        "Who are you? :: A familiar face from the project days. Part of the crew that made college interesting.",
-        "What's the plan today? :: Same as always. Hang out, talk, lose track of time."
+        "Take a picture of me, Shabesh! :: Step onto your mark, face the camera! Three, two, one, flash! [action:tahiti-photo]",
+        "If Nathan's journey were a film, what genre? :: A coming-of-age comeback story. Good friends and big dreams.",
+        "What lens are you shooting with? :: A 35mm prime. Natural field of view and real atmosphere."
       ],
       "sameAs": "shabesh",
       "extras": ""
@@ -148,13 +144,13 @@
       "name": "Logesh",
       "role": "The Outlaws · The Crew Member",
       "district": "tahiti",
-      "scripted": true,
       "lines": [
-        "The sunset is right on schedule."
+        "The sunset is right on schedule today."
       ],
       "topics": [
-        "Who are you? :: One of the Outlaws. Always part of the conversations that make the balcony feel alive.",
-        "What's the plan today? :: Same as always. Hang out, talk, lose track of time."
+        "Let's play beach volleyball! :: Outlaws on court! Let's get a rally going. [action:tahiti-volley-ol]",
+        "What electronics are you tinkering with? :: A low power mesh node network across the shoreline.",
+        "Hardware never lies, right? :: When code talks directly to physical pins, that is pure craft."
       ],
       "sameAs": "logeshwaran",
       "extras": ""
@@ -164,13 +160,13 @@
       "name": "Thianish",
       "role": "The Outlaws · The Gym Bro",
       "district": "tahiti",
-      "scripted": true,
       "lines": [
-        "Took the stairs? Respect."
+        "Took the villa stairs? Respect. That counts as your morning cardio."
       ],
       "topics": [
-        "Who are you? :: The gym connection of the crew. Training, college life, and plenty of conversations.",
-        "What's the plan today? :: Same as always. Hang out, talk, lose track of time."
+        "I challenge you to an eating contest! :: You asked for it! Mash the plate for ten seconds! [action:tahiti-feast]",
+        "How is vacation training going? :: Gym first, beach second, food always. No excuses.",
+        "What is the secret to recovery? :: Deep sleep, plenty of protein, and showing up every day."
       ],
       "sameAs": "thianesh",
       "extras": ""
@@ -180,13 +176,13 @@
       "name": "Akshay",
       "role": "The Outlaws · The Techie",
       "district": "tahiti",
-      "scripted": true,
       "lines": [
-        "Careful, the railing's mine."
+        "Careful, the railing's mine and the TV corner is warmed up."
       ],
       "topics": [
-        "Who are you? :: Another technical mind in the gang. From projects to random discussions, he's part of the action.",
-        "What's the plan today? :: Same as always. Hang out, talk, lose track of time."
+        "Pass player two controller, let's play! :: Player two is locked in! Protect the base ship! [action:tahiti-tvgame]",
+        "How does the Aratro build test out? :: Passed all stress tests! Hack Odyssey first place was well earned.",
+        "What hardware upgrade makes the biggest difference? :: Fast NVMe storage and dual-channel memory."
       ],
       "sameAs": "akshai",
       "extras": ""
@@ -196,13 +192,13 @@
       "name": "Pranav",
       "role": "The Outlaws · The Crew Member",
       "district": "tahiti",
-      "scripted": true,
       "lines": [
-        "One sec, replying to the group chat."
+        "One second, closing a pull request on the balcony."
       ],
       "topics": [
-        "Who are you? :: One of the familiar faces who helped turn the college years into a shared adventure.",
-        "What's the plan today? :: Same as always. Hang out, talk, lose track of time."
+        "Up for beach volleyball? :: Time to set and spike! Let's get the Outlaws on court. [action:tahiti-volley-ol]",
+        "How did the TCE Event Scheduler turn out? :: Runner-up at HackFest 2025! Handled 500 simultaneous registrations.",
+        "How do you stay on top of heavy workloads? :: Time blocking, automated tests, and clear milestones."
       ],
       "sameAs": "piranav",
       "extras": ""
@@ -212,13 +208,13 @@
       "name": "Sathesh Kumar",
       "role": "The Outlaws · The Outlaw",
       "district": "tahiti",
-      "scripted": true,
       "lines": [
-        "Hey, good timing."
+        "Hey, good timing Nathan! Golden hour is hitting the balcony."
       ],
       "topics": [
-        "Who are you? :: Brown-skinned, bearded, and usually seen in a sleeved shirt. Another member of the balcony crew.",
-        "What's the plan today? :: Same as always. Hang out, talk, lose track of time."
+        "Let's do a photoshoot on the balcony! :: Position yourself by the railing. Smile for the Outlaws archive! [action:tahiti-photo]",
+        "How do you grade the colors on your photos? :: Warm highlights, deep rich shadows, natural skin tones.",
+        "What is your favorite memory with the gang? :: Long balcony dinners where everyone laughs until midnight."
       ],
       "species": "human",
       "skin": "brown",
@@ -242,12 +238,13 @@
       "name": "Naveen",
       "role": "The Outlaws · The Crew Member",
       "district": "tahiti",
-      "scripted": true,
       "lines": [
-        "Hey, you made it."
+        "Hey, you made it! Balcony tea is steaming."
       ],
       "topics": [
-        "What's the plan today? :: Same as always. Hang out, talk, lose track of time."
+        "Up for a beach volleyball match? :: Count me in! Naveen covering the back line. [action:tahiti-volley-ol]",
+        "Who is winning on the carrom board? :: My center striker has been deadly! Loser buys snacks.",
+        "What is your favorite part of this whole crew? :: How everyone lifts each other up. Nobody walks alone."
       ],
       "sameAs": "naveen",
       "extras": ""
@@ -257,12 +254,13 @@
       "name": "Sivasuthan",
       "role": "The Outlaws · The Crew Member",
       "district": "tahiti",
-      "scripted": true,
       "lines": [
-        "Took your time, Nathan."
+        "Took your time, Nathan! Best return on investment in life is true friendship."
       ],
       "topics": [
-        "What's the plan today? :: Same as always. Hang out, talk, lose track of time."
+        "What is your best investment advice? :: Invest deeply in skills, health, and friends who build.",
+        "How is the sound system on the deck? :: Crisp highs, warm low-end. Good music sets the island mood.",
+        "What about calculated risk? :: Seek positive asymmetry: capped downside, uncapped upside."
       ],
       "species": "human",
       "skin": "fair",
@@ -286,13 +284,13 @@
       "name": "Shabeer",
       "role": "Vanderlinde Gang · The Memory Keeper",
       "district": "tahiti",
-      "scripted": true,
       "lines": [
-        "Hold still. Okay, now move."
+        "Hold still for a photo! Adding today's memories to the board."
       ],
       "topics": [
-        "Still taking photos? :: Someone has to remember what you guys did.",
-        "What's on the board? :: Every trip, every party. The gang's memory."
+        "Can we look through the memory album? :: Opening the archive now. Every chapter has a story. [action:open-album]",
+        "Still keeping memories? :: Someone has to remember all the crazy things we did together.",
+        "Remember our classroom days at Montfort? :: Trading lunch boxes and laughing until our stomachs hurt."
       ],
       "sameAs": "shabeer",
       "extras": ""

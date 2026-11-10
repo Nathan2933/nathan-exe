@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { mat, C } from './kit.js';
+import { mat, C, mergeGroupByMat } from './kit.js';
 import { tileAt } from './tiled.js';
 
 // The Memory Line: track bed, rails, sleepers and a lake bridge built along
@@ -58,6 +58,7 @@ export function buildRailway(root, map, stations, animated) {
       m(new THREE.BoxGeometry(0.9, 0.3, 0.08), mat(0xfff1c0, { emissive: 0xffd27a, emissiveIntensity: 1 }), 0, 1.15, 1.66).material = mat(0xfff1c0, { emissive: 0xffd27a, emissiveIntensity: 1 });
       m(new THREE.CylinderGeometry(0.16, 0.2, 0.5, 8), C.ink, 0.35, 2.1, 0.7);
     }
+    mergeGroupByMat(g, { trackPalette: true });
     g.userData.dynamic = true;
     root.add(g);
     return g;

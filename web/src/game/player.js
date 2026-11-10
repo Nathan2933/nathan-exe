@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { registerMaterial } from './palette.js';
+import { registerMaterial, unregisterVertexColors, isVertexColorCandidate, mergeVertexColorMeshes } from './palette.js';
 
 // Characters for NATHAN.EXE. One jointed rig (hips → thighs/shins, spine →
 // upper arms/forearms, neck → head) shared by Nathan and every NPC, with
@@ -67,18 +67,73 @@ function plaid() {
   plaidTex.wrapS = plaidTex.wrapT = THREE.RepeatWrapping;
   plaidTex.repeat.set(2, 2);
   plaidTex.colorSpace = THREE.SRGBColorSpace;
+  plaidTex.userData = { shared: true };
   return plaidTex;
 }
 const cache = new Map();
 const m = (c) => {
-  if (c === 'plaid') { if (!cache.has('plaid')) cache.set('plaid', new THREE.MeshLambertMaterial({ map: plaid(), flatShading: true })); return cache.get('plaid'); }
-  if (!cache.has(c)) cache.set(c, registerMaterial(new THREE.MeshLambertMaterial({ color: c, flatShading: true })));
+  if (c === 'plaid') {
+    if (!cache.has('plaid')) {
+      const mat = new THREE.MeshLambertMaterial({ map: plaid(), flatShading: true });
+      mat.userData.shared = true;
+      cache.set('plaid', mat);
+    }
+    return cache.get('plaid');
+  }
+  if (!cache.has(c)) {
+    const mat = registerMaterial(new THREE.MeshLambertMaterial({ color: c, flatShading: true }));
+    mat.userData.shared = true;
+    cache.set(c, mat);
+  }
   return cache.get(c);
 };
-const curlGeo = new THREE.IcosahedronGeometry(0.085, 0);
+const boxCache = new Map();
+const boxGeo = (w, h, d) => {
+  const key = `${w}|${h}|${d}`;
+  let g = boxCache.get(key);
+  if (!g) {
+    g = new THREE.BoxGeometry(w, h, d);
+    g.userData.shared = true;
+    boxCache.set(key, g);
+  }
+  return g;
+};
+const icoCache = new Map();
+const icoGeo = (r, d = 0) => {
+  const key = `${r}|${d}`;
+  let g = icoCache.get(key);
+  if (!g) {
+    g = new THREE.IcosahedronGeometry(r, d);
+    g.userData.shared = true;
+    icoCache.set(key, g);
+  }
+  return g;
+};
+const curlGeo = icoGeo(0.085, 0);
+
+let _eyesGeo = null;
+function mergedEyesGeo() {
+  if (_eyesGeo) return _eyesGeo;
+  const base = boxGeo(0.09, 0.1, 0.02);
+  const l = (base.index ? base.toNonIndexed() : base.clone()).translate(-0.13, 0, 0);
+  const r = (base.index ? base.toNonIndexed() : base.clone()).translate(0.13, 0, 0);
+  _eyesGeo = mergeGeometries([l, r], false);
+  l.dispose(); r.dispose();
+  _eyesGeo.userData.shared = true;
+  return _eyesGeo;
+}
+
+let _vcCharMat = null;
+function vcCharMat() {
+  if (!_vcCharMat) {
+    _vcCharMat = new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true, flatShading: true });
+    _vcCharMat.userData.shared = true;
+  }
+  return _vcCharMat;
+}
 
 function part(w, h, d, mat, x, y, z, parent) {
-  const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m(mat));
+  const mesh = new THREE.Mesh(boxGeo(w, h, d), m(mat));
   mesh.position.set(x, y, z);
   mesh.castShadow = true;
   parent.add(mesh);
@@ -106,7 +161,7 @@ const ACTIONS = {
 };
 
 export class Character {
-  constructor(outfit = OUTFITS.nathan) {
+  constructor(outfit = OUTFITS.nathan, { splitHeadDetails = false } = {}) {
     const o = { topColor: 0xffffff, pantsColor: 0x3d5f8f, shoes: 0xf6f3ec, build: 1, ...outfit };
     this.outfit = o;
     this.group = new THREE.Group();
@@ -182,7 +237,12 @@ export class Character {
     part(0.58, 0.54, 0.52, o.skin, 0, 0.32, 0, H);
     part(0.06, 0.12, 0.1, o.skin, -0.31, 0.3, 0, H);
     part(0.06, 0.12, 0.1, o.skin, 0.31, 0.3, 0, H);
-    this.eyes = [-0.13, 0.13].map((x) => part(0.09, 0.1, 0.02, 0x1e1b2e, x, 0.36, 0.265, H));
+    const eyeMesh = new THREE.Mesh(mergedEyesGeo(), m(0x1e1b2e));
+    eyeMesh.position.set(0, 0.36, 0.265);
+    eyeMesh.castShadow = false;
+    eyeMesh.userData.noXray = true;
+    H.add(eyeMesh);
+    this.eyes = [eyeMesh];
     part(0.06, 0.06, 0.03, 0xe2b99e, 0, 0.25, 0.27, H);
     part(0.22, 0.05, 0.02, 0x7a3b3b, 0, 0.17, 0.265, H);
     if (o.teeth) { part(0.075, 0.09, 0.035, 0xffffff, -0.042, 0.135, 0.272, H); part(0.075, 0.09, 0.035, 0xffffff, 0.042, 0.135, 0.272, H); }
@@ -218,7 +278,7 @@ export class Character {
     }
     if (!(o.extras || []).includes('mask')) this.#hair(o, H);
     (this.laterExtras || []).forEach((f) => f());
-    this.#mergeParts();
+    this.#mergeParts(splitHeadDetails);
 
     // animation state
     this.heading = 0;
@@ -273,24 +333,50 @@ export class Character {
       part(0.62, 0.22, 0.14, c, 0, 0.44, -0.22, H);
       part(0.64, 0.3, 0.58, o.hatColor, 0, 0.66, 0, H);
       part(0.66, 0.08, 0.6, 0xf7faff, 0, 0.52, 0, H);
-      const pom = new THREE.Mesh(new THREE.IcosahedronGeometry(0.1, 0), m(0xf7faff)); pom.position.set(0, 0.88, 0); H.add(pom);
+      const pom = new THREE.Mesh(icoGeo(0.1, 0), m(0xf7faff)); pom.position.set(0, 0.88, 0); H.add(pom);
     } else if (o.hair === 'bun') {
       part(0.62, 0.14, 0.56, c, 0, 0.62, -0.01, H); part(0.62, 0.26, 0.14, c, 0, 0.48, -0.22, H);
-      const bun = new THREE.Mesh(new THREE.IcosahedronGeometry(0.15, 0), m(c)); bun.position.set(0, 0.78, -0.18); H.add(bun);
+      const bun = new THREE.Mesh(icoGeo(0.15, 0), m(c)); bun.position.set(0, 0.78, -0.18); H.add(bun);
     }
   }
 
-  /** Merge the rigid meshes of each joint by material: ~100 meshes → ~25 draw calls. */
-  #mergeParts() {
+  /** Merge the rigid meshes of each joint using vertex colours: ~100 meshes -> ~11 draw calls. */
+  #mergeParts(splitHeadDetails = false) {
     const eyes = new Set(this.eyes);
+    const detailMats = splitHeadDetails ? new Set([0x1e1b2e, 0xe2b99e, 0x7a3b3b, 0xffffff].map(m)) : null;
     const pivots = [];
     this.group.traverse((o) => { if (!o.isMesh) pivots.push(o); });
     for (const p of pivots) {
+      const vcMain = [];
+      const vcDetail = [];
       const byMat = new Map();
       for (const c of [...p.children]) {
         if (!c.isMesh || eyes.has(c)) continue;
-        if (!byMat.has(c.material)) byMat.set(c.material, []);
-        byMat.get(c.material).push(c);
+        if (detailMats && p === this.head && detailMats.has(c.material) && !c.geometry.attributes.color && isVertexColorCandidate(c.material)) {
+          vcDetail.push(c);
+        } else if (!c.geometry.attributes.color && isVertexColorCandidate(c.material)) {
+          vcMain.push(c);
+        } else {
+          if (!byMat.has(c.material)) byMat.set(c.material, []);
+          byMat.get(c.material).push(c);
+        }
+      }
+      for (const [list, isDetail] of [[vcMain, false], [vcDetail, true]]) {
+        if (!list.length) continue;
+        if (list.length === 1) {
+          if (isDetail) list[0].userData.noXray = true;
+          continue;
+        }
+        const geo = mergeVertexColorMeshes(list, { worldSpace: false, trackPalette: true });
+        if (!geo) continue;
+        for (const c of list) {
+          p.remove(c);
+          if (c.geometry && !c.geometry.userData?.shared) c.geometry.dispose();
+        }
+        const merged = new THREE.Mesh(geo, vcCharMat());
+        merged.castShadow = true;
+        if (isDetail) merged.userData.noXray = true;
+        p.add(merged);
       }
       for (const [material, meshes] of byMat) {
         if (meshes.length < 2) continue;
@@ -303,10 +389,22 @@ export class Character {
           return g;
         });
         const merged = new THREE.Mesh(mergeGeometries(geos, false), material);
+        for (const g of geos) g.dispose();
         merged.castShadow = true;
         p.add(merged);
       }
     }
+  }
+
+  dispose() {
+    const geos = new Set();
+    this.group.traverse((o) => {
+      if (o.isMesh && o.geometry && !o.geometry.userData?.shared) {
+        geos.add(o.geometry);
+        o.geometry.dispose();
+      }
+    });
+    if (geos.size) unregisterVertexColors(geos);
   }
 
   /** Theme props for park characters (hats, hoods, capes, canes...). */
@@ -339,7 +437,14 @@ export class Character {
     if (ex.has('cane')) { part(0.04, 1.0, 0.04, 0xf4f4f4, 0, -0.74, 0.06, right.elbow); part(0.045, 0.12, 0.045, 0xc4402f, 0, -1.22, 0.06, right.elbow); }
     if (ex.has('wraps')) for (const a of this.arms) part(0.17, 0.12, 0.19, 0xf2efe6, 0, -0.27, 0, a.elbow);
     if (ex.has('coffee')) { part(0.09, 0.13, 0.09, 0xffffff, 0, -0.34, 0.1, right.elbow); part(0.095, 0.04, 0.095, 0x8a5a36, 0, -0.29, 0.1, right.elbow); }
-    if (ex.has('camera')) { part(0.2, 0.16, 0.26, 0x1e1b2e, 0, -0.33, 0.12, right.elbow); part(0.1, 0.1, 0.08, 0x4a5a7a, 0, -0.33, 0.28, right.elbow); part(0.05, 0.05, 0.02, 0xff3b30, 0.06, -0.24, 0.12, right.elbow); }
+    if (ex.has('camera')) {
+      const cg = new THREE.Group();
+      part(0.2, 0.16, 0.26, 0x1e1b2e, 0, -0.33, 0.12, cg);
+      part(0.1, 0.1, 0.08, 0x4a5a7a, 0, -0.33, 0.28, cg);
+      part(0.05, 0.05, 0.02, 0xff3b30, 0.06, -0.24, 0.12, cg);
+      right.elbow.add(cg);
+      this.cameraProp = cg;
+    }
     if (ex.has('tie')) { part(0.1, 0.36, 0.02, 0x2a3a6a, 0, 0.32, 0.175, S); part(0.14, 0.06, 0.03, 0x2a3a6a, 0, 0.52, 0.176, S); }
     if (ex.has('laptop')) part(0.04, 0.3, 0.4, 0x8a93a6, 0.13, -0.2, 0, left.shoulder);
     if (ex.has('cowboy')) later.push(() => { part(0.98, 0.05, 0.86, c, 0, 0.64, 0.02, H()); part(0.6, 0.24, 0.52, c, 0, 0.78, 0, H()); part(0.61, 0.06, 0.53, 0x2a1a12, 0, 0.69, 0, H()); });
@@ -369,11 +474,12 @@ export class Character {
   showBells(on) {
     if (!on && !this.bells) return;
     if (!this.bells) {
-      const hm = new THREE.MeshLambertMaterial({ color: 0x2bb3a3, flatShading: true }), bm = new THREE.MeshLambertMaterial({ color: 0xc6d2e0, flatShading: true });
+      const hm = m(0x2bb3a3), bm = m(0xc6d2e0);
+      const barGeo = boxGeo(0.24, 0.04, 0.04), headGeo = boxGeo(0.08, 0.13, 0.13);
       this.bells = this.arms.map((arm) => {
         const g = new THREE.Group(); g.position.set(0, -0.28, 0.02);
-        const bar = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.04, 0.04), bm); g.add(bar);
-        for (const s of [-1, 1]) { const h = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.13, 0.13), hm); h.position.x = s * 0.13; g.add(h); }
+        const bar = new THREE.Mesh(barGeo, bm); g.add(bar);
+        for (const s of [-1, 1]) { const h = new THREE.Mesh(headGeo, hm); h.position.x = s * 0.13; g.add(h); }
         g.traverse((o) => { if (o.isMesh) { o.renderOrder = 30; o.castShadow = true; } });
         arm.elbow.add(g); return g;
       });
@@ -395,12 +501,13 @@ export class Character {
 
     // --- heading + turn lean ---
     const v = Math.hypot(velocity.x, velocity.z);
-    this.speed = damp(this.speed, v, 10, dt);
+    this.speed = damp(this.speed, v, 20, dt);
+    if (v === 0 && this.speed < 0.04) this.speed = 0;
     let turnRate = 0;
     if (v > 0.05) {
       const target = Math.atan2(velocity.x, velocity.z);
       let d = Math.atan2(Math.sin(target - this.heading), Math.cos(target - this.heading));
-      const step = d * (1 - Math.exp(-14 * dt));
+      const step = d * (1 - Math.exp(-22 * dt));
       this.heading += step;
       turnRate = step / Math.max(dt, 1e-4);
     }
@@ -422,7 +529,8 @@ export class Character {
     this.blinkT -= dt;
     const blink = this.blinkT < 0.12;
     if (this.blinkT < 0) this.blinkT = 2.5 + Math.random() * 3.5;
-    this.eyes.forEach((e) => (e.scale.y = blink ? 0.15 : 1));
+    const sleeping = this.lastPose === 'sleep' && this.poseW > 0.55;
+    this.eyes.forEach((e) => (e.scale.y = blink || sleeping ? 0.15 : 1));
 
     // --- base pose ---
     for (const [i, leg] of this.legs.entries()) {
@@ -508,6 +616,18 @@ export class Character {
         pm('sx0', -1.0); pm('sx1', -1.0); pm('el0', -0.75 + 0.12 * Math.sin(t * 14)); pm('el1', -0.75 + 0.12 * Math.sin(t * 15 + 1));
       } else if (P === 'film') {
         pm('sx1', -1.35); pm('el1', -0.55); pm('sx0', -1.15); pm('el0', -0.9); pm('headX', 0.06); pm('spineY', Math.sin(t * 0.5) * 0.35);
+      } else if (P === 'aim') {
+        pm('hipY', 0.03); pm('hipX', 0);
+        pm('th0', 0); pm('th1', 0); pm('kn0', 0.02); pm('kn1', 0.02);
+        pm('spineX', 0); pm('spineY', 0); pm('headX', 0.04); pm('headY', 0);
+        pm('sx1', -1.42); pm('el1', -0.45); pm('sz1', -0.2); pm('ez1', 0);
+        pm('sx0', -1.15); pm('el0', -0.85); pm('sz0', 0.2); pm('ez0', 0);
+      } else if (P === 'photo') {
+        pm('hipY', 0.03); pm('hipX', 0);
+        pm('th0', 0); pm('th1', 0); pm('kn0', 0); pm('kn1', 0);
+        pm('spineX', 0); pm('spineY', 0); pm('headX', 0); pm('headY', 0);
+        pm('sx0', 0.05); pm('sz0', -0.14); pm('el0', -0.22); pm('ez0', 0);
+        pm('sx1', 0.05); pm('sz1', 0.14); pm('el1', -0.22); pm('ez1', 0);
       } else if (P === 'cycle') {
         const ph = this.pedal || 0;
         pm('hipY', -0.16); pm('spineX', 0.32); pm('headX', -0.2);
@@ -527,6 +647,13 @@ export class Character {
         pm('sx0', -0.15 - 0.25 * a); pm('el0', -0.15 - 2.0 * a); pm('sx1', -0.15 - 0.25 * b); pm('el1', -0.15 - 2.0 * b); pm('sz0', -0.12); pm('sz1', 0.12);
       } else if (P === 'gaze') {
         pm('headX', -0.38); this.arms.forEach((a, i) => { pm(`sx${i}`, 0.4); pm(`el${i}`, -0.5); pm(`sz${i}`, a.side * 0.05); });
+      } else if (P === 'sleep') {
+        pm('hipY', -0.42); pm('hipX', 0);
+        pm('spineX', -0.02); pm('spineY', 0);
+        pm('headX', 0.36); pm('headY', 0.06);
+        pm('th0', -0.18); pm('th1', -0.28); pm('kn0', 0.34); pm('kn1', 0.52);
+        pm('sx0', -0.08); pm('el0', -0.22); pm('sz0', -0.16); pm('ez0', 0);
+        pm('sx1', -0.14); pm('el1', -0.42); pm('sz1', 0.14); pm('ez1', 0);
       }
     } else if (!this.pose) this.lastPose = null;
 
@@ -549,7 +676,7 @@ export class Character {
         wm('headX', 0.1);
       }
     }
-    this.lie = WK?.type === 'bench' ? ww : 0;
+    this.lie = WK?.type === 'bench' ? ww : this.lastPose === 'sleep' ? this.poseW : 0;
     this.showBells((WK?.type === 'curl' && WK.hold && ww > 0.2) || (this.lastPose === 'curl' && this.poseW > 0.3));
 
     // --- actions (override with fade) ---
@@ -587,7 +714,7 @@ export class Character {
     } else if (this.action === 'tap') {
       mix('sx1', -1.6); mix('el1', -0.3); mix('sz1', -0.3);
     }
-    if (this.talking && !this.action) J.sx1 += Math.sin(t * 3.1) * 0.12 - 0.25, J.el1 += -0.5;
+    if (this.talking && !this.action && this.pose !== 'photo' && this.pose !== 'aim' && this.pose !== 'sleep') J.sx1 += Math.sin(t * 3.1) * 0.12 - 0.25, J.el1 += -0.5;
 
     // --- apply ---
     this.legs.forEach((leg, i) => { leg.thigh.rotation.x = J[`th${i}`]; leg.knee.rotation.x = J[`kn${i}`]; });
@@ -630,29 +757,84 @@ export class Character {
 /** Nathan himself. */
 export class Player extends Character {
   constructor() {
-    super(OUTFITS.nathan);
+    super(OUTFITS.nathan, { splitHeadDetails: true });
+    this._headChildren = this.head ? this.head.children.length : 0;
     this.#addXray();
   }
 
+  update(dt, velocity, t) {
+    super.update(dt, velocity, t);
+    if (this._xrayMinY) this._xrayMinY.value = this.group.position.y + 0.025;
+    if (this.head && this.head.children.length !== this._headChildren) {
+      this._headChildren = this.head.children.length;
+      for (const c of this.head.children) if (c.isMesh && !c.userData?.xray) c.renderOrder = 30;
+    }
+  }
+
   /**
-   * X-ray silhouette: a flat amber copy of every body part that only draws
+   * X-ray silhouette: a flat amber copy of outer body parts that only draws
    * where something (a building, tree, sign…) is in front of Nathan, so the
    * player never disappears behind scenery.
    */
   #addXray() {
+    const minY = { value: -1e6 };
+    this._xrayMinY = minY;
     // Opaque on purpose: ghosts (renderOrder 20) draw after the scenery but
     // before Nathan's own body (renderOrder 30), so his limbs never trigger
     // the x-ray on each other, only buildings and props in front of him do.
+    // Discard fragments below ground level so sneaker soles dipping into flat
+    // floor tiles never flash orange while standing or walking in the open.
     const xray = new THREE.MeshBasicMaterial({ color: 0xffb347, depthFunc: THREE.GreaterDepth, depthWrite: false });
-    const meshes = [];
-    this.group.traverse((o) => { if (o.isMesh) meshes.push(o); });
-    for (const mesh of meshes) {
-      mesh.renderOrder = 30;
-      const ghost = new THREE.Mesh(mesh.geometry, xray);
+    xray.userData.shared = true;
+    xray.customProgramCacheKey = () => 'player-xray-floor';
+    xray.onBeforeCompile = (shader) => {
+      shader.uniforms.uXrayMinY = minY;
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\nvarying float vXrayWorldY;')
+        .replace('#include <project_vertex>', '#include <project_vertex>\nvXrayWorldY = (modelMatrix * vec4(transformed, 1.0)).y;');
+      shader.fragmentShader = shader.fragmentShader
+        .replace('#include <common>', '#include <common>\nuniform float uXrayMinY;\nvarying float vXrayWorldY;')
+        .replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\nif (vXrayWorldY < uXrayMinY) discard;');
+    };
+
+    const eyes = new Set(this.eyes);
+    const detailMats = new Set([0x1e1b2e, 0xe2b99e, 0x7a3b3b, 0xffffff].map(m));
+    const byPivot = new Map();
+    this.group.traverse((o) => {
+      if (!o.isMesh || o.userData?.xray) return;
+      // Every visible mesh must render after X-ray ghosts so Nathan's own
+      // head, hair, face, and glasses are never overwritten by X-ray geometry.
+      o.renderOrder = 30;
+
+      // Skip X-ray ghosts only for small facial details (eyes, nose, mouth,
+      // teeth, glasses); outer skull, neck, ears, and hair keep full silhouettes.
+      // Match by flag or material identity so pastel palette recoloring still excludes them.
+      if (o.userData?.noXray) return;
+      if (this.head) {
+        let isHeadChild = false;
+        for (let cur = o; cur && cur !== this.group; cur = cur.parent) {
+          if (cur === this.head) { isHeadChild = true; break; }
+        }
+        if (isHeadChild && (eyes.has(o) || detailMats.has(o.material))) return;
+      }
+      if (!byPivot.has(o.parent)) byPivot.set(o.parent, []);
+      byPivot.get(o.parent).push(o);
+    });
+    for (const [parent, meshes] of byPivot) {
+      const geos = meshes.map((mesh) => {
+        mesh.updateMatrix();
+        const g = mesh.geometry.index ? mesh.geometry.toNonIndexed() : mesh.geometry.clone();
+        for (const n of Object.keys(g.attributes)) if (n !== 'position') g.deleteAttribute(n);
+        g.applyMatrix4(mesh.matrix);
+        return g;
+      });
+      const ghostGeo = geos.length === 1 ? geos[0] : mergeGeometries(geos, false);
+      if (geos.length > 1) for (const g of geos) g.dispose();
+      const ghost = new THREE.Mesh(ghostGeo, xray);
       ghost.renderOrder = 20;
       ghost.castShadow = false;
       ghost.userData.xray = true;
-      mesh.add(ghost);
+      parent.add(ghost);
     }
   }
 }

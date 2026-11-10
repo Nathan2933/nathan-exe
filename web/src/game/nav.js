@@ -1,7 +1,7 @@
 // Walkable grid + A* pathfinding on the ground plane (x/z).
 
 export class NavGrid {
-  constructor({ size = 64, cell = 0.5, islandRadius = 27, colliders = [], agentRadius = 0.45, blocked = null }) {
+  constructor({ size = 64, cell = 0.5, islandRadius = 27, colliders = [], agentRadius = 0.45, blocked = null, queryColliders = null }) {
     this.blocked = null;
     this.extraBlocked = blocked; // (x, z) => true for non-walkable ground (water…)
     this.cell = cell;
@@ -9,8 +9,14 @@ export class NavGrid {
     this.origin = -size / 2;
     this.islandRadius = islandRadius;
     this.colliders = colliders;
+    this.queryColliders = queryColliders;
+    this._qBuf = [];
     this.agentRadius = agentRadius;
-    this.blocked = new Uint8Array(this.n * this.n);
+    const total = this.n * this.n;
+    this.blocked = new Uint8Array(total);
+    this._g = new Float32Array(total);
+    this._came = new Int32Array(total);
+    this._closed = new Uint8Array(total);
     for (let j = 0; j < this.n; j++) {
       for (let i = 0; i < this.n; i++) {
         const { x, z } = this.toWorld(i, j);
@@ -22,7 +28,9 @@ export class NavGrid {
   isWalkable(x, z, r = this.agentRadius) {
     if (Math.hypot(x, z) > this.islandRadius - r) return false;
     if (this.extraBlocked && this.extraBlocked(x, z)) return false;
-    for (const c of this.colliders) {
+    const list = this.queryColliders ? this.queryColliders(x, z, r, this._qBuf) : this.colliders;
+    for (let i = 0; i < list.length; i++) {
+      const c = list[i];
       if (c.r !== undefined) {
         const dx = x - c.cx, dz = z - c.cz, rr = c.r + r;
         if (dx * dx + dz * dz < rr * rr) return false;
@@ -88,9 +96,9 @@ export class NavGrid {
     const n = this.n;
     const startK = start.j * n + start.i;
     const goalK = goal.j * n + goal.i;
-    const g = new Float32Array(n * n).fill(Infinity);
-    const came = new Int32Array(n * n).fill(-1);
-    const closed = new Uint8Array(n * n);
+    const g = this._g; g.fill(Infinity);
+    const came = this._came; came.fill(-1);
+    const closed = this._closed; closed.fill(0);
     const open = new MinHeap();
     const h = (k) => {
       const dx = Math.abs((k % n) - goal.i), dz = Math.abs(Math.floor(k / n) - goal.j);

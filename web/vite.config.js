@@ -53,6 +53,70 @@ function adminApi() {
         }
         next();
       });
+      // Secure backend AI proxy: evaluates API key strictly on server, never exposes key to client
+      server.middlewares.use('/__ai/dialogue', async (req, res) => {
+        const send = (code, body) => {
+          res.statusCode = code;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify(body));
+        };
+        if (req.method !== 'POST') return send(405, { error: 'Method not allowed' });
+        let raw = '';
+        req.on('data', (c) => { raw += c; if (raw.length > 50000) req.destroy(); });
+        req.on('end', async () => {
+          try {
+            const body = JSON.parse(raw);
+            const geminiKey = process.env.GEMINI_API_KEY;
+            const openAiKey = process.env.OPENAI_API_KEY;
+            if (!geminiKey && !openAiKey) {
+              return send(200, { available: false, reason: 'No AI key configured' });
+            }
+            if (geminiKey) {
+              const prompt = `You generate in-game dialogue for NATHAN.EXE, a retro pixel-art RPG where Nathan explores his life, memories, and friends.
+Character Name: ${body.name}
+Role: ${body.role}
+Personality: ${body.traits || ''}
+Location: ${body.location || 'Island'}
+Activity: ${body.activity || 'hanging out'}
+Visits: ${body.visitCount || 0}
+Events: ${JSON.stringify(body.events || [])}
+Input: ${body.playerChoice || 'greeting'}
+
+Respond strictly with valid JSON:
+{
+  "lines": ["Spoken line 1", "Optional line 2"],
+  "choices": [
+    {"q": "Choice 1 for Nathan", "reply": "NPC short response", "action": null},
+    {"q": "Choice 2 for Nathan", "reply": "NPC short response", "action": null}
+  ]
+}
+Rules:
+1. Natural spoken English like close friends.
+2. Short, punchy replies with humor and personality.
+3. NEVER use double hyphens anywhere.
+4. Keep lines under 120 chars each so they fit the dialogue box.`;
+
+              const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  contents: [{ parts: [{ text: prompt }] }],
+                  generationConfig: { responseMimeType: 'application/json', temperature: 0.85 }
+                })
+              });
+              const json = await resp.json();
+              const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (text) {
+                const parsed = JSON.parse(text);
+                return send(200, { available: true, ...parsed });
+              }
+            }
+            return send(200, { available: false });
+          } catch (err) {
+            return send(200, { available: false, error: err.message });
+          }
+        });
+      });
       server.middlewares.use('/__admin', (req, res) => {
         if (req.method === 'POST' && req.headers['x-admin'] !== '1') {
           res.statusCode = 403; return res.end('{"error":"Missing admin header"}');

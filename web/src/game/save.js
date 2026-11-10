@@ -3,14 +3,14 @@ const KEY = 'nathan-exe:save';
 const LEGACY_KEY = 'nathan-exe:visited';
 const VERSION = 1;
 
-const blank = () => ({ v: VERSION, chapters: [], memories: [], minigames: [], talked: [], stamps: [], gym: [], seconds: 0, pos: null, created: Date.now() });
+const blank = () => ({ v: VERSION, chapters: [], memories: [], minigames: [], talked: [], stamps: [], gym: [], seconds: 0, pos: null, created: Date.now(), npcMemory: {} });
 
 export function loadSave() {
   try {
     const raw = localStorage.getItem(KEY);
     if (raw) {
       const s = JSON.parse(raw);
-      if (s && s.v === VERSION) return { ...blank(), ...s };
+      if (s && s.v === VERSION) return { ...blank(), ...s, npcMemory: s.npcMemory || {} };
     }
     // Migrate the earlier "visited" list
     const legacy = JSON.parse(localStorage.getItem(LEGACY_KEY) || '[]');

@@ -46,6 +46,30 @@ export const sfx = {
   rep: () => tone(220, 0.12, { type: 'sawtooth', vol: 0.08, slide: 220 }),
   select: () => { tone(523, 0.07, { type: 'square', vol: 0.06 }); setTimeout(() => tone(784, 0.07, { type: 'square', vol: 0.06 }), 70); setTimeout(() => tone(1047, 0.14, { type: 'square', vol: 0.06 }), 140); },
   bonk: () => { tone(320, 0.12, { type: 'square', vol: 0.07, slide: -200 }); setTimeout(() => tone(900, 0.06, { type: 'triangle', vol: 0.05 }), 90); },
+  trainCrash: () => {
+    if (!enabled || !ensure()) return;
+    const now = ctx.currentTime;
+    kick(master, now, 0.45, 160);
+    hit(master, now, { freq: 750, q: 2, dur: 0.28, vol: 0.4 });
+    hit(master, now + 0.03, { freq: 1500, q: 3, dur: 0.22, vol: 0.3 });
+    tone(140, 0.35, { type: 'sawtooth', vol: 0.2, slide: -100 });
+    tone(70, 0.45, { type: 'square', vol: 0.25, slide: -40, delay: 0.02 });
+  },
+  wasted: () => {
+    if (!enabled || !ensure()) return;
+    const now = ctx.currentTime;
+    kick(master, now, 0.35, 80);
+    const notes = [
+      { f: 146.83, delay: 0.0, dur: 1.8, vol: 0.14 },
+      { f: 174.61, delay: 0.07, dur: 1.7, vol: 0.11 },
+      { f: 220.00, delay: 0.14, dur: 1.6, vol: 0.11 },
+      { f: 110.00, delay: 0.0, dur: 2.2, vol: 0.18 },
+      { f: 73.42, delay: 0.22, dur: 2.0, vol: 0.2 },
+    ];
+    notes.forEach((n) => {
+      tone(n.f, n.dur, { type: 'sawtooth', vol: n.vol, delay: n.delay, slide: -8 });
+    });
+  },
   miss: () => tone(180, 0.18, { type: 'sawtooth', vol: 0.06, slide: -80 }),
   whistle: () => { tone(880, 0.35, { type: 'sine', vol: 0.09 }); tone(1175, 0.35, { type: 'sine', vol: 0.06 }); },
   echo: () => [880, 660, 494, 370].forEach((f, i) => tone(f, 0.22, { type: 'sine', vol: 0.09 - i * 0.015, delay: i * 0.45 })),

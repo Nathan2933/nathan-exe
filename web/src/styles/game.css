@@ -367,11 +367,65 @@ body.look-retro #world { image-rendering: pixelated; }
 .finale-credits { font-family: var(--font-mono); font-size: 12px; color: var(--ink-3); margin: 10px 0 12px !important; }
 
 /* ---------- Knock-out / respawn ---------- */
-.ko { position: fixed; inset: 0; z-index: 6; display: grid; place-items: center; pointer-events: none; background: rgba(20, 18, 28, 0); transition: background .4s; }
-.ko.dark { background: rgba(20, 18, 28, 1); }
+.ko { position: fixed; inset: 0; z-index: 75; display: grid; place-items: center; pointer-events: none; background: rgba(20, 18, 28, 0); transition: background .45s ease-in-out; }
+.ko.dark { background: rgba(14, 10, 20, 1); }
 .ko-card { display: grid; gap: 4px; text-align: center; padding: 16px 22px; background: var(--ink); color: var(--cream); border: 2px solid var(--accent); border-radius: var(--radius); box-shadow: 4px 4px 0 var(--accent); animation: pop .2s steps(3); }
 .ko-card b { font-family: var(--font-pixel); font-weight: 400; font-size: 26px; color: #ffd257; }
 .ko-card span { font-family: var(--font-mono); font-size: 13px; }
+
+/* WASTED Retro Train Collision Overlay (Text Only) */
+.wasted-screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  overflow: hidden;
+}
+.wasted-banner {
+  position: relative;
+  width: 100%;
+  padding: 10px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  animation: wasted-slam 0.32s cubic-bezier(0.16, 0.88, 0.34, 1.25) forwards;
+}
+.wasted-text {
+  font-family: var(--font-pixel, monospace);
+  font-size: clamp(48px, 11vw, 86px);
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  color: #ff2a44;
+  margin: 0;
+  line-height: 1;
+  text-transform: uppercase;
+  text-shadow:
+    4px 4px 0 #120508,
+    -2px -2px 0 #5e0c18,
+    0 0 28px rgba(255, 42, 68, 0.75);
+}
+.wasted-sub {
+  font-family: var(--font-mono, monospace);
+  font-size: clamp(12px, 2.6vw, 15px);
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #fff1c0;
+  margin: 10px 0 0;
+  text-shadow: 2px 2px 0 #000, 0 0 8px rgba(0, 0, 0, 0.85);
+}
+@keyframes wasted-slam {
+  0% { transform: scale(1.45); opacity: 0; filter: blur(3px); }
+  100% { transform: scale(1); opacity: 1; filter: blur(0); }
+}
 
 /* ---------- Prompt (redesigned) ---------- */
 @media (pointer: fine) {
