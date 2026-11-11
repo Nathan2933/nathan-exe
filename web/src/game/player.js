@@ -759,11 +759,44 @@ export class Player extends Character {
   constructor() {
     super(OUTFITS.nathan, { splitHeadDetails: true });
     this._headChildren = this.head ? this.head.children.length : 0;
+    this._xrayGhosts = [];
     this.#addXray();
+  }
+
+  get riding() {
+    return !!(this._riding || this.pose === 'scooty' || this.pose === 'ride' || this.pose === 'cycle');
+  }
+
+  set riding(val) {
+    this._riding = !!val;
+    if (this._xrayGhosts) {
+      const showXray = !val && (this._xrayEnabled !== false);
+      for (let i = 0; i < this._xrayGhosts.length; i++) this._xrayGhosts[i].visible = showXray;
+    }
+  }
+
+  get xrayEnabled() {
+    return this._xrayEnabled !== false;
+  }
+
+  set xrayEnabled(val) {
+    this._xrayEnabled = !!val;
+    if (this._xrayGhosts) {
+      const showXray = !this.riding && this._xrayEnabled;
+      for (let i = 0; i < this._xrayGhosts.length; i++) this._xrayGhosts[i].visible = showXray;
+    }
   }
 
   update(dt, velocity, t) {
     super.update(dt, velocity, t);
+    const riding = this.riding;
+    const showXray = !riding && (this._xrayEnabled !== false);
+    if (this._xrayGhosts) {
+      for (let i = 0; i < this._xrayGhosts.length; i++) {
+        const g = this._xrayGhosts[i];
+        if (g.visible !== showXray) g.visible = showXray;
+      }
+    }
     if (this._xrayMinY) this._xrayMinY.value = this.group.position.y + 0.025;
     if (this.head && this.head.children.length !== this._headChildren) {
       this._headChildren = this.head.children.length;
@@ -835,6 +868,7 @@ export class Player extends Character {
       ghost.castShadow = false;
       ghost.userData.xray = true;
       parent.add(ghost);
+      this._xrayGhosts.push(ghost);
     }
   }
 }

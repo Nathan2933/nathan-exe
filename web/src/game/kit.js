@@ -3244,6 +3244,8 @@ export const KIT = {
     sb(W - 0.6, 0.06, 0.06, 0xffc46a, 0, B + H - 0.12, hd + 0.08, 0xffb347);
     for (const x of [-3.4, -1.7, 1.7, 3.4]) sb(0.12, 0.08, 0.12, 0xffd08a, x, B + H - 0.2, hd + 0.14, 0xffb347);
     mergeGroupByMat(shell, { fadeSet: fmats });
+    const shellShadowMeshes = [];
+    shell.traverse((o) => { if (o.isMesh && o.castShadow) shellShadowMeshes.push(o); });
     const sign = boardSign('VANDERLINDE GANG', 7.4, 1.05, { fg: '#fff1d6', bg: '#5a3a26', board: 0x5a3a26, trim: C.amber });
     sign.position.set(0, B + H + 0.65, hd + 0.4); sign.userData.dynamic = true; g.add(sign);
     // the sign is softly lit: a warm glow behind it and two little lamps above
@@ -3256,9 +3258,15 @@ export const KIT = {
     const sub = boardSign('THE HIDEOUT', 2.6, 0.42, { fg: '#2a2440', bg: '#ffd257', board: 0xffd257, trim: 0x5a3a26 });
     sub.position.set(0, B + H + 0.0, hd + 0.42); sub.userData.dynamic = true; g.add(sub);
     const entryPool = lightPool(3.2, 0xffc46a); entryPool.position.set(0, 0.1, hd + 1.4); g.add(entryPool);
-    const v = new THREE.Vector3(); let fade = 1;
+    const v = new THREE.Vector3();
+    let fade = 1, shadowsOn = true;
+    const api = {
+      obj: g,
+      isInside: () => fade < 0.6,
+    };
     return {
       obj: g,
+      api,
       colliders: [
         { x: 0, z: -hd + T / 2, w: W, d: T + 0.2 }, { x: -hw + T / 2, z: 0, w: T + 0.2, d: D }, { x: hw - T / 2, z: 0, w: T + 0.2, d: D },
         { x: -(DOOR / 2 + sideW / 2), z: hd - T / 2, w: sideW, d: T + 0.2 }, { x: DOOR / 2 + sideW / 2, z: hd - T / 2, w: sideW, d: T + 0.2 },
@@ -3268,15 +3276,18 @@ export const KIT = {
       floors: [{ x: 0, z: 0, w: W - 2 * T, d: D - 2 * T, h: B }, { x: 0, z: hd + 0.15, w: DOOR, d: 0.7, h: B }],
       nightGlow: [entryPool],
       animate: (t, state) => {
-        const p = state.playerPos; let inside = false;
-        if (p) { v.set(p.x, 0, p.z); g.worldToLocal(v); inside = Math.abs(v.x) < hw + 0.3 && v.z > -hd && v.z < hd + 1.0; }
-        const target = inside ? 0.1 : 1;
+        const p = state.playerPos;
+        let inside = false;
+        if (p) { v.set(p.x, 0, p.z); g.worldToLocal(v); inside = Math.abs(v.x) < hw + 0.2 && v.z > -hd && v.z < hd + 0.45; }
+        const target = inside ? 0 : 1;
         if (Math.abs(target - fade) < 0.001) return;
         fade += (target - fade) * 0.12;
         if (Math.abs(target - fade) < 0.002) fade = target;
         const isTrans = fade < 0.995;
-        for (const m of fmats.values()) { m.opacity = fade; m.transparent = isTrans; m.depthWrite = !isTrans; }
+        for (const m of fmats.values()) { m.opacity = fade; m.transparent = isTrans; m.depthWrite = !isTrans; m.visible = fade > 0.01; }
         sign.visible = sub.visible = signBits.visible = fade > 0.55;
+        const sh = fade > 0.5;
+        if (sh !== shadowsOn) { shadowsOn = sh; for (const o of shellShadowMeshes) o.castShadow = sh; }
       },
     };
   },
@@ -3710,7 +3721,7 @@ export const KIT = {
   },
   tv_corner() {
     // Akshay's gaming corner: rug, TV on a stand (screen animates), console,
-    // low table with two controllers, two bean bags and a shade umbrella. TV faces +z.
+    // low table with two controllers and two bean bags. TV faces +z.
     const g = new THREE.Group(), k = kit(g);
     k.box(2.6, 0.02, 2.6, 0x2f8f9a, 0, 0, 0.2, { shadow: false }); k.box(2.2, 0.025, 2.2, 0xe8d6b0, 0, 0, 0.2, { shadow: false });
     k.box(1.5, 0.5, 0.45, 0x3a2418, 0, 0, -1.1);
@@ -3721,13 +3732,11 @@ export const KIT = {
     k.box(0.9, 0.3, 0.5, 0x6f4a30, 0, 0, 0.1);
     for (const [x, c] of [[-0.18, 0x1e1b2e], [0.2, 0xc4302b]]) { k.box(0.2, 0.05, 0.12, c, x, 0.3, 0.1, { shadow: false }); }
     for (const [x, c] of [[-0.6, 0xff6a3d], [0.6, 0x2f6fc6]]) { k.cyl(0.38, 0.42, 0.34, c, x, 0, 1.15, 10); k.box(0.5, 0.32, 0.18, c, x, 0.3, 1.42); }
-    k.cyl(0.04, 0.04, 2.3, 0xc6d2e0, -1.25, 0, 0.6, 6);
-    k.cyl(0.05, 1.3, 0.35, 0xff6a3d, -1.25, 2.2, 0.6, 8, { shadow: false });
     const pal = [0x1c2246, 0xff6a3d, 0x9fe6f2, 0xffd257, 0x6fbf4a];
     let busy = 0, lastF = -1;
     return {
       obj: g, api: { setBusy(v) { busy = v ? 1 : 0; } },
-      colliders: [{ x: 0, z: -1.1, w: 1.5, d: 0.45 }, { x: 0, z: 0.1, w: 0.9, d: 0.5 }, { x: -1.25, z: 0.6, r: 0.1 }],
+      colliders: [{ x: 0, z: -1.1, w: 1.5, d: 0.45 }, { x: 0, z: 0.1, w: 0.9, d: 0.5 }],
       animate: (t) => {
         // a tiny pixel "game" on the TV: ships drift, shots pop; brighter while Nathan plays
         const f = Math.floor(t * (busy ? 8 : 4));

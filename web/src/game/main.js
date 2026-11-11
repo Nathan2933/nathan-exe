@@ -301,7 +301,7 @@ const dialogue = new Dialogue($('#dialogue'));
 async function init() {
   await document.fonts.load('32px Silkscreen').catch(() => {});
   try {
-    [state.content, map] = await Promise.all([loadContent(), loadTiledMap(`${BASE}maps/town.tmj`)]);
+    [state.content, map] = await Promise.all([loadContent(), loadTiledMap(`${BASE}maps/town.tmj?v=${Date.now()}`)]);
   } catch (err) {
     console.error(err);
     location.replace('./?error=content');
@@ -406,8 +406,20 @@ function setupUI() {
       if (!$('#controls').classList.contains('hidden')) return toggleControls(false);
       if (dialogue.open) dialogue.close(); else closePanel();
     }
-    if (e.key === ' ' && !dialogue.open && (state.volley || state.hoop)) { e.preventDefault(); tahiti.key(' '); return; }
-    if (e.key === ' ' && !dialogue.open) { e.preventDefault(); if (player.jump()) sfx.rep(); return; }
+    if (e.key === ' ' && !dialogue.open) {
+      e.preventDefault();
+      if (state.volley || state.hoop) { tahiti.key(' '); return; }
+      if (state.mount) {
+        if (mountJump()) {
+          if (state.mount.it.vtype === 'horse') sfx.whinny();
+          else sfx.rep();
+        }
+        return;
+      }
+      if (state.passengerOf === 'guru') return;
+      if (player.jump()) sfx.rep();
+      return;
+    }
     const act = e.key === 'e' || e.key === 'E' || e.key === 'Enter' || (e.key === ' ' && dialogue.open);
     const focused = document.activeElement;
     if (!act || focused?.closest?.('input, textarea, select')) return;
@@ -1349,10 +1361,10 @@ function openDiscipline(it, view = 'menu') {
 // Each vehicle type is just a config; on foot movement is untouched and comes
 // back as soon as Nathan gets off.
 const VEHICLES = {
-  bike: { speed: 5.2, boost: 7.0, accel: 5, brake: 9, turn: 4.2, seatY: 0.3, pose: 'cycle', r: 0.42, yaw: 0, avoid: ['water'], label: 'bicycle' },
-  moto: { speed: 7.0, boost: 9.5, accel: 6, brake: 10, turn: 3.6, seatY: 0.62, pose: 'ride', r: 0.5, yaw: 0, avoid: ['water'], label: 'motorcycle' },
-  scooty: { speed: 5.6, boost: 7.6, accel: 4.2, brake: 9, turn: 3.6, seatY: 0.15, pose: 'scooty', r: 0.45, yaw: 0, avoid: ['water'], label: 'scooty' },
-  horse: { speed: 4.0, boost: 6.6, accel: 3.5, brake: 7, turn: 3.0, seatY: 0.7, pose: 'ride', r: 0.6, yaw: -Math.PI / 2, avoid: ['water'], label: 'horse' },
+  bike: { speed: 5.2, boost: 7.0, accel: 5, brake: 9, turn: 4.2, seatY: 0.3, pose: 'cycle', r: 0.42, yaw: 0, jumpV: 5.4, avoid: ['water'], label: 'bicycle' },
+  moto: { speed: 7.0, boost: 9.5, accel: 6, brake: 10, turn: 3.6, seatY: 0.62, pose: 'ride', r: 0.5, yaw: 0, jumpV: 5.4, avoid: ['water'], label: 'motorcycle' },
+  scooty: { speed: 5.6, boost: 7.6, accel: 4.2, brake: 9, turn: 3.6, seatY: 0.15, pose: 'scooty', r: 0.45, yaw: 0, jumpV: 5.2, avoid: ['water'], label: 'scooty' },
+  horse: { speed: 4.0, boost: 6.6, accel: 3.5, brake: 7, turn: 3.0, seatY: 0.7, pose: 'ride', r: 0.6, yaw: -Math.PI / 2, jumpV: 6.4, avoid: ['water'], label: 'horse' },
 };
 const _qBuf = [];
 let railPts = null;
@@ -1378,18 +1390,28 @@ function vehicleFree(x, z, cfg) {
   }
   return true;
 }
+function mountJump() {
+  const m = state.mount;
+  if (!m || m.lift < 0.9) return false;
+  if ((m.jumpY || 0) > 0.001) return false;
+  m.jumpV = m.cfg.jumpV || 5.4;
+  return true;
+}
 function mount(it) {
   if (state.mount || dialogue.open || state.minigame || state.ko) return;
   const cfg = VEHICLES[it.vtype];
   closePanel(); state.path = []; marker.visible = false;
-  state.mount = { it, cfg, speed: 0, heading: it.heading, lift: 0, phase: 0, from: player.group.position.clone() };
+  state.mount = { it, cfg, speed: 0, heading: it.heading, lift: 0, phase: 0, jumpY: 0, jumpV: 0, from: player.group.position.clone() };
+  player.riding = true;
+  player.jumpY = 0; player.jumpV = 0;
   it.beacon.group.visible = false; state.nearby = null; // refresh the prompt to 'Dismount'
   player.play('interact'); sfx.open();
   if (it.vtype === 'moto') tahiti.onMotoMount(state.mount);
-  if (!state.rideHint) { state.rideHint = true; toast(`${isTouch ? 'Tap to steer' : 'WASD to steer · Shift for speed'} · E to get off${isTouch ? '' : ' · R returns it to its rack'}`); }
+  if (!state.rideHint) { state.rideHint = true; toast(`${isTouch ? 'Tap to steer' : 'WASD to steer · Shift for speed · Space to jump'} · E to get off${isTouch ? '' : ' · R returns it to its rack'}`); }
 }
 function dismount(force = false) {
   const m = state.mount; if (!m) return;
+  if (!force && (m.jumpY || 0) > 0.05) return;
   const p = player.group.position, h = m.heading;
   const cands = [[Math.cos(h), -Math.sin(h)], [-Math.cos(h), Math.sin(h)], [-Math.sin(h), -Math.cos(h)], [Math.sin(h), Math.cos(h)]];
   let spot = null;
@@ -1400,8 +1422,15 @@ function dismount(force = false) {
   it.x = p.x; it.z = p.z; it.heading = h;
   it.beacon.group.position.set(p.x, heightAt(p.x, p.z) + 0.04, p.z); it.beacon.group.visible = true;
   it.hit.position.set(p.x, 1.3, p.z);
+  if (it.model?.group) {
+    it.model.group.rotation.x = 0;
+    it.model.group.rotation.z = 0;
+    it.model.group.position.y = heightAt(p.x, p.z);
+  }
   state.mount = null; state.nearby = null;
   player.pose = null;
+  player.riding = false;
+  player.jumpY = 0; player.jumpV = 0;
   if (it.vtype === 'moto') { setEngine(null); tahiti.onMotoDismount(spot); }
   p.set(spot.x, heightAt(spot.x, spot.z), spot.z);
   player.heading = Math.atan2(it.x - spot.x, it.z - spot.z);
@@ -1409,6 +1438,11 @@ function dismount(force = false) {
 }
 function resetMount() {
   const m = state.mount; if (!m) return;
+  m.jumpY = 0; m.jumpV = 0;
+  if (m.it?.model?.group) {
+    m.it.model.group.rotation.x = 0;
+    m.it.model.group.rotation.z = 0;
+  }
   const home = m.it.home;
   player.group.position.set(home.x, heightAt(home.x, home.z), home.z);
   m.heading = home.heading; m.speed = 0;
@@ -1446,10 +1480,30 @@ function rideUpdate(dt, t, kx, kz, running) {
   const ground = heightAt(pos.x, pos.z);
   m.lift = Math.min(1, m.lift + dt / 0.35);                                      // mount: hop up into the seat
   const hop = Math.sin(m.lift * Math.PI) * 0.25;
+
+  // Jump physics integration
+  const wasAirborne = (m.jumpY || 0) > 0.001;
+  if (m.jumpV || m.jumpY) {
+    m.jumpV = (m.jumpV || 0) - 18 * dt;
+    m.jumpY = Math.max(0, (m.jumpY || 0) + m.jumpV * dt);
+    if (m.jumpY === 0) {
+      m.jumpV = 0;
+      if (wasAirborne) {
+        sfx.step();
+        if (tileAt(map, pos.x, pos.z)?.type?.match(/sand|beach|dirt|path/)) {
+          dust(pos.x, pos.z);
+        }
+      }
+    }
+  }
+  const jY = m.jumpY || 0;
+  player.jumpY = 0;
+  player.jumpV = 0;
+
   // model follows Nathan
   const g = it.model.group;
   const back = it.vtype === 'moto' ? 0.28 : it.vtype === 'scooty' ? -0.36 : 0;   // scooty: its seat sits 0.36 m behind the model centre                                  // bike sits a little behind the driver so the passenger fits
-  g.position.set(pos.x - Math.sin(m.heading) * back, ground, pos.z - Math.cos(m.heading) * back);
+  g.position.set(pos.x - Math.sin(m.heading) * back, ground + jY, pos.z - Math.cos(m.heading) * back);
   g.rotation.y = m.heading + cfg.yaw;
   it.x = pos.x; it.z = pos.z;
   const sp = Math.abs(m.speed);
@@ -1459,24 +1513,47 @@ function rideUpdate(dt, t, kx, kz, running) {
     it.model.crank.rotation.x = m.phase;
     player.pedal = m.phase;
     g.rotation.z = Math.atan2(Math.sin(rideDir.x * 0), 1) * 0;                  // keep upright
-    pos.y = ground + cfg.seatY * m.lift + hop;
+    g.rotation.x = jY > 0 ? -(m.jumpV / 5.4) * 0.16 : 0;
+    pos.y = ground + cfg.seatY * m.lift + hop + jY;
   } else if (it.vtype === 'moto' || it.vtype === 'scooty') {
     for (const w of it.model.wheels) w.rotation.x += (m.speed * dt) / (it.vtype === 'scooty' ? 0.24 : 0.36);
     if (it.model.bars) { const steer = want ? Math.atan2(Math.sin(Math.atan2(rideDir.x, rideDir.z) - m.heading), Math.cos(Math.atan2(rideDir.x, rideDir.z) - m.heading)) : 0; it.model.bars.rotation.y = Math.max(-0.5, Math.min(0.5, steer * 0.6)); player.steer = it.model.bars.rotation.y; }
-    g.rotation.z = -Math.atan2(Math.sin(Math.atan2(rideDir.x, rideDir.z) - m.heading), 1) * Math.min(1, sp / 6) * 0.25 * (want ? 1 : 0);   // lean into turns
-    pos.y = ground + cfg.seatY * m.lift + hop + (sp > 0.2 ? Math.sin(t * 40) * 0.006 : 0);
+    const lean = -Math.atan2(Math.sin(Math.atan2(rideDir.x, rideDir.z) - m.heading), 1) * Math.min(1, sp / 6) * 0.25 * (want ? 1 : 0);   // lean into turns
+    g.rotation.z = jY > 0 ? lean * Math.max(0, 1 - jY * 2) : lean;
+    g.rotation.x = jY > 0 ? -(m.jumpV / 5.4) * 0.12 : 0;
+    pos.y = ground + cfg.seatY * m.lift + hop + (sp > 0.2 ? Math.sin(t * 40) * 0.006 : 0) + jY;
     setEngine(Math.min(1, sp / cfg.boost));
     if (sp > 2 && tileAt(map, pos.x, pos.z)?.type?.match(/sand|beach|dirt|path/) && Math.random() < dt * sp * 2) dust(pos.x - Math.sin(m.heading) * 0.8, pos.z - Math.cos(m.heading) * 0.8);
   } else {
     const trot = sp > 4.6;
     m.phase += dt * sp * (trot ? 5.5 : 4.2);
     const amp = Math.min(1, sp / 2) * (trot ? 0.7 : 0.45);
-    it.model.legs.forEach((l, i) => { l.rotation.z = Math.sin(m.phase + (i % 2 ? Math.PI : 0) + (i > 1 ? (trot ? Math.PI : Math.PI / 2) : 0)) * amp; });
-    it.model.head.rotation.z = sp > 0.1 ? Math.sin(m.phase * 2) * 0.08 : Math.sin(t * 0.9) * 0.1 - 0.12;
-    it.model.tail.rotation.x = Math.sin(t * 2.2) * 0.3 + (trot ? 0.3 : 0);
+    g.rotation.order = 'ZYX';
+    g.rotation.x = 0;
+    if (jY > 0) {
+      const jumpAir = Math.min(1, jY * 2.5);
+      const jumpPitch = (m.jumpV / 6.4) * 0.22;
+      g.rotation.z = jumpPitch;
+      const frontLegs = 0.45 * jumpAir;
+      const backLegs = -0.5 * jumpAir;
+      it.model.legs.forEach((l, i) => {
+        const groundRot = Math.sin(m.phase + (i % 2 ? Math.PI : 0) + (i > 1 ? (trot ? Math.PI : Math.PI / 2) : 0)) * amp;
+        const airRot = i >= 2 ? frontLegs : backLegs;
+        l.rotation.z = groundRot * (1 - jumpAir) + airRot * jumpAir;
+      });
+      const groundHead = sp > 0.1 ? Math.sin(m.phase * 2) * 0.08 : Math.sin(t * 0.9) * 0.1 - 0.12;
+      it.model.head.rotation.z = groundHead * (1 - jumpAir) + 0.15 * jumpAir;
+      const groundTail = Math.sin(t * 2.2) * 0.3 + (trot ? 0.3 : 0);
+      it.model.tail.rotation.x = groundTail * (1 - jumpAir) + 0.45 * jumpAir;
+    } else {
+      g.rotation.z = 0;
+      it.model.legs.forEach((l, i) => { l.rotation.z = Math.sin(m.phase + (i % 2 ? Math.PI : 0) + (i > 1 ? (trot ? Math.PI : Math.PI / 2) : 0)) * amp; });
+      it.model.head.rotation.z = sp > 0.1 ? Math.sin(m.phase * 2) * 0.08 : Math.sin(t * 0.9) * 0.1 - 0.12;
+      it.model.tail.rotation.x = Math.sin(t * 2.2) * 0.3 + (trot ? 0.3 : 0);
+    }
     const bounce = trot ? Math.abs(Math.sin(m.phase)) * 0.08 : Math.abs(Math.sin(m.phase)) * 0.03 * Math.min(1, sp);
-    g.position.y = ground + bounce;
-    pos.y = ground + cfg.seatY * m.lift + hop + bounce;
+    g.position.y = ground + bounce + jY;
+    pos.y = ground + cfg.seatY * m.lift + hop + bounce + jY;
   }
   player.heading = m.heading;
   player.pose = cfg.pose;
@@ -2774,8 +2851,9 @@ function checkTrain() {
   if (invulnerable && !trainNear(p.x, p.z, 2.2) && (!state.invulnerableUntil || now >= state.invulnerableUntil)) {
     state.trainGuard = false;
   }
+  const jumpH = state.mount ? (state.mount.jumpY || 0) : player.jumpY;
   const canHit = state.started && !state.ko && !state.cine && !state.seated && moving
-    && (state.mount || player.jumpY < 1.15);
+    && (jumpH < 1.15);
   let hit = null;
   if (canHit && !invulnerable) {
     let nearTrain = false;
@@ -3129,6 +3207,7 @@ function trainCollisionDeath(car) {
     state.mount = null;
     state.nearby = null;
     player.pose = null;
+    player.riding = false;
     player.pedal = 0;
     if (it.vtype === 'moto') {
       setEngine(null);

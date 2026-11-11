@@ -263,16 +263,67 @@ async function runTests() {
     assert(routine.isPassengerActive() === true, 'Passenger active is true');
     assert(ctx.state.passengerOf === 'guru', 'state.passengerOf is set to guru');
     assert(playerChar.pose === 'ride', 'Nathan adopts ride pose');
+    assert(playerChar.riding === true, 'Nathan playerChar.riding is true when boarded');
 
     /* Ride for a few seconds */
     routine.update(0.1, 1.0);
     routine.update(0.1, 1.1);
+
+    /* Verify Nathan is seated on the passenger seat BEHIND Guru */
+    const { guruChar, scootyInteractable } = { guruChar: ctx.world.npcs[0].character, scootyInteractable: ctx.world.interactables[0] };
+    const h = scootyInteractable.heading;
+    const forwardX = Math.sin(h);
+    const forwardZ = Math.cos(h);
+    // Relative vector from Guru to Nathan
+    const relX = playerChar.group.position.x - guruChar.group.position.x;
+    const relZ = playerChar.group.position.z - guruChar.group.position.z;
+    const forwardDot = relX * forwardX + relZ * forwardZ;
+    assert(forwardDot < -0.2, `Nathan is seated behind Guru along heading (forwardDot: ${forwardDot.toFixed(3)})`);
+    assert(Math.abs(forwardDot - (-0.36)) < 0.05, `Nathan sits at exact rear passenger distance (~0.36m behind Guru)`);
 
     /* Nathan chooses to dismount early */
     routine.dismountNathanPassenger();
     assert(routine.isPassengerActive() === false, 'Passenger active is false after dismount');
     assert(ctx.state.passengerOf === null, 'state.passengerOf is cleared');
     assert(playerChar.pose === null, 'Nathan pose restored to normal standing');
+    assert(playerChar.riding === false, 'Nathan playerChar.riding is false after dismount');
+  }
+
+  /* Test 7: Player X-Ray Ghost Silhouette Disabling While Riding */
+  console.log('\n== Test 7: Player X-Ray Silhouette Toggling While Riding ==');
+  {
+    globalThis.document = {
+      createElement: () => ({
+        getContext: () => ({ fillRect(){}, createPattern(){}, fill(){}, stroke(){} })
+      })
+    };
+    const { Player } = await import('../src/game/player.js');
+    const player = new Player();
+    assert(player._xrayGhosts && player._xrayGhosts.length > 0, `Player has ${player._xrayGhosts.length} X-ray ghost meshes`);
+    assert(player.riding === false, 'Player is not riding by default');
+
+    // Walk / Idle update
+    player.update(0.1, { x: 0, y: 0, z: 0 }, 0);
+    assert(player._xrayGhosts.every((g) => g.visible === true), 'All X-ray ghosts are visible while on foot');
+
+    // Mount scooty or bike
+    player.riding = true;
+    player.update(0.1, { x: 0, y: 0, z: 0 }, 0);
+    assert(player.riding === true, 'Player reports riding === true');
+    assert(player._xrayGhosts.every((g) => g.visible === false), 'All X-ray ghosts are hidden while riding');
+
+    // Dismount
+    player.riding = false;
+    player.pose = null;
+    player.update(0.1, { x: 0, y: 0, z: 0 }, 0);
+    assert(player.riding === false, 'Player reports riding === false after dismount');
+    assert(player._xrayGhosts.every((g) => g.visible === true), 'All X-ray ghosts are restored after dismount');
+
+    // Also verify riding pose automatically hides X-ray even without explicit riding flag
+    player.pose = 'ride';
+    assert(player.riding === true, 'Pose ride automatically sets player.riding');
+    player.update(0.1, { x: 0, y: 0, z: 0 }, 0);
+    assert(player._xrayGhosts.every((g) => g.visible === false), 'All X-ray ghosts are hidden in ride pose');
   }
 
   console.log(`\nGuru Routine verification complete: ${passedTests}/${totalTests} tests passed.`);

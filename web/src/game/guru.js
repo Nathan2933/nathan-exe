@@ -362,6 +362,7 @@ export function createGuruRoutine(ctx) {
     passengerActive = true;
     ctx.state.passengerOf = 'guru';
     ctx.player.pose = 'ride';
+    ctx.player.riding = true;
     ctx.toast('Riding with Guru! Press E anytime to dismount.');
     showBubble('Hold on tight, Nathan! Taking the scenic ring road.', 2.8);
   }
@@ -371,6 +372,7 @@ export function createGuruRoutine(ctx) {
     passengerActive = false;
     ctx.state.passengerOf = null;
     ctx.player.pose = null;
+    ctx.player.riding = false;
 
     /* Step off to a safe walkable spot beside the scooter */
     const h = scootyHeading;
@@ -598,11 +600,12 @@ export function createGuruRoutine(ctx) {
       if (scooty.beacon?.group) scooty.beacon.group.visible = false;
 
       /* Place Guru seated on the front scooter seat */
-      const seatOffset = -0.36, seatY = 0.15;
+      const driverDist = passengerActive ? 0.22 : 0.32;
+      const seatY = 0.15;
       ch.group.position.set(
-        scootyPos.x - Math.sin(scootyHeading) * seatOffset,
+        scootyPos.x - Math.sin(scootyHeading) * driverDist,
         ground + seatY,
-        scootyPos.z - Math.cos(scootyHeading) * seatOffset
+        scootyPos.z - Math.cos(scootyHeading) * driverDist
       );
       ch.heading = scootyHeading;
       ch.pose = 'scooty';
@@ -619,14 +622,16 @@ export function createGuruRoutine(ctx) {
 
       /* If Nathan is riding along as passenger */
       if (passengerActive && ctx.player) {
-        const passOffset = -0.72;
+        const passDist = 0.58;
+        const passY = 0.18;
         ctx.player.group.position.set(
-          scootyPos.x - Math.sin(scootyHeading) * passOffset,
-          ground + seatY,
-          scootyPos.z - Math.cos(scootyHeading) * passOffset
+          scootyPos.x - Math.sin(scootyHeading) * passDist,
+          ground + passY,
+          scootyPos.z - Math.cos(scootyHeading) * passDist
         );
         ctx.player.heading = scootyHeading;
         ctx.player.pose = 'ride';
+        ctx.player.riding = true;
         ctx.player.update(dt, zeroV, t);
       }
 
@@ -724,11 +729,12 @@ export function createGuruRoutine(ctx) {
       }
 
       /* Position Guru seated on the front scooter seat */
-      const seatOffset = -0.36, seatY = 0.15;
+      const driverDist = passengerActive ? 0.22 : 0.32;
+      const seatY = 0.15;
       ch.group.position.set(
-        scootyPos.x - Math.sin(scootyHeading) * seatOffset,
+        scootyPos.x - Math.sin(scootyHeading) * driverDist,
         currentGround + seatY,
-        scootyPos.z - Math.cos(scootyHeading) * seatOffset
+        scootyPos.z - Math.cos(scootyHeading) * driverDist
       );
       ch.heading = scootyHeading;
       ch.pose = 'scooty';
@@ -747,14 +753,16 @@ export function createGuruRoutine(ctx) {
 
       /* Update Nathan as passenger */
       if (passengerActive && ctx.player) {
-        const passOffset = -0.72;
+        const passDist = 0.58;
+        const passY = 0.18;
         ctx.player.group.position.set(
-          scootyPos.x - Math.sin(scootyHeading) * passOffset,
-          currentGround + seatY,
-          scootyPos.z - Math.cos(scootyHeading) * passOffset
+          scootyPos.x - Math.sin(scootyHeading) * passDist,
+          currentGround + passY,
+          scootyPos.z - Math.cos(scootyHeading) * passDist
         );
         ctx.player.heading = scootyHeading;
         ctx.player.pose = 'ride';
+        ctx.player.riding = true;
         ctx.player.update(dt, zeroV, t);
         if (ctx.velocity) {
           ctx.velocity.set(Math.sin(scootyHeading) * currentSpeed, 0, Math.cos(scootyHeading) * currentSpeed);
@@ -798,11 +806,12 @@ export function createGuruRoutine(ctx) {
       }
 
       /* Keep Guru seated on scooty until dismount threshold */
-      const seatOffset = -0.36, seatY = 0.15;
+      const driverDist = 0.32;
+      const seatY = 0.15;
       ch.group.position.set(
-        PARK_POS.x - Math.sin(PARK_POS.heading) * seatOffset,
+        PARK_POS.x - Math.sin(PARK_POS.heading) * driverDist,
         ground + seatY,
-        PARK_POS.z - Math.cos(PARK_POS.heading) * seatOffset
+        PARK_POS.z - Math.cos(PARK_POS.heading) * driverDist
       );
       ch.heading = PARK_POS.heading;
       ch.pose = 'scooty';
