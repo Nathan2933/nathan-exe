@@ -97,7 +97,7 @@ for (let z = -HALF; z < HALF; z++) {
 
 // Roads: two avenues + a deliberately irregular ring (west/north sit further out).
 const ROADS = [
-  [-2, -36, 2, 30],    // north–south avenue (5 m)
+  [-2, -36, 2, 29],    // north–south avenue (5 m, joins south ring road)
   [-27, -2, 31, 2],    // east–west avenue (joins the west ring road)
   [-27, -31, -24, 28], // ring: west
   [-27, -31, 28, -28], // ring: north (moved 6 m out so the Pop Culture Park block is big)
@@ -106,7 +106,7 @@ const ROADS = [
 ];
 for (const [x0, z0, x1, z1] of ROADS) rect(x0, z0, x1, z1, T.road);
 // Centre dashes on the avenues
-for (let z = -36; z <= 30; z++) if (Math.abs(z) > 9 && z % 3 !== 0) set(0, z, T.road_line);
+for (let z = -36; z <= 29; z++) if (Math.abs(z) > 9 && z % 3 !== 0) set(0, z, T.road_line);
 for (let x = -26; x <= 31; x++) if (Math.abs(x) > 9 && x % 3 !== 0) set(x, 0, T.road_line);
 
 // District grounds (before sidewalks so sidewalks wrap them cleanly)
@@ -129,7 +129,6 @@ rect(32, -1, 46, 1, T.terracotta);        //   main red-earth walk from the arch
 rect(35, -5, 47, -3, T.terracotta);       //   veranda forecourt
 disc(40, 3.6, 3.3, T.terracotta);         //   small paved court
 rect(35, 1, 37, 8, T.terracotta);         //   path to the tea stall
-rect(-1, 30, 1, 34, T.path);              // path down to the airport
 rect(-12, 34, 10, 39, T.concrete);        // airport apron
 rect(-8, 39, 8, 42, T.concrete);          // runway strip
 rect(-35, -11, -31, 0, T.concrete);       // Montfort schoolyard
