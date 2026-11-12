@@ -339,10 +339,8 @@ interact.push(point('memory', 7.9, -35.8, { id: 'new-campus' }));
 interact.push(point('memory', 9.8, -37.9, { id: 'two-semesters' }));
 interact.push(point('memory', -11.6, -44.2, { id: 'campus-sign' }));
 // Rideable bicycles at the two universities (E to ride, E again to get off)
-interact.push(point('vehicle', 4.6, -36.2, { id: 'bike-tomsk', vtype: 'bike', rot: 90, color: '#2f5f9a', district: 'winter-campus' }));
-interact.push(point('vehicle', 46.4, -0.2, { id: 'bike-tce', vtype: 'bike', rot: 180, color: '#b5523b', district: 'monsoon-campus' }));
-interact.push(point('vehicle', 48.6, 1.6, { id: 'moto-tce', vtype: 'moto', rot: 180, color: '#f4f6fa', style: 'yamaha', name: 'White Yamaha', district: 'monsoon-campus' }));
-interact.push(point('vehicle', 8.4, -37.2, { id: 'moto-prince', vtype: 'moto', rot: 90, color: '#17171c', style: 'shine', name: "Prince's black bike", district: 'winter-campus' }));
+interact.push(point('vehicle', 46.4, -0.2, { id: 'moto-tce', vtype: 'moto', rot: 180, color: '#f4f6fa', style: 'yamaha', name: 'White Yamaha', district: 'monsoon-campus' }));
+interact.push(point('vehicle', 4.6, -36.2, { id: 'moto-prince', vtype: 'moto', rot: 90, color: '#17171c', style: 'shine', name: "Prince's black bike", district: 'winter-campus' }));
 // --- Monsoon Campus (India chapter, Tamil Nadu college) ---
 O('college_building', 41.5, -9.2, { text: 'TCE Madurai', subtitle: 'Thiagarajar College of Engineering', logo: 'assets/logos/tce.png' });
 O('gate_arch', 33.4, 0, { text: 'TCE Madurai' });
