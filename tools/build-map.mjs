@@ -230,8 +230,8 @@ interact.push(point('memory', -5.6, -5.2, { id: 'fitness-chapter' }));
 // Six themed areas around a central arcade, one character each:
 //   NW Hell's Kitchen alley (Daredevil) · N rooftop (Spider-Man) · NE camp + paddock (Arthur Morgan)
 //   SW basement (Tyler Durden) · S moonlit court (Moon Knight) · SE Pied Piper (Richard Hendricks)
-hedge(2.2, -27.8, 24.9, -27); hedge(24.2, -27, 24.9, -2.1); hedge(2.2, -27, 2.9, -16.5); hedge(2.2, -13, 2.9, -2.1);
-hedge(2.2, -2.9, 8, -2.1); hedge(11, -2.9, 24.9, -2.1);
+hedge(2.2, -27.8, 24.9, -27); hedge(24.2, -27, 24.9, -2.1); hedge(2.2, -27, 2.9, -16.5); hedge(2.2, -13, 2.9, -5.2);
+hedge(5.2, -2.9, 8, -2.1); hedge(11, -2.9, 24.9, -2.1);
 O('pop_arcade', 9.5, -15.5);
 // Hell's Kitchen alley + rooftop signal
 O('pop_rooftop', 5.0, -25.4, { variant: 'signal' });
@@ -280,7 +280,7 @@ O('guild_trophy_stand', -8.2, 14.8, { rot: 0 });
 O('guild_skill_tree', -13.0, 18.4);
 O('guild_profile_stand', -17.8, 21.2, { rot: 0 });
 O('training_dummy', -8.0, 21.0); O('training_dummy', -6.2, 22.6);
-O('lamp', -5.2, 16.0); O('lamp', -20.2, 13.0); O('lamp', -15.4, 23.6);
+O('lamp', -5.2, 16.0); O('lamp', -20.2, 13.0); O('lamp', -13.9, 23.6);
 labels.push(point('label', -13.0, 8.2, { text: 'GUILD HALL', color: '#2a2440', height: 9.6 }));
 interact.push(point('chapter', -14.6, 8.9, { id: 'signal-tower', district: 'signal-tower' }));   // the Toolbox, inside the hall
 interact.push(point('panel', -13.0, 20.8, { id: 'skilltree', district: 'signal-tower', panel: 'skilltree', title: 'Skill tree' }));
@@ -341,6 +341,8 @@ interact.push(point('memory', -11.6, -44.2, { id: 'campus-sign' }));
 // Rideable bicycles at the two universities (E to ride, E again to get off)
 interact.push(point('vehicle', 4.6, -36.2, { id: 'bike-tomsk', vtype: 'bike', rot: 90, color: '#2f5f9a', district: 'winter-campus' }));
 interact.push(point('vehicle', 46.4, -0.2, { id: 'bike-tce', vtype: 'bike', rot: 180, color: '#b5523b', district: 'monsoon-campus' }));
+interact.push(point('vehicle', 48.6, 1.6, { id: 'moto-tce', vtype: 'moto', rot: 180, color: '#f4f6fa', style: 'yamaha', name: 'White Yamaha', district: 'monsoon-campus' }));
+interact.push(point('vehicle', 8.4, -37.2, { id: 'moto-prince', vtype: 'moto', rot: 90, color: '#17171c', style: 'shine', name: "Prince's black bike", district: 'winter-campus' }));
 // --- Monsoon Campus (India chapter, Tamil Nadu college) ---
 O('college_building', 41.5, -9.2, { text: 'TCE Madurai', subtitle: 'Thiagarajar College of Engineering', logo: 'assets/logos/tce.png' });
 O('gate_arch', 33.4, 0, { text: 'TCE Madurai' });

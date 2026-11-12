@@ -1,9 +1,11 @@
+import { initTouchControls } from './touch.js';
 import * as THREE from 'three';
 import { RetroRenderer } from './retro.js';
 import { applyPalette, SKY } from './palette.js';
 import { setGlowBoost } from './kit.js';
 import { sfx, setSound, setRain, setMusic, setTheme, setOcean, setEngine } from './audio.js';
 import { createTahiti } from './tahiti.js';
+import { createXrayOcclusion } from './xray.js';
 import { createGuruRoutine } from './guru.js';
 import { buildWorld, loadKitOverrides, updateWalkers, updateNpcs, groundHeight, markerMats, windowMats } from './world.js';
 import { loadTiledMap, tileAt } from './tiled.js';
@@ -11,14 +13,18 @@ import { NavGrid } from './nav.js';
 import { Player } from './player.js';
 import { drawPortrait, portraitURL } from './portrait.js';
 import { Dialogue } from './dialogue.js';
-import { conversationSystem } from './conversation.js';
+import { conversationSystem, CANONICAL_MAP } from './conversation.js';
+import { createCharacters } from './characters.js';
 import { runLift, runTempo } from './minigame.js';
 import { loadSave, writeSave, resetSave, addUnique, formatTime } from './save.js';
+import { createTour, findStopInteractable } from './tour.js';
 import { loadContent, esc, safeUrl, chapterFor, projectCard, projectDetails, DISTRICTS, MAIN_DISTRICTS } from '../shared/content.js';
 
 const $ = (s) => document.querySelector(s);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const isTouch = matchMedia('(pointer: coarse)').matches;
+const COMPACT_MQ = '(max-width: 760px), (max-height: 520px) and (orientation: landscape), (pointer: coarse) and (max-width: 1100px)';
+const isCompactUI = () => matchMedia(COMPACT_MQ).matches;
 const BASE = import.meta.env.BASE_URL || '/';
 const DEBUG = new URLSearchParams(location.search).has('debug');
 let debugOn = DEBUG;
@@ -204,11 +210,11 @@ renderer.outputColorSpace = THREE.SRGBColorSpace;
 const retro = new RetroRenderer(renderer);
 // "Look" preferences: palette (bright | pastel) and pixels (smooth | retro), remembered per browser.
 const LOOK_KEY = 'nathan-exe:look';
-const look = (() => { try { return { palette: 'bright', pixels: 'smooth', time: 'auto', ...JSON.parse(localStorage.getItem(LOOK_KEY) || '{}') }; } catch { return { palette: 'bright', pixels: 'smooth', time: 'auto' }; } })();
+const look = (() => { try { return { palette: 'bright', pixels: 'smooth', ...JSON.parse(localStorage.getItem(LOOK_KEY) || '{}'), time: 'day' }; } catch { return { palette: 'bright', pixels: 'smooth', time: 'day' }; } })();   // daylight is always the default; a stored time is never restored
 const qs = new URLSearchParams(location.search);
 if (qs.get('palette')) look.palette = qs.get('palette');
 if (qs.get('pixels')) look.pixels = qs.get('pixels');
-if (qs.get('time')) look.time = qs.get('time');
+if (qs.get('time') === 'night') look.time = 'night';
 if (!look.motion) look.motion = matchMedia('(prefers-reduced-motion: reduce)').matches ? 'off' : 'on';
 if (!look.music) look.music = 'on';
 if (typeof look.musicVol !== 'number') look.musicVol = 0.6;
@@ -224,7 +230,7 @@ function applyLook() {
   if (pb) pb.textContent = look.palette === 'pastel' ? 'Pastel' : 'Bright';
   if (xb) xb.textContent = look.pixels === 'retro' ? 'Pixel' : 'Smooth';
   const tb = document.getElementById('look-time');
-  if (tb) tb.textContent = { auto: '◐ Auto', day: '☀ Day', night: '☾ Night' }[look.time] || '◐ Auto';
+  if (tb) tb.textContent = look.time === 'night' ? '☾ Night' : '☀ Day';
   const mb = document.getElementById('look-motion');
   if (mb) { mb.textContent = look.motion === 'off' ? '⏸ Motion' : '▶ Motion'; mb.setAttribute('aria-pressed', String(look.motion !== 'off')); }
   const mu = document.getElementById('look-music');
@@ -235,13 +241,13 @@ function applyLook() {
   const sb = document.getElementById('look-sound');
   if (sb) { sb.textContent = look.sound ? '♪ On' : '♪ Off'; sb.setAttribute('aria-pressed', String(!!look.sound)); }
   if (look.sound && !state.started) { /* audio may only start after a user gesture */ } else setSound(!!look.sound);
-  try { localStorage.setItem(LOOK_KEY, JSON.stringify(look)); } catch { /* ignore */ }
+  try { localStorage.setItem(LOOK_KEY, JSON.stringify({ ...look, time: 'day' })); } catch { /* ignore */ }
 }
 
 const scene = new THREE.Scene();
 const SKY_START = new THREE.Color(0x8fdcf0);
 const SKY_END = new THREE.Color(0xffc98f);
-const TAHITI_SKY = new THREE.Color(0xffa58a); // soft sunset over Tahiti
+const TAHITI_SKY = new THREE.Color(0x6ecde6); // clear tropical sky over Tahiti
 scene.background = SKY_START.clone();
 applyLook();
 
@@ -249,12 +255,60 @@ const hemi = new THREE.HemisphereLight(0xfff6e6, 0x9aa6c8, 1.7);
 scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xfff1d2, 2.5);
 sun.castShadow = true;
-sun.shadow.mapSize.set(1024, 1024);
-Object.assign(sun.shadow.camera, { left: -24, right: 24, top: 24, bottom: -24, near: 1, far: 90 });
+// 2048 keeps the fitted frustum crisp even on tall portrait phones; only very low-memory devices fall back to 1024.
+const SHADOW_RES = (navigator.deviceMemory && navigator.deviceMemory <= 2) ? 1024 : 2048;
+sun.shadow.mapSize.set(SHADOW_RES, SHADOW_RES);
+Object.assign(sun.shadow.camera, { left: -24, right: 24, top: 24, bottom: -24, near: 0.5, far: 110 });
 sun.shadow.bias = -0.0005;
 sun.shadow.normalBias = 0.05;
 scene.add(sun, sun.target);
 const SUN_OFFSET = new THREE.Vector3(16, 34, 10);
+
+const _sunDir = SUN_OFFSET.clone().normalize();
+const _sunRight = new THREE.Vector3(0, 1, 0).cross(_sunDir).normalize();
+const _sunUp = _sunDir.clone().cross(_sunRight).normalize();
+const _sp = new THREE.Vector3(), _sCR = new THREE.Vector3(), _sCU = new THREE.Vector3(), _sCF = new THREE.Vector3();
+const SHADOW_PAD = 6;            // world units of shadow coverage kept beyond the visible edge
+const SHADOW_Y = [-1.5, 10];     // receiver heights sampled when projecting the view footprint
+/**
+ * Fit the sun's shadow frustum to what the camera can actually see (plus a buffer), every frame,
+ * AFTER the camera has its final position. The old fixed ±24 box was smaller than the visible
+ * ground on portrait/phone and zoomed-out views, so trees entered the picture before the shadow
+ * map covered them. Extents depend only on zoom/aspect (not on position), are quantised so they
+ * do not wobble, and the light is snapped to whole shadow texels so shadows do not shimmer.
+ */
+function fitSunShadow() {
+  camera.updateMatrixWorld();
+  _sCR.setFromMatrixColumn(camera.matrixWorld, 0);
+  _sCU.setFromMatrixColumn(camera.matrixWorld, 1);
+  _sCF.setFromMatrixColumn(camera.matrixWorld, 2).negate();      // view direction
+  let l = Infinity, r = -Infinity, b = Infinity, t = -Infinity;
+  for (const cy of [camera.top, camera.bottom]) for (const cx of [camera.left, camera.right]) {
+    _sp.copy(camera.position).addScaledVector(_sCR, cx).addScaledVector(_sCU, cy);
+    for (const y of SHADOW_Y) {
+      const k = (y - _sp.y) / _sCF.y;
+      const px = _sp.x + _sCF.x * k - camTarget.x, py = y - camTarget.y, pz = _sp.z + _sCF.z * k - camTarget.z;
+      const a = px * _sunRight.x + py * _sunRight.y + pz * _sunRight.z;
+      const u = px * _sunUp.x + py * _sunUp.y + pz * _sunUp.z;
+      if (a < l) l = a; if (a > r) r = a; if (u < b) b = u; if (u > t) t = u;
+    }
+  }
+  const q = (v, up) => (up ? Math.ceil((v + SHADOW_PAD) / 2) * 2 : Math.floor((v - SHADOW_PAD) / 2) * 2);
+  l = Math.max(-110, q(l, false)); r = Math.min(110, q(r, true)); b = Math.max(-110, q(b, false)); t = Math.min(110, q(t, true));
+  const sc = sun.shadow.camera;
+  if (sc.left !== l || sc.right !== r || sc.bottom !== b || sc.top !== t) {
+    sc.left = l; sc.right = r; sc.bottom = b; sc.top = t;
+    sc.updateProjectionMatrix();
+  }
+  // snap the light's target to whole texels in light space (steady shadows while the camera glides)
+  const tx = (r - l) / sun.shadow.mapSize.x, ty = (t - b) / sun.shadow.mapSize.y;
+  const pr = camTarget.dot(_sunRight), pu = camTarget.dot(_sunUp);
+  const dr = Math.round(pr / tx) * tx - pr, du = Math.round(pu / ty) * ty - pu;
+  sun.target.position.copy(camTarget).addScaledVector(_sunRight, dr).addScaledVector(_sunUp, du);
+  sun.position.copy(sun.target.position).add(SUN_OFFSET);
+  sun.target.updateMatrixWorld();
+  sun.updateMatrixWorld();
+}
 
 const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 300);
 const CAM_DIR = new THREE.Vector3(Math.sin(Math.PI / 4) * Math.cos(0.58), Math.sin(0.58), Math.cos(Math.PI / 4) * Math.cos(0.58)).normalize();
@@ -266,7 +320,17 @@ function updateCameraFrustum() {
   const aspect = w / Math.max(1, h);
   const base = aspect >= 1 ? 21 : 19 / aspect;
   const view = base / state.zoom / introZoom();
-  camera.top = view / 2; camera.bottom = -view / 2;
+  // UI safe margin: shift the view down by half the navbar height so the top bar never covers the
+  // action, without zooming out (Nathan sits a touch below centre)
+  const navB = document.querySelector('.hud-top')?.getBoundingClientRect().bottom || 0;
+  // on phones the joystick/buttons own the bottom edge: centre Nathan in the free band between the HUDs
+  let botB = 0;
+  if (document.body.classList.contains('touch-ui-on') && isCompactUI()) {
+    const st = document.getElementById('tc-stick'), r = st && st.offsetParent !== null ? st.getBoundingClientRect() : null;
+    if (r && r.top > h * 0.4) botB = h - r.top;
+  }
+  const sh = view * Math.max(-0.05, Math.min(0.07, ((navB - botB) * 0.5) / Math.max(1, h)));
+  camera.top = view / 2 + sh; camera.bottom = -view / 2 + sh;
   camera.left = (-view * aspect) / 2; camera.right = (view * aspect) / 2;
   camera.updateProjectionMatrix();
 }
@@ -281,6 +345,7 @@ const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
 let world, nav, map;
 const player = new Player();
 scene.add(player.group);
+const xrayGate = createXrayOcclusion({ camera, player, getScene: () => scene });
 const velocity = new THREE.Vector3();
 const heightAt = (x, z) => {
   if (world) {
@@ -322,6 +387,7 @@ async function init() {
   if (GYM_IDS.every((id) => (s.gym || []).includes(id))) player.setJacked(true);
   if (s.finale) world.apis.lighthouse?.setLit(true);
   setupUI();
+  tour.bind();
   setupLabels();
   setupMinimap();
   resize();
@@ -382,12 +448,23 @@ function setupUI() {
   $('#nav-education')?.addEventListener('click', (e) => { e.preventDefault(); $('#recruiter-bar').classList.remove('open'); $('#menu-toggle').setAttribute('aria-expanded', 'false'); openEducation(); });
   $('#look-sound').addEventListener('click', () => { look.sound = !look.sound; applyLook(); if (look.sound) sfx.open(); });
   applyLook();
-  $('#journey-toggle').addEventListener('click', () => $('.journey').classList.toggle(innerWidth <= 760 ? 'open-m' : 'collapsed'));
+  $('#journey-toggle').addEventListener('click', () => {
+    journeyTouched = true;
+    const j = $('.journey');
+    const compact = isCompactUI();
+    j.classList.toggle(compact ? 'open-m' : 'collapsed');
+    $('#journey-toggle').setAttribute('aria-expanded', String(compact ? j.classList.contains('open-m') : !j.classList.contains('collapsed')));
+  });
+  // chapter drawer (phones): tapping the dim backdrop or pressing Esc closes it
+  const closeDrawer = () => { const j = $('.journey'); if (j.classList.contains('open-m')) { j.classList.remove('open-m'); $('#journey-toggle').setAttribute('aria-expanded', 'false'); } };
+  document.addEventListener('pointerdown', (e) => { if ($('.journey').classList.contains('open-m') && !e.target.closest('.journey, #chars-panel')) { e.preventDefault(); closeDrawer(); } }, true);
+  window.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDrawer(); }, true);
+  $('#journey-list').addEventListener('click', () => { if (isCompactUI()) setTimeout(closeDrawer, 0); });
   window.addEventListener('keydown', (e) => {
     if (e.key === 'F3' && !e.repeat) { e.preventDefault(); toggleDebug(); return; }
     if (state.minigame && mgRoot()?.onkey && !e.repeat) { const k = e.key.length === 1 ? e.key.toLowerCase() : e.key; if (k.startsWith('Arrow') || k === ' ' || k === 'e' || k === 'Enter') { e.preventDefault(); mgRoot().onkey(k); return; } }
-    if (!state.started || state.minigame || state.ko) return;
-    if (e.target.closest?.('input, textarea')) return;
+    if (!state.started || state.minigame || state.ko || state.flightStarting) return;
+    if (e.target.closest?.('input, textarea, select, [contenteditable="true"]')) return;
     if (state.gym) {
       const k = e.key.toLowerCase();
       if (k === 'escape' || ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) gymCancel();
@@ -395,9 +472,10 @@ function setupUI() {
       return;
     }
     if (state.level === 'tahiti' && !e.repeat && !state.mount && ['r', 'f', 'g'].includes(e.key.toLowerCase()) && tahiti.key(e.key.toLowerCase())) { e.preventDefault(); return; }
-    if (e.target.closest?.('input, textarea')) return;
-    if (e.key === 'm' || e.key === 'M') { e.preventDefault(); toggleBigMap(); return; }
+    if (e.target.closest?.('input, textarea, select, [contenteditable="true"]')) return;
+    if (e.target.closest?.('#tour-card, #tour-modal')) return;
     if (e.key === 'h' || e.key === 'H') { e.preventDefault(); toggleControls(); return; }
+    if (e.key === 'm' || e.key === 'M') { e.preventDefault(); toggleBigMap(); return; }
     if (e.key === 'n' || e.key === 'N') { e.preventDefault(); cycleTime(); return; }
     if ((e.key === 'r' || e.key === 'R') && state.mount) { e.preventDefault(); resetMount(); return; }
     if (e.key === 'Escape' && state.groupScene) { endGroupScene(); return; }
@@ -426,7 +504,7 @@ function setupUI() {
     if (e.key === 'Enter' && focused?.closest?.('a, button')) return; // let Enter press the focused button
     e.preventDefault();
     if (dialogue.open) dialogue.advance();
-    else if (state.nearby && !state.panelOpen && !(e.repeat && state.nearby.kind === 'gym')) interact(state.nearby);
+    else if (state.nearby && !state.panelOpen && !(e.repeat && state.nearby.kind === 'gym') && performance.now() - dialogue.closedAt > 350) interact(state.nearby);
   });
   dialogue.onClose = () => {
     const it = state.talkingTo;
@@ -438,20 +516,20 @@ function setupUI() {
   dialogue.onMemory = (id) => unlockMemory(id);
   dialogue.onAction = (name) => {
     state.talkingTo?.character.play('nod');
-    if (name === 'fly-tahiti') {
-      conversationSystem.recordEvent(state.save, 'harris', 'flight_tahiti');
-      persist();
-      return void setTimeout(() => startFlight('tahiti'), 900);
-    }
-    if (name === 'fly-home') {
-      if (!tahiti.harrisNearJet()) {
+    if (name === 'fly-tahiti' || name === 'fly-home') {
+      // accepting a flight ends the conversation at once: speaker, text, choices and queue are
+      // cleared before departure starts, and nothing can reopen it while the flight runs
+      if (state.flightStarting || state.cine) return;
+      const home = name === 'fly-home';
+      dialogue.close();
+      if (home && !tahiti.harrisNearJet()) {
         tahiti.callHarrisToJet();
         toast('Harris will meet you at the jet.');
         return;
       }
-      conversationSystem.recordEvent(state.save, 'harris', 'flight_home');
+      conversationSystem.recordEvent(state.save, 'harris', home ? 'flight_home' : 'flight_tahiti');
       persist();
-      return void setTimeout(() => startFlight('island1'), 900);
+      return void startFlight(home ? 'island1' : 'tahiti');
     }
     if (name === 'scooter-ride' || name === 'join-guru-ride') {
       dialogue.close();
@@ -598,10 +676,11 @@ function setupUI() {
 function renderJourney() {
   const s = state.save;
   const list = $('#journey-list');
+  const nextId = DISTRICTS.find((d) => !d.optional && !s.chapters.includes(d.id))?.id;
   list.innerHTML = DISTRICTS.map((d) => {
     const ch = chapterFor(state.content, d.id);
     const done = s.chapters.includes(d.id);
-    return `<li class="${done ? 'done' : ''}${d.optional ? ' optional' : ''}"><button type="button" data-goto="${d.id}">${esc(ch?.title || d.name)}</button></li>`;
+    return `<li class="${done ? 'done' : ''}${d.optional ? ' optional' : ''}${d.id === nextId ? ' next' : ''}"><button type="button" data-goto="${d.id}">${esc(ch?.title || d.name)}</button></li>`;
   }).join('');
   list.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
     const it = world.interactables.find((i) => i.kind === 'chapter' && i.district === b.dataset.goto)
@@ -617,6 +696,7 @@ function renderJourney() {
 
 // ---------------- Interactions ----------------
 function interact(it) {
+  if (state.visiting) return;   // tour or visit transition: no accidental interactions
   if (state.mount) return dismount();
   if (state.passengerOf === 'guru') return guruRoutine.dismountNathanPassenger();
   if (state.seated) return standUp();
@@ -641,6 +721,7 @@ function interact(it) {
 }
 
 function face(target) {
+  if (!target || typeof target.x !== 'number' || typeof target.z !== 'number' || Number.isNaN(target.x) || Number.isNaN(target.z)) return;
   const p = player.group.position;
   player.heading = Math.atan2(target.x - p.x, target.z - p.z);
 }
@@ -659,7 +740,7 @@ function openInteractable(it) {
     const p = c.projects.find((x) => x.id === it.projectId);
     if (!p) return;
     bar = `projects/${p.id}.exe`;
-    html = `<h2 id="panel-title" class="sr-only">${esc(p.title)}</h2>${projectDetails(p)}`;
+    html = `${tourOverviewHtml(c, p.id)}<h2 id="panel-title" class="sr-only">${esc(p.title)}</h2>${projectDetails(p)}`;
   } else if (it.kind === 'about') {
     const p = c.profile || {};
     bar = 'about/readme.txt';
@@ -683,8 +764,8 @@ function openInteractable(it) {
       html += `<div class="panel-projects">${c.projects.map(projectCard).join('')}</div><a class="btn" href="./#projects">All projects →</a>`;
     }
     if (it.district === 'signal-tower') {
-      html += (c.skills || []).map((g) => `<p class="eyebrow" style="margin-top:14px">${esc(g.group)}</p><ul class="chips">${(g.items || []).map((s) => `<li>${esc(s)}</li>`).join('')}</ul>`).join('');
-      if ((c.experience || []).length) html += `<p class="eyebrow" style="margin-top:18px">Experience</p><ul class="highlights">${c.experience.map((e) => `<li class="has-logo">${orgLogo(e)}<b>${esc(e.role)}</b> · ${esc(e.org)} <span class="muted">${esc(e.period)}</span><br>${esc(e.summary)}</li>`).join('')}</ul>`;
+      html += (c.skills || []).map((g, gi) => `<div class="tb-head" style="--bc:var(--sk${gi % 5})"><span>${esc(g.group)}</span></div><ul class="tb-grid" style="--bc:var(--sk${gi % 5})">${(g.items || []).map((s) => `<li><span class="sk-icon">${skillIcon(s)}</span><b>${esc(s)}</b></li>`).join('')}</ul>`).join('');
+      if ((c.experience || []).length) html += `<div class="tb-head" style="--bc:var(--sk4)"><span>Experience</span></div><ul class="tb-exp">${c.experience.map((e) => `<li>${orgLogo(e)}<div><b>${esc(e.role)}</b><span class="tb-org">${esc(e.org)}</span><span class="tb-per">${esc(e.period)}</span><p>${esc(e.summary)}</p></div></li>`).join('')}</ul>`;
       if ((c.achievements || []).length) html += `<p class="eyebrow" style="margin-top:18px">Achievements</p><ul class="highlights">${c.achievements.map((a) => `<li><b>${esc(a.title)}</b>${a.org ? ` · ${esc(a.org)}` : ''} <span class="muted">${esc(a.year)}</span>${a.detail ? `<br>${esc(a.detail)}` : ''}</li>`).join('')}</ul>`;
     }
     if (it.district === 'lighthouse') {
@@ -699,7 +780,15 @@ function openInteractable(it) {
   }
   showPanel(bar, html, it);
   if (it.kind === 'chapter') mountChapterMedia(chapterFor(c, it.district));
+  $('#panel-body').querySelectorAll('.tb-grid .sk-icon img, .tb-head .gh-ico img').forEach(pixelateIcon);
   if (it.kind === 'project') {
+    $('#panel-body').querySelectorAll('[data-tour-project]').forEach((b) => b.addEventListener('click', () => {
+      const next = world.interactables.find((i) => i.kind === 'project' && i.projectId === b.dataset.tourProject);
+      if (!next) return;
+      openInteractable(next);
+      const q = player.group.position;
+      state.panelOpen = { x: q.x, z: q.z, radius: 99 };   // switching stations from here must not close the panel
+    }));
     const p = c.projects.find((x) => x.id === it.projectId);
     const box = document.createElement('div'); box.className = 'proj-media';
     const media = [...new Set([...(p?.media || []), ...(p?.media?.length && p.image ? [p.image] : [])])];
@@ -731,17 +820,34 @@ function openInteractable(it) {
   }
 }
 
+// One shared cleanup for every dismissal path (close button, Esc, walking away, panel replaced, page hide):
+// pause + rewind + release every viewer video so nothing keeps playing detached from the DOM.
+const liveVideos = new Set();
+function stopPanelMedia(root = document) {
+  for (const v of [...liveVideos]) {
+    if (root !== document && !root.contains(v) && v.isConnected) continue;
+    try { v.pause(); v.currentTime = 0; v.removeAttribute('src'); v.load(); } catch { /* ignore */ }
+    liveVideos.delete(v);
+  }
+  root.querySelectorAll?.('video').forEach((v) => { try { v.pause(); } catch { /* ignore */ } });
+}
+
 function showPanel(bar, html, it = null, cls = '') {
+  stopPanelMedia();
   $('#panel-bar').textContent = bar;
   $('#panel-body').innerHTML = html;
   $('#panel-body').scrollTop = 0;
   $('#panel').className = `panel window ${cls}`;
+  // every open / card change starts at the title: reset every scroller now and after layout
+  const resetScroll = () => { $('#panel').scrollTop = 0; $('#panel-body').scrollTop = 0; $('#panel-body').querySelectorAll('.sk-scroll, .panel-body-inner').forEach((e) => { e.scrollTop = 0; }); };
+  resetScroll(); requestAnimationFrame(() => { resetScroll(); setTimeout(resetScroll, 120); });
   sfx.open();
   state.panelOpen = it || { x: player.group.position.x, z: player.group.position.z, radius: 99 };
   $('#prompt').classList.add('hidden');
 }
 
 function closePanel() {
+  stopPanelMedia();
   if (!state.panelOpen) return;
   $('#panel').classList.add('hidden');
   sfx.close();
@@ -750,6 +856,7 @@ function closePanel() {
 }
 
 async function talkTo(it) {
+  if (state.flightStarting || state.cine) return;
   if (it.npcId === 'guru' && state.level === 'island1') {
     guruRoutine.pauseForDialogue();
   }
@@ -778,7 +885,8 @@ async function talkTo(it) {
     timeOfDay: state.timeOfDay || 'day',
     weather: state.weather,
     mount: state.mount ? state.mount.cfg.label : null,
-    activity: state.level === 'tahiti' ? tahiti.getNpcActivity?.(it.npcId) : (it.npcId === 'guru' ? guruRoutine.getRoutinePhase() : null),
+    activity: state.level === 'tahiti' ? tahiti.getNpcActivity?.(it.npcId) : (it.npcId === 'guru' ? { act: guruRoutine.getRoutinePhase() } : null),
+    harrisState: it.npcId === 'harris' && state.level === 'tahiti' ? tahiti.harrisState?.() : null,
     routinePhase: it.npcId === 'guru' && state.level === 'island1' ? guruRoutine.getRoutinePhase() : null,
     save: state.save,
   };
@@ -856,9 +964,18 @@ const orgLogo = (e) => e.logo ? `<img class="org-logo" src="${esc(safeUrl(e.logo
 const DEVICON = { Python: 'python', Java: 'java', JavaScript: 'javascript', TypeScript: 'typescript', C: 'c', 'C++': 'cplusplus', SQL: 'azuresqldatabase', Solidity: 'solidity',
   HTML: 'html5', CSS: 'css3', React: 'react', 'Next.js': 'nextjs', Flask: 'flask', 'Node.js': 'nodejs', 'Tailwind CSS': 'tailwindcss', MySQL: 'mysql', MongoDB: 'mongodb', SQLite: 'sqlite',
   Docker: 'docker', Kubernetes: 'kubernetes', Grafana: 'grafana', Git: 'git', GitHub: 'github', 'Blender (learning)': 'blender', 'Three.js': 'threejs', 'Ethereum / Ganache': 'ethereum' };
-const skillIcon = (name) => DEVICON[name]
-  ? `<img src="https://cdn.jsdelivr.net/gh/devicons/devicon@v2.16.0/icons/${DEVICON[name]}/${DEVICON[name]}-original.svg" alt="" crossorigin="anonymous" onerror="if(!this.dataset.p){this.dataset.p=1;this.src=this.src.replace('-original','-plain')}else{this.replaceWith(Object.assign(document.createElement('span'),{className:'sk-fallback',textContent:${'`'}${esc(name[0])}${'`'}}))}">`
-  : `<span class="sk-fallback">${esc(name[0])}</span>`;
+const SIMPLE_ICON = { 'Ethereum / Ganache': 'ethereum' };
+const GLYPH = { Falco: '🦅', 'Audit-event monitoring': '🛡️', 'AI-assisted prototyping': '🤖', 'Prompt engineering': '💬', Reflect: '🪞', 'BugBug.io': '🐞', 'Ethereum / Ganache': '⬨' };
+const glyphOf = (name) => GLYPH[name] || name[0];
+const skillIcon = (name) => {
+  const gl = esc(glyphOf(name));
+  if (SIMPLE_ICON[name]) return `<img src="https://cdn.jsdelivr.net/npm/simple-icons@9.21.0/icons/${SIMPLE_ICON[name]}.svg" alt="" crossorigin="anonymous" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'sk-fallback',textContent:'${gl}'}))">`;
+  return DEVICON[name]
+    ? `<img src="https://cdn.jsdelivr.net/gh/devicons/devicon@v2.16.0/icons/${DEVICON[name]}/${DEVICON[name]}-original.svg" alt="" crossorigin="anonymous" onerror="if(!this.dataset.p){this.dataset.p=1;this.src=this.src.replace('-original','-plain')}else{this.replaceWith(Object.assign(document.createElement('span'),{className:'sk-fallback',textContent:'${gl}'}))}">`
+    : `<span class="sk-fallback">${gl}</span>`;
+};
+const GROUP_ICON = [[/lang/i, 'Python'], [/web|data/i, 'React'], [/cloud|secur/i, 'Kubernetes'], [/\bai\b/i, 'AI-assisted prototyping'], [/tool/i, 'Git']];
+const groupIcon = (g) => `<span class="gh-ico">${skillIcon((GROUP_ICON.find(([re]) => re.test(g.group)) || [])[1] || (g.items || [])[0] || g.group)}</span>`;
 // Redraw a logo at 18×18 and scale it up with hard edges, so it reads as pixel art
 const PIXEL_CACHE = new Map();
 function pixelateIcon(img) {
@@ -906,6 +1023,7 @@ function openPhotoCard(list, i) {
 }
 const isVideoUrl = (u) => /\.(mp4|webm|mov|m4v)(\?|$)/i.test(u);
 function mountPhotoViewer(box, slides) {
+  stopPanelMedia(box);   // re-mounting inside the same box must not leave the previous video playing
   slides = slides.map((x) => ({ ...x, src: safeUrl(x.src) })).filter((x) => x.src);
   if (!slides.length) return;
   let i = 0;
@@ -917,7 +1035,8 @@ function mountPhotoViewer(box, slides) {
     const s = slides[i];
     const isVid = isVideoUrl(s.src);
     vid.pause(); img.hidden = isVid; vid.hidden = !isVid;
-    if (isVid) { vid.src = s.src; vid.muted = false; vid.volume = 1; } else { img.src = s.src; img.alt = s.caption || ''; }
+    if (isVid) { vid.src = s.src; vid.muted = false; vid.volume = 1; liveVideos.add(vid); }
+    else { vid.removeAttribute('src'); vid.load(); img.src = s.src; img.alt = s.caption || ''; }
     title.textContent = s.caption || ''; count.textContent = `${i + 1} / ${slides.length}`;
     v.querySelectorAll('.pv-nav').forEach((b) => { b.hidden = slides.length < 2; });
   };
@@ -951,7 +1070,7 @@ function openInfoPanel(it) {
     html = `<div class="sk-fixed">
       <header class="sk-hero"><img class="sk-hero-face" src="${portraitURL()}" alt=""><div><p class="eyebrow">GUILD HALL</p><h2 id="panel-title">Skill tree</h2><small>MY TECH STACK &amp; SKILLS</small></div></header>
       <div class="sk-stats"><span><i>&lt;/&gt;</i><b>${total}</b>SKILLS</span><span><i>▤</i><b>${groups.length}</b>DOMAINS</span><span><i>♛</i><b>MAX</b>CURIOSITY</span></div>
-      <div class="sk-tabs"><button type="button" class="gh-branch" data-branch="all" aria-expanded="true">▦ All</button>${groups.map((g, i) => `<button type="button" class="gh-branch" data-branch="${i}" aria-expanded="false" style="--bc:var(--sk${i % 5})"><span class="gh-gem b${i % 5}"></span>${esc(g.group)} <em>${(g.items || []).length}</em></button>`).join('')}</div>
+      <div class="sk-tabs"><button type="button" class="gh-branch" data-branch="all" aria-expanded="true">▦ All</button>${groups.map((g, i) => `<button type="button" class="gh-branch" data-branch="${i}" aria-expanded="false" style="--bc:var(--sk${i % 5})">${groupIcon(g)}${esc(g.group)} <em>${(g.items || []).length}</em></button>`).join('')}</div>
     </div>
     <div class="gh-nodes sk-scroll" id="gh-nodes" aria-live="polite"></div>`;
   } else if (it.panel === 'trophies') {
@@ -1000,10 +1119,11 @@ function openInfoPanel(it) {
     world.apis.guild_skill_tree?.trigger();
     const drawSkills = (which) => {
       const list = which === 'all' ? groups.map((g, i) => [g, i]) : [[groups[+which], +which]];
-      $('#gh-nodes').innerHTML = list.map(([g, gi]) => `<section class="sk-branch" style="--bc:var(--sk${gi % 5})"><h3><span class="gh-gem b${gi % 5}"></span>${esc(g.group)}<em>${(g.items || []).length} / ${(g.items || []).length}</em></h3>
+      $('#gh-nodes').innerHTML = list.map(([g, gi]) => `<section class="sk-branch" style="--bc:var(--sk${gi % 5})"><h3>${groupIcon(g)}${esc(g.group)}<em>${(g.items || []).length} / ${(g.items || []).length}</em></h3>
         <ul class="gh-node-list sk-grid">${(g.items || []).map((x, i) => `<li style="animation-delay:${i * 40}ms"><span class="sk-icon">${skillIcon(x)}</span><b>${esc(x)}</b></li>`).join('')}</ul></section>`).join('');
-      $('#gh-nodes').querySelectorAll('.sk-icon img').forEach(pixelateIcon);
+      $('#gh-nodes').querySelectorAll('.sk-icon img, .gh-ico img').forEach(pixelateIcon);
     };
+    body.querySelectorAll('.gh-ico img').forEach(pixelateIcon);
     drawSkills('all');
     body.querySelectorAll('[data-branch]').forEach((b) => b.addEventListener('click', () => {
       body.querySelectorAll('[data-branch]').forEach((x) => x.setAttribute('aria-expanded', String(x === b)));
@@ -1618,6 +1738,7 @@ async function loadTahitiData() {
   state.tahiti = data;
   return data;
 }
+let journeyTouched = false;
 async function switchLevel(name) {
   if (name === 'tahiti') await loadTahitiData();
   const m = mapCache[name] || (mapCache[name] = await loadTiledMap(`${BASE}${LEVELS[name]}`));
@@ -1638,10 +1759,212 @@ async function switchLevel(name) {
   const jet = world.apis.private_jet;
   if (jet) { jet.home = jet.group.position.clone(); jet.homeRot = jet.group.rotation.y; }
   setupLabels(); setupMinimap();
+  // exploring Tahiti: keep the chapter list tucked away unless the player opened it
+  if (name === 'tahiti' && !journeyTouched && !isCompactUI()) { $('.journey')?.classList.add('collapsed'); $('#journey-toggle')?.setAttribute('aria-expanded', 'false'); }
   state.nearby = null; state.talkingTo = null; state.path = [];
+  try { renderer.compile(scene, camera); } catch { /* ignore */ }
   if (name === 'tahiti') tahiti.enter();
   if (name === 'island1') guruRoutine.enter();
 }
+
+// ---------------- Characters menu: Visit ----------------
+// Resolves a person's live position (loading their island first if needed), finds a clear,
+// walkable spot directly in front of them and puts Nathan there. It never starts dialogue:
+// the usual "E · Talk" prompt appears and the player chooses.
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const frames = (n = 2) => sleep(Math.max(1, n) * 50);   // timer based: a throttled or hidden tab must never leave the screen faded
+const npcIslandOf = (id) => (id.startsWith('tahiti_') ? 'tahiti' : 'island1');
+const npcIdsFor = (canon) => (state.content.npcs || []).filter((d) => (CANONICAL_MAP[d.id] || d.id) === canon).map((d) => d.id);
+function visitBusy() {
+  if (!state.started) return 'Start the game first';
+  if (state.visiting) return 'Travelling to someone, one moment';
+  if (state.ko) return 'Not right now';
+  if (state.cine || state.flightStarting) return 'Not available during a flight';
+  if (state.minigame) return 'Finish the current activity first';
+  if (state.groupScene) return 'Finish the group scene first';
+  if (state.gym) return 'Finish the workout first';
+  if (state.passengerOf) return 'Not while riding along';
+  if (state.level === 'tahiti') { const r = tahiti.busyReason?.(); if (r) return r; }
+  return '';
+}
+function liveActivity(npcId) {
+  if (state.level === 'tahiti') return tahiti.getNpcActivity?.(npcId) || null;
+  if (npcId === 'guru') return { act: guruRoutine.getRoutinePhase() };
+  const it = world.npcs.find((n) => n.npcId === npcId);
+  if (!it) return null;
+  const r = it.route;
+  return { pose: it.character.pose, mode: r && r.pts.length > 1 && r.wait <= 0 ? 'walk' : 'idle' };
+}
+/** A walkable spot facing the person: straight ahead first, then round them; never on water, props, people or across a wall. */
+function standSpotFor(it) {
+  const gp = it.character.group.position, h = it.character.heading;
+  const me = player.group.position;
+  const floorHere = onFloor(gp.x, gp.z);
+  const free = (x, z) => solidFree(x, z) && nav.isWalkable(x, z, 0.32) && !isWet(x, z) && onFloor(x, z) === floorHere
+    && !world.npcs.some((n) => n !== it && !n.passenger && Math.hypot(n.character.group.position.x - x, n.character.group.position.z - z) < 0.95);
+  const turns = [0, 0.4, -0.4, 0.8, -0.8, 1.25, -1.25, 1.8, -1.8, 2.4, -2.4, Math.PI];
+  // the camera looks along (-1,-1): a spot straight down that line would hide the person behind Nathan,
+  // so prefer one that is also off to the side on screen (both clearly visible), then anything safe
+  // and the prompt must read "Talk" (not a neighbouring activity), using the same priority as the prompt itself
+  const talkWins = (x, z) => {
+    const mine = Math.hypot(x - gp.x, z - gp.z) - 0.8;
+    return !world.interactables.some((o) => {
+      if (o === it || o.disabled || o.kind === 'npc' || (o.kind === 'memory' && o.visited)) return false;
+      const d = Math.hypot(x - o.x, z - o.z);
+      return d < o.radius && d < mine;
+    });
+  };
+  for (const strict of [3, 2, 1, 0]) for (const r of [1.5, 1.8, 1.3, 2.1, 2.5]) {
+    for (const o of turns) {
+      const a = h + o, x = gp.x + Math.sin(a) * r, z = gp.z + Math.cos(a) * r;
+      if ((strict & 1) && ((x - gp.x) - (z - gp.z)) / 1.414 < 0.9) continue;   // screen-right of them: workstations sit on the left
+      if ((strict & 2) && !talkWins(x, z)) continue;
+      if (!free(x, z)) continue;
+      let clear = true;   // nothing solid between them (thin walls, props)
+      for (let k = 1; k < 5; k++) { const q = k / 5; if (!free(gp.x + (x - gp.x) * q, gp.z + (z - gp.z) * q) && !(Math.hypot(gp.x + (x - gp.x) * q - gp.x, gp.z + (z - gp.z) * q - gp.z) < 0.7)) { clear = false; break; } }
+      if (clear) return { x, z };
+    }
+  }
+  return null;
+}
+async function visitCharacter(canon) {
+  const why = visitBusy();
+  if (why) { toast(why); return false; }
+  const ids = npcIdsFor(canon);
+  if (!ids.length) return false;
+  const lvl = state.level;
+  const target = canon === 'harris' ? lvl : ids.some((i) => npcIslandOf(i) === lvl) ? lvl : npcIslandOf(ids[0]);
+  const fade = $('#visit-fade');
+  state.visiting = true;
+  fade.classList.add('on');
+  let ok = false;
+  try {
+    await sleep(190);
+    closePanel();
+    if (dialogue.open) dialogue.close();
+    if (state.level === 'tahiti') tahiti.leaveJoin();
+    if (state.seated) standUp();
+    if (state.mount) dismount(true);
+    if (target !== lvl) {
+      if (target === 'tahiti') {
+        const access = await checkTahitiAccess();
+        if (!access.allowed) { toast('Tahiti is a private island. Ask Nathan for an invite.'); return false; }
+      }
+      toast(target === 'tahiti' ? 'Heading to Tahiti…' : 'Heading to Island 01…');
+      await switchLevel(target);
+      await sleep(450);   // the island's schedules place everyone before we look for them
+    }
+    const it = world.npcs.find((n) => ids.includes(n.npcId));
+    if (!it) { toast('Could not find them right now.'); return false; }
+    const a = liveActivity(it.npcId) || {};
+    if (a.riding || ['walk_to_scooty', 'mount', 'riding', 'return'].includes(a.act)) { toast('They are on the move. Try again in a moment.'); return false; }
+    if (state.level === 'tahiti') { tahiti.holdForVisit?.(it.npcId, 30000); await frames(3); }   // roaming people stop where they are
+    const spot = standSpotFor(it);
+    if (!spot) { toast('No safe spot to stand there right now. Try again in a moment.'); return false; }
+    const gp = it.character.group.position;
+    const py = heightAt(spot.x, spot.z);
+    player.group.position.set(spot.x, py, spot.z);
+    player.group.rotation.set(0, 0, 0);
+    player.heading = Math.atan2(gp.x - spot.x, gp.z - spot.z);
+    player.pose = null; player.speed = 0; player.jumpY = 0; player.jumpV = 0;
+    velocity.set(0, 0, 0);
+    lastSafe.set(spot.x, py, spot.z);
+    state.path = []; marker.visible = false; state.talkingTo = null; state.nearby = null;
+    it.character.lookAt(player.group.position);
+    camTarget.set((gp.x + spot.x) / 2, 0, (gp.z + spot.z) / 2);   // both of them centred in frame
+    state.camOverride = null;
+    ok = true;
+  } catch (err) {
+    console.warn('visit failed', err);
+    toast('Could not get there right now.');
+  } finally {
+    await frames(2);
+    fade.classList.remove('on');
+    state.visiting = false;
+  }
+  return ok;
+}
+/** A spot just inside E range of a stop's interactable, to its screen-right so Nathan and the display both show. */
+function standSpotForInteractable(it) {
+  const floorHere = onFloor(it.x, it.z);
+  const free = (x, z) => solidFree(x, z) && nav.isWalkable(x, z, 0.32) && !isWet(x, z) && onFloor(x, z) === floorHere
+    && !world.npcs.some((n) => !n.passenger && Math.hypot(n.character.group.position.x - x, n.character.group.position.z - z) < 0.95);
+  // the target must be what the prompt picks from this spot, with the same priority as the update loop
+  const wins = (x, z) => {
+    const d = Math.hypot(x - it.x, z - it.z);
+    if (d >= it.radius) return false;
+    return !world.interactables.some((o) => {
+      if (o === it || o.disabled || (o.kind === 'memory' && o.visited)) return false;
+      const od = Math.hypot(x - o.x, z - o.z);
+      return od < o.radius && (o.kind === 'npc' ? od - 0.8 : od) < d;
+    });
+  };
+  for (const strict of [1, 0]) for (const r of [1.1, 1.3, 0.9, 1.45, 0.7]) {
+    if (r >= it.radius) continue;
+    for (let k = 0; k < 24; k++) {
+      const a = Math.PI / 4 + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * (Math.PI / 12);   // start screen-right, fan out
+      const x = it.x + Math.sin(a) * r, z = it.z + Math.cos(a) * r;
+      if (strict && ((x - it.x) - (z - it.z)) / 1.414 < r * 0.5) continue;
+      if (free(x, z) && wins(x, z) && free((x + it.x) / 2, (z + it.z) / 2)) return { x, z };
+    }
+  }
+  return null;
+}
+async function tourGoTo(stop) {
+  const why = visitBusy();
+  if (why) { toast(why); return false; }
+  const fade = $('#visit-fade');
+  state.visiting = true;
+  fade.classList.add('on');
+  let ok = false;
+  try {
+    await sleep(190);
+    closePanel();
+    if (dialogue.open) dialogue.close();
+    if (state.level === 'tahiti') tahiti.leaveJoin();
+    if (state.seated) standUp();
+    if (state.mount) dismount(true);
+    if (state.level !== 'island1') { toast('Heading to Island 01…'); await switchLevel('island1'); await sleep(450); }
+    const it = findStopInteractable(stop, world.interactables, state.content);
+    if (!it) { toast('Could not find that stop right now.'); return false; }
+    const spot = standSpotForInteractable(it);
+    if (!spot) { toast('No safe spot to stand there right now.'); return false; }
+    const py = heightAt(spot.x, spot.z);
+    player.group.position.set(spot.x, py, spot.z);
+    player.group.rotation.set(0, 0, 0);
+    player.heading = Math.atan2(it.x - spot.x, it.z - spot.z);
+    player.pose = null; player.speed = 0; player.jumpY = 0; player.jumpV = 0;
+    velocity.set(0, 0, 0); keys.clear();
+    lastSafe.set(spot.x, py, spot.z);
+    state.path = []; state.pendingOpen = null; marker.visible = false; state.talkingTo = null; state.nearby = null;
+    state.camOverride = null; state.zoom = 1; updateCameraFrustum();
+    camTarget.set((it.x + spot.x) / 2, 0, (it.z + spot.z) / 2);
+    ok = true;
+  } catch (err) {
+    console.warn('tour move failed', err);
+    toast('Could not get there right now.');
+  } finally {
+    await frames(2);
+    fade.classList.remove('on');
+    state.visiting = false;
+  }
+  return ok;
+}
+/** Garage stop only: a compact way into the featured projects, inside the normal project panel. */
+function tourOverviewHtml(c, currentId) {
+  if (!tour.active || tour.stop?.id !== 'garage') return '';
+  const feat = (c.projects || []).filter((p) => p.featured);
+  if (!feat.length) return '';
+  return `<div class="tour-overview"><p class="eyebrow">Featured projects</p>${feat.map((p) => `<button type="button" data-tour-project="${esc(p.id)}"${p.id === currentId ? ' class="on" aria-current="true"' : ''}><b>${esc(p.title)}</b><small>${esc(p.pitch || '')}</small></button>`).join('')}</div>`;
+}
+const characters = createCharacters({
+  content: () => state.content,
+  level: () => state.level,
+  activityOf: (id) => liveActivity(id),
+  busyReason: visitBusy,
+  loadTahiti: () => loadTahitiData(),
+  visit: visitCharacter,
+});
 
 // ---------------- Flight cinematic ----------------
 // Keyframed jet paths per island (metres, relative to the parked jet's ground).
@@ -1700,7 +2023,11 @@ function cineCaption(text) { const c = $('#cine .cine-caption'); if (c) c.textCo
 function cineClouds(v) { const c = $('#cine .cine-clouds'); if (c) c.style.opacity = String(v); }
 
 async function startFlight(to) {
-  if (state.cine || state.groupScene) return;
+  if (state.flightStarting || state.cine || state.groupScene) return;   // never twice
+  state.flightStarting = true;
+  try { await startFlightInner(to); } finally { state.flightStarting = false; }
+}
+async function startFlightInner(to) {
   leaveGym();
   if (dialogue.open) dialogue.close();
   if (state.mount) dismount(true);
@@ -2106,6 +2433,13 @@ function setupMinimap() {
     else if (/building|placeholder|monument/.test(o.type)) { g.fillStyle = '#1e1b2e'; g.fillRect((o.x + map.half) * MM.scale - 3, (o.z + map.half) * MM.scale - 3, 6, 6); }
   }
   MM.bg = bg;
+  // Tahiti: a small, distinct icon set (airstrip, gang compounds, key activities)
+  MM.icons = [];
+  if (map.props?.island === 'tahiti') {
+    const pick = (type, kind, color) => { for (const o of map.objects) if (o.type === type) MM.icons.push({ kind, color, x: o.x, z: o.z }); };
+    pick('runway', 'plane', '#ffffff'); pick('hideout_house', 'house', '#c9483c'); pick('outlaws_villa', 'house', '#2f8f9a');
+    pick('basketball_court', 'ball', '#ff8838'); pick('volley_net', 'vball', '#ffffff'); pick('photo_station', 'cam', '#ffd257'); pick('tv_corner', 'pad', '#9b7bff');
+  }
   MM.toPx = (x, z) => [(x + map.half) * MM.scale, (z + map.half) * MM.scale];
   cv.onclick = ((e) => {
     const r = cv.getBoundingClientRect();
@@ -2134,6 +2468,32 @@ function drawMinimap(t) {
   }
   const p = player.group.position;
   const [px, py] = MM.toPx(p.x, p.z);
+  if (MM.icons?.length) {
+    // icons are drawn upright (un-rotated) so they stay readable on the tilted map
+    g.restore(); g.save();
+    const half = MM.size / 2, cs = Math.SQRT1_2;
+    const up = (x, z) => { const [ax, ay] = MM.toPx(x, z); const dx = ax - half, dy = ay - half; return [half + (dx * cs - dy * cs), half + (dx * cs + dy * cs)]; };
+    g.lineWidth = 1.4; g.strokeStyle = '#1e1b2e';
+    for (const ic of MM.icons) {
+      const [x, y] = up(ic.x, ic.z);
+      g.fillStyle = ic.color;
+      g.beginPath();
+      if (ic.kind === 'house') { g.moveTo(x - 4.5, y + 3.5); g.lineTo(x - 4.5, y - 0.5); g.lineTo(x, y - 4.5); g.lineTo(x + 4.5, y - 0.5); g.lineTo(x + 4.5, y + 3.5); g.closePath(); }
+      else if (ic.kind === 'plane') { g.rect(x - 4, y - 1, 8, 2); g.rect(x - 1, y - 4.5, 2, 9); }
+      else if (ic.kind === 'cam') { g.rect(x - 4, y - 2.5, 8, 5.5); }
+      else if (ic.kind === 'pad') { g.moveTo(x - 4, y - 3); g.lineTo(x + 4, y - 3); g.lineTo(x + 4, y + 3); g.lineTo(x - 4, y + 3); g.closePath(); }
+      else g.arc(x, y, 3.8, 0, Math.PI * 2);
+      g.fill(); g.stroke();
+      if (ic.kind === 'ball') { g.beginPath(); g.moveTo(x - 3.8, y); g.lineTo(x + 3.8, y); g.stroke(); }
+    }
+    // Nathan: arrow pointing the way he faces
+    const [ux, uy] = up(p.x, p.z), h = player.heading, fx = Math.sin(h), fz = Math.cos(h);
+    const ax = (fx * cs - fz * cs), ay = (fx * cs + fz * cs), nx = -ay, ny = ax;
+    g.fillStyle = '#ffffff'; g.lineWidth = 1.6;
+    g.beginPath(); g.moveTo(ux + ax * 7, uy + ay * 7); g.lineTo(ux - ax * 4.5 + nx * 4.6, uy - ay * 4.5 + ny * 4.6); g.lineTo(ux - ax * 2, uy - ay * 2); g.lineTo(ux - ax * 4.5 - nx * 4.6, uy - ay * 4.5 - ny * 4.6); g.closePath(); g.fill(); g.stroke();
+    g.restore();
+    return;
+  }
   g.fillStyle = '#1e1b2e';
   g.beginPath(); g.arc(px, py, 4 + Math.sin(t * 5) * 0.8, 0, Math.PI * 2); g.fill();
   g.fillStyle = '#f8f3e7';
@@ -2151,6 +2511,7 @@ function setupLabels() {
   layer.setAttribute('aria-hidden', 'true');
   canvas.after(layer);
   for (const l of world.labels) {
+    if (state.level === 'tahiti' && (l.text === 'EUPHONIUM VILLA' || l.text === 'VANDERLINDE GANG' || l.text === 'VANDERLINDE HIDEOUT')) continue;
     const d = document.createElement('div');
     d.className = 'world-label';
     d.textContent = l.text;
@@ -2165,15 +2526,33 @@ function updateLabels() {
   for (let i = 0; i < labelEls.length; i++) {
     const lbl = labelEls[i];
     projV.copy(lbl.pos).project(camera);
-    const x = (projV.x * 0.5 + 0.5) * w, y = (-projV.y * 0.5 + 0.5) * h;
-    const disp = x < -100 || x > w + 100 || y < -40 || y > h + 40 ? 'none' : '';
+    const rawX = (projV.x * 0.5 + 0.5) * w, rawY = (-projV.y * 0.5 + 0.5) * h;
+    const disp = rawX < -120 || rawX > w + 120 || rawY < -60 || rawY > h + 60 || projV.z > 1 ? 'none' : '';
     if (lbl.disp !== disp) { lbl.el.style.display = disp; lbl.disp = disp; }
     if (!disp) {
-      const tf = `translate(${Math.round(x)}px, ${Math.round(y)}px) translate(-50%, -100%)`;
+      const clampedY = Math.max(64, Math.min(h - 28, rawY));
+      const clampedX = Math.max(90, Math.min(w - 90, rawX));
+      const tf = `translate(${Math.round(clampedX)}px, ${Math.round(clampedY)}px) translate(-50%, -100%)`;
       if (lbl.tf !== tf) { lbl.el.style.transform = tf; lbl.tf = tf; }
     }
   }
+  // Tahiti: a location sign steps aside (fades) while a dialogue bubble or the interaction prompt sits on it
+  if (state.level === 'tahiti' && (labelFrame++ % 2) === 0) {
+    const cover = [];
+    for (const b of document.querySelectorAll('.tahiti-bubble')) if (b.style.display !== 'none') cover.push(b.getBoundingClientRect());
+    const pr = $('#prompt'); if (pr && !pr.classList.contains('hidden') && pr.offsetParent) cover.push(pr.getBoundingClientRect());
+    for (const lbl of labelEls) {
+      if (lbl.disp) continue;
+      let hit = false;
+      if (cover.length) {
+        const r = lbl.el.getBoundingClientRect();
+        for (const c of cover) if (r.left < c.right + 4 && r.right > c.left - 4 && r.top < c.bottom + 4 && r.bottom > c.top - 4) { hit = true; break; }
+      }
+      if (lbl.hid !== hit) { lbl.el.style.opacity = hit ? '0' : ''; lbl.el.style.transition = 'opacity .15s'; lbl.hid = hit; }
+    }
+  }
 }
+let labelFrame = 0;
 
 // ---------------- Input ----------------
 const raycaster = new THREE.Raycaster();
@@ -2182,11 +2561,12 @@ const ndc = new THREE.Vector2();
 const keys = new Set();
 
 window.addEventListener('keydown', (e) => {
-  if (e.target.closest?.('input, textarea')) return;
+  if (e.target.closest?.('input, textarea, select, [contenteditable="true"]')) return;
   keys.add(e.key.toLowerCase());
 });
 window.addEventListener('keyup', (e) => keys.delete(e.key.toLowerCase()));
 window.addEventListener('blur', () => keys.clear());
+initTouchControls(keys);
 
 const pointers = new Map();
 let pinchStart = 0, zoomStart = 1, downAt = null;
@@ -2277,6 +2657,7 @@ function start() {
   document.body.classList.add('started');
   setSound(!!look.sound);
   if (state.level !== 'tahiti') setTimeout(() => toast('ISLAND 01 · ORIGIN ISLE'), 900);
+  tour.offerWhenReady();
 }
 
 const _camR = new THREE.Vector3(), _camU = new THREE.Vector3();
@@ -2294,6 +2675,7 @@ function update(dt, t) {
   const running = keys.has('shift');
   velocity.set(0, 0, 0);
   const pos = player.group.position;
+  const prevPos = state.prevPlayerPos ? state.prevPlayerPos.set(pos.x, pos.y, pos.z) : (state.prevPlayerPos = pos.clone());
   if (state.freezeUntil && performance.now() < state.freezeUntil) {
     if (shakeT > 0) {
       shakeT -= dt;
@@ -2333,8 +2715,8 @@ function update(dt, t) {
         if (state.pendingOpen) { const it = state.pendingOpen; state.pendingOpen = null; interact(it); }
       }
     } else {
-      // Long click-to-move trips jog automatically; ease in to the destination.
-      const sp = remaining > 14 ? RUN : SPEED;
+      // Click-to-move always sprints to the spot; ease in at the destination.
+      const sp = RUN;
       velocity.set(dx / d, 0, dz / d).multiplyScalar(Math.min(sp, (remaining / dt) * 0.5 + 0.8));
     }
   }
@@ -2353,6 +2735,7 @@ function update(dt, t) {
   if (!state.ko && !state.joined) pos.y += (heightAt(pos.x, pos.z) - pos.y) * Math.min(1, dt * 18);
   if (!state.cine) checkHazards(dt);
   if (state.cine) velocity.copy(state.cine.vel);
+  xrayGate.update(dt);
   player.update(dt, velocity, t);
   if (state.gym) gymSync();
   stepT -= dt * Math.hypot(velocity.x, velocity.z);
@@ -2382,11 +2765,14 @@ function update(dt, t) {
     state.nearby = best;
     updatePrompt();
   }
-  // E-spot circles: far ones fade back, the one you can use right now stands out
+  // E-spot circles: nearby ones brighten, far ones keep subtle visibility matching Island 01
+  const garageStop = tour.stop?.id === 'garage', featuredIds = garageStop ? new Set((state.content.projects || []).filter((p) => p.featured).map((p) => p.id)) : null;
   for (const it of world.interactables) {
     if (!it.beacon || it.kind === 'memory') continue;
     const d = Math.hypot(pos.x - it.x, pos.z - it.z);
-    it.beacon.prom = it === best ? 1.5 : d < 9 ? 1 : d < 18 ? 0.7 : 0.45;
+    it.beacon.prom = it === best ? 1.5 : d < 9 ? 1.0 : d < 24 ? 0.75 : 0.55;
+    // Garage tour stop: the featured project stations glow brighter so the important ones stand out
+    if (garageStop && it.kind === 'project' && featuredIds.has(it.projectId)) it.beacon.prom = Math.max(it.beacon.prom, 2.2);
   }
   // Character themes: the nearest park character's music fades in, a bit
   // louder while talking; only one theme ever plays
@@ -2413,6 +2799,17 @@ function update(dt, t) {
   // Named NPCs roam their district routes, stop for Nathan, then carry on
   updateNpcs(world.npcs, dt, t, heightAt, state.ko ? null : pos, state.talkingTo, camera);
   updateWalkers(world.walkers, dt, t, heightAt, state.ko ? null : pos, camera);
+  // E-rings: under the feet on Island 01, in front of the character on Tahiti (Guru's own routine moves his ring itself)
+  for (const n of world.npcs) {
+    if (!n.beacon?.group || n.passenger || (n.npcId === 'guru' && state.level === 'island1')) continue;
+    // in front of the character; when that side faces away from the camera (or is a desk), the nearest open side toward the camera
+    const ch = n.character, seated = ch.pose === 'sit' || ch.pose === 'sittype' || ch.pose === 'sleep', off = seated ? 0.7 : 0.95;
+    const under = state.level === 'island1';   // Island 01: the ring is centred directly under the NPC's feet
+    let dx = Math.sin(ch.heading), dz = Math.cos(ch.heading);
+    if (dx * CAM_DIR.x + dz * CAM_DIR.z < -0.2 || ch.pose === 'sittype' || ch.pose === 'type') { dx = Math.SQRT1_2; dz = Math.SQRT1_2; }
+    if (under) { dx = 0; dz = 0; }
+    n.beacon.group.position.set(ch.group.position.x + dx * off, ch.group.position.y + 0.04, ch.group.position.z + dz * off);
+  }
   if (state.level === 'tahiti') { tahiti.update(dt, t); tahitiHints(); }
   if (state.level === 'island1') { guruRoutine.update(dt, t); }
   dustTick(dt);
@@ -2424,6 +2821,7 @@ function update(dt, t) {
   }
   // exhibits wake up as Nathan approaches; Motion Off (or OS reduce-motion) freezes them
   state.playerPos = state.ko ? null : pos;
+  state.dt = dt;
   state.reduceMotion = look.motion === 'off';
   world.animated.forEach((fn) => fn(t, state));
   checkTrain();
@@ -2452,11 +2850,12 @@ function update(dt, t) {
     camera.updateMatrixWorld();
   }
 
-  sun.position.copy(camTarget).add(SUN_OFFSET);
-  sun.target.position.copy(camTarget);
+  fitSunShadow();
   updateLabels();
   drawMinimap(t);
   placePrompt();
+  placeHints();
+  tour.update();
   if (state.started && !hintHidden && (t > 14 || state.save.chapters.length)) { hintHidden = true; $('#hint').classList.add('faded'); }
 
   if (state.save.chapters.length !== _lastChapLen) {
@@ -2472,199 +2871,87 @@ function update(dt, t) {
   for (let i = 0; i < world.weather.length; i++) if (world.weather[i].contains(pos.x, pos.z)) { rain = world.weather[i]; break; }
   rainMix += ((rain ? rain.intensity(t) : 0) - rainMix) * Math.min(1, dt * 2);
   if (rainMix > 0.01) scene.background.lerp(RAIN_SKY, rainMix * 0.55);
-  if (state.level === 'tahiti') scene.background.lerp(TAHITI_SKY, 0.55);
+  if (state.level === 'tahiti') {
+    scene.background.lerp(TAHITI_SKY, 0.45);
+    sun.color.set(0xfff7e8);
+  } else {
+    sun.color.setHSL(0.11, 0.7 + progress * 0.25, 0.9 - progress * 0.08);
+  }
   setOcean(state.level === 'tahiti' ? 0.55 : 0);
   setRain(rainMix);
-  sun.color.setHSL(0.11, 0.7 + progress * 0.25, 0.9 - progress * 0.08);
   applyDayNight(dt);
 }
 const ZERO = new THREE.Vector3();
 
 // ---------------- Day / night ----------------
-// 'auto' follows the visitor's local clock: day 07–17, dusk to 20:00, night
-// until 05:00, dawn back to day by 07:00. The change eases in smoothly.
-function nightTarget() {
-  if (look.time === 'day') return 0;
-  if (look.time === 'night') return 1;
-  const d = new Date(), h = d.getHours() + d.getMinutes() / 60;
-  if (h >= 20 || h < 5) return 1;
-  if (h >= 17) return (h - 17) / 3;   // dusk
-  if (h < 7) return 1 - (h - 5) / 2;  // dawn
-  return 0;
-}
+// Daylight is the permanent default. Night only happens when the player picks it (no automatic cycle).
+function nightTarget() { return look.time === 'night' ? 1 : 0; }
 function cycleTime() {
-  look.time = { auto: 'day', day: 'night', night: 'auto' }[look.time] || 'auto';
+  look.time = look.time === 'night' ? 'day' : 'night';
   applyLook();
-  toast(look.time === 'auto' ? 'Time follows your clock' : look.time === 'night' ? 'Night mode: street lights on' : 'Day mode');
+  toast(look.time === 'night' ? 'Night mode: cosy lamplight' : 'Day mode');
 }
-let night = -1, heroIndoor = 0;
+let night = -1;
 
 // ============================================================================
-// Option C: Soft Balanced Night Vision Lighting (Among Us-inspired)
+// Cosy night: soft blue-purple ambient light, warm amber lamps/windows. No spotlight on Nathan.
 // ============================================================================
 export const NIGHT_SETTINGS = {
-  // 1. Radius: ~3x original 4.2 radius -> 12.6, adjustable in NIGHT settings
-  radius: 15.0,
-  // 3D PointLight distance for radial reach across 3D environment
-  distance: 42.0,
-  decay: 0.8,
-  // 2. Neutral-white light (#FFFFFF): preserves natural colors of grass, roads, trees, buildings, NPCs
-  color: 0xffffff,
-  // 3. Center intensity: bright enough to reveal Nathan clearly without daytime blowout
-  intensity: 10.0,
-  // 4. Subtle independent neutral-white fill light for Nathan's face, hair, and clothes
-  fillIntensity: 1.1,
-  fillDistance: 4.2,
-  fillColor: 0xffffff,
-  // 5. Ground vision pool opacity for smooth Among Us-style floor illumination
-  groundOpacity: 0.3,
-  // Deep navy-blue nighttime surroundings colors
-  skyColor: new THREE.Color(0x101c36),
-  moonColor: new THREE.Color(0x7a94d0),
-  hemiSky: new THREE.Color(0x5a78c0),
-  hemiGround: new THREE.Color(0x26365e),
+  skyColor: new THREE.Color(0x5a5fae),
+  moonColor: new THREE.Color(0xb4b8ff),
+  hemiSky: new THREE.Color(0xa59cf0),
+  hemiGround: new THREE.Color(0x6a5fa8),
+  hemiIntensity: 1.5,   // day is 1.7, so the world stays clearly readable
+  sunIntensity: 1.4,     // day is 2.5
+  glowBoost: 0.9,        // extra emissive on lamps/fires (gentle)
+  poolOpacity: 0.4,      // warm amber lamp pools, soft falloff
+  fillColor: 0xc9c0ff,
+  fillIntensity: 0.45,   // faint cool fill so Nathan reads against the scene
 };
 if (typeof window !== 'undefined') window.NIGHT_SETTINGS = NIGHT_SETTINGS;
-if (qs.get('nightRadius')) {
-  const nr = parseFloat(qs.get('nightRadius'));
-  if (nr > 0) NIGHT_SETTINGS.radius = nr;
-}
 
-// 6 & 1. Nathan's radial night vision light (moving radial PointLight, not a spotlight/flashlight)
-const heroLight = new THREE.PointLight(NIGHT_SETTINGS.color, 0, NIGHT_SETTINGS.distance, NIGHT_SETTINGS.decay);
-heroLight.position.set(0, 2.2, 0);
-player.group.add(heroLight);
-
-// 4. Subtle independent neutral-white fill light specifically for Nathan
-const heroFillLight = new THREE.PointLight(NIGHT_SETTINGS.fillColor, 0, NIGHT_SETTINGS.fillDistance, 2.0);
-heroFillLight.position.set(0.2, 1.4, 0.7);
+// Very light fill on Nathan only (no glow, no ground disc); cheap on mobile.
+const heroFillLight = new THREE.PointLight(NIGHT_SETTINGS.fillColor, 0, 7, 2.0);
+heroFillLight.position.set(0.2, 2.0, 0.9);
 player.group.add(heroFillLight);
 
-// Large, soft, neutral-white (#FFFFFF) ground illumination radius inspired by Among Us player vision
-const heroPool = (() => {
-  const c = document.createElement('canvas');
-  c.width = c.height = 256;
-  const g = c.getContext('2d');
-  const gr = g.createRadialGradient(128, 128, 0, 128, 128, 128);
-  // Multi-stop cubic falloff: bright center plateau, smooth feathering into navy darkness, no harsh circular borders
-  gr.addColorStop(0.00, 'rgba(255,255,255,0.42)');
-  gr.addColorStop(0.25, 'rgba(255,255,255,0.38)');
-  gr.addColorStop(0.50, 'rgba(255,255,255,0.26)');
-  gr.addColorStop(0.72, 'rgba(255,255,255,0.12)');
-  gr.addColorStop(0.88, 'rgba(255,255,255,0.035)');
-  gr.addColorStop(1.00, 'rgba(255,255,255,0.00)');
-  g.fillStyle = gr;
-  g.fillRect(0, 0, 256, 256);
-  const tex = new THREE.CanvasTexture(c);
-  // Unit geometry: scaled dynamically by NIGHT_SETTINGS.radius
-  const m = new THREE.Mesh(
-    new THREE.CircleGeometry(1.0, 48),
-    new THREE.MeshBasicMaterial({
-      color: 0xffffff,
-      map: tex,
-      transparent: true,
-      opacity: 0,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-    })
-  );
-  m.rotation.x = -Math.PI / 2;
-  m.position.y = 0.07;
-  m.renderOrder = -1; // under glows, markers and characters
-  scene.add(m);
-  return m;
-})();
-
-const WINDOW_WARM = new THREE.Color(0xffc46a);
-const MARKER_GOLD = new THREE.Color(0xffc93c);
-const SUN_DAY = new THREE.Color(0xfff1d2);
+const MARKER_GOLD = new THREE.Color(0xffc93c);   // mission rings turn gold at night
+const WINDOW_WARM = new THREE.Color(0xffb85a);
 const HEMI_SKY_DAY = new THREE.Color(0xfff6e6);
 const HEMI_GND_DAY = new THREE.Color(0x9aa6c8);
 
-let _prevNight = -1, _heroNightOn = false;
+let _prevNight = -1;
 
 function applyDayNight(dt) {
   const target = nightTarget();
   night = night < 0 ? target : night + (target - night) * Math.min(1, dt * 1.5);
   const n = night;
 
-  // 5. Surrounding deep navy-blue nighttime atmosphere (blend over daytime/sunset sky)
+  // scene.background and sun.color are reset every frame elsewhere, so daytime is restored exactly at n = 0
   if (n > 0.0005) {
-    scene.background.lerp(NIGHT_SETTINGS.skyColor, n * 0.94);
+    scene.background.lerp(NIGHT_SETTINGS.skyColor, n * 0.9);
     sun.color.lerp(NIGHT_SETTINGS.moonColor, n);
   }
 
   if (Math.abs(n - _prevNight) >= 0.0005 || _nightDirty) {
     _prevNight = n;
     _nightDirty = false;
-    hemi.intensity = 1.7 - n * 0.95;
+    hemi.intensity = 1.7 + (NIGHT_SETTINGS.hemiIntensity - 1.7) * n;
     hemi.color.copy(HEMI_SKY_DAY).lerp(NIGHT_SETTINGS.hemiSky, n);
     hemi.groundColor.copy(HEMI_GND_DAY).lerp(NIGHT_SETTINGS.hemiGround, n);
-    sun.intensity = 2.5 - n * 1.85;
-
-    // 7. Preserve existing warm streetlights, campfires, window lights and environmental glows
-    setGlowBoost(1 + n * 1.8);
-    // Orange checkpoint markers (activities, NPCs) turn gold at night
-    // Building windows glow warm at night
-    for (let i = 0; i < windowMats.length; i++) { const w = windowMats[i]; w.mat.emissive.copy(w.emissive).lerp(WINDOW_WARM, n); w.mat.emissiveIntensity = w.ei + (0.95 - w.ei) * n; }
+    sun.intensity = 2.5 + (NIGHT_SETTINGS.sunIntensity - 2.5) * n;
+    setGlowBoost(1 + n * NIGHT_SETTINGS.glowBoost);
+    // Windows glow warm amber; mission rings turn gold
+    for (let i = 0; i < windowMats.length; i++) { const w = windowMats[i]; w.mat.emissive.copy(w.emissive).lerp(WINDOW_WARM, n); w.mat.emissiveIntensity = w.ei + (0.8 - w.ei) * n; }
     for (let i = 0; i < markerMats.length; i++) { const m = markerMats[i]; m.mat.color.copy(m.day).lerp(MARKER_GOLD, n); }
     for (let i = 0; i < world.nightGlow.length; i++) {
       const p = world.nightGlow[i];
       p.visible = n > 0.03;
-      p.material.opacity = 0.62 * n;
+      p.material.opacity = NIGHT_SETTINGS.poolOpacity * n;
     }
     document.body.classList.toggle('is-night', n > 0.5);
   }
-
-  // Daytime early-out for player night-vision lights and ground pool
-  if (n <= 0.005) {
-    if (_heroNightOn) {
-      heroLight.intensity = 0;
-      heroFillLight.intensity = 0;
-      heroPool.visible = false;
-      heroPool.material.opacity = 0;
-      heroIndoor = 0;
-      _heroNightOn = false;
-    }
-    return;
-  }
-  _heroNightOn = true;
-
-  // 1 & 6. Player vision radius dynamically adjusted from NIGHT_SETTINGS
-  const r = NIGHT_SETTINGS.radius;
-  heroPool.scale.set(r, r, 1);
-  heroLight.distance = NIGHT_SETTINGS.distance * (r / 15.0);
-  heroLight.decay = NIGHT_SETTINGS.decay;
-  heroLight.color.set(NIGHT_SETTINGS.color);
-  heroFillLight.color.set(NIGHT_SETTINGS.fillColor);
-
-  // 8. Activate only during nighttime and fade smoothly during dawn and dusk
-  // Step back gently indoors so rooms maintain their own warm interior lighting
-  const hp = player.group.position;
-  const indoorT = world && onFloor(hp.x, hp.z) ? 1 : 0;
-  heroIndoor += (indoorT - heroIndoor) * Math.min(1, dt * 4);
-
-  // 3. Balanced brightness
-  heroLight.intensity = NIGHT_SETTINGS.intensity * n * n * (1 - heroIndoor * 0.7);
-  // 4. Subtle fill light on Nathan
-  heroFillLight.intensity = NIGHT_SETTINGS.fillIntensity * n * (1 - heroIndoor * 0.3);
-
-  heroPool.visible = n > 0.02 && heroIndoor < 0.95;
-  heroPool.material.opacity = NIGHT_SETTINGS.groundOpacity * n * (1 - heroIndoor);
-
-  // 6. Follow Nathan's world position smoothly across walking, running, mounts, vehicles and islands
-  const distToHero = Math.hypot(hp.x - heroPool.position.x, hp.z - heroPool.position.z);
-  if (!heroPool.userData.set || distToHero > 14) {
-    heroPool.position.x = hp.x;
-    heroPool.position.z = hp.z;
-    heroPool.userData.set = true;
-  } else {
-    const followRate = Math.min(1, dt * 16);
-    heroPool.position.x += (hp.x - heroPool.position.x) * followRate;
-    heroPool.position.z += (hp.z - heroPool.position.z) * followRate;
-  }
-  const groundY = heightAt(heroPool.position.x, heroPool.position.z);
-  heroPool.position.y = Math.max(0, groundY) + 0.07;
+  heroFillLight.intensity = n > 0.005 ? NIGHT_SETTINGS.fillIntensity * n : 0;
 }
 let hintHidden = false;
 
@@ -2674,13 +2961,54 @@ const promptV = new THREE.Vector3();
 let _promptTf = '';
 function placePrompt() {
   const pr = $('#prompt');
+  if (!state.nearby && !pr.classList.contains('hidden')) pr.classList.add('hidden');   // never leave a stale prompt behind
   if (isTouch || !state.nearby || pr.classList.contains('hidden')) { _promptTf = ''; return; }
   const nx = state.nearby.kind === 'passenger' ? player.group.position.x : state.nearby.x;
   const nz = state.nearby.kind === 'passenger' ? player.group.position.z : state.nearby.z;
-  promptV.set(nx, (state.nearby.kind === 'npc' ? 2.9 : 3.1), nz).project(camera);
+  const gy = heightAt(nx, nz);
+  promptV.set(nx, gy + (state.nearby.kind === 'npc' ? 2.6 : 2.4), nz).project(camera);
   const x = (promptV.x * 0.5 + 0.5) * innerWidth, y = (-promptV.y * 0.5 + 0.5) * innerHeight;
-  const tf = `translate(${Math.round(x)}px, ${Math.round(y)}px) translate(-50%, -100%)`;
+  // keep the prompt inside the viewport and clear of the navbar, sidebar card and minimap
+  const w = pr.offsetWidth || 160, h = pr.offsetHeight || 40, m = 8;
+  let cx = Math.min(Math.max(x, w / 2 + m), innerWidth - w / 2 - m);
+  let cy = Math.min(Math.max(y, (document.querySelector('.hud-top')?.getBoundingClientRect().bottom || 0) + h + m), innerHeight - m);
+  for (const sel of ['.journey', '.minimap-wrap']) {
+    const r = document.querySelector(sel)?.getBoundingClientRect();
+    if (!r || !r.width || cx + w / 2 < r.left || cx - w / 2 > r.right || cy < r.top || cy - h > r.bottom) continue;
+    cy = Math.max(r.top - m, h + m);
+  }
+  const tf = `translate(${Math.round(cx)}px, ${Math.round(cy)}px) translate(-50%, -100%)`;
   if (tf !== _promptTf) { pr.style.transform = tf; _promptTf = tf; }
+}
+
+// Context hints (R / F / G ...) sit just under the interaction spot they belong to, inside the
+// viewport and clear of the navbar, sidebar card, minimap and the floating E prompt.
+let _hintTf = '';
+function placeHints() {
+  const el = document.getElementById('tahiti-hints');
+  if (!el) return;
+  if (isTouch || !state.nearby || el.classList.contains('hidden') || state.nearby.kind === 'passenger') {
+    if (_hintTf) { el.style.left = ''; el.style.top = ''; el.style.bottom = ''; el.style.transform = ''; _hintTf = ''; }
+    return;
+  }
+  const it = state.nearby;
+  const v = promptV.set(it.x, heightAt(it.x, it.z), it.z).project(camera);
+  const sx = (v.x * 0.5 + 0.5) * innerWidth, sy = (-v.y * 0.5 + 0.5) * innerHeight;
+  const w = el.offsetWidth || 220, h = el.offsetHeight || 34, m = 8;
+  let cx = Math.min(Math.max(sx, w / 2 + m), innerWidth - w / 2 - m);
+  let top = sy + 30;
+  const navB = document.querySelector('.hud-top')?.getBoundingClientRect().bottom || 0;
+  const rects = ['.journey', '.minimap-wrap', '#prompt'].map((q) => document.querySelector(q)).filter((n) => n && !n.classList.contains('hidden')).map((n) => n.getBoundingClientRect()).filter((r) => r.width);
+  for (let pass = 0; pass < 3; pass++) {
+    top = Math.min(Math.max(top, navB + m), innerHeight - h - m);
+    const hit = rects.find((r) => cx + w / 2 > r.left && cx - w / 2 < r.right && top + h > r.top && top < r.bottom);
+    if (!hit) break;
+    // slide sideways out of a corner widget, otherwise step above it
+    if (hit.left < 20 || hit.right > innerWidth - 20) cx = hit.left < 20 ? hit.right + w / 2 + m : hit.left - w / 2 - m;
+    else top = hit.top - h - m;
+  }
+  const tf = `translate(${Math.round(cx)}px, ${Math.round(top)}px) translate(-50%, 0)`;
+  if (tf !== _hintTf) { el.style.left = '0'; el.style.top = '0'; el.style.bottom = 'auto'; el.style.transform = tf; _hintTf = tf; }
 }
 
 function toggleControls(force) {
@@ -3461,7 +3789,7 @@ let stepT = 0;
 
 function updatePrompt() {
   const best = state.nearby, pr = $('#prompt');
-  if (!best || state.ko || state.panelOpen || dialogue.open || state.minigame || state.groupScene) { pr.classList.add('hidden'); return; }
+  if (!best || state.ko || state.panelOpen || dialogue.open || state.minigame || state.groupScene || (state.level === 'tahiti' && tahiti.inMatch())) { pr.classList.add('hidden'); return; }
   if (best.kind === 'passenger') {
     $('#prompt-kind').textContent = "Guru's Scooty";
     $('#prompt-title').textContent = 'Dismount';
@@ -3476,7 +3804,7 @@ function updatePrompt() {
   const [kind, title] = {
     project: ['Inspect project', c.projects.find((p) => p.id === best.projectId)?.title],
     about: ['NATHAN.EXE', `About ${c.profile?.name || 'me'}`],
-    npc: ['Talk', npc && `${npc.name}`],
+    npc: ['', npc && `Talk to ${String(npc.name).split(' ')[0].replace(/^Sivasuthan$/, 'Siva')}`],
     minigame: ['Try it', 'Lift the bar'],
     memory: ['Memory', mem ? 'Pick up ✦' : ''],
     station: ['Memory Line', best.name ? `${best.name} station` : 'Station'],
@@ -3494,6 +3822,15 @@ function updatePrompt() {
   pr.querySelector('kbd').textContent = isTouch ? '◆' : 'E';
   pr.classList.remove('hidden');
 }
+
+// ---------------- Quick tour ----------------
+const tour = createTour({
+  state, dialogue,
+  goTo: tourGoTo,
+  busy: () => !state.started || state.intro < 1 || !!state.panelOpen || dialogue.open || !!state.minigame || !!state.cine || !!state.gym
+    || !!state.groupScene || !!state.ko || !!state.choosing || !!state.visiting || !!state.flightStarting || !!state.volley || !!state.hoop
+    || !$('#bigmap').classList.contains('hidden') || !!state.passengerOf,
+});
 
 // ---------------- Tahiti: companion AI, activities and events ----------------
 const mgRoot = () => $('#minigame');
@@ -3609,9 +3946,19 @@ function tahitiHints() {
   let el = $('#tahiti-hints');
   if (!el) {
     el = document.createElement('div'); el.id = 'tahiti-hints'; el.className = 'tahiti-hints'; document.body.append(el);
-    el.addEventListener('click', (e) => { const b = e.target.closest('[data-k]'); if (b) tahiti.key(b.dataset.k); });
+    el.addEventListener('click', (e) => {
+      const more = e.target.closest('[data-more]');
+      if (more) { more.setAttribute('aria-expanded', String(el.classList.toggle('sheet-open'))); return; }
+      const b = e.target.closest('[data-k]'); if (b) { el.classList.remove('sheet-open'); tahiti.key(b.dataset.k); }
+    });
   }
-  el.innerHTML = h.map((s) => { if (s.startsWith('Space ')) return `<button type="button" data-k=" "><kbd>Space</kbd>${esc(s.slice(6))}</button>`; const key = s[0]; return /^[RFG] /.test(s) ? `<button type="button" data-k="${key.toLowerCase()}"><kbd>${key}</kbd>${esc(s.slice(2))}</button>` : `<span>${esc(s)}</span>`; }).join('');
+  const parts = h.map((s) => { if (s.startsWith('Space ')) return { act: true, html: `<button type="button" data-k=" "><kbd>Space</kbd>${esc(s.slice(6))}</button>` }; const key = s[0]; return /^[RFG] /.test(s) ? { act: true, html: `<button type="button" data-k="${key.toLowerCase()}"><kbd>${key}</kbd>${esc(s.slice(2))}</button>` } : { act: false, html: `<span>${esc(s)}</span>` }; });
+  const acts = parts.filter((x) => x.act), notes = parts.filter((x) => !x.act);
+  el.classList.remove('sheet-open');
+  // phones: one primary action visible, the rest tuck into a compact action sheet behind a "more" button
+  if (isCompactUI() && acts.length > 1) {
+    el.innerHTML = `${notes.map((x) => x.html).join('')}<div class="th-sheet" id="th-sheet">${acts.slice(1).map((x) => x.html).join('')}</div><div class="th-row">${acts[0].html}<button type="button" class="th-more" data-more aria-expanded="false" aria-controls="th-sheet" aria-label="More actions">⋯ ${acts.length - 1}</button></div>`;
+  } else el.innerHTML = parts.map((x) => x.html).join('');
   el.classList.toggle('hidden', !h.length);
 }
 
@@ -3698,16 +4045,19 @@ function loop() {
 if (import.meta.env.DEV) {
   // Dev-only hook for automated testing: step the simulation without rAF.
   window.__game = {
-    state, player, camera, get world() { return world; }, renderer, dialogue, nightSettings: NIGHT_SETTINGS,
+    state, player, camera, sun, scene, camTarget, get world() { return world; }, renderer, dialogue, nightSettings: NIGHT_SETTINGS,
     step(frames = 60) { for (let i = 0; i < frames; i++) update(1 / 60, clock.elapsedTime + i / 60); retro.render(scene, camera); },
-    tap: handleTap, walkTo, interact, knockout, trainCrash: trainCollisionDeath, respawn: respawnNathanAfterDeath, startFlight, skipCine, switchLevel, get map() { return map; }, tahiti: () => tahiti, guru: () => guruRoutine, keys,
+    tap: handleTap, walkTo, interact, knockout, trainCrash: trainCollisionDeath, respawn: respawnNathanAfterDeath, startFlight, skipCine, switchLevel, get map() { return map; }, get nav() { return nav; }, tahiti: () => tahiti, guru: () => guruRoutine, tour, keys,
   };
 }
 
 // After a mouse/touch click on HUD buttons, give keyboard control back to the game.
 document.addEventListener('pointerup', (e) => { const b = e.target.closest?.('button, a'); if (b && !b.closest('.travel')) setTimeout(() => b.blur(), 0); });
 window.addEventListener('resize', resize);
-window.addEventListener('pagehide', () => { resetGym(); persist(); });
+window.addEventListener('orientationchange', () => { resize(); setTimeout(resize, 250); setTimeout(resize, 700); });
+window.visualViewport?.addEventListener('resize', resize);
+window.addEventListener('pagehide', () => { stopPanelMedia(); resetGym(); persist(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) stopPanelMedia(); });
 resize();
 const loaded = init();
 runBoot(loaded);

@@ -144,6 +144,95 @@ export function mergeGroupByMat(group, { fadeSet = null, trackPalette = false } 
   }
 }
 
+/**
+ * Controller for building exterior cutaways (fade roof/walls/signs when player enters).
+ * Evaluates doorway crossing continuously (including sprint velocity across frames)
+ * and animates a snappy 50-80ms linear fade without delayed exponential asymptotic tail.
+ */
+export function createBuildingCutawayController({
+  group,
+  interiorBounds,   // { minX, maxX, minZ, maxZ }
+  doorway,          // { minX, maxX, thresholdZ, dir: 1 (enters towards -z) or -1 (enters towards +z) }
+  fmats,            // Map or Array of materials to fade
+  shadowMeshes = [],// optional array of meshes to toggle castShadow
+  elements = [],    // optional array of objects to toggle visibility with fade
+  fadeDuration = 0.065, // ~65ms transition time (50-80ms)
+  minStep = 0.18,   // smallest fade step per frame
+}) {
+  // Entry-only cutaway: the shell stays fully opaque until Nathan crosses the doorway or stands
+  // inside the interior bounds, and is restored as soon as he leaves. No proximity or camera fading.
+  const v = new THREE.Vector3();
+  const prevV = new THREE.Vector3();
+  let fade = 1.0;
+  let shadowsOn = true;
+  let wasInside = false;
+
+  return {
+    isInside: () => wasInside || fade < 0.6,
+    isOpen: () => fade < 0.05,
+    interiorBounds,
+    getFade: () => fade,
+    setFade(val) { fade = THREE.MathUtils.clamp(val, 0, 1); },
+    update(t, state) {
+      const p = state?.playerPos;
+      let inside = false;
+
+      if (p) {
+        v.set(p.x, 0, p.z);
+        group.worldToLocal(v);
+
+        const inBox = v.x >= interiorBounds.minX && v.x <= interiorBounds.maxX &&
+                      v.z >= interiorBounds.minZ && v.z <= interiorBounds.maxZ;
+        const inDoorX = !!doorway && v.x >= doorway.minX && v.x <= doorway.maxX;
+        // the doorway slab between the interior edge and the threshold: only counts once Nathan is already in
+        // (prevents flicker while he pauses on the threshold)
+        const edgeZ = doorway ? (doorway.dir >= 0 ? interiorBounds.maxZ : interiorBounds.minZ) : 0;
+        const inSlab = inDoorX && (doorway.dir >= 0 ? (v.z >= edgeZ && v.z <= doorway.thresholdZ) : (v.z <= edgeZ && v.z >= doorway.thresholdZ));
+
+        if (wasInside) {
+          inside = inBox || inSlab;
+        } else {
+          let crossed = false;
+          if (state.prevPlayerPos && doorway) {
+            prevV.set(state.prevPlayerPos.x, 0, state.prevPlayerPos.z);
+            group.worldToLocal(prevV);
+            const dZ = doorway.thresholdZ;
+            const entersZ = doorway.dir >= 0 ? (prevV.z >= dZ && v.z <= dZ) : (prevV.z <= dZ && v.z >= dZ);
+            if (entersZ && Math.abs(prevV.z - v.z) > 1e-4) {
+              const frac = (dZ - prevV.z) / (v.z - prevV.z);
+              const crossX = prevV.x + (v.x - prevV.x) * frac;
+              crossed = crossX >= doorway.minX && crossX <= doorway.maxX;
+            }
+          }
+          inside = inBox || (crossed && v.z >= interiorBounds.minZ && v.z <= interiorBounds.maxZ);
+        }
+      }
+
+      wasInside = inside;
+      const target = inside ? 0 : 1;
+
+      if (Math.abs(target - fade) > 0.0001) {
+        const rawDt = typeof state?.dt === 'number' && state.dt > 0 ? state.dt : 0.016;
+        const dt = Math.min(rawDt, 0.05);
+        const step = Math.max(minStep, dt / fadeDuration);
+        fade = target < fade ? Math.max(target, fade - step) : Math.min(target, fade + step);
+
+        const isTrans = fade < 0.999;
+        const matList = fmats.values ? fmats.values() : fmats;
+        for (const m of matList) {
+          m.opacity = fade;
+          m.transparent = isTrans;
+          m.depthWrite = !isTrans;
+          m.visible = fade > 0.01;
+        }
+        for (const el of elements) { if (el) el.visible = fade > 0.55; }
+        const sh = fade > 0.5;
+        if (sh !== shadowsOn) { shadowsOn = sh; for (const o of shadowMeshes) o.castShadow = sh; }
+      }
+    },
+  };
+}
+
 let _pool = null;
 function poolTex() {
   if (_pool) return _pool;
@@ -331,6 +420,7 @@ export function buildScooty(color = 0x1f6fe0) {
 
 export function buildMotorbike(color = 0xc4302b, style = '') {
   if (style === 'shine') return buildShine(color);
+  if (style === 'yamaha') return buildYamaha(color);
   const g = new THREE.Group(), k = kit(g);
   const wheels = [];
   for (const z of [-0.62, 0.66]) {
@@ -386,6 +476,38 @@ function buildShine(color = 0x2f6fc6) {
   k.cyl(0.13, 0.13, 0.1, black, 0, 0.84, 0.74, 12, { rx: Math.PI / 2 });            // round headlamp shell
   k.cyl(0.1, 0.1, 0.02, 0xfff1c0, 0, 0.84, 0.8, 12, { rx: Math.PI / 2 });
   k.box(0.22, 0.12, 0.04, color, 0, 0.98, 0.72, { rx: -0.4 });                      // small visor
+  mergeGroupByMat(g, { trackPalette: true });
+  g.userData.dynamic = true;
+  return { group: g, wheels };
+}
+
+/** Yamaha R15-style sport bike facing +z: full fairing, split seat, twin headlamp slit,
+ *  blue accents and a short underbelly exhaust. */
+function buildYamaha(color = 0xf4f6fa) {
+  const g = new THREE.Group(), k = kit(g), black = 0x1b1b22, chrome = 0xd8dee8, blue = 0x1f4fd0;
+  const wheels = [];
+  for (const z of [-0.64, 0.68]) {
+    const w = new THREE.Group(); w.position.set(0, 0.33, z); g.add(w);
+    const tyre = new THREE.Mesh(new THREE.CylinderGeometry(0.33, 0.33, 0.13, 16), mat(0x15151a)); tyre.rotation.z = Math.PI / 2; tyre.castShadow = true; w.add(tyre);
+    const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.23, 0.23, 0.14, 12), mat(blue)); rim.rotation.z = Math.PI / 2; w.add(rim);
+    for (const a of [0, Math.PI / 3, (2 * Math.PI) / 3]) { const sp = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.44, 0.04), mat(black)); sp.rotation.x = a; w.add(sp); }
+    mergeGroupByMat(w, { trackPalette: true });
+    wheels.push(w);
+  }
+  k.box(0.28, 0.28, 0.5, 0x3a3a46, 0, 0.3, 0.04);                                   // engine
+  k.box(0.12, 0.12, 0.5, chrome, 0.16, 0.24, -0.3, { rx: -0.08 });                  // exhaust
+  k.box(0.36, 0.3, 0.62, color, 0, 0.64, 0.26);                                     // tank + fairing
+  for (const x of [-0.2, 0.2]) k.box(0.05, 0.34, 0.56, color, x, 0.46, 0.4);        // side fairing
+  k.box(0.38, 0.05, 0.5, blue, 0, 0.8, 0.26, { shadow: false });                    // blue tank stripe
+  k.box(0.3, 0.08, 0.5, black, 0, 0.76, -0.28);                                     // rider seat
+  k.box(0.22, 0.12, 0.3, color, 0, 0.8, -0.74, { rx: 0.15 });                       // tail cowl
+  k.box(0.14, 0.05, 0.04, 0xe0202a, 0, 0.78, -0.9, { shadow: false });              // tail lamp
+  k.box(0.34, 0.04, 0.3, color, 0, 0.62, 0.7);                                      // front fender
+  k.box(0.06, 0.5, 0.06, chrome, 0, 0.44, 0.66, { rx: 0.3 });                       // fork
+  k.box(0.56, 0.05, 0.05, black, 0, 0.98, 0.5);                                     // clip-on bars
+  k.box(0.3, 0.2, 0.2, color, 0, 0.92, 0.66, { rx: -0.35 });                        // nose fairing
+  for (const x of [-0.08, 0.08]) k.box(0.1, 0.04, 0.03, 0xfff1c0, x, 0.92, 0.77, { shadow: false });   // twin headlamp slits
+  k.box(0.2, 0.18, 0.04, 0x9fd8ff, 0, 1.08, 0.6, { rx: -0.6, shadow: false });      // windscreen
   mergeGroupByMat(g, { trackPalette: true });
   g.userData.dynamic = true;
   return { group: g, wheels };
@@ -853,8 +975,16 @@ export const KIT = {
     for (let i = 0; i < 4; i++) k.cyl(0.42, 0.42, 0.1, i % 2 ? C.ink : band, 5.0, 0.3 + i * 0.1, hd + 0.75, 12);
     const porch = lightPool(3, 0xffd08a); porch.position.set(DX, 0.09, hd + 1.4); g.add(porch); pools.push(porch);
 
-    const v = new THREE.Vector3();
-    let fade = 1, shadowsOn = true;
+    const cutaway = createBuildingCutawayController({
+      group: g,
+      interiorBounds: { minX: -hw + T, maxX: hw - T, minZ: -hd + T, maxZ: hd - T },
+      doorway: { minX: DX - DW / 2, maxX: DX + DW / 2, thresholdZ: hd - T / 2, dir: 1 },
+      fmats,
+      shadowMeshes: shellShadowMeshes,
+      elements: [sign],
+      fadeDuration: 0.065,
+    });
+
     const api = {
       obj: g,
       // Workout spots in local space (front = +z). stand: where Nathan steps to
@@ -867,7 +997,8 @@ export const KIT = {
       },
       benchBar, benchRest, latBar, latRest, setLat,
       setRackPair(on) { rackPair.visible = on; },
-      isInside: () => fade < 0.6,
+      isInside: () => cutaway.isInside(), interiorBounds: cutaway.interiorBounds,
+      isOpen: () => cutaway.isOpen(),
     };
     return {
       obj: g,
@@ -887,18 +1018,7 @@ export const KIT = {
       floors: [{ x: 0, z: 0, w: W - 2 * T, d: D - 2 * T, h: B }, { x: DX, z: hd, w: DW, d: 1.0, h: B }],
       nightGlow: pools,
       animate: (t, state) => {
-        const p = state.playerPos;
-        let inside = false;
-        if (p) { v.set(p.x, 0, p.z); g.worldToLocal(v); inside = Math.abs(v.x) < hw + 0.2 && v.z > -hd && v.z < hd + 0.45; }
-        const target = inside ? 0 : 1;
-        if (Math.abs(target - fade) < 0.001) return;
-        fade += (target - fade) * 0.12;
-        if (Math.abs(target - fade) < 0.002) fade = target;
-        const isTrans = fade < 0.995;
-        for (const m of fmats.values()) { m.opacity = fade; m.transparent = isTrans; m.depthWrite = !isTrans; m.visible = fade > 0.01; }
-        sign.visible = fade > 0.55;
-        const sh = fade > 0.5;
-        if (sh !== shadowsOn) { shadowsOn = sh; for (const o of shellShadowMeshes) o.castShadow = sh; }
+        cutaway.update(t, state);
       },
     };
   },
@@ -1596,12 +1716,15 @@ export const KIT = {
         const lx = p ? p.x - g.position.x : 1e9, lz = p ? p.z - g.position.z : 1e9; // canopy is placed unrotated
         const inside = Math.abs(lx) < hw + 2 && Math.abs(lz) < hd + 2;
         const target = inside ? 0 : 1;
-        if (Math.abs(target - fade) < 0.001) return;
-        fade += (target - fade) * 0.12;
-        if (Math.abs(target - fade) < 0.002) fade = target;
-        const isTrans = fade < 0.995;
-        for (const m of fadeMats) { m.opacity = fade; m.transparent = isTrans; m.depthWrite = !isTrans; }
-        upper.visible = fade > 0.02;
+        if (Math.abs(target - fade) > 0.0001) {
+          const rawDt = typeof state?.dt === 'number' && state.dt > 0 ? state.dt : 0.016;
+          const dt = Math.min(rawDt, 0.05);
+          const step = Math.max(0.18, dt / 0.065);
+          fade = target < fade ? Math.max(target, fade - step) : Math.min(target, fade + step);
+          const isTrans = fade < 0.999;
+          for (const m of fadeMats) { m.opacity = fade; m.transparent = isTrans; m.depthWrite = !isTrans; }
+          upper.visible = fade > 0.02;
+        }
       },
     };
   },
@@ -2225,11 +2348,14 @@ export const KIT = {
         let under = false;
         if (p) { v.set(p.x, 0, p.z); g.worldToLocal(v); under = Math.abs(v.x) < len / 2 + 0.3 && v.z > -hz - 0.3 && v.z < hz + 0.6; }
         const target = under ? 0.35 : 1;
-        if (Math.abs(target - fade) < 0.001) return;
-        fade += (target - fade) * 0.12;
-        if (Math.abs(target - fade) < 0.002) fade = target;
-        const isTrans = fade < 0.995;
-        roofMat.opacity = fade; roofMat.transparent = isTrans; roofMat.depthWrite = !isTrans;
+        if (Math.abs(target - fade) > 0.0001) {
+          const rawDt = typeof state?.dt === 'number' && state.dt > 0 ? state.dt : 0.016;
+          const dt = Math.min(rawDt, 0.05);
+          const step = Math.max(0.18, dt / 0.065);
+          fade = target < fade ? Math.max(target, fade - step) : Math.min(target, fade + step);
+          const isTrans = fade < 0.999;
+          roofMat.opacity = fade; roofMat.transparent = isTrans; roofMat.depthWrite = !isTrans;
+        }
       },
     };
   },
@@ -2309,10 +2435,22 @@ export const KIT = {
     mergeGroupByMat(signBits, { trackPalette: true });
     const porch = lightPool(3, 0xffd08a); porch.position.set(0, 0.09, hd + 1.4); g.add(porch); pools.push(porch);
 
-    const v = new THREE.Vector3();
-    let fade = 1;
+    const shellShadowMeshes = [];
+    shell.traverse((o) => { if (o.isMesh && o.castShadow) shellShadowMeshes.push(o); });
+
+    const cutaway = createBuildingCutawayController({
+      group: g,
+      interiorBounds: { minX: -hw + T, maxX: hw - T, minZ: -hd + T, maxZ: hd - T },
+      doorway: { minX: -DOOR / 2, maxX: DOOR / 2, thresholdZ: hd - T / 2, dir: 1 },
+      fmats,
+      shadowMeshes: shellShadowMeshes,
+      elements: [sign, signBits],
+      fadeDuration: 0.065,
+    });
+
     return {
       obj: g,
+      api: { obj: g, isInside: () => cutaway.isInside(), interiorBounds: cutaway.interiorBounds, isOpen: () => cutaway.isOpen() },
       colliders: [
         { x: 0, z: -hd + T / 2, w: W, d: T + 0.2 },                                  // back wall
         { x: -hw + T / 2, z: 0, w: T + 0.2, d: D },                                  // west wall
@@ -2325,16 +2463,7 @@ export const KIT = {
       floors: [{ x: 0, z: 0, w: W - 2 * T, d: D - 2 * T, h: B }, { x: 0, z: hd + 0.1, w: DOOR, d: 0.8, h: B }],
       nightGlow: pools,
       animate: (t, state) => {
-        const p = state.playerPos;
-        let inside = false;
-        if (p) { v.set(p.x, 0, p.z); g.worldToLocal(v); inside = Math.abs(v.x) < hw + 0.2 && v.z > -hd && v.z < hd + 0.8; }
-        const target = inside ? 0 : 1;
-        if (Math.abs(target - fade) < 0.001) return;
-        fade += (target - fade) * 0.12;
-        if (Math.abs(target - fade) < 0.002) fade = target;
-        const isTrans = fade < 0.995;
-        for (const m of fmats.values()) { m.opacity = fade; m.transparent = isTrans; m.depthWrite = !isTrans; m.visible = fade > 0.01; }
-        sign.visible = fade > 0.55; signBits.visible = fade > 0.55;   // the eave board steps aside while you're indoors
+        cutaway.update(t, state);
       },
     };
   },
@@ -3088,8 +3217,10 @@ export const KIT = {
   },
 
   laptop_table() {
-    // Small work table with an open laptop, notebook and a coffee.
+    // Small work table with an open laptop, notebook and a coffee on a paved pad.
     const g = new THREE.Group(), k = kit(g);
+    k.box(1.8, 0.04, 1.6, 0xdcd8d0, 0, 0, 0.4);
+    k.box(1.88, 0.02, 1.68, 0xbab6ae, 0, 0, 0.4, { shadow: false });
     const T = 0.62;
     k.box(1.2, T, 0.6, 0x6f4a30, 0, 0, 0); k.box(1.28, 0.06, 0.68, C.woodLight, 0, T, 0);
     k.box(0.5, 0.03, 0.34, C.charcoal, 0.0, T + 0.06, 0.08); k.box(0.5, 0.34, 0.03, C.charcoal, 0.0, T + 0.09, -0.09, { rx: -0.25 });
@@ -3097,6 +3228,39 @@ export const KIT = {
     k.box(0.22, 0.02, 0.28, 0xf6e7c4, -0.42, T + 0.06, 0.1); k.cyl(0.05, 0.045, 0.11, C.white, 0.45, T + 0.06, 0.15, 8);
     k.cyl(0.24, 0.22, 0.42, 0x3d4058, 0, 0, 0.78, 10); k.cyl(0.26, 0.26, 0.05, 0x2a2440, 0, 0.42, 0.78, 10);   // stool
     return { obj: g, colliders: [{ x: 0, z: 0, w: 1.2, d: 0.6 }] };
+  },
+
+  coding_station() {
+    // Guru's outdoor dev corner (Tahiti): desk with a big monitor of scrolling code, laptop, keyboard,
+    // coffee, sticky notes and a small tower PC, with a stool. Screen faces +z.
+    const g = new THREE.Group(), k = kit(g);
+    k.box(2.4, 0.04, 1.9, 0xdcd8d0, 0, 0, 0.5);
+    k.box(2.48, 0.02, 1.98, 0xbab6ae, 0, 0, 0.5, { shadow: false });
+    const T = 0.66;
+    k.box(1.6, T, 0.66, 0x6f4a30, 0, 0, 0); k.box(1.68, 0.06, 0.74, C.woodLight, 0, T, 0);
+    const cv = document.createElement('canvas'); cv.width = 96; cv.height = 56; const cx = cv.getContext('2d');
+    const tex = new THREE.CanvasTexture(cv); tex.magFilter = THREE.NearestFilter; tex.colorSpace = THREE.SRGBColorSpace;
+    const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.86, 0.5), new THREE.MeshBasicMaterial({ map: tex }));
+    scr.position.set(-0.28, T + 0.58, -0.2); scr.userData.dynamic = true; g.add(scr);
+    k.box(0.94, 0.58, 0.04, 0x14101f, -0.28, T + 0.3, -0.24); k.box(0.08, 0.26, 0.08, 0x14101f, -0.28, T + 0.06, -0.22);       // monitor + stand
+    k.box(0.5, 0.02, 0.18, 0x1e1b2e, -0.28, T + 0.06, 0.12);                                                                       // keyboard
+    k.box(0.4, 0.03, 0.28, C.charcoal, 0.5, T + 0.06, 0.04); k.box(0.4, 0.26, 0.03, C.charcoal, 0.5, T + 0.18, -0.1, { rx: -0.25 }); k.box(0.34, 0.2, 0.02, glow(0x6fa8dc), 0.5, T + 0.19, -0.08, { rx: -0.25, shadow: false });   // laptop
+    k.cyl(0.05, 0.045, 0.11, C.white, 0.7, T + 0.06, 0.22, 8);                                                                     // coffee
+    for (const [x, c] of [[0.2, 0xffd257], [0.3, 0xff8fb1]]) k.box(0.08, 0.01, 0.08, c, x, T + 0.06, 0.22, { shadow: false });  // sticky notes
+    k.box(0.28, 0.5, 0.46, 0x2a2440, -0.95, 0, 0.0); k.box(0.02, 0.4, 0.3, glow(0x4ad0ff), -0.8, 0.05, 0.0, { shadow: false });  // tower PC
+    k.cyl(0.24, 0.22, 0.42, 0x3d4058, 0, 0, 0.85, 10); k.cyl(0.26, 0.26, 0.05, 0x2a2440, 0, 0.42, 0.85, 10);                       // stool
+    const L = ['const nathan = {', ' role: "dev",', ' build()', '};', 'git commit', 'npm run dev', 'if (ok) ship();', '// TODO'];
+    let last = -1;
+    const draw = (t) => {
+      const step = Math.floor(t * 1.5); if (step === last) return; last = step;
+      cx.fillStyle = '#10142a'; cx.fillRect(0, 0, 96, 56);
+      cx.fillStyle = '#1e2a52'; cx.fillRect(0, 0, 96, 7);
+      cx.font = '6px monospace';
+      for (let i = 0; i < 7; i++) { cx.fillStyle = ['#9fe6f2', '#b5e48c', '#ffd257', '#ff8fb1'][(i + step) % 4]; cx.fillText(L[(i + step) % L.length], 4 + ((i + step) % 3) * 4, 15 + i * 6.5); }
+      tex.needsUpdate = true;
+    };
+    draw(0);
+    return { obj: g, colliders: [{ x: 0, z: 0, w: 1.6, d: 0.66 }], animate: (t) => draw(t) };
   },
 
   training_dummy() {
@@ -3234,11 +3398,13 @@ export const KIT = {
     sb(sideW, H, T, ext, -(DOOR / 2 + sideW / 2), B, hd - T / 2); sb(sideW, H, T, ext, DOOR / 2 + sideW / 2, B, hd - T / 2);
     sb(DOOR, 0.8, T, ext, 0, B + H - 0.8, hd - T / 2);
     sb(T, H, D, ext, hw - T / 2, B, 0);
-    sb(W + 0.1, 0.3, D + 0.1, 0xb5523b, 0, B, 0);
+    sb(W + 0.1, 0.3, D + 0.1, 0x88382c, 0, B, 0);
     for (const x of [-4.6, -2.4, 2.4, 4.6]) { sb(1.0, 1.0, 0.06, 0x6a4a32, x, B + 1.0, hd + 0.01); sb(0.85, 0.85, 0.05, 0x2f86d6, x, B + 1.07, hd + 0.04); }
     for (const z of [-2.6, 0, 2.6]) { sb(0.06, 1.0, 1.0, 0x6a4a32, hw + 0.01, B + 1.0, z); sb(0.05, 0.85, 0.85, 0x2f86d6, hw + 0.04, B + 1.07, z); }
-    const rs = new THREE.Shape(); rs.moveTo(-hd - 0.4, 0); rs.lineTo(hd + 0.4, 0); rs.lineTo(0, 1.8); rs.closePath();
-    const roof = new THREE.Mesh(new THREE.ExtrudeGeometry(rs, { depth: W + 0.6, bevelEnabled: false }), fm(0xc4623a)); roof.position.set(-hw - 0.3, B + H, 0); roof.rotation.y = Math.PI / 2; roof.castShadow = true; shell.add(roof);
+    const rs = new THREE.Shape(); rs.moveTo(-hd - 0.18, 0); rs.lineTo(hd + 0.18, 0); rs.lineTo(0, 0.78); rs.closePath();
+    const roof = new THREE.Mesh(new THREE.ExtrudeGeometry(rs, { depth: W + 0.3, bevelEnabled: false }), fm(0xb4888c)); roof.position.set(-hw - 0.15, B + H, 0); roof.rotation.y = Math.PI / 2; roof.castShadow = true; shell.add(roof);
+    // Muted brick roof: 0xb4888c is the source colour that the scene lighting and retro grade render as ~#984439 (not a dark saturated red). Ridge and eave trim are tuned to the same family.
+    sb(W + 0.3, 0.08, 0.16, 0xc49c9c, 0, B + H + 0.74, 0); sb(W + 0.3, 0.1, 0.06, 0x9c6c70, 0, B + H - 0.02, hd + 0.17);
     sb(DOOR + 0.3, H - 0.6, 0.12, 0x5a3a26, 0, B, hd + 0.02).scale.set(1, 1, 1);
     for (const x of [-DOOR / 2 - 0.45, DOOR / 2 + 0.45]) { sb(0.08, 0.3, 0.14, C.ink, x, B + 1.85, hd + 0.08); sb(0.2, 0.26, 0.2, 0xffc46a, x, B + 1.7, hd + 0.24, 0xffb347); }
     sb(W - 0.6, 0.06, 0.06, 0xffc46a, 0, B + H - 0.12, hd + 0.08, 0xffb347);
@@ -3246,23 +3412,31 @@ export const KIT = {
     mergeGroupByMat(shell, { fadeSet: fmats });
     const shellShadowMeshes = [];
     shell.traverse((o) => { if (o.isMesh && o.castShadow) shellShadowMeshes.push(o); });
-    const sign = boardSign('VANDERLINDE GANG', 7.4, 1.05, { fg: '#fff1d6', bg: '#5a3a26', board: 0x5a3a26, trim: C.amber });
-    sign.position.set(0, B + H + 0.65, hd + 0.4); sign.userData.dynamic = true; g.add(sign);
+    const sign = boardSign('VANDERLINDE HIDEOUT', 7.2, 0.98, { fg: '#fff1d6', bg: '#5a3a26', board: 0x5a3a26, trim: C.amber });
+    sign.position.set(0, B + H + 0.45, hd + 0.22); sign.userData.dynamic = true; g.add(sign);
     // the sign is softly lit: a warm glow behind it and two little lamps above
     const signBits = new THREE.Group(); signBits.userData.dynamic = true; g.add(signBits);
     const sbk = kit(signBits), warm = mat(0xffc46a, { emissive: 0xffb347, emissiveIntensity: 0.45 });
-    const halo = new THREE.Mesh(new THREE.PlaneGeometry(8.0, 1.5), new THREE.MeshBasicMaterial({ color: 0xffb347, transparent: true, opacity: 0.16, depthWrite: false, blending: THREE.AdditiveBlending }));
-    halo.position.set(0, B + H + 0.65, hd + 0.3); signBits.add(halo);
-    for (const x of [-2.4, 2.4]) { sbk.box(0.05, 0.35, 0.05, C.ink, x, B + H + 1.2, hd + 0.4); sbk.box(0.05, 0.05, 0.3, C.ink, x, B + H + 1.52, hd + 0.52); sbk.box(0.22, 0.1, 0.16, warm, x, B + H + 1.42, hd + 0.66, { shadow: false }); }
+    const halo = new THREE.Mesh(new THREE.PlaneGeometry(7.6, 1.4), new THREE.MeshBasicMaterial({ color: 0xffb347, transparent: true, opacity: 0.16, depthWrite: false, blending: THREE.AdditiveBlending }));
+    halo.position.set(0, B + H + 0.45, hd + 0.2); signBits.add(halo);
+    for (const x of [-2.4, 2.4]) { sbk.box(0.05, 0.35, 0.05, C.ink, x, B + H + 1.0, hd + 0.22); sbk.box(0.05, 0.05, 0.3, C.ink, x, B + H + 1.32, hd + 0.34); sbk.box(0.22, 0.1, 0.16, warm, x, B + H + 1.22, hd + 0.48, { shadow: false }); }
     mergeGroupByMat(signBits, { trackPalette: true });
-    const sub = boardSign('THE HIDEOUT', 2.6, 0.42, { fg: '#2a2440', bg: '#ffd257', board: 0xffd257, trim: 0x5a3a26 });
-    sub.position.set(0, B + H + 0.0, hd + 0.42); sub.userData.dynamic = true; g.add(sub);
     const entryPool = lightPool(3.2, 0xffc46a); entryPool.position.set(0, 0.1, hd + 1.4); g.add(entryPool);
-    const v = new THREE.Vector3();
-    let fade = 1, shadowsOn = true;
+    const cutaway = createBuildingCutawayController({
+      group: g,
+      interiorBounds: { minX: -hw + T, maxX: hw - T, minZ: -hd + T, maxZ: hd - T },
+      doorway: { minX: -DOOR / 2, maxX: DOOR / 2, thresholdZ: hd - T / 2, dir: 1 },
+      fmats,
+      shadowMeshes: shellShadowMeshes,
+      elements: [sign, signBits],
+      fadeDuration: 0.065,
+    });
+
     const api = {
       obj: g,
-      isInside: () => fade < 0.6,
+      isInside: () => cutaway.isInside(), interiorBounds: cutaway.interiorBounds,
+      isOpen: () => cutaway.isOpen(),
+      getFade: () => cutaway.getFade(),
     };
     return {
       obj: g,
@@ -3276,18 +3450,7 @@ export const KIT = {
       floors: [{ x: 0, z: 0, w: W - 2 * T, d: D - 2 * T, h: B }, { x: 0, z: hd + 0.15, w: DOOR, d: 0.7, h: B }],
       nightGlow: [entryPool],
       animate: (t, state) => {
-        const p = state.playerPos;
-        let inside = false;
-        if (p) { v.set(p.x, 0, p.z); g.worldToLocal(v); inside = Math.abs(v.x) < hw + 0.2 && v.z > -hd && v.z < hd + 0.45; }
-        const target = inside ? 0 : 1;
-        if (Math.abs(target - fade) < 0.001) return;
-        fade += (target - fade) * 0.12;
-        if (Math.abs(target - fade) < 0.002) fade = target;
-        const isTrans = fade < 0.995;
-        for (const m of fmats.values()) { m.opacity = fade; m.transparent = isTrans; m.depthWrite = !isTrans; m.visible = fade > 0.01; }
-        sign.visible = sub.visible = signBits.visible = fade > 0.55;
-        const sh = fade > 0.5;
-        if (sh !== shadowsOn) { shadowsOn = sh; for (const o of shellShadowMeshes) o.castShadow = sh; }
+        cutaway.update(t, state);
       },
     };
   },
@@ -3300,26 +3463,83 @@ export const KIT = {
     const g = new THREE.Group(), k = kit(g);
     const W = 8, D = 7, B = 1.4, H = 2.8, hw = W / 2, hd = D / 2;
     const white = 0xf4efe4, teal = 0x2f8f9a, wood = 0xb07a4a, deckC = 0xc98b55;
-    // raised base + two storeys
+    // raised base (stays solid at ground level)
     k.box(W + 0.4, B, D + 0.4, 0xb8aa98, 0, 0, 0);
-    k.box(W, H, D, white, 0, B, 0);
-    k.box(W - 1, H, D - 1, 0xf0e8d8, -0.5, B + H, -0.3);
-    k.box(W + 0.5, 0.18, D + 0.5, teal, 0, B + H, 0);
-    k.box(W - 0.6, 0.2, D - 0.6, teal, -0.5, B + 2 * H, -0.3);
-    k.box(W - 1.2, 0.5, D - 1.2, 0xd9cdb8, -0.5, B + 2 * H + 0.2, -0.3);          // low roof
+
+    // Fading shell: walls, upper storey, roof, windows, and sign
+    const shell = new THREE.Group(); shell.userData.dynamic = true; g.add(shell);
+    const fmats = new Map();
+    const fm = (color, em = 0) => { const key = `${color}|${em}`; if (!fmats.has(key)) fmats.set(key, new THREE.MeshLambertMaterial({ color, emissive: em, emissiveIntensity: em ? 0.5 : 0, flatShading: true, transparent: false, depthWrite: true, opacity: 1 })); return fmats.get(key); };
+    const sb = (w2, h2, d2, color, x, y, z, em = 0) => { const m = new THREE.Mesh(sharedBox(w2, h2, d2), fm(color, em)); m.position.set(x, y + h2 / 2, z); m.castShadow = true; shell.add(m); return m; };
+
+    sb(W, H, D, white, 0, B, 0);
+    sb(W - 1, H, D - 1, 0xf0e8d8, -0.5, B + H, -0.3);
+    sb(W + 0.5, 0.18, D + 0.5, teal, 0, B + H, 0);
+    // Modest roof overhang extending ~0.35m beyond upper floor walls
+    sb(7.8, 0.22, 6.8, 0x4a5868, -0.5, B + 2 * H, -0.3);
+    sb(7.4, 0.16, 6.4, 0x5a6a7c, -0.5, B + 2 * H + 0.22, -0.3);
+    sb(8.0, 0.06, 7.0, 0x2f8f9a, -0.5, B + 2 * H + 0.08, -0.3); // sleek teal roof fascia trim
+
     // east (deck) facade: sliding glass doors + windows
-    k.box(0.06, 2.2, 3.6, 0x2a3a4a, hw + 0.02, B + 0.1, 0); k.box(0.05, 2.0, 3.4, glow(0xa8d8f0), hw + 0.05, B + 0.2, 0, { shadow: false });
-    for (const z of [-1.7, 0, 1.7]) k.box(0.06, 2.0, 0.06, 0x2a3a4a, hw + 0.07, B + 0.2, z, { shadow: false });
-    for (const z of [-2.2, 0, 2.2]) { k.box(0.06, 1.0, 1.1, 0x2a3a4a, hw - 0.48, B + H + 0.8, z - 0.3); k.box(0.05, 0.85, 0.95, glow(0xffd08a), hw - 0.45, B + H + 0.87, z - 0.3, { shadow: false }); }
-    for (const x of [-2.2, 0.4, 2.6]) { k.box(1.1, 1.0, 0.06, 0x2a3a4a, x, B + 0.9, hd + 0.02); k.box(0.95, 0.85, 0.05, glow(0xffd08a), x, B + 0.97, hd + 0.05, { shadow: false }); }
-    // THE OUTLAWS board on the upper storey, facing the deck / camera side
-    const sign = boardSign('THE OUTLAWS', 5.2, 1.0, { fg: '#fff1d6', bg: '#2a2440', trim: C.accent });
-    sign.position.set(hw - 0.45, B + H + 2.15, -0.3); sign.rotation.y = Math.PI / 2; g.add(sign);
-    // deck
+    sb(0.06, 2.2, 3.6, 0x2a3a4a, hw + 0.02, B + 0.1, 0);
+    sb(0.05, 2.0, 3.4, 0xa8d8f0, hw + 0.05, B + 0.2, 0, 0xa8d8f0);
+    for (const z of [-1.7, 0, 1.7]) sb(0.06, 2.0, 0.06, 0x2a3a4a, hw + 0.07, B + 0.2, z);
+    for (const z of [-1.5, 0.9]) { sb(0.06, 1.0, 1.1, 0x2a3a4a, hw - 0.48, B + H + 0.8, z); sb(0.05, 0.85, 0.95, 0xffd08a, hw - 0.45, B + H + 0.87, z, 0xffd08a); }
+
+    // south (entrance approach) facade:
+    // Upper storey: two neatly aligned upper windows
+    for (const x of [-2.0, 1.0]) {
+      sb(1.2, 1.1, 0.08, 0x2a3a4a, x, B + H + 0.85, 2.7);
+      sb(1.04, 0.94, 0.06, 0xffd08a, x, B + H + 0.93, 2.72, 0xffd08a);
+    }
+    // Ground storey: clearly identifiable front entrance door + canopy + steps
+    const entX = -1.0;
+    sb(1.6, 2.25, 0.12, 0x2a3a4a, entX, B, hd + 0.02); // door frame
+    sb(1.36, 2.1, 0.14, 0x6f4a30, entX, B, hd + 0.04);  // wooden door
+    sb(0.06, 0.2, 0.1, 0xffd257, entX + 0.48, B + 0.95, hd + 0.12); // brass handle
+    sb(2.4, 0.12, 1.2, teal, entX, B + 2.3, hd + 0.58); // entrance canopy overhang
+    sb(0.24, 0.08, 0.24, 0xffc46a, entX, B + 2.22, hd + 0.58, 0xffb347); // warm canopy light
+    for (const x of [entX - 0.95, entX + 0.95]) sb(0.06, 0.45, 0.45, 0x2a3a4a, x, B + 1.85, hd + 0.2, 0); // canopy brackets
+    // Physical entrance sign mounted above the front entrance canopy
+    const frontSign = boardSign("EUPHONIUM VILLA", 3.2, 0.55, { fg: '#fff1d6', bg: '#2a2440', trim: C.accent });
+    frontSign.position.set(entX, B + 2.7, hd + 0.58); frontSign.userData.dynamic = true; shell.add(frontSign);
+
+    // Front entrance stairs descending to south ground (B=1.4m down to 0)
+    for (let i = 0; i < 4; i++) k.box(2.2, B - i * 0.35, 0.45, 0x9c6d48, entX, 0, hd + 0.22 + i * 0.45);
+    // Side curbs along front steps
+    k.box(0.18, 1.42, 1.8, 0xb8aa98, entX - 1.15, 0, hd + 0.9);
+    k.box(0.18, 1.42, 1.8, 0xb8aa98, entX + 1.15, 0, hd + 0.9);
+
+    // EUPHONIUM board on the upper storey, facing the deck / camera side
+    const sign = boardSign('EUPHONIUM', 5.2, 1.0, { fg: '#fff1d6', bg: '#2a2440', trim: C.accent });
+    sign.position.set(hw - 0.45, B + H + 2.15, -0.3); sign.rotation.y = Math.PI / 2; sign.userData.dynamic = true; shell.add(sign);
+
+    mergeGroupByMat(shell, { fadeSet: fmats });
+    const shellShadowMeshes = [];
+    shell.traverse((o) => { if (o.isMesh && o.castShadow) shellShadowMeshes.push(o); });
+
+    // deck with warm wooden decking
     const dx0 = hw, dx1 = hw + 8, dz0 = -5, dz1 = 7;
-    k.box(dx1 - dx0, B, dz1 - dz0, 0x8a6a4a, (dx0 + dx1) / 2, 0, (dz0 + dz1) / 2);
-    k.box(dx1 - dx0, 0.06, dz1 - dz0, deckC, (dx0 + dx1) / 2, B - 0.03, (dz0 + dz1) / 2, { shadow: false });
-    for (let x = dx0 + 0.4; x < dx1; x += 0.4) k.box(0.02, 0.065, dz1 - dz0, 0xa86f42, x, B - 0.03, (dz0 + dz1) / 2, { shadow: false });
+    k.box(dx1 - dx0, B, dz1 - dz0, 0x6a4a32, (dx0 + dx1) / 2, 0, (dz0 + dz1) / 2);
+    const deckCv = document.createElement('canvas'); deckCv.width = 64; deckCv.height = 128;
+    const dcg = deckCv.getContext('2d');
+    const plankCols = ['#9e6f4a', '#966743', '#9c6d48', '#936440'];
+    for (let p = 0; p < 4; p++) {
+      dcg.fillStyle = plankCols[p];
+      dcg.fillRect(p * 16, 0, 16, 128);
+      dcg.fillStyle = '#7a5030';
+      dcg.fillRect(p * 16, 0, 1, 128);
+    }
+    const deckTex = new THREE.CanvasTexture(deckCv);
+    deckTex.magFilter = THREE.NearestFilter; deckTex.minFilter = THREE.LinearFilter;
+    deckTex.wrapS = THREE.RepeatWrapping; deckTex.wrapT = THREE.RepeatWrapping;
+    deckTex.repeat.set(4, 3);
+    deckTex.colorSpace = THREE.SRGBColorSpace;
+    const deckMat = new THREE.MeshLambertMaterial({ map: deckTex, flatShading: true });
+    const deckMesh = new THREE.Mesh(new THREE.BoxGeometry(dx1 - dx0, 0.06, dz1 - dz0), deckMat);
+    deckMesh.position.set((dx0 + dx1) / 2, B, (dz0 + dz1) / 2);
+    deckMesh.receiveShadow = true;
+    g.add(deckMesh);
     // railings (gap for the stairs on the south side, x 5..8)
     const rail = (x0, z0, x1, z1) => {
       const len = Math.hypot(x1 - x0, z1 - z0), n = Math.max(2, Math.round(len / 0.9));
@@ -3329,13 +3549,15 @@ export const KIT = {
     };
     rail(dx0, dz0, dx1, dz0); rail(dx1, dz0, dx1, dz1); rail(dx0, dz1, 5, dz1); rail(8, dz1, dx1, dz1);
     // stairs down to the south
-    for (let i = 0; i < 4; i++) k.box(3, B - i * 0.35, 0.5, 0xa86f42, 6.5, 0, dz1 + 0.25 + i * 0.5);
-    // table + chairs, loungers, plants, string lights
-    k.cyl(0.6, 0.6, 0.06, wood, 7.6, B + 0.72, -1.5, 12); k.cyl(0.08, 0.1, 0.72, 0x3a2a24, 7.6, B, -1.5, 8);
-    const chairs = [[6.7, -1.5, Math.PI / 2], [8.5, -1.5, -Math.PI / 2], [7.6, -2.4, 0], [7.6, -0.6, Math.PI]];
-    for (const [x, z] of chairs) { k.box(0.45, 0.42, 0.45, teal, x, B, z); }
-    for (const z of [3.2, 5.0]) { k.box(0.7, 0.3, 1.6, white, 10.6, B, z); k.box(0.7, 0.5, 0.2, white, 10.6, B + 0.3, z - 0.7, { rx: -0.4 }); }
-    for (const [x, z] of [[4.6, -4.4], [11.4, -4.4], [4.6, 6.2]]) { k.cyl(0.25, 0.2, 0.45, 0xc4623a, x, B, z, 8); k.mesh(new THREE.IcosahedronGeometry(0.35, 0), C.leaf, x, B + 0.75, z); }
+    for (let i = 0; i < 4; i++) k.box(3, B - i * 0.35, 0.5, 0x9c6d48, 6.5, 0, dz1 + 0.25 + i * 0.5);
+    // table + chairs: intentional, comfortable dining seating with >2m walking clearance
+    k.cyl(0.7, 0.7, 0.06, wood, 7.6, B + 0.72, -1.5, 12); k.cyl(0.1, 0.12, 0.72, 0x3a2a24, 7.6, B, -1.5, 8);
+    const chairs = [[6.5, -1.5, Math.PI / 2], [8.7, -1.5, -Math.PI / 2], [7.6, -2.5, 0], [7.6, -0.5, Math.PI]];
+    for (const [x, z] of chairs) { k.box(0.48, 0.42, 0.48, teal, x, B, z); }
+    // two ocean-view loungers along east railing
+    for (const z of [2.5, 4.5]) { k.box(0.7, 0.3, 1.6, white, 10.8, B, z); k.box(0.7, 0.5, 0.2, white, 10.8, B + 0.3, z - 0.7, { rx: -0.4 }); }
+    k.cyl(0.25, 0.25, 0.35, wood, 10.8, B, 3.5, 8); // drinks table between loungers
+    for (const [x, z] of [[4.6, -4.4], [11.4, -4.4], [4.6, 6.2]]) { k.cyl(0.25, 0.2, 0.45, 0x9c483c, x, B, z, 8); k.mesh(new THREE.IcosahedronGeometry(0.35, 0), C.leaf, x, B + 0.75, z); }
     for (const [x, z] of [[dx1, dz0], [dx1, dz1], [dx0 + 0.1, dz0]]) k.box(0.08, 2.4, 0.08, 0x3a2a24, x, B, z);
     const bulbs = [];
     const dyn = new THREE.Group(); dyn.userData.dynamic = true; g.add(dyn);
@@ -3347,28 +3569,52 @@ export const KIT = {
     const posts = [];
     const railCols = (x0, z0, x1, z1) => { const len = Math.hypot(x1 - x0, z1 - z0), n = Math.ceil(len / 0.5); for (let i = 0; i <= n; i++) posts.push({ x: x0 + ((x1 - x0) * i) / n, z: z0 + ((z1 - z0) * i) / n, r: 0.18 }); };
     railCols(dx0, dz0, dx1, dz0); railCols(dx1, dz0, dx1, dz1); railCols(dx0, dz1, 5, dz1); railCols(8, dz1, dx1, dz1);
+
+    const v = new THREE.Vector3();
+    let fade = 1, shadowsOn = true, lastF = -1;
     return {
       obj: g,
       colliders: [
         { x: 0, z: 0, w: W + 0.4, d: D + 0.4 }, ...posts,
-        { x: 7.6, z: -1.5, r: 0.6 }, { x: 10.6, z: 4.1, w: 0.7, d: 3.4 },
+        { x: 7.6, z: -1.5, r: 0.75 }, { x: 10.8, z: 3.5, w: 0.8, d: 3.2 },
         { x: 4.6, z: -4.4, r: 0.3 }, { x: 11.4, z: -4.4, r: 0.3 }, { x: 4.6, z: 6.2, r: 0.3 },
         { x: 4.5, z: 7.6, w: 0.3, d: 2.2 }, { x: 8.5, z: 7.6, w: 0.3, d: 2.2 },   // stair sides
+        { x: entX - 1.15, z: hd + 0.9, w: 0.25, d: 1.8 }, { x: entX + 1.15, z: hd + 0.9, w: 0.25, d: 1.8 }, // front stair sides
       ],
       floors: [
         { x: (dx0 + dx1) / 2, z: (dz0 + dz1) / 2, w: dx1 - dx0, d: dz1 - dz0, h: B },
         ...[0, 1, 2, 3].map((i) => ({ x: 6.5, z: dz1 + 0.25 + i * 0.5, w: 3, d: 0.5, h: B - i * 0.35 })),
+        ...[0, 1, 2, 3].map((i) => ({ x: entX, z: hd + 0.22 + i * 0.45, w: 2.2, d: 0.45, h: B - i * 0.35 })),
       ],
       nightGlow: pools,
-      animate: (() => {
-        let lastF = -1;
-        return (t) => {
-          const f = Math.floor(t * 4);
-          if (f === lastF) return;
+      animate: (t, state) => {
+        const f = Math.floor(t * 4);
+        if (f !== lastF) {
           lastF = f;
           bulbs.forEach((b, i) => b.material.color.setHex(Math.sin(t * 1.5 + i) > -0.6 ? 0xffd08a : 0xc98b4a));
-        };
-      })(),
+        }
+        const p = state?.playerPos;
+        let occluded = false;
+        if (p) {
+          v.set(p.x, 0, p.z); g.worldToLocal(v);
+          // Behind the villa (north or west where the villa blocks the isometric camera line of sight to player):
+          // In local coordinates: villa building spans x in [-4, 4], z in [-3.5, 3.5]
+          // The camera looks from south-east (+x, +z) toward north-west (-x, -z).
+          occluded = (v.x >= -hw - 1.8 && v.x <= hw + 1.2 && v.z >= -hd - 5.5 && v.z <= hd - 0.4);
+        }
+        const target = occluded ? 0.22 : 1;
+        if (Math.abs(target - fade) > 0.0001) {
+          const rawDt = typeof state?.dt === 'number' && state.dt > 0 ? state.dt : 0.016;
+          const dt = Math.min(rawDt, 0.05);
+          const step = Math.max(0.18, dt / 0.065);
+          fade = target < fade ? Math.max(target, fade - step) : Math.min(target, fade + step);
+          const isTrans = fade < 0.999;
+          for (const m of fmats.values()) { m.opacity = fade; m.transparent = isTrans; m.depthWrite = !isTrans; m.visible = fade > 0.01; }
+          sign.visible = fade > 0.55;
+          const sh = fade > 0.5;
+          if (sh !== shadowsOn) { shadowsOn = sh; for (const o of shellShadowMeshes) o.castShadow = sh; }
+        }
+      },
     };
   },
 
@@ -3431,6 +3677,9 @@ export const KIT = {
   },
   bbq_grill() {
     const g = new THREE.Group(), k = kit(g);
+    // Coherent paved stone barbecue patio base
+    k.box(2.6, 0.04, 3.2, 0xdcd8d0, 0, 0, 0.7);
+    k.box(2.7, 0.02, 3.3, 0xbab6ae, 0, 0, 0.7, { shadow: false });
     for (const [x, z] of [[-0.45, -0.25], [0.45, -0.25], [-0.45, 0.25], [0.45, 0.25]]) k.box(0.06, 0.8, 0.06, 0x2a2440, x, 0, z);
     k.box(1.1, 0.25, 0.6, 0x3a3a46, 0, 0.8, 0); k.box(1.0, 0.03, 0.5, 0x7d8fa8, 0, 1.05, 0, { shadow: false });
     for (const x of [-0.3, 0, 0.3]) k.box(0.18, 0.06, 0.1, 0x8a3a2a, x, 1.08, 0.05);
@@ -3446,18 +3695,98 @@ export const KIT = {
     k.box(0.04, 0.06, len, 0xffffff, 0, 1.62, 0, { shadow: false });
     for (let z = -h + 0.1; z <= h - 0.1; z += 0.22) k.box(0.02, 0.5, 0.02, 0x9aa3b2, 0, 1.35, z, { shadow: false });
     // court lines in the sand
-    for (const x of [-L / 2, L / 2]) k.box(0.06, 0.01, len + 0.4, 0xfff6e6, x, 0.01, 0, { shadow: false });
-    for (const z of [-(h + 0.2), h + 0.2]) k.box(L, 0.01, 0.06, 0xfff6e6, 0, 0.01, z, { shadow: false });
+    for (const x of [-L / 2, L / 2]) k.box(0.09, 0.012, len + 0.49, 0xffffff, x, 0.01, 0, { shadow: false });
+    for (const z of [-(h + 0.2), h + 0.2]) k.box(L + 0.09, 0.012, 0.09, 0xffffff, 0, 0.01, z, { shadow: false });
+    // centre line under the net, a "join here" pad behind side A's baseline (where the interaction ring sits) and a ball resting beside it
+    k.box(0.06, 0.011, len + 0.4, 0xe9e1cf, 0, 0.009, 0, { shadow: false });
+    const jx = -(L / 2 + 1.35);
+    for (const dz of [-0.75, 0.75]) k.box(1.5, 0.012, 0.07, 0xffd257, jx, 0.012, dz, { shadow: false });
+    for (const dx of [-0.75, 0.75]) k.box(0.07, 0.012, 1.58, 0xffd257, jx + dx, 0.012, 0, { shadow: false });
+    const vb = new THREE.Mesh(new THREE.IcosahedronGeometry(0.2, 1), new THREE.MeshLambertMaterial({ color: 0xfff6e6 }));
+    vb.position.set(jx + 1.0, 0.2, -1.05); vb.castShadow = true; g.add(vb);
+    const vs = new THREE.Mesh(new THREE.TorusGeometry(0.201, 0.03, 4, 14), new THREE.MeshBasicMaterial({ color: 0x2f8fd6 })); vs.position.copy(vb.position); vs.rotation.set(0.5, 0.3, 0); g.add(vs);
+    const vsh = new THREE.Mesh(new THREE.CircleGeometry(0.28, 12), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.22, depthWrite: false })); vsh.rotation.x = -Math.PI / 2; vsh.position.set(vb.position.x, 0.014, vb.position.z); g.add(vsh);
+    for (const m of [vb, vs, vsh]) m.userData.dynamic = true;
     return { obj: g, colliders: [{ x: 0, z: -h, r: 0.12 }, { x: 0, z: h, r: 0.12 }] };
   },
+  basketball_court({ w = 8, d = 7 } = {}) {
+    const g = new THREE.Group(), k = kit(g);
+    const white = 0xffffff, lineW = 0.08, halfW = w / 2, halfD = d / 2;
+    // Outer boundary lines
+    k.box(w, 0.015, lineW, white, 0, 0.005, -halfD, { shadow: false }); // north baseline
+    k.box(w, 0.015, lineW, white, 0, 0.005, halfD, { shadow: false });  // south half-court line
+    k.box(lineW, 0.015, d, white, -halfW, 0.005, 0, { shadow: false }); // west sideline
+    k.box(lineW, 0.015, d, white, halfW, 0.005, 0, { shadow: false });  // east sideline
+    // Center circle arc on half-court line (radius 1.2m)
+    const arcSegments = 16;
+    for (let i = 0; i < arcSegments; i++) {
+      const a0 = Math.PI + (i / arcSegments) * Math.PI, a1 = Math.PI + ((i + 1) / arcSegments) * Math.PI;
+      const x0 = Math.cos(a0) * 1.2, z0 = halfD + Math.sin(a0) * 1.2;
+      const x1 = Math.cos(a1) * 1.2, z1 = halfD + Math.sin(a1) * 1.2;
+      const len = Math.hypot(x1 - x0, z1 - z0);
+      const seg = k.box(len, 0.015, lineW, white, (x0 + x1) / 2, 0.005, (z0 + z1) / 2, { shadow: false });
+      seg.rotation.y = -Math.atan2(z1 - z0, x1 - x0);
+    }
+    // Free-throw lane (key): width 2.4m, extends from baseline (z = -halfD) to free-throw line (length 4.0m)
+    const keyW = 2.4, keyL = 4.0;
+    k.box(lineW, 0.015, keyL, white, -keyW / 2, 0.005, -halfD + keyL / 2, { shadow: false });
+    k.box(lineW, 0.015, keyL, white, keyW / 2, 0.005, -halfD + keyL / 2, { shadow: false });
+    k.box(keyW, 0.015, lineW, white, 0, 0.005, -halfD + keyL, { shadow: false }); // free throw line
+    // Free-throw top of key semi-circle (radius 1.2m)
+    for (let i = 0; i < arcSegments; i++) {
+      const a0 = (i / arcSegments) * Math.PI, a1 = ((i + 1) / arcSegments) * Math.PI;
+      const x0 = Math.cos(a0) * (keyW / 2), z0 = -halfD + keyL + Math.sin(a0) * (keyW / 2);
+      const x1 = Math.cos(a1) * (keyW / 2), z1 = -halfD + keyL + Math.sin(a1) * (keyW / 2);
+      const len = Math.hypot(x1 - x0, z1 - z0);
+      const seg = k.box(len, 0.015, lineW, white, (x0 + x1) / 2, 0.005, (z0 + z1) / 2, { shadow: false });
+      seg.rotation.y = -Math.atan2(z1 - z0, x1 - x0);
+    }
+    // Three-point arc (radius ~3.6m from hoop post at z = -halfD + 0.6)
+    const r3 = 3.6, hx = 0, hz = -halfD + 0.6;
+    for (let i = 0; i < arcSegments; i++) {
+      const a0 = (i / arcSegments) * Math.PI, a1 = ((i + 1) / arcSegments) * Math.PI;
+      const x0 = hx + Math.cos(a0) * r3, z0 = hz + Math.sin(a0) * r3;
+      const x1 = hx + Math.cos(a1) * r3, z1 = hz + Math.sin(a1) * r3;
+      if (Math.abs(x0) <= halfW && Math.abs(x1) <= halfW && z0 <= halfD && z1 <= halfD) {
+        const len = Math.hypot(x1 - x0, z1 - z0);
+        const seg = k.box(len, 0.015, lineW, white, (x0 + x1) / 2, 0.005, (z0 + z1) / 2, { shadow: false });
+        seg.rotation.y = -Math.atan2(z1 - z0, x1 - x0);
+      }
+    }
+    return { obj: g, colliders: [] };
+  },
+
   hoop() {
     const g = new THREE.Group(), k = kit(g);
-    k.box(0.12, 2.9, 0.12, 0x2a2440, 0, 0, 0);
-    k.box(1.2, 0.8, 0.06, 0xffffff, 0, 2.6, 0.32); k.box(0.4, 0.3, 0.02, 0xc4302b, 0, 2.55, 0.36, { shadow: false });
-    k.box(0.5, 0.03, 0.03, 0xff6a3d, 0, 2.4, 0.62); k.box(0.03, 0.03, 0.4, 0xff6a3d, -0.24, 2.4, 0.46); k.box(0.03, 0.03, 0.4, 0xff6a3d, 0.24, 2.4, 0.46);
-    k.box(0.03, 0.03, 0.3, 0xff6a3d, 0, 2.38, 0.3);
-    k.mesh(new THREE.IcosahedronGeometry(0.13, 1), 0xe0702a, 0.9, 0.13, 0.9);
-    return { obj: g, colliders: [{ x: 0, z: 0, r: 0.18 }] };
+    // Steel pole anchored behind baseline, angling forward over the court
+    k.box(0.14, 2.9, 0.14, 0x222430, 0, 0, -0.2);
+    k.box(0.12, 0.12, 0.6, 0x222430, 0, 2.7, 0.1, { rx: 0.1 });
+    // Protective padding on lower post
+    k.box(0.26, 1.2, 0.26, 0x1c3a60, 0, 0, -0.2);
+    // Backboard: crisp regulation proportions (1.4m x 0.9m x 0.06m)
+    k.box(1.4, 0.9, 0.06, 0xffffff, 0, 2.5, 0.42);
+    // Backboard red outer border & inner shooter square
+    k.box(1.36, 0.04, 0.07, 0xc4302b, 0, 2.92, 0.42, { shadow: false });
+    k.box(1.36, 0.04, 0.07, 0xc4302b, 0, 2.08, 0.42, { shadow: false });
+    k.box(0.04, 0.88, 0.07, 0xc4302b, -0.66, 2.5, 0.42, { shadow: false });
+    k.box(0.04, 0.88, 0.07, 0xc4302b, 0.66, 2.5, 0.42, { shadow: false });
+    // Inner target box (0.5m x 0.4m)
+    k.box(0.5, 0.03, 0.07, 0xc4302b, 0, 2.65, 0.42, { shadow: false });
+    k.box(0.5, 0.03, 0.07, 0xc4302b, 0, 2.25, 0.42, { shadow: false });
+    k.box(0.03, 0.4, 0.07, 0xc4302b, -0.25, 2.45, 0.42, { shadow: false });
+    k.box(0.03, 0.4, 0.07, 0xc4302b, 0.25, 2.45, 0.42, { shadow: false });
+    // Rim mount bracket
+    k.box(0.12, 0.08, 0.14, 0xff6a3d, 0, 2.25, 0.52);
+    // Orange metal rim (diameter ~0.45m)
+    k.box(0.46, 0.04, 0.04, 0xff6a3d, 0, 2.25, 0.8);
+    k.box(0.04, 0.04, 0.42, 0xff6a3d, -0.22, 2.25, 0.61);
+    k.box(0.04, 0.04, 0.42, 0xff6a3d, 0.22, 2.25, 0.61);
+    // Net: clean stylized white net cylinder
+    const netM = mat(0xffffff, { transparent: true, opacity: 0.85 });
+    k.cyl(0.2, 0.14, 0.42, netM, 0, 1.83, 0.61, 10);
+    // A basketball resting near the post
+    k.mesh(new THREE.IcosahedronGeometry(0.13, 1), 0xe0702a, 0.6, 0.13, 0.4);
+    return { obj: g, colliders: [{ x: 0, z: -0.2, r: 0.25 }] };
   },
   hammock() {
     const g = new THREE.Group(), k = kit(g);
@@ -3557,6 +3886,109 @@ export const KIT = {
     k.box(0.3, 0.22, 0.26, 0xf4efe4, 0.85, 0.85, -0.05); k.box(0.34, 0.06, 0.3, 0xc44a3a, 0.85, 1.07, -0.05);   // model house on a side shelf
     k.box(0.4, 0.04, 0.4, 0x8a5428, 0.85, 0.8, -0.05); k.box(0.05, 0.8, 0.05, 0x5a3a26, 0.85, 0, -0.05);
     return { obj: g, colliders: [{ x: 0.15, z: 0, w: 1.6, d: 0.7 }] };
+  },
+  // ===== Jeswin's architecture studio (Vanderlinde garden) =====
+  // Low, broad, stepped. Cream walls, terracotta caps and louvres, restrained glass, a recessed entrance
+  // porch and a readable sign. Faces +z. Solid massing: the interior is never shown, so there is nothing to
+  // cut away and no proximity fade. `w` x `d` is the footprint; the tallest block is 3.6 m.
+  architecture_studio({ w = 12, d = 4.8 } = {}) {
+    const g = new THREE.Group(), k = kit(g);
+    const CREAM = 0xf1e3c4, CREAM2 = 0xe6d5b0, TERRA = 0xb9553a, TERRA_D = 0x93402b, GLASS = 0x8fb7c9, DARK = 0x2d2433, STONE = 0xc9bfae;
+    const B0 = 0.18;                                      // plinth height
+    const blocks = [                                      // [centre x, width, height, depth, front inset]
+      [-4.9, 2.2, 2.3, d - 0.8, 0.8], [-2.7, 2.2, 3.0, d - 0.2, 0.2], [0, 3.2, 3.6, d, 0],
+      [2.7, 2.2, 3.0, d - 0.2, 0.2], [4.9, 2.2, 2.3, d - 0.8, 0.8],
+    ];
+    k.box(w + 0.4, B0, d + 0.5, STONE, 0, 0, 0.1);         // plinth
+    const colliders = [];
+    for (const [cx, bw, bh, bd, inset] of blocks) {
+      const fz = d / 2 - inset, zc = fz - bd / 2;         // front face z, block centre z
+      k.box(bw, bh, bd, CREAM, cx, B0, zc);
+      k.box(bw + 0.16, 0.14, bd + 0.16, TERRA, cx, B0 + bh, zc);                                // terracotta cap
+      k.box(bw - 0.1, 0.26, 0.05, TERRA_D, cx, B0 + bh - 0.5, fz + 0.03, { shadow: false });     // fascia band
+      k.box(bw - 0.2, 0.06, bd - 0.2, CREAM2, cx, B0 + bh + 0.14, zc, { shadow: false });        // roof deck
+      colliders.push({ x: cx, z: zc, w: bw + 0.1, d: bd + 0.1 });
+    }
+    // shaded openings: dark recess, restrained glass, terracotta canopy above
+    const opening = (cx, y, ow, oh, fz) => {
+      k.box(ow + 0.16, oh + 0.16, 0.05, DARK, cx, y - 0.08, fz + 0.02, { shadow: false });
+      k.box(ow, oh, 0.05, GLASS, cx, y, fz + 0.05, { shadow: false });
+      k.box(0.05, oh, 0.06, DARK, cx, y, fz + 0.08, { shadow: false });                          // mullion
+      k.box(ow + 0.5, 0.07, 0.45, TERRA, cx, y + oh + 0.1, fz + 0.2);                             // canopy
+      for (let i = 0; i < 3; i++) k.box(ow + 0.4, 0.03, 0.05, TERRA_D, cx, y + oh + 0.02, fz + 0.14 + i * 0.12, { shadow: false });
+    };
+    opening(-2.7, 1.0, 1.5, 1.1, d / 2 - 0.2);
+    opening(2.7, 1.0, 1.5, 1.1, d / 2 - 0.2);
+    for (const x of [-4.9, 4.9]) { k.box(0.9, 0.5, 0.05, DARK, x, 1.15, d / 2 - 0.8 + 0.02, { shadow: false }); k.box(0.74, 0.34, 0.05, GLASS, x, 1.23, d / 2 - 0.8 + 0.05, { shadow: false }); }
+    k.box(2.8, 0.34, 0.05, GLASS, 0, 2.7, d / 2 + 0.04, { shadow: false });                       // clerestory band
+    // entrance: recessed portal, terracotta frame, deep canopy, two steps and a paved porch
+    const ez = d / 2;
+    k.box(1.7, 2.2, 0.06, DARK, 0, B0, ez + 0.03, { shadow: false });
+    k.box(1.3, 2.0, 0.05, GLASS, 0, B0, ez + 0.07, { shadow: false });
+    k.box(0.04, 2.0, 0.06, DARK, 0, B0, ez + 0.1, { shadow: false });
+    for (const sgn of [-1, 1]) k.box(0.22, 2.5, 0.3, TERRA, sgn * 0.98, B0, ez + 0.14);
+    k.box(2.5, 0.2, 1.1, TERRA, 0, 2.5, ez + 0.45);                                              // entrance canopy
+    k.box(2.3, 0.05, 1.0, CREAM, 0, 2.7, ez + 0.45, { shadow: false });
+    k.box(3.0, 0.1, 1.3, STONE, 0, B0, ez + 0.75);                                               // porch
+    k.box(2.4, 0.09, 0.4, STONE, 0, 0.1, ez + 1.45); k.box(2.0, 0.07, 0.3, STONE, 0, 0.04, ez + 1.8);   // steps
+    const sign = signMesh('ARCHITECTURE STUDIO', 3.1, 0.42, { fg: '#ffe9c4', bg: '#7a3524', w: 320, h: 44, size: 18 });
+    sign.position.set(0, 3.2, ez + 0.06); g.add(sign);
+    // roof lantern on the tall block, planters either side of the porch
+    k.box(1.2, 0.35, 1.2, CREAM2, 0.9, B0 + 3.74, -0.6); k.box(1.3, 0.06, 1.3, TERRA, 0.9, B0 + 4.09, -0.6);
+    for (const sgn of [-1, 1]) { k.box(0.5, 0.4, 0.5, TERRA_D, sgn * 2.0, B0, ez + 0.5); k.box(0.38, 0.3, 0.38, 0x5fa14a, sgn * 2.0, B0 + 0.4, ez + 0.5); }
+    k.box(w - 0.4, 0.07, 0.05, TERRA_D, 0, 0.5, ez + 0.03, { shadow: false });                    // datum line
+    return { obj: g, colliders };
+  },
+  // Jeswin's outdoor workstation: one coherent set. Local +z faces the visitor; Jeswin stands near (0.7, 0.3).
+  architect_workspace() {
+    const g = new THREE.Group(), k = kit(g);
+    const WOOD = 0x8a5a36, WOOD_L = 0xd9a066, CREAM = 0xf1e3c4, TERRA = 0xb9553a, SAND = 0xe0c391, SAND_D = 0xc9a46a;
+    // drafting table: tilted board, blueprint with a visible plan, T-square, set square, pencil
+    const T = { x: -1.0, z: 0.0 };
+    for (const [x, z] of [[-0.62, -0.32], [0.62, -0.32], [-0.62, 0.32], [0.62, 0.32]]) k.box(0.07, 0.86, 0.07, 0x5a3a26, T.x + x, 0, T.z + z);
+    k.box(1.4, 0.06, 0.8, WOOD, T.x, 0.82, T.z);
+    const board = new THREE.Group(); board.position.set(T.x, 0.97, T.z); board.rotation.x = 0.32; g.add(board);
+    const bk = kit(board);
+    bk.box(1.5, 0.05, 0.85, 0xe9dcc0, 0, 0, 0);
+    bk.box(1.34, 0.012, 0.7, 0x2f6fc6, 0, 0.03, 0, { shadow: false });                             // blueprint sheet
+    bk.box(0.86, 0.01, 0.34, 0xdfeaff, -0.14, 0.04, 0.05, { shadow: false });                       // plan: outer wall
+    bk.box(0.78, 0.012, 0.26, 0x2f6fc6, -0.14, 0.045, 0.05, { shadow: false });
+    for (const [px, pz, pw, pd] of [[-0.4, 0.02, 0.02, 0.26], [-0.1, 0.1, 0.02, 0.14], [0.12, 0.0, 0.02, 0.26], [-0.25, -0.04, 0.3, 0.02]]) bk.box(pw, 0.014, pd, 0xdfeaff, px, 0.05, pz, { shadow: false });
+    bk.box(1.4, 0.03, 0.05, WOOD_L, 0, 0.05, -0.38);                                                 // T-square head
+    bk.box(0.05, 0.02, 0.9, WOOD_L, 0.55, 0.05, 0.0);                                                // T-square blade
+    bk.box(0.3, 0.02, 0.05, 0xffc14d, -0.62, 0.05, 0.3); bk.box(0.05, 0.02, 0.24, 0xffc14d, -0.62 - 0.125, 0.05, 0.2);   // set square (two legs)
+    bk.box(0.02, 0.02, 0.22, 0xffd257, 0.3, 0.06, 0.28, { ry: 0.5 });                                // pencil
+    // stool
+    k.cyl(0.2, 0.2, 0.05, WOOD, T.x, 0.5, T.z + 1.0, 10); k.box(0.05, 0.5, 0.05, 0x5a3a26, T.x, 0, T.z + 1.0);
+    // rolled drawings: a rack of three horizontal rolls and two more standing in a bin
+    const R = { x: -2.2, z: -0.7 };
+    k.box(0.5, 0.06, 0.5, WOOD, R.x, 0, R.z); k.box(0.06, 0.55, 0.5, WOOD, R.x - 0.22, 0.06, R.z); k.box(0.06, 0.55, 0.5, WOOD, R.x + 0.22, 0.06, R.z);
+    for (const [dx, y] of [[-0.09, 0.2], [0.09, 0.2], [0, 0.38]]) k.cyl(0.07, 0.07, 0.62, CREAM, R.x + dx, y, R.z, 10, { rx: Math.PI / 2 });
+    k.cyl(0.18, 0.16, 0.5, 0x7d8fa8, R.x + 0.55, 0, R.z + 0.1, 10);
+    k.cyl(0.05, 0.05, 0.9, 0xe9dcc0, R.x + 0.5, 0.25, R.z + 0.1, 8); k.cyl(0.05, 0.05, 0.85, 0x9fc4d6, R.x + 0.62, 0.25, R.z + 0.06, 8);
+    // scale model on its own pedestal: stepped, cream, terracotta roofs, on a green site base
+    const M = { x: 2.0, z: -0.9 };
+    for (const [x, z] of [[-0.45, -0.35], [0.45, -0.35], [-0.45, 0.35], [0.45, 0.35]]) k.box(0.06, 0.8, 0.06, 0x5a3a26, M.x + x, 0, M.z + z);
+    k.box(1.1, 0.06, 0.85, WOOD, M.x, 0.8, M.z);
+    k.box(1.0, 0.04, 0.75, 0x7fb35a, M.x, 0.86, M.z);
+    for (const [dx, h, bw, bd] of [[-0.3, 0.14, 0.22, 0.3], [-0.1, 0.2, 0.24, 0.34], [0.14, 0.28, 0.3, 0.34], [0.36, 0.16, 0.2, 0.3]]) { k.box(bw, h, bd, CREAM, M.x + dx, 0.9, M.z - 0.06); k.box(bw + 0.03, 0.025, bd + 0.03, TERRA, M.x + dx, 0.9 + h, M.z - 0.06); }
+    k.box(0.16, 0.05, 0.14, 0x9fc4d6, M.x + 0.14, 0.96, M.z + 0.12, { shadow: false });              // glass entrance
+    k.cyl(0.04, 0.04, 0.1, 0x3f8f4a, M.x - 0.38, 0.9, M.z + 0.26, 6); k.cyl(0.04, 0.04, 0.1, 0x3f8f4a, M.x + 0.4, 0.9, M.z + 0.26, 6);
+    // material samples on a small tilted board: terracotta, cream, glass, timber, concrete, brick, planting
+    const S = { x: 0.2, z: -1.2 };
+    k.box(0.06, 0.7, 0.06, 0x5a3a26, S.x - 0.42, 0, S.z); k.box(0.06, 0.7, 0.06, 0x5a3a26, S.x + 0.42, 0, S.z);
+    const sb = new THREE.Group(); sb.position.set(S.x, 0.62, S.z); sb.rotation.x = -0.25; g.add(sb);
+    const sk = kit(sb); sk.box(1.0, 0.5, 0.04, 0x3a3048, 0, 0, 0);
+    [[TERRA, -0.33, 0.13], [CREAM, -0.11, 0.13], [0x9fc4d6, 0.11, 0.13], [WOOD_L, 0.33, 0.13], [0xb7aea2, -0.22, -0.1], [0xc8553d, 0.0, -0.1], [0x5fa14a, 0.22, -0.1]].forEach(([c, x, y]) => sk.box(0.17, 0.17, 0.03, c, x, y, 0.03, { shadow: false }));
+    // sand-building tray with a small courtyard model
+    const B = { x: -1.6, z: 2.6 };
+    k.box(1.3, 0.12, 0.9, WOOD, B.x, 0, B.z); k.box(1.18, 0.1, 0.78, SAND, B.x, 0.04, B.z, { shadow: false });
+    for (const [dx, dz, bw, bd, h] of [[-0.25, -0.12, 0.5, 0.12, 0.16], [-0.25, 0.14, 0.5, 0.12, 0.16], [-0.46, 0.01, 0.1, 0.38, 0.16], [0.18, 0.0, 0.3, 0.3, 0.26]]) k.box(bw, h, bd, SAND_D, B.x + dx, 0.14, B.z + dz);
+    k.box(0.08, 0.04, 0.3, 0x8a8a96, B.x + 0.52, 0.14, B.z + 0.25, { ry: 0.5 });                      // trowel
+    return {
+      obj: g,
+      colliders: [{ x: T.x, z: T.z, w: 1.5, d: 0.9 }, { x: M.x, z: M.z, w: 1.1, d: 0.9 }, { x: R.x, z: R.z, w: 0.6, d: 0.55 }, { x: S.x, z: S.z, w: 1.0, d: 0.4 }, { x: B.x, z: B.z, w: 1.3, d: 0.9 }],
+    };
   },
   stream_desk() {
     // Arok's livestream setup: monitor with a LIVE overlay + scrolling chat, webcam,
@@ -3685,8 +4117,11 @@ export const KIT = {
   },
   photo_station() {
     // Sathesh + Shabesh's camera corner: table with a retro camera and lenses, a little
-    // preview display that flicks through shots, a camera bag and a tripod camera.
+    // preview display that flicks through shots, a camera bag and a tripod camera on a stone paved patio.
     const g = new THREE.Group(), k = kit(g);
+    // Coherent stone paved patio base
+    k.box(3.2, 0.04, 2.6, 0xdcd8d0, 0.35, 0, 0.1);
+    k.box(3.28, 0.02, 2.68, 0xbab6ae, 0.35, 0, 0.1, { shadow: false });
     k.box(1.1, 0.68, 0.6, 0x6f4a30, 0, 0, 0); k.box(1.16, 0.04, 0.66, C.woodLight, 0, 0.68, 0);
     k.box(0.3, 0.18, 0.16, 0x1e1b2e, -0.28, 0.72, 0.05); k.cyl(0.07, 0.07, 0.14, 0x7d8fa8, -0.28, 0.8, 0.16, 8, { rx: Math.PI / 2 });
     k.box(0.08, 0.04, 0.05, 0xc4302b, -0.2, 0.9, 0.0, { shadow: false });
@@ -3704,8 +4139,11 @@ export const KIT = {
     return { obj: g, colliders: [{ x: 0, z: 0, w: 1.1, d: 0.6 }, { x: tx, z: tz, r: 0.25 }], animate: (t) => screen.material.color.setHex(shots[Math.floor(t / 2.5) % 4]) };
   },
   contest_table() {
-    // Thianish's food-contest station: long table, plates of snacks, two stools, a sign
+    // Thianesh's food-contest station: long table, plates of snacks, two stools, a sign on a stone platform
     const g = new THREE.Group(), k = kit(g);
+    // Coherent stone paved contest platform
+    k.box(3.4, 0.04, 2.4, 0xdcd8d0, 0.2, 0, 0);
+    k.box(3.48, 0.02, 2.48, 0xbab6ae, 0.2, 0, 0, { shadow: false });
     k.box(1.8, 0.7, 0.8, 0xb07a4a, 0, 0, 0); k.box(1.86, 0.04, 0.86, 0xfff6e6, 0, 0.7, 0);
     k.box(1.86, 0.02, 0.1, 0xc4302b, 0, 0.72, 0, { shadow: false });
     for (const [x, z] of [[-0.5, 0.22], [0.5, 0.22], [-0.5, -0.22], [0.5, -0.22]]) {
@@ -3720,10 +4158,13 @@ export const KIT = {
     return { obj: g, colliders: [{ x: 0, z: 0, w: 1.8, d: 0.8 }, { x: 1.25, z: 0, r: 0.1 }] };
   },
   tv_corner() {
-    // Akshay's gaming corner: rug, TV on a stand (screen animates), console,
-    // low table with two controllers and two bean bags. TV faces +z.
+    // Akshay's gaming corner: cohesive outdoor rug & timber platform, TV on a stand (screen animates),
+    // console, low table with two controllers and two bean bags. TV faces +z.
     const g = new THREE.Group(), k = kit(g);
-    k.box(2.6, 0.02, 2.6, 0x2f8f9a, 0, 0, 0.2, { shadow: false }); k.box(2.2, 0.025, 2.2, 0xe8d6b0, 0, 0, 0.2, { shadow: false });
+    // Cohesive timber deck platform + outdoor rug
+    k.box(3.0, 0.04, 3.2, 0x9b6a48, 0, 0, 0.0);
+    k.box(2.6, 0.05, 2.8, 0x2f8f9a, 0, 0.01, 0.0, { shadow: false });
+    k.box(2.3, 0.055, 2.5, 0xe8d6b0, 0, 0.015, 0.0, { shadow: false });
     k.box(1.5, 0.5, 0.45, 0x3a2418, 0, 0, -1.1);
     k.box(1.5, 0.86, 0.08, 0x1e1b2e, 0, 0.55, -1.15);
     const px = [];
@@ -3747,15 +4188,100 @@ export const KIT = {
     };
   },
   photo_table() {
-    // Shabeer's memory corner: little table with a retro camera, a photo stack and a pinned board
+    // Shabeer's memory corner: little table with a retro camera, photo stack and pinned board on a stone paver pad
     const g = new THREE.Group(), k = kit(g);
+    k.box(1.6, 0.04, 1.4, 0xdcd8d0, 0.15, 0, -0.05);
+    k.box(1.68, 0.02, 1.48, 0xbab6ae, 0.15, 0, -0.05, { shadow: false });
     k.box(0.8, 0.7, 0.5, 0x8a5428, 0, 0, 0);
     k.box(0.26, 0.16, 0.14, 0x1e1b2e, -0.15, 0.7, 0); k.cyl(0.05, 0.05, 0.08, 0x7d8fa8, -0.15, 0.78, 0.09, 8, { rx: Math.PI / 2 });
     k.box(0.06, 0.03, 0.04, 0xc4302b, -0.08, 0.86, 0, { shadow: false });
     [0, 1, 2].forEach((i) => k.box(0.18, 0.01, 0.13, [0xfff6e6, 0x9fe6f2, 0xffd08a][i], 0.2, 0.71 + i * 0.012, 0.02 * i, { ry: i * 0.3, shadow: false }));
     k.box(0.06, 1.4, 0.06, 0x5a3a26, 0.5, 0, -0.2); k.box(0.7, 0.5, 0.04, 0xd9b27a, 0.5, 1.15, -0.2);
     [[0.32, 1.28], [0.62, 1.3], [0.4, 1.02], [0.7, 1.05]].forEach(([x, y], i) => k.box(0.18, 0.14, 0.01, [0xfff6e6, 0x9fe6f2, 0xffd08a, 0xb5e48c][i], x, y, -0.17, { shadow: false }));
-    return { obj: g, colliders: [{ x: 0.1, z: -0.05, w: 1.0, d: 0.6 }] };
+    // tripod + camera beside the table, aimed out over the lawn
+    for (const a of [0, 2.1, 4.2]) k.box(0.04, 1.3, 0.04, 0x2a2440, -0.75 + Math.cos(a) * 0.2, 0, 0.55 + Math.sin(a) * 0.2, { rz: Math.cos(a) * 0.15, rx: -Math.sin(a) * 0.15 });
+    k.box(0.3, 0.22, 0.2, 0x1e1b2e, -0.75, 1.3, 0.55); k.cyl(0.07, 0.07, 0.16, 0x7d8fa8, -0.75, 1.4, 0.7, 8, { rx: Math.PI / 2 }); k.box(0.07, 0.05, 0.05, 0xc4302b, -0.65, 1.55, 0.55, { shadow: false });
+    return { obj: g, colliders: [{ x: 0.1, z: -0.05, w: 1.0, d: 0.6 }, { x: -0.75, z: 0.55, r: 0.25 }] };
+  },
+  finance_stock() {
+    // Siva's finance corner: a big upright stock-market board (bold green/red candles, amber trend line),
+    // a desk with a chunky calculator and an open ledger. Face is local +z; the NPC stands at local x +2.2.
+    const g = new THREE.Group(), k = kit(g);
+    k.box(6.6, 0.04, 3.8, 0xdcd8d0, 0.1, 0, 0.6);
+    k.box(6.68, 0.02, 3.88, 0xbab6ae, 0.1, 0, 0.6, { shadow: false });
+    for (const x of [-1.62, 1.62]) k.box(0.16, 3.1, 0.16, 0x5a3a26, x, 0, -0.06);
+    k.box(3.5, 2.3, 0.14, 0x5a3a26, 0, 0.95, -0.06);
+    k.box(3.2, 2.0, 0.06, 0x16283a, 0, 1.1, 0.03, { shadow: false });
+    k.box(3.2, 0.2, 0.08, 0xffc14d, 0, 2.9, 0.04, { shadow: false });
+    for (const y of [1.65, 2.2, 2.7]) k.box(3.0, 0.03, 0.02, 0x35557a, 0, y, 0.07, { shadow: false });
+    const up = [1, 1, 0, 1, 0, 1, 1], hs = [0.5, 0.78, 0.62, 1.05, 0.9, 1.25, 1.5], bars = [];
+    hs.forEach((h, i) => {
+      const x = -1.26 + i * 0.42, col = up[i] ? 0x3ddc6a : 0xe5484d;
+      const b = k.box(0.28, h, 0.08, col, x, 1.3, 0.1, { shadow: false });
+      b.userData.dynamic = true; bars.push({ m: b, h, y0: 1.3 });
+      k.box(0.05, h + 0.3, 0.03, 0xf4efe4, x, 1.3 - 0.07, 0.07, { shadow: false });
+    });
+    // rising amber trend line with an arrow head
+    const pts = [[-1.3, 1.9], [-0.55, 2.15], [0.1, 2.0], [0.8, 2.45], [1.35, 2.75]];
+    for (let i = 0; i < pts.length - 1; i++) {
+      const [x0, y0] = pts[i], [x1, y1] = pts[i + 1], len = Math.hypot(x1 - x0, y1 - y0);
+      k.box(len, 0.07, 0.04, 0xffc14d, (x0 + x1) / 2, (y0 + y1) / 2, 0.17, { rz: Math.atan2(y1 - y0, x1 - x0), shadow: false });
+    }
+    k.box(0.22, 0.22, 0.05, 0xffc14d, 1.38, 2.7, 0.17, { rz: Math.PI / 4, shadow: false });
+    // desk (screen-left of the board): calculator + open ledger
+    k.box(1.5, 0.7, 0.8, 0x8a5a36, -2.35, 0, 0.55); k.box(1.58, 0.05, 0.88, 0xd9a066, -2.35, 0.7, 0.55);
+    k.box(0.34, 0.07, 0.48, 0x3a4a5e, -2.85, 0.75, 0.5); k.box(0.26, 0.02, 0.12, 0x9be8a0, -2.85, 0.82, 0.37, { shadow: false });
+    for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) k.box(0.06, 0.02, 0.06, (r + c) % 3 === 0 ? 0xffc14d : 0xe9e6dc, -2.94 + c * 0.09, 0.82, 0.5 + r * 0.09, { shadow: false });
+    k.box(0.38, 0.03, 0.5, 0xfff6e6, -2.2, 0.75, 0.55, { ry: 0.12 }); k.box(0.38, 0.03, 0.5, 0xfff6e6, -1.8, 0.75, 0.55, { ry: 0.12 });
+    k.box(0.05, 0.04, 0.5, 0x7a2e2e, -2.0, 0.75, 0.55, { ry: 0.12, shadow: false });
+    for (let i = 0; i < 4; i++) { k.box(0.28, 0.01, 0.025, i % 2 ? 0x3ddc6a : 0xe5484d, -2.2, 0.785, 0.4 + i * 0.1, { ry: 0.12, shadow: false }); k.box(0.28, 0.01, 0.025, 0x3a4a5e, -1.8, 0.785, 0.4 + i * 0.1, { ry: 0.12, shadow: false }); }
+    return {
+      obj: g,
+      colliders: [{ x: 0, z: -0.06, w: 3.4, d: 0.4 }, { x: -2.35, z: 0.55, w: 1.5, d: 0.8 }],
+      animate: (t) => { bars.forEach((b, i) => { const s = 0.9 + 0.1 * Math.sin(t * 1.4 + i * 1.3); b.m.scale.y = s; b.m.position.y = b.y0 + (b.h * s) / 2; }); },
+    };
+  },
+  finance_savings() {
+    // Shabeer's finance corner: upright savings-goal board with an oversized gold coin and progress bars,
+    // chunky coin stacks, a desk with finance books and a piggy bank. Face is local +z; the NPC stands at local x +2.2.
+    const g = new THREE.Group(), k = kit(g);
+    k.box(6.6, 0.04, 3.8, 0xdcd8d0, 0.1, 0, 0.6);
+    k.box(6.68, 0.02, 3.88, 0xbab6ae, 0.1, 0, 0.6, { shadow: false });
+    for (const x of [-1.62, 1.62]) k.box(0.16, 3.1, 0.16, 0x5a3a26, x, 0, -0.06);
+    k.box(3.5, 2.3, 0.14, 0x5a3a26, 0, 0.95, -0.06);
+    k.box(3.2, 2.0, 0.06, 0x1d5a52, 0, 1.1, 0.03, { shadow: false });
+    k.box(3.2, 0.2, 0.08, 0xffc83d, 0, 2.9, 0.04, { shadow: false });
+    // oversized coin with a chunky "$"
+    k.cyl(0.72, 0.72, 0.12, 0xffc83d, -0.85, 1.55, 0.06, 20, { rx: Math.PI / 2 });
+    k.cyl(0.56, 0.56, 0.14, 0xffe08a, -0.85, 1.55, 0.07, 20, { rx: Math.PI / 2, shadow: false });
+    const dk = 0xb8861b, cx = -0.85, cy = 2.27;
+    k.box(0.08, 0.95, 0.04, dk, cx, cy - 0.47, 0.16, { shadow: false });
+    k.box(0.34, 0.08, 0.04, dk, cx, cy + 0.12, 0.16, { shadow: false });
+    k.box(0.34, 0.08, 0.04, dk, cx, cy - 0.32, 0.16, { shadow: false });
+    k.box(0.34, 0.08, 0.04, dk, cx, cy - 0.76, 0.16, { shadow: false });
+    k.box(0.08, 0.26, 0.04, dk, cx - 0.14, cy - 0.12, 0.16, { shadow: false });
+    k.box(0.08, 0.26, 0.04, dk, cx + 0.14, cy - 0.56, 0.16, { shadow: false });
+    // three progress bars: track + fill
+    const prog = [[2.6, 1.0, 0x6fd36a], [2.1, 0.74, 0xffc83d], [1.6, 0.42, 0xff8a3d]], fills = [];
+    prog.forEach(([y, f, c]) => {
+      k.box(1.4, 0.26, 0.04, 0x0e2f2b, 0.75, y - 0.2, 0.08, { shadow: false });
+      const m = k.box(1.3 * f, 0.18, 0.06, c, 0.1 + 0.65 * f, y - 0.16, 0.12, { shadow: false });
+      m.userData.dynamic = true; fills.push({ m, w: 1.3 * f, x0: 0.1 });
+    });
+    // chunky coin stacks beside the board
+    const stack = (x, z, n, r = 0.3) => { for (let i = 0; i < n; i++) { k.cyl(r, r, 0.1, i % 2 ? 0xe0a82a : 0xffc83d, x + (i % 3 - 1) * 0.02, i * 0.1, z, 12); } };
+    stack(-0.9, 1.15, 6); stack(-0.4, 1.35, 4); stack(0.15, 1.2, 8, 0.32); stack(0.7, 1.4, 3);
+    // desk with finance books and a piggy bank
+    k.box(1.5, 0.7, 0.8, 0x8a5a36, -2.35, 0, 0.55); k.box(1.58, 0.05, 0.88, 0xd9a066, -2.35, 0.7, 0.55);
+    [[0x2f6fc6, 0.5, 0.0], [0xc4302b, 0.46, 0.1], [0x3ddc6a, 0.5, -0.05], [0xffc14d, 0.42, 0.08]].forEach(([c, w, dx], i) => k.box(w, 0.09, 0.36, c, -2.75 + dx, 0.75 + i * 0.09, 0.5, { ry: dx }));
+    k.box(0.42, 0.28, 0.3, 0xff8fb1, -1.85, 0.75, 0.55); k.box(0.1, 0.1, 0.1, 0xff8fb1, -1.65, 0.97, 0.55);
+    for (const [dx, dz] of [[-0.14, -0.1], [0.14, -0.1], [-0.14, 0.1], [0.14, 0.1]]) k.box(0.07, 0.07, 0.07, 0xe8648e, -1.85 + dx, 0.75, 0.55 + dz, { shadow: false });
+    k.box(0.14, 0.03, 0.03, 0x2a2440, -1.85, 1.03, 0.55, { shadow: false });
+    return {
+      obj: g,
+      colliders: [{ x: 0, z: -0.06, w: 3.4, d: 0.4 }, { x: -2.35, z: 0.55, w: 1.5, d: 0.8 }, { x: -0.5, z: 1.3, w: 1.6, d: 0.7 }],
+      animate: (t) => { fills.forEach((f, i) => { const s = 1 + 0.03 * Math.sin(t * 1.2 + i * 2); f.m.scale.x = s; f.m.position.x = f.x0 + (f.w * s) / 2; }); },
+    };
   },
   food_table() {
     const g = new THREE.Group(), k = kit(g);
