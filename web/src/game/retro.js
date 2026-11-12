@@ -30,7 +30,7 @@ export class RetroRenderer {
         tDiffuse: { value: this.target.texture },
         uRes: { value: new THREE.Vector2(2, 2) },
         uLevels: { value: 22.0 },
-        uDither: { value: 0.45 },
+        uDither: { value: 0.06 },
         tDepth: { value: null },
         uOutline: { value: 1 },
         uRetro: { value: 0 },

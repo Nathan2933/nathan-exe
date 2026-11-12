@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
     <title>NATHAN.EXE</title>
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32" />
@@ -21,6 +21,8 @@
     <meta name="twitter:image" content="uploads/og-image.png" />
     <link rel="stylesheet" href="/src/styles/base.css" />
     <link rel="stylesheet" href="/src/styles/game.css" />
+    <link rel="stylesheet" href="/src/styles/game-mobile.css" />
+    <link rel="stylesheet" href="/src/styles/game-compact.css" />
     <noscript><meta http-equiv="refresh" content="0; url=./" /></noscript>
   </head>
   <body class="game">
@@ -32,6 +34,7 @@
         <span class="logo-text">NATHAN<b>.EXE</b></span>
       </a>
       <nav class="recruiter-bar" id="recruiter-bar" aria-label="Quick links">
+        <button type="button" class="btn" id="nav-tour">Tour</button>
         <a class="btn" href="./#about">About</a>
         <a class="btn" id="nav-resume" href="#" target="_blank" rel="noopener">Resume</a>
         <a class="btn" id="nav-education" href="#education">Education</a>
@@ -53,17 +56,25 @@
         <button type="button" class="journey-toggle" id="journey-toggle" aria-label="Show or hide chapters">▾</button>
       </div>
       <ol id="journey-list"></ol>
+      <button type="button" class="chars-toggle" id="chars-toggle" aria-expanded="false" aria-controls="chars-panel">Characters <span aria-hidden="true">▸</span></button>
       <div class="look" role="group" aria-label="Look">
         <span>Look</span>
         <button type="button" data-look="palette" id="look-palette">Bright</button>
         <button type="button" data-look="pixels" id="look-pixels">Smooth</button>
-        <button type="button" data-look="time" id="look-time" aria-label="Time of day">◐ Auto</button>
+        <button type="button" data-look="time" id="look-time" aria-label="Time of day">☀ Day</button>
         <button type="button" data-look="motion" id="look-motion" aria-pressed="true" aria-label="Exhibit animations" title="Exhibit animations on/off">▶ Motion</button>
         <button type="button" data-look="sound" id="look-sound" aria-pressed="false" aria-label="Sound">♪ Off</button>
         <button type="button" data-look="music" id="look-music" aria-pressed="true" aria-label="Character music">♫ Music</button>
         <label class="music-vol"><span class="sr-only">Music volume</span><input type="range" id="music-vol" min="0" max="100" value="60" aria-label="Music volume"></label>
       </div>
     </aside>
+
+    <section class="chars-panel window hidden" id="chars-panel" aria-label="Characters">
+      <div class="window-bar"><span class="title">characters.lst</span><button class="panel-close chars-close" type="button" aria-label="Close characters">✕</button></div>
+      <p class="chars-note" id="chars-note" role="status"></p>
+      <ul class="chars-list" id="chars-list"></ul>
+    </section>
+    <div class="visit-fade" id="visit-fade" aria-hidden="true"></div>
 
     <div class="minimap-wrap" title="Map: click to travel, M for the full map">
       <canvas id="minimap" aria-label="Island map. Click a spot to walk there."></canvas>
@@ -92,6 +103,8 @@
       </div>
     </section>
 
+    <aside class="tour-card hidden" id="tour-card" aria-label="Tour"></aside>
+    <section class="tour-modal hidden" id="tour-modal" role="dialog" aria-live="polite"></section>
     <div class="hint" id="hint"></div>
 
     <button class="prompt hidden" id="prompt" type="button">

@@ -500,6 +500,7 @@ export class Character {
     const set = (k, target, rate = 14) => (J[k] = damp(J[k] ?? 0, target, rate, dt));
 
     // --- heading + turn lean ---
+    if (Number.isNaN(this.heading)) this.heading = 0;
     const v = Math.hypot(velocity.x, velocity.z);
     this.speed = damp(this.speed, v, 20, dt);
     if (v === 0 && this.speed < 0.04) this.speed = 0;
@@ -769,10 +770,7 @@ export class Player extends Character {
 
   set riding(val) {
     this._riding = !!val;
-    if (this._xrayGhosts) {
-      const showXray = !val && (this._xrayEnabled !== false);
-      for (let i = 0; i < this._xrayGhosts.length; i++) this._xrayGhosts[i].visible = showXray;
-    }
+    this.#syncXray();
   }
 
   get xrayEnabled() {
@@ -781,16 +779,29 @@ export class Player extends Character {
 
   set xrayEnabled(val) {
     this._xrayEnabled = !!val;
-    if (this._xrayGhosts) {
-      const showXray = !this.riding && this._xrayEnabled;
-      for (let i = 0; i < this._xrayGhosts.length; i++) this._xrayGhosts[i].visible = showXray;
-    }
+    this.#syncXray();
+  }
+
+  /** Set by the occlusion gate (xray.js): true only while a large structure blocks Nathan. */
+  get xrayBlocked() {
+    return !!this._xrayBlocked;
+  }
+
+  set xrayBlocked(val) {
+    this._xrayBlocked = !!val;
+    this.#syncXray();
+  }
+
+  #syncXray() {
+    if (!this._xrayGhosts) return;
+    const showXray = !this.riding && this._xrayEnabled !== false && !!this._xrayBlocked;
+    for (let i = 0; i < this._xrayGhosts.length; i++) this._xrayGhosts[i].visible = showXray;
   }
 
   update(dt, velocity, t) {
     super.update(dt, velocity, t);
     const riding = this.riding;
-    const showXray = !riding && (this._xrayEnabled !== false);
+    const showXray = !riding && (this._xrayEnabled !== false) && !!this._xrayBlocked;
     if (this._xrayGhosts) {
       for (let i = 0; i < this._xrayGhosts.length; i++) {
         const g = this._xrayGhosts[i];

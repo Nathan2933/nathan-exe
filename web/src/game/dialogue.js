@@ -1,5 +1,9 @@
 import { esc } from '../shared/content.js';
 import { sfx } from './audio.js';
+import { portraitURL } from './portrait.js';
+
+// a line is a plain string, or { s: speaker, t: text }. No speaker means the NPC.
+const asLine = (l) => (typeof l === 'string' ? { s: null, t: l } : { s: l.s || null, t: l.t || '' });
 
 // Bottom-of-screen dialogue box with typewriter effect and contextual choices.
 // Never blocks movement: walking away closes it.
@@ -15,11 +19,13 @@ export class Dialogue {
     this.onAction = null;
     this.conversationSystem = null;
     this.saveRef = null;
+    this.goodbye = null;
+    this.closedAt = 0;   // performance.now() of the last close: lets callers ignore the same key press
 
     root.addEventListener('click', (e) => {
       const opt = e.target.closest('[data-topic]');
       if (opt) return this.#choose(Number(opt.dataset.topic));
-      if (e.target.closest('.dlg-close')) return this.close();
+      if (e.target.closest('.dlg-close')) return this.bye();
       this.advance();
     });
   }
@@ -38,6 +44,7 @@ export class Dialogue {
 
     if (conversation) {
       // Dynamic contextual conversation object
+      this.goodbye = conversation.goodbye || null;
       this.queue = [...(conversation.lines || [])];
       this.topics = [...(conversation.topics || [])];
       this.rootTopics = [...this.topics];
@@ -49,6 +56,7 @@ export class Dialogue {
         return { q: q.trim(), a: rest.join('::').trim() };
       }).filter((t) => t.q && (t.a || t.reply));
       this.rootTopics = [...this.topics];
+      this.goodbye = null;
       this.queue = (npc.lines || []).flatMap((l) => String(l).split(/\s*\/\/\s*/)).filter(Boolean);
     }
 
@@ -64,11 +72,27 @@ export class Dialogue {
     this.close();
   }
 
-  close() {
+  /** Bye button: say the goodbye line once, then the next advance closes. */
+  bye() {
     if (!this.open) return;
+    if (!this.goodbye) return this.close();
+    const line = { s: null, t: this.goodbye };
+    this.goodbye = null;
+    this.queue = []; this.topics = []; this.rootTopics = [];
+    this.#render(line, true);
+  }
+
+  /** Hard close: clears speaker, text, choices and anything queued so nothing can reopen it. */
+  close() {
     clearInterval(this.typing);
     this.typing = null;
+    this.queue = []; this.topics = []; this.rootTopics = [];
+    this.goodbye = null; this.full = ''; this.textEl = null;
+    this.closedAt = performance.now();
+    if (!this.open) return;
     this.root.classList.add('hidden');
+    this.root.innerHTML = '';
+    this.npc = null;
     this.onClose?.();
   }
 
@@ -92,6 +116,7 @@ export class Dialogue {
     // Trigger action immediately or on choice
     if (t.action) {
       this.onAction?.(t.action);
+      if (!this.open) return;   // the action closed the conversation (e.g. a flight): do not redraw it
     }
 
     // Handle replies and branching follow-up choices
@@ -115,7 +140,9 @@ export class Dialogue {
   }
 
   #next() {
-    let line = this.queue.shift() ?? '';
+    if (!this.queue.length && !this.topics.length) return this.close();   // nothing to show (e.g. a choice with no reply)
+    const raw = asLine(this.queue.shift() ?? '');
+    let line = raw.t;
     const mem = line.match(/\[memory:([\w-]+)\]\s*$/);
     if (mem) {
       line = line.slice(0, mem.index).trim();
@@ -126,19 +153,22 @@ export class Dialogue {
       line = line.slice(0, act.index).trim();
       this.onAction?.(act[1]);
     }
-    this.#render(line, !this.queue.length);
+    this.#render({ s: raw.s, t: line }, !this.queue.length);
   }
 
-  #render(text, last) {
+  #render(line, last) {
     const n = this.npc;
+    const text = line.t;
+    const you = line.s === 'Nathan';
+    const who = line.s || n.name;
     const choices = last && this.topics.length
       ? `<div class="dlg-topics">${this.topics.map((t, i) => `<button type="button" data-topic="${i}" class="${this.asked.has(t.q) ? 'asked' : ''}">${esc(t.q)}</button>`).join('')}<button type="button" class="dlg-close">Bye</button></div>`
       : '';
 
     this.root.innerHTML = `
-      <div class="dlg-portrait" style="--npc:${esc(n.color || '#1e1b2e')}">${this.portrait ? `<img src="${this.portrait}" alt="">` : esc((n.name || '?')[0])}</div>
+      <div class="dlg-portrait" style="--npc:${esc(you ? '#b8393a' : (n.color || '#1e1b2e'))}">${you ? `<img src="${portraitURL()}" alt="">` : this.portrait ? `<img src="${this.portrait}" alt="">` : esc((who || '?')[0])}</div>
       <div class="dlg-body">
-        <div class="dlg-name">${esc(n.name)}${n.role ? ` <span>${esc(n.role)}</span>` : ''}</div>
+        <div class="dlg-name">${esc(who)}${!line.s && n.role ? ` <span>${esc(n.role)}</span>` : ''}</div>
         <p class="dlg-text" aria-live="polite"></p>
         ${choices}
         <div class="dlg-more">${last && !choices ? 'close ▸' : last ? '' : 'next ▸'}</div>

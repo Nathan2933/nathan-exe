@@ -240,21 +240,25 @@ details > summary:hover { color: var(--turq); }
 .md-links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
 
 /* ---------- skill tree ---------- */
-.tree { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
-.branch { border: 2px solid var(--navy); border-radius: 4px; background: #fff; padding: 0 0 12px; overflow: hidden; }
-.branch h3 { margin: 0 0 10px; padding: 6px 12px; background: var(--turq); color: var(--ivory); font-family: var(--font-pixel); font-weight: 400; font-size: 12.5px; text-transform: uppercase; letter-spacing: .06em; border-bottom: 2px solid var(--navy); text-shadow: 1px 1px 0 var(--navy); }
-.branch ul { list-style: none; margin: 0; padding: 0 12px; display: flex; flex-wrap: wrap; gap: 6px; }
-.skill { display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 2px 9px; border: 2px solid var(--navy); border-radius: 3px; background: var(--ivory); color: var(--navy); cursor: pointer; font-family: var(--font-mono); font-size: 12px; transition: background .12s, transform .12s; }
-.skill:hover { transform: translateY(-1px); background: #e8fbfb; border-color: var(--turq); }
-.skill[aria-pressed="true"] { background: var(--sun); color: var(--navy); border-color: var(--navy); box-shadow: 2px 2px 0 var(--navy); }
-.s-n { font-size: 10px; background: var(--cyan); color: var(--navy); padding: 0 4px; border: 1px solid var(--navy); }
-.skill-out { margin-top: 16px; border: 2px dashed var(--turq); padding: 10px 14px; min-height: 48px; background: #fff; }
-.skill-out p { margin: 0; }
-.skill-out .hint { color: var(--ink-3); font-family: var(--font-mono); font-size: 13px; }
 .rel { margin: 6px 0 0; padding-left: 18px; }
 .link-btn { background: none; border: 0; padding: 2px 0; cursor: pointer; font-weight: 600; text-align: left; color: var(--blue); border-bottom: 2px solid var(--turq); }
 .link-btn:hover { color: var(--navy); border-color: var(--cyan); }
 
+/* ---------- skill tree: static inventory ---------- */
+.skill-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 14px; }
+.skill-tab { padding: 7px 14px; background: var(--turq); color: var(--ivory); border: 3px solid var(--navy); border-radius: 4px; box-shadow: 3px 3px 0 var(--navy); font-family: var(--font-pixel); font-size: 13px; letter-spacing: .06em; text-transform: uppercase; text-shadow: 1px 1px 0 var(--navy); cursor: pointer; }
+.skill-tab[aria-selected="true"] { background: var(--sun); color: var(--navy); text-shadow: none; }
+.skill-panel[hidden] { display: none; }
+.slots { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
+.slot { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 4px 8px; background: var(--cream); border: 0; color: var(--navy);
+  clip-path: polygon(0 4px, 2px 4px, 2px 2px, 4px 2px, 4px 0, calc(100% - 4px) 0, calc(100% - 4px) 2px, calc(100% - 2px) 2px, calc(100% - 2px) 4px, 100% 4px, 100% calc(100% - 4px), calc(100% - 2px) calc(100% - 4px), calc(100% - 2px) calc(100% - 2px), calc(100% - 4px) calc(100% - 2px), calc(100% - 4px) 100%, 4px 100%, 4px calc(100% - 2px), 2px calc(100% - 2px), 2px calc(100% - 4px), 0 calc(100% - 4px));
+  box-shadow: inset 0 0 0 1px var(--navy); }
+.slot-icon { position: relative; width: 44px; height: 44px; display: grid; place-items: center; }
+.slot-icon img { width: 40px; height: 40px; object-fit: contain; display: block; }
+.sym { min-width: 40px; height: 40px; display: grid; place-items: center; padding: 0 3px; border: 2px solid var(--navy); background: var(--sun); color: var(--navy); font-family: var(--font-pixel); font-size: 13px; line-height: 1; }
+.learn { position: absolute; top: -6px; right: -18px; background: var(--sun); color: var(--navy); border: 1px solid var(--navy); font-family: var(--font-pixel); font-size: 8px; padding: 1px 3px; line-height: 1.2; text-transform: uppercase; }
+.slot-name { font-family: var(--font-mono); font-size: 11.5px; line-height: 1.2; text-align: center; overflow-wrap: anywhere; max-width: 100%; }
+@media (max-width: 520px) { .slots { grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 6px; } .slot-name { font-size: 10.5px; } }
 /* ---------- career log ---------- */
 .career { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 10px; }
 .career li { padding: 12px 14px 12px 22px; border: 2px solid var(--navy); border-left: 6px solid var(--turq); border-radius: 4px; background: #fff; position: relative; }
@@ -344,7 +348,7 @@ details > summary:hover { color: var(--turq); }
   .checkpoints li:last-child { border-bottom: 0; }
   .chapter { grid-template-columns: 100px minmax(0, 1fr); gap: 10px; }
   .chapter:not(:last-child)::after { left: 44px; }
-  .mission-grid, .tree, .trophy-grid, .strip-list { grid-template-columns: minmax(0, 1fr); }
+  .mission-grid, .trophy-grid, .strip-list { grid-template-columns: minmax(0, 1fr); }
   .stat-row div { padding: 6px 10px; }
   .term li { grid-template-columns: minmax(0, 1fr); gap: 0; }
   .md-body { padding: 14px; }
@@ -352,8 +356,8 @@ details > summary:hover { color: var(--turq); }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .mission, .skill, .btn, .side-nav a, .top-nav a { transition: none !important; }
-  .mission:hover, .skill:hover, .btn:hover { transform: none !important; }
+  .mission, .btn, .side-nav a, .top-nav a { transition: none !important; }
+  .mission:hover, .btn:hover { transform: none !important; }
 }
 /* Character File hero: the pixel-art portrait replaces the old HELLO name tag */
 .hero-grid:has(.hero-portrait) { grid-template-columns: minmax(0, 1fr) minmax(300px, 40%); gap: 12px; }
@@ -367,3 +371,104 @@ details > summary:hover { color: var(--turq); }
 .duo { align-items: stretch; }
 .duo > * { display: flex; flex-direction: column; min-height: 100%; }
 .duo > * > :last-child { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+
+/* ---------- mobile polish: safe areas, 44px targets, prominent Play ---------- */
+.site-head { padding-left: max(var(--gutter), env(safe-area-inset-left)); padding-right: max(var(--gutter), env(safe-area-inset-right)); }
+.site-head .play { white-space: nowrap; flex: 0 0 auto; }
+.md-close { min-width: 44px; min-height: 44px; display: inline-grid; place-items: center; font-size: 18px; margin: -8px -10px -8px 0; }
+.mission-dialog { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+.mission-dialog .md-links .btn { flex: 1 1 140px; }
+.skill-tab { min-height: 44px; }
+@media (hover: none), (pointer: coarse), (max-width: 820px) {
+  .portfolio .btn, .menu-btn, .side-actions .btn { min-height: 44px; }
+  .side-nav a { min-height: 44px; display: flex; align-items: center; }
+  .project-links a, .link-btn, .term a { display: inline-flex; align-items: center; min-height: 44px; }
+  .portfolio .btn:hover, .mission:hover { transform: none; }
+}
+@media (max-width: 820px) {
+  .site-head { gap: 8px; }
+  .site-head .play { min-height: 44px; padding: 0 14px; font-size: 14px; box-shadow: 3px 3px 0 var(--navy); }
+  .skill-tabs { gap: 6px; }
+  .skill-tab { flex: 1 1 auto; padding: 6px 10px; font-size: 12px; }
+}
+@media (max-width: 400px) {
+  .logo-small { font-size: 13px; gap: 6px; }
+  .logo-small .logo-icon { width: 32px; height: 32px; }
+  .site-head .play { padding: 0 10px; font-size: 13px; }
+  .slots { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .chapter { grid-template-columns: 84px minmax(0, 1fr); }
+}
+@media (max-height: 480px) and (orientation: landscape) {
+  body.portfolio { --head-h: 50px; }
+  .side { position: static; }          /* the compact bar would eat a short landscape screen */
+  .mission-dialog { max-height: calc(100dvh - 12px); }
+}
+@media (hover: none), (pointer: coarse), (max-width: 820px) { .logo-small { min-height: 44px; } .site-foot a { display: inline-block; padding: 12px 4px; } }
+
+/* =====================================================================
+   Responsive pass: one compact sticky header, anchor offsets, balanced
+   hero grid + stats, and phone-first project dialog.
+   ===================================================================== */
+html { scroll-padding-top: calc(var(--head-h) + 12px); }
+html.modal-lock { overflow: hidden; }
+html.modal-lock body { position: fixed; left: 0; right: 0; width: 100%; overflow: hidden; }
+body.portfolio, .shell, main { max-width: 100%; }
+.section-body h2, .hero h1, .p-name, .p-label, .top-nav, .btn, .menu-btn, .side-nav, .kicker, .window-bar { font-family: var(--font-pixel); }
+.md-body, .md-body * { min-width: 0; }
+.md-body img, .md-body video { max-width: 100%; height: auto; }
+.mission-dialog .window-bar .title { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* stats: three equal columns */
+.stat-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; max-width: 460px; }
+.stat-row div { padding: 8px 12px; min-width: 0; }
+.stat-row dt { overflow-wrap: anywhere; line-height: 1.25; }
+
+@media (max-width: 820px) {
+  body.portfolio { --head-h: 60px; }
+  .site-head { height: var(--head-h); padding-top: env(safe-area-inset-top); box-sizing: content-box; }
+  .site-head .menu-btn { margin-left: auto; flex: 0 0 auto; min-width: 44px; min-height: 44px; }
+  .site-head .play { margin-left: 0; }
+  /* the second sticky bar is gone: the player card becomes a dropdown under the header, opened by Menu */
+  .side { display: none; position: fixed; top: calc(var(--head-h) + env(safe-area-inset-top)); left: 0; right: 0; margin: 0; z-index: 19; max-height: calc(100dvh - var(--head-h) - env(safe-area-inset-top)); overflow-y: auto; overscroll-behavior: contain; }
+  .side:has(.side-nav.open) { display: block; }
+  .side-card { padding: 12px var(--gutter) 14px; gap: 10px; }
+  .side-id { display: none; }
+  .side-nav.open { padding-top: 0; }
+  .shell { padding: 14px max(var(--gutter), env(safe-area-inset-left)) 20px max(var(--gutter), env(safe-area-inset-right)); }
+  section[id] { scroll-margin-top: calc(var(--head-h) + env(safe-area-inset-top) + 12px); }
+  html { scroll-padding-top: calc(var(--head-h) + env(safe-area-inset-top) + 12px); }
+  /* balanced action grid */
+  .hero-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .hero-actions .btn { width: 100%; min-height: 48px; justify-content: center; padding: 0 6px; font-size: 12px; text-align: center; }
+  .name-tag.hero-portrait { width: min(78vw, 340px); margin: 0 auto -8px; }
+  .hero-grid { gap: 14px; }
+}
+@media (max-width: 560px) {
+  .stat-row { max-width: none; }
+  .stat-row div { padding: 8px 8px; }
+  .stat-row dt { font-size: 10px; letter-spacing: .03em; }
+  .stat-row dd { font-size: 22px; }
+  .hero-actions .btn { font-size: 11px; letter-spacing: .02em; }
+  main { gap: 20px; }
+}
+@media (max-width: 340px) {
+  .stat-row { grid-template-columns: minmax(0, 1fr); }
+  .stat-row div { border-right: 0; border-bottom: var(--line); display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .stat-row div:last-child { border-bottom: 0; }
+  .hero-actions { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* project / chapter dialog: nearly full width on phones, header pinned, body scrolls */
+.mission-dialog { display: none; }
+.mission-dialog[open] { display: flex; flex-direction: column; }
+.mission-dialog .md-body { overflow-y: auto; overscroll-behavior: contain; min-height: 0; flex: 1 1 auto; -webkit-overflow-scrolling: touch; }
+.mission-dialog { overflow: hidden; max-height: calc(100dvh - 24px); }
+.mission-dialog .window-bar { position: static; flex: none; }
+.md-shot { width: 100%; height: auto; aspect-ratio: auto; object-fit: contain; }
+@media (max-width: 560px) {
+  .mission-dialog { width: calc(100vw - 24px); max-width: none; margin: auto; max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); box-shadow: 0 0 0 3px var(--cyan), 5px 5px 0 3px rgba(16, 31, 69, .6); }
+  .md-body { padding: 14px 14px calc(18px + env(safe-area-inset-bottom)); }
+  .md-body h2 { font-size: 20px; }
+  .mission-dialog .md-links { display: grid; grid-template-columns: 1fr; }
+  .mission-dialog .md-links .btn { min-height: 48px; width: 100%; }
+}

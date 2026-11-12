@@ -1,285 +1,93 @@
-// Comprehensive verification suite for the Natural NPC Conversation System
-// Strict rule: No double hyphens anywhere in dialogue, choices, or comments.
-
+// Verification for the shared conversation controller and the dialogue bank.
+// Run: node tools/test-conversation.mjs
 import { conversationSystem, CANONICAL_MAP } from '../src/game/conversation.js';
+import { BANK, FLIGHT_CHOICE } from '../src/game/dialogue-bank.js';
 
-const CHAR_IDS = [
-  // Vanderlinde
-  'guru',
-  'tahiti_sf1',
-  'prince',
-  'tahiti_sf2',
-  'tahiti_sf3', // jeswin
-  'tahiti_sf4', // arok
-  'shabeer',
-  'tahiti_sf5',
-  'harris',
-  // Euphonium
-  'akshai',
-  'tahiti_cf5',
-  'logeshwaran',
-  'tahiti_cf3',
-  'piranav',
-  'tahiti_cf6',
-  'shabesh',
-  'tahiti_cf2',
-  'tahiti_cf7', // sathesh
-  'thianesh',
-  'tahiti_cf4',
-  'naveen',
-  'tahiti_cf8',
-  'tahiti_cf9', // sivasuthan
-  'anu',
-  'tahiti_cf1',
-  // Pop culture
-  'soap',
-  'cal',
-  'vesper',
-  'skip',
-  'hale',
-  'ollie',
-];
+let failed = 0, passed = 0;
+const assert = (cond, msg) => { if (cond) { passed++; console.log(`PASS: ${msg}`); } else { failed++; console.error(`FAIL: ${msg}`); } };
+const textOf = (l) => (typeof l === 'string' ? l : l.t);
+const allText = (obj) => JSON.stringify(obj, (k, v) => (typeof v === 'function' ? undefined : v));
 
-let totalTests = 0;
-let passedTests = 0;
+const REQUIRED = ['guru', 'prince', 'jeswin', 'arok', 'shabeer', 'harris', 'anu', 'shabesh', 'logeshwaran', 'thianesh', 'akshai', 'pranav', 'sathesh', 'naveen', 'sivasuthan'];
 
-function assert(condition, message) {
-  totalTests++;
-  if (!condition) {
-    console.error(`FAIL: ${message}`);
-    process.exitCode = 1;
-  } else {
-    passedTests++;
-    console.log(`PASS: ${message}`);
+// ---- content shape ----
+for (const id of REQUIRED) {
+  const b = BANK[id];
+  assert(!!b, `${id}: has a dialogue bank entry`);
+  if (!b) continue;
+  assert(b.first?.length >= 2, `${id}: first conversation`);
+  assert(b.repeats?.length === 3, `${id}: exactly three repeat conversations`);
+  assert(b.activity?.length >= 1, `${id}: activity-specific conversation`);
+  assert(b.topics?.length >= 3, `${id}: selectable topics`);
+  assert(typeof b.goodbye === 'string' && b.goodbye.length > 0, `${id}: goodbye line`);
+  assert(!/--/.test(allText(b)), `${id}: no double hyphens`);
+}
+
+// ---- canonical ids: Tahiti and Island 01 versions share one conversation record ----
+assert(CANONICAL_MAP.tahiti_sf3 === 'jeswin', 'tahiti_sf3 maps to jeswin');
+assert(CANONICAL_MAP.piranav === 'pranav' && CANONICAL_MAP.tahiti_cf6 === 'pranav', 'Pranav ids share one record');
+assert(CANONICAL_MAP.tahiti_cf3 === 'logeshwaran' && CANONICAL_MAP.logeshwaran === 'logeshwaran', 'Logesh ids share one record');
+
+const build = (npcId, ctx = {}, save = {}) => conversationSystem.buildConversation({ id: npcId, name: npcId }, { npcId, level: 'tahiti', save, ...ctx });
+
+// ---- first, then rotate repeats, then activity only when it matches ----
+{
+  const save = {};
+  const first = await build('tahiti_sf1', {}, save);
+  assert(textOf(first.lines[0]) === 'You taking the scooty out?', 'Guru first conversation opens as written');
+  assert(first.lines[0].s === 'Nathan' && first.lines[1].s === undefined, 'speakers are marked: Nathan, then the character');
+  const r1 = await build('tahiti_sf1', {}, save), r2 = await build('tahiti_sf1', {}, save), r3 = await build('tahiti_sf1', {}, save), r4 = await build('tahiti_sf1', {}, save);
+  const open = (c) => textOf(c.lines[0]);
+  assert(new Set([open(r1), open(r2), open(r3)]).size === 3, 'three repeats are all different before any repeats');
+  assert(open(r4) === open(r1), 'rotation then starts over');
+  const act = await build('tahiti_sf1', { activity: { act: 'coding' } }, save);
+  assert(textOf(act.lines[0]) === 'Can I borrow you?', 'Guru coding conversation is used while coding');
+  const again = await build('tahiti_sf1', { activity: { act: 'coding' } }, save);
+  assert(textOf(again.lines[0]) !== 'Can I borrow you?', 'same activity opener is not shown twice in a row');
+  const idle = await build('tahiti_sf1', { activity: { act: 'rest' } }, {});
+  assert(textOf(idle.lines[0]) === 'You taking the scooty out?', 'no activity dialogue without the matching activity');
+}
+
+// ---- Jeswin ----
+{
+  const c = await build('tahiti_sf3', { activity: { act: 'drafting' } }, { npcMemory: { jeswin: { visitCount: 3, topics: [], events: [], firstDone: true } } });
+  assert(textOf(c.lines[1]).includes('Hold this drawing flat'), 'Jeswin drafting conversation matches the brief');
+  assert(c.topics.map((t) => t.q).join('|') === 'Show me the building|Explain the model|How\'s the bike?|Build with sand', 'Jeswin topics match the brief');
+  assert(c.topics.every((t) => !t.action), 'Jeswin has no launch action that is not backed by a mechanic');
+  assert(c.goodbye === "Come back later. I'll show you what I change.", 'Jeswin goodbye');
+}
+
+// ---- launch actions only where the mechanic exists; Talk never launches anything by itself ----
+{
+  const tah = await build('tahiti_cf1', {}, {});
+  const isl = await build('anu', { level: 'island1' }, {});
+  assert(tah.topics.some((t) => t.action === 'tahiti-basket'), 'Anu offers the hoops action on Tahiti');
+  assert(!isl.topics.some((t) => t.action), 'no hoops action off Tahiti');
+  assert(isl.topics.some((t) => t.q === 'Shoot some hoops'), 'Anu still has the conversational topic off Tahiti');
+  for (const id of REQUIRED) {
+    const c = await build(id === 'harris' ? 'harris' : id, { level: 'island1' }, {});
+    assert(c.lines.every((l) => !l.action) && !('action' in c), `${id}: opening conversation never starts an activity`);
   }
 }
 
-async function runTests() {
-  console.log('Starting NPC Conversation System verification...\n');
-
-  // Test 1: Every character generates contextual dialogue and choices
-  for (const npcId of CHAR_IDS) {
-    const save = { npcMemory: {} };
-    const ctx = {
-      npcId,
-      level: npcId.startsWith('tahiti_') ? 'tahiti' : 'island1',
-      district: 'test-district',
-      save,
-      activity: null,
-      mount: null,
-    };
-    const def = { id: npcId, name: npcId };
-    const conv = await conversationSystem.buildConversation(def, ctx);
-
-    assert(conv && conv.lines && conv.lines.length > 0, `${npcId}: generates greeting lines`);
-    assert(conv.topics && conv.topics.length > 0, `${npcId}: generates conversation choices`);
-
-    // Verify all text is English and contains no double hyphens
-    for (const line of conv.lines) {
-      assert(!line.includes('--'), `${npcId}: greeting has no double hyphens`);
-    }
-    for (const t of conv.topics) {
-      assert(!t.q.includes('--'), `${npcId}: choice prompt "${t.q}" has no double hyphens`);
-      const reply = t.reply || t.a || '';
-      assert(!reply.includes('--'), `${npcId}: reply has no double hyphens`);
-    }
-  }
-
-  // Test 2: Contextual Activity Sensitivity
-  // 2a. Arok streaming activity
-  {
-    const save = { npcMemory: {} };
-    const conv = await conversationSystem.buildConversation(
-      { id: 'tahiti_sf4', name: 'Arok' },
-      { npcId: 'tahiti_sf4', level: 'tahiti', activity: { act: 'stream' }, save }
-    );
-    const greetingText = conv.lines.join(' ');
-    assert(
-      greetingText.toLowerCase().includes('live') || greetingText.toLowerCase().includes('chat'),
-      `Arok in stream mode acknowledges live stream / chat: "${greetingText}"`
-    );
-  }
-
-  // 2b. Jeswin drafting activity
-  {
-    const save = { npcMemory: {} };
-    const conv = await conversationSystem.buildConversation(
-      { id: 'tahiti_sf3', name: 'Jeswin' },
-      { npcId: 'tahiti_sf3', level: 'tahiti', activity: { act: 'drafting' }, save }
-    );
-    const greetingText = conv.lines.join(' ');
-    assert(
-      greetingText.toLowerCase().includes('blueprint') || greetingText.toLowerCase().includes('load-bearing') || greetingText.toLowerCase().includes('pavilion') || greetingText.toLowerCase().includes('structural') || greetingText.toLowerCase().includes('roofline'),
-      `Jeswin in drafting mode discusses architecture / blueprints: "${greetingText}"`
-    );
-  }
-
-  // 2c. Guru with scooter mount
-  {
-    const save = { npcMemory: {} };
-    const conv = await conversationSystem.buildConversation(
-      { id: 'guru', name: 'Guru' },
-      { npcId: 'guru', level: 'island1', mount: 'scooty', save }
-    );
-    const greetingText = conv.lines.join(' ');
-    assert(
-      greetingText.toLowerCase().includes('scooty') || greetingText.toLowerCase().includes('zest'),
-      `Guru acknowledges riding his blue scooty: "${greetingText}"`
-    );
-  }
-
-  // 2d. Thianesh at feast table
-  {
-    const save = { npcMemory: {} };
-    const conv = await conversationSystem.buildConversation(
-      { id: 'tahiti_cf4', name: 'Thianish' },
-      { npcId: 'tahiti_cf4', level: 'tahiti', activity: { act: 'feast' }, save }
-    );
-    const greetingText = conv.lines.join(' ');
-    assert(
-      greetingText.toLowerCase().includes('snack') || greetingText.toLowerCase().includes('eating') || greetingText.toLowerCase().includes('feast'),
-      `Thianesh at feast table acknowledges eating contest / food: "${greetingText}"`
-    );
-  }
-
-  // 2e. Anu at basketball court
-  {
-    const save = { npcMemory: {} };
-    const conv = await conversationSystem.buildConversation(
-      { id: 'tahiti_cf1', name: 'Anu' },
-      { npcId: 'tahiti_cf1', level: 'tahiti', activity: { act: 'hoop' }, save }
-    );
-    const greetingText = conv.lines.join(' ');
-    assert(
-      greetingText.toLowerCase().includes('court') || greetingText.toLowerCase().includes('basketball') || greetingText.toLowerCase().includes('shots') || greetingText.toLowerCase().includes('net') || greetingText.toLowerCase().includes('shootout') || greetingText.toLowerCase().includes('three-point'),
-      `Anu on basketball court acknowledges basketball challenge: "${greetingText}"`
-    );
-  }
-
-  // 2f. Sathesh at photo booth
-  {
-    const save = { npcMemory: {} };
-    const conv = await conversationSystem.buildConversation(
-      { id: 'tahiti_cf7', name: 'Sathesh Kumar' },
-      { npcId: 'tahiti_cf7', level: 'tahiti', activity: { act: 'photo_sa' }, save }
-    );
-    const greetingText = conv.lines.join(' ');
-    assert(
-      greetingText.toLowerCase().includes('photo') || greetingText.toLowerCase().includes('golden hour') || greetingText.toLowerCase().includes('lens') || greetingText.toLowerCase().includes('balcony'),
-      `Sathesh near photo booth acknowledges photography: "${greetingText}"`
-    );
-  }
-
-  // Test 3: Lightweight Conversational Memory
-  // 3a. Guru remembers previous scooter ride
-  {
-    const save = { npcMemory: {} };
-    conversationSystem.recordEvent(save, 'guru', 'scooter_ride');
-    const conv = await conversationSystem.buildConversation(
-      { id: 'guru', name: 'Guru' },
-      { npcId: 'guru', level: 'island1', save }
-    );
-    const greetingText = conv.lines.join(' ');
-    assert(
-      greetingText.toLowerCase().includes('scooty') || greetingText.toLowerCase().includes('ride'),
-      `Guru remembers previous scooter ride: "${greetingText}"`
-    );
-  }
-
-  // 3b. Anu remembers previous hoop challenge
-  {
-    const save = { npcMemory: {} };
-    conversationSystem.recordEvent(save, 'anu', 'anu_hoops');
-    const conv = await conversationSystem.buildConversation(
-      { id: 'tahiti_cf1', name: 'Anu' },
-      { npcId: 'tahiti_cf1', level: 'tahiti', save }
-    );
-    const greetingText = conv.lines.join(' ');
-    assert(
-      greetingText.toLowerCase().includes('jumper') || greetingText.toLowerCase().includes('court') || greetingText.toLowerCase().includes('shots'),
-      `Anu remembers previous basketball match: "${greetingText}"`
-    );
-  }
-
-  // 3c. Thianesh remembers previous eating contest
-  {
-    const save = { npcMemory: {} };
-    conversationSystem.recordEvent(save, 'thianesh', 'eating_contest');
-    const conv = await conversationSystem.buildConversation(
-      { id: 'tahiti_cf4', name: 'Thianish' },
-      { npcId: 'tahiti_cf4', level: 'tahiti', save }
-    );
-    const greetingText = conv.lines.join(' ');
-    assert(
-      greetingText.toLowerCase().includes('feast') || greetingText.toLowerCase().includes('appetite') || greetingText.toLowerCase().includes('hungry'),
-      `Thianesh remembers previous feast contest: "${greetingText}"`
-    );
-  }
-
-  // Test 4: Real Gameplay Action Triggers
-  // Verify that dialogue choices map to real action triggers
-  {
-    // Guru scooter ride
-    const convGuru = await conversationSystem.buildConversation(
-      { id: 'guru', name: 'Guru' },
-      { npcId: 'guru', level: 'island1', save: {} }
-    );
-    const scootOpt = convGuru.topics.find((t) => t.action === 'scooter-ride');
-    assert(!!scootOpt, 'Guru dialogue offers real scooter-ride action');
-
-    // Jeswin motorcycle ride
-    const convJeswin = await conversationSystem.buildConversation(
-      { id: 'tahiti_sf3', name: 'Jeswin' },
-      { npcId: 'tahiti_sf3', level: 'tahiti', save: {} }
-    );
-    const motoOpt = convJeswin.topics.find((t) => t.action === 'tahiti-moto');
-    assert(!!motoOpt, 'Jeswin dialogue offers real tahiti-moto ride action');
-
-    // Anu basketball challenge
-    const convAnu = await conversationSystem.buildConversation(
-      { id: 'tahiti_cf1', name: 'Anu' },
-      { npcId: 'tahiti_cf1', level: 'tahiti', save: {} }
-    );
-    const basketOpt = convAnu.topics.find((t) => t.action === 'tahiti-basket');
-    assert(!!basketOpt, 'Anu dialogue offers real tahiti-basket challenge action');
-
-    // Thianesh eating contest
-    const convThianesh = await conversationSystem.buildConversation(
-      { id: 'tahiti_cf4', name: 'Thianish' },
-      { npcId: 'tahiti_cf4', level: 'tahiti', save: {} }
-    );
-    const feastOpt = convThianesh.topics.find((t) => t.action === 'tahiti-feast');
-    assert(!!feastOpt, 'Thianesh dialogue offers real tahiti-feast contest action');
-
-    // Akshai arcade shooter
-    const convAkshai = await conversationSystem.buildConversation(
-      { id: 'tahiti_cf5', name: 'Akshay' },
-      { npcId: 'tahiti_cf5', level: 'tahiti', save: {} }
-    );
-    const tvOpt = convAkshai.topics.find((t) => t.action === 'tahiti-tvgame');
-    assert(!!tvOpt, 'Akshai dialogue offers real tahiti-tvgame arcade action');
-
-    // Shabesh / Sathesh photo session
-    const convShabesh = await conversationSystem.buildConversation(
-      { id: 'tahiti_cf2', name: 'Shabesh' },
-      { npcId: 'tahiti_cf2', level: 'tahiti', save: {} }
-    );
-    const photoOpt = convShabesh.topics.find((t) => t.action === 'tahiti-photo');
-    assert(!!photoOpt, 'Shabesh dialogue offers real tahiti-photo session action');
-
-    // Harris flight to Tahiti
-    const convHarris = await conversationSystem.buildConversation(
-      { id: 'harris', name: 'Harris' },
-      { npcId: 'harris', level: 'island1', save: {} }
-    );
-    const flightOpt = convHarris.topics.find((t) => t.action === 'fly-tahiti');
-    assert(!!flightOpt, 'Harris dialogue offers real fly-tahiti action');
-  }
-
-  console.log(`\nVerification complete: ${passedTests}/${totalTests} tests passed.`);
+// ---- Harris: correct destination, choice closes into the flight, nothing queued ----
+{
+  const isl = await build('harris', { level: 'island1' }, {});
+  const f = isl.topics[0];
+  assert(f.q === FLIGHT_CHOICE.tahiti.q && f.action === 'fly-tahiti', 'Harris offers "Let\'s fly to Tahiti." on Island 01');
+  assert(Array.isArray(f.reply) && f.reply.length === 0, 'the flight choice has no timed final line');
+  const home = await build('harris', { level: 'tahiti' }, {});
+  assert(home.topics[0].action === 'fly-home', 'Harris offers the flight home on Tahiti');
+  const term = await build('harris', { level: 'tahiti', harrisState: 'WAITING_FOR_NATHAN' }, { npcMemory: { harris: { visitCount: 5, topics: [], events: [], firstDone: true, last: 'rep:0', rep: 1 } } });
+  assert(textOf(term.lines[0]) === 'Heading out?', 'Harris at the terminal asks "Heading out?"');
 }
 
-runTests().catch((err) => {
-  console.error('Test execution failed:', err);
-  process.exit(1);
-});
+// ---- Anu's cake: only the given date ----
+{
+  const t = allText(BANK.anu);
+  assert(t.includes('Twenty-sixth December'), 'Anu remembers the cake on 26 December');
+  assert(!/chocolate|vanilla|birthday|flavou?r/i.test(t), 'no invented cake details');
+}
+
+console.log(`\n${passed} passed, ${failed} failed`);
+if (failed) process.exit(1);

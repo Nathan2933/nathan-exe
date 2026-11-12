@@ -29,15 +29,11 @@ const aliases = (item) => norm(item).split('/').map((s) => s.trim()).filter(Bool
 
 // Category for each existing skill item (no new skills are invented here).
 const SKILL_CATS = [
-  ['Languages', ['python', 'java', 'javascript', 'typescript', 'c', 'c++', 'sql']],
-  ['Frontend', ['html', 'css', 'react', 'next.js', 'tailwind css']],
-  ['Backend', ['flask', 'node.js']],
-  ['Databases', ['mysql', 'mongodb', 'sqlite']],
-  ['Cloud / DevOps', ['docker', 'kubernetes', 'grafana', 'git', 'github']],
-  ['Security', ['falco', 'audit-event monitoring']],
-  ['Blockchain', ['solidity', 'ethereum / ganache']],
-  ['AI & Tools', ['ai-assisted prototyping', 'prompt engineering', 'reflect', 'bugbug.io']],
-  ['Game Dev', ['three.js', 'blender']],
+  ['Languages', ['python', 'java', 'javascript', 'typescript', 'c', 'c++', 'sql', 'solidity']],
+  ['Web', ['html', 'css', 'react', 'next.js', 'tailwind css', 'flask', 'node.js', 'mysql', 'mongodb', 'sqlite']],
+  ['Cloud', ['docker', 'kubernetes', 'grafana']],
+  ['Security', ['falco', 'audit-event monitoring', 'ethereum / ganache']],
+  ['Tools', ['git', 'github', 'ai-assisted prototyping', 'prompt engineering', 'reflect', 'bugbug.io', 'three.js', 'blender']],
 ];
 
 function groupSkills(c) {
@@ -193,20 +189,60 @@ function missionDetails(c, p) {
     ${links ? `<div class="md-links">${links}</div>` : ''}`;
 }
 
+// Official logo file per skill (public/assets/skills); anything missing gets a labelled symbol.
+const SKILL_LOGOS = {
+  python: 'python', java: 'java', javascript: 'javascript', typescript: 'typescript', html: 'html', css: 'css',
+  react: 'react', 'next.js': 'nextjs', flask: 'flask', 'node.js': 'nodejs', 'tailwind css': 'tailwind',
+  mysql: 'mysql', mongodb: 'mongodb', sqlite: 'sqlite', docker: 'docker', kubernetes: 'kubernetes',
+  grafana: 'grafana', git: 'git', github: 'github', solidity: 'solidity', 'ethereum / ganache': 'ethereum',
+  blender: 'blender', 'three.js': 'threejs',
+};
+const SKILL_SYMBOLS = {
+  sql: 'SQL', falco: '[!]', 'audit-event monitoring': '[•]', 'ai-assisted prototyping': 'AI',
+  'prompt engineering': '>_', reflect: 'RF', 'bugbug.io': 'BUG', c: 'C', 'c++': 'C++',
+};
+
+function skillSlot(item) {
+  const key = norm(item);
+  const learning = /\(learning\)/i.test(item);
+  const label = item.replace(/\s*\(learning\)/i, '');
+  const logo = SKILL_LOGOS[key];
+  const icon = logo
+    ? `<img src="assets/skills/${logo}.svg" alt="" width="40" height="40" loading="lazy">`
+    : `<span class="sym" aria-hidden="true">${esc(SKILL_SYMBOLS[key] || label.slice(0, 2).toUpperCase())}</span>`;
+  return `<li class="slot"><span class="slot-icon">${icon}${learning ? '<span class="learn">Learning</span>' : ''}</span><span class="slot-name">${esc(label)}</span></li>`;
+}
+
 function skillTree(c) {
   const groups = groupSkills(c);
-  return section('skills', 'skill_tree.cfg', 'Skill Tree', `
-    <p class="sub">Select a skill to see the missions that used it.</p>
-    <div class="tree">${groups.map((g) => `
-      <div class="branch">
-        <h3>${esc(g.name)}</h3>
-        <ul>${g.items.map((s) => {
-          const n = projectsUsing(c, s).length;
-          return `<li><button type="button" class="skill" aria-pressed="false" data-skill="${esc(s)}">${esc(s)}${n ? `<span class="s-n" aria-label="${n} missions">${n}</span>` : ''}</button></li>`;
-        }).join('')}</ul>
-      </div>`).join('')}
+  return section('skills', 'SKILL_TREE.CFG', 'SKILL TREE', `
+    <p class="sub">The tools behind my work.</p>
+    <div class="skill-tabs" role="tablist" aria-label="Skill categories">${groups.map((g, i) => `
+      <button type="button" role="tab" class="skill-tab" id="st-t${i}" aria-controls="st-p${i}" aria-selected="${i === 0}" tabindex="${i === 0 ? 0 : -1}">${esc(g.name)}</button>`).join('')}
     </div>
-    <div class="skill-out" id="skill-out" aria-live="polite"><p class="hint">No skill selected.</p></div>`);
+    ${groups.map((g, i) => `
+      <div class="skill-panel" role="tabpanel" id="st-p${i}" aria-labelledby="st-t${i}"${i ? ' hidden' : ''}>
+        <ul class="slots">${g.items.map(skillSlot).join('')}</ul>
+      </div>`).join('')}`);
+}
+
+function wireSkillTabs() {
+  const tabs = [...document.querySelectorAll('.skill-tab')];
+  const show = (t) => tabs.forEach((x) => {
+    const on = x === t;
+    x.setAttribute('aria-selected', on);
+    x.tabIndex = on ? 0 : -1;
+    document.getElementById(x.getAttribute('aria-controls')).hidden = !on;
+  });
+  tabs.forEach((t, i) => {
+    t.addEventListener('click', () => show(t));
+    t.addEventListener('keydown', (e) => {
+      const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+      if (!d) return;
+      const n = tabs[(i + d + tabs.length) % tabs.length];
+      show(n); n.focus();
+    });
+  });
 }
 
 function careerLog(c) {
@@ -317,11 +353,11 @@ function render(c) {
   main.innerHTML = '';
   main.append(noticeEl);
   main.insertAdjacentHTML('beforeend', characterFile(c) + `<div class="duo">${journey(c)}${missionList(sorted)}</div>` + discipline(c) + missions(c, sorted) + skillTree(c) + careerLog(c) + terminal(c));
+  wireSkillTabs();
   loadShots();
   main.removeAttribute('aria-busy');
 
   wireMissions(c);
-  wireSkills(c);
   wireNavHighlight();
   if (location.hash) document.querySelector(location.hash)?.scrollIntoView();
 }
@@ -332,12 +368,33 @@ function openMission(c, id, opener) {
   const p = (c.projects || []).find((x) => x.id === id);
   if (!p) return;
   document.getElementById('md-body').innerHTML = missionDetails(c, p);
-  document.getElementById('md-file').textContent = `mission_${p.id}.log`;
-  lastOpener = opener;
-  if (dialog.showModal) dialog.showModal(); else dialog.setAttribute('open', '');
-  document.getElementById('md-close').focus();
+  document.getElementById('md-file').textContent = p.title;   // readable title, not the internal mission_<id>.log name
+  showDialog(opener);
 }
-dialog.addEventListener('close', () => lastOpener?.focus());
+// background scroll lock + shared media cleanup for every way the dialog can be dismissed
+let lockY = 0;
+function showDialog(opener) {
+  lastOpener = opener;
+  if (!dialog.open) {
+    lockY = window.scrollY;
+    document.documentElement.classList.add('modal-lock');
+    document.body.style.top = `-${lockY}px`;
+  }
+  document.getElementById('md-body').scrollTop = 0; dialog.scrollTop = 0;
+  if (dialog.showModal) { if (!dialog.open) dialog.showModal(); } else dialog.setAttribute('open', '');
+  document.getElementById('md-close').focus({ preventScroll: true });
+}
+function cleanupDialog() {
+  const body = document.getElementById('md-body');
+  body.querySelectorAll('video, audio').forEach((m) => { try { m.pause(); m.removeAttribute('src'); m.load(); } catch { /* ignore */ } });
+  body.querySelectorAll('iframe').forEach((f) => { f.src = 'about:blank'; });
+  body.innerHTML = '';
+  document.documentElement.classList.remove('modal-lock');
+  document.body.style.top = '';
+  window.scrollTo({ top: lockY, left: 0, behavior: 'instant' });
+}
+dialog.addEventListener('close', () => { cleanupDialog(); lastOpener?.focus({ preventScroll: true }); });
+window.addEventListener('pagehide', () => { if (dialog.open) dialog.close(); });
 document.getElementById('md-close').addEventListener('click', () => dialog.close());
 dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });
 
@@ -346,10 +403,8 @@ function wireMissions(c) {
     const chb = e.target.closest('[data-chapter]');
     if (chb) {
       document.getElementById('md-body').innerHTML = chb.parentElement.querySelector('.ch-body').innerHTML;
-      document.getElementById('md-file').textContent = 'journey.map';
-      lastOpener = chb;
-      if (dialog.showModal) dialog.showModal(); else dialog.setAttribute('open', '');
-      document.getElementById('md-close').focus();
+      document.getElementById('md-file').textContent = chb.closest('.chapter')?.querySelector('h3')?.textContent || 'Journey';
+      showDialog(chb);
       return;
     }
     const b = e.target.closest('[data-details]');
@@ -357,23 +412,6 @@ function wireMissions(c) {
   });
 }
 
-function wireSkills(c) {
-  const out = document.getElementById('skill-out');
-  const buttons = [...main.querySelectorAll('.skill')];
-  buttons.forEach((b) => b.addEventListener('click', () => {
-    const on = b.getAttribute('aria-pressed') !== 'true';
-    buttons.forEach((x) => x.setAttribute('aria-pressed', 'false'));
-    main.querySelectorAll('.mission.is-match').forEach((m) => m.classList.remove('is-match'));
-    if (!on) { out.innerHTML = '<p class="hint">No skill selected.</p>'; return; }
-    b.setAttribute('aria-pressed', 'true');
-    const skill = b.dataset.skill;
-    const ps = projectsUsing(c, skill);
-    ps.forEach((p) => main.querySelector(`.mission[data-project="${CSS.escape(p.id)}"]`)?.classList.add('is-match'));
-    out.innerHTML = ps.length
-      ? `<p><b>${esc(skill)}</b> was used in:</p><ul class="rel">${ps.map((p) => `<li><button type="button" class="link-btn" data-details="${esc(p.id)}">${esc(p.title)}</button></li>`).join('')}</ul>`
-      : `<p><b>${esc(skill)}</b> isn't tied to a listed mission yet.</p>`;
-  }));
-}
 
 function wireTrophies() {
   const grid = document.getElementById('trophy-grid');
@@ -421,6 +459,15 @@ function wireNavHighlight() {
 // Mobile menu
 const menuBtn = document.getElementById('menu-btn');
 const sideNav = document.getElementById('side-nav');
+// phones: one compact header: the Menu button moves into the top bar next to Play
+const siteHead = document.querySelector('.site-head'), sideId = document.querySelector('.side-id');
+const mobileMQ = matchMedia('(max-width: 820px)');
+function placeMenu() {
+  if (mobileMQ.matches) siteHead.insertBefore(menuBtn, siteHead.querySelector('.play'));
+  else sideId.append(menuBtn);
+  if (!mobileMQ.matches) { menuBtn.setAttribute('aria-expanded', 'false'); sideNav.classList.remove('open'); }
+}
+mobileMQ.addEventListener('change', placeMenu);
 menuBtn.addEventListener('click', () => {
   const open = menuBtn.getAttribute('aria-expanded') !== 'true';
   menuBtn.setAttribute('aria-expanded', String(open));
@@ -430,6 +477,10 @@ sideNav.addEventListener('click', (e) => {
   if (e.target.closest('a')) { menuBtn.setAttribute('aria-expanded', 'false'); sideNav.classList.remove('open'); }
 });
 
+const closeMenu = () => { menuBtn.setAttribute('aria-expanded', 'false'); sideNav.classList.remove('open'); };
+document.addEventListener('click', (e) => { if (sideNav.classList.contains('open') && !e.target.closest('.side, #menu-btn')) closeMenu(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenu(); });
+placeMenu();
 document.getElementById('portrait').src = portraitURL();
 if (params.has('nowebgl')) notice("Your browser couldn't start the 3D version, so here's the classic portfolio.");
 

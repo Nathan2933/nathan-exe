@@ -110,7 +110,7 @@
     {
       "id": "tahiti_cf1",
       "name": "Anu",
-      "role": "The Outlaws · The Close Companion",
+      "role": "Euphonium · The Close Companion",
       "district": "tahiti",
       "lines": [
         "You found the good spot! Told you the view was worth the climb."
@@ -126,7 +126,7 @@
     {
       "id": "tahiti_cf2",
       "name": "Shabesh",
-      "role": "The Outlaws · The Teammate",
+      "role": "Euphonium · The Teammate",
       "district": "tahiti",
       "lines": [
         "Nathan, hold that frame! The natural rim lighting is cinematic perfection."
@@ -142,13 +142,13 @@
     {
       "id": "tahiti_cf3",
       "name": "Logesh",
-      "role": "The Outlaws · The Crew Member",
+      "role": "Euphonium · The Crew Member",
       "district": "tahiti",
       "lines": [
         "The sunset is right on schedule today."
       ],
       "topics": [
-        "Let's play beach volleyball! :: Outlaws on court! Let's get a rally going. [action:tahiti-volley-ol]",
+        "Let's play beach volleyball! :: Euphonium on the court! Let's get a rally going. [action:tahiti-volley-ol]",
         "What electronics are you tinkering with? :: A low power mesh node network across the shoreline.",
         "Hardware never lies, right? :: When code talks directly to physical pins, that is pure craft."
       ],
@@ -157,8 +157,8 @@
     },
     {
       "id": "tahiti_cf4",
-      "name": "Thianish",
-      "role": "The Outlaws · The Gym Bro",
+      "name": "Thianesh",
+      "role": "Euphonium · The Gym Bro",
       "district": "tahiti",
       "lines": [
         "Took the villa stairs? Respect. That counts as your morning cardio."
@@ -173,8 +173,8 @@
     },
     {
       "id": "tahiti_cf5",
-      "name": "Akshay",
-      "role": "The Outlaws · The Techie",
+      "name": "Akshai",
+      "role": "Euphonium · The Techie",
       "district": "tahiti",
       "lines": [
         "Careful, the railing's mine and the TV corner is warmed up."
@@ -190,13 +190,13 @@
     {
       "id": "tahiti_cf6",
       "name": "Pranav",
-      "role": "The Outlaws · The Crew Member",
+      "role": "Euphonium · The Crew Member",
       "district": "tahiti",
       "lines": [
         "One second, closing a pull request on the balcony."
       ],
       "topics": [
-        "Up for beach volleyball? :: Time to set and spike! Let's get the Outlaws on court. [action:tahiti-volley-ol]",
+        "Up for beach volleyball? :: Time to set and spike! Let's get Euphonium on court. [action:tahiti-volley-ol]",
         "How did the TCE Event Scheduler turn out? :: Runner-up at HackFest 2025! Handled 500 simultaneous registrations.",
         "How do you stay on top of heavy workloads? :: Time blocking, automated tests, and clear milestones."
       ],
@@ -206,13 +206,13 @@
     {
       "id": "tahiti_cf7",
       "name": "Sathesh Kumar",
-      "role": "The Outlaws · The Outlaw",
+      "role": "Euphonium · The Member",
       "district": "tahiti",
       "lines": [
         "Hey, good timing Nathan! Golden hour is hitting the balcony."
       ],
       "topics": [
-        "Let's do a photoshoot on the balcony! :: Position yourself by the railing. Smile for the Outlaws archive! [action:tahiti-photo]",
+        "Let's do a photoshoot on the balcony! :: Position yourself by the railing. Smile for the Euphonium archive! [action:tahiti-photo]",
         "How do you grade the colors on your photos? :: Warm highlights, deep rich shadows, natural skin tones.",
         "What is your favorite memory with the gang? :: Long balcony dinners where everyone laughs until midnight."
       ],
@@ -236,7 +236,7 @@
     {
       "id": "tahiti_cf8",
       "name": "Naveen",
-      "role": "The Outlaws · The Crew Member",
+      "role": "Euphonium · The Crew Member",
       "district": "tahiti",
       "lines": [
         "Hey, you made it! Balcony tea is steaming."
@@ -252,14 +252,14 @@
     {
       "id": "tahiti_cf9",
       "name": "Sivasuthan",
-      "role": "The Outlaws · The Crew Member",
+      "role": "Euphonium · The Crew Member",
       "district": "tahiti",
       "lines": [
-        "Took your time, Nathan! Best return on investment in life is true friendship."
+        "Took your time, Nathan! Come see the market board. Best return on investment in life is true friendship."
       ],
       "topics": [
         "What is your best investment advice? :: Invest deeply in skills, health, and friends who build.",
-        "How is the sound system on the deck? :: Crisp highs, warm low-end. Good music sets the island mood.",
+        "Any philosophy for money? :: The Stoics said to want less, and I try to remember that before I buy anything.",
         "What about calculated risk? :: Seek positive asymmetry: capped downside, uncapped upside."
       ],
       "species": "human",
@@ -285,12 +285,12 @@
       "role": "Vanderlinde Gang · The Memory Keeper",
       "district": "tahiti",
       "lines": [
-        "Hold still for a photo! Adding today's memories to the board."
+        "Come see my savings goal. The progress bars are looking good."
       ],
       "topics": [
         "Can we look through the memory album? :: Opening the archive now. Every chapter has a story. [action:open-album]",
-        "Still keeping memories? :: Someone has to remember all the crazy things we did together.",
-        "Remember our classroom days at Montfort? :: Trading lunch boxes and laughing until our stomachs hurt."
+        "How do you budget? :: Needs first, then savings, then fun. I write all three down before the month starts.",
+        "Tips for saving? :: Move the money the day you get it. What you never see, you never spend."
       ],
       "sameAs": "shabeer",
       "extras": ""
@@ -348,7 +348,7 @@
       ]
     },
     "outlaws": {
-      "title": "Join the Outlaws",
+      "title": "Join Euphonium",
       "slot": {
         "x": 23.3,
         "z": -0.9,
@@ -434,7 +434,7 @@
       ]
     },
     "outlaws": {
-      "name": "THE OUTLAWS",
+      "name": "EUPHONIUM",
       "tagline": "The College Crew",
       "text": "Different people, one unforgettable chapter. Between classes, projects, deadlines, and random conversations, this crew made college more than just a degree.",
       "members": [
@@ -456,15 +456,15 @@
         {
           "name": "Logesh",
           "role": "The Crew Member",
-          "text": "One of the Outlaws. Always part of the conversations that make the balcony feel alive."
+          "text": "One of Euphonium. Always part of the conversations that make the balcony feel alive."
         },
         {
-          "name": "Thianish",
+          "name": "Thianesh",
           "role": "The Gym Bro",
           "text": "The gym connection of the crew. Training, college life, and plenty of conversations."
         },
         {
-          "name": "Akshay",
+          "name": "Akshai",
           "role": "The Techie",
           "text": "Another technical mind in the gang. From projects to random discussions, he's part of the action."
         },
@@ -475,7 +475,7 @@
         },
         {
           "name": "Sathesh Kumar",
-          "role": "The Outlaw",
+          "role": "The Member",
           "text": "Brown-skinned, bearded, and usually seen in a sleeved shirt. Another member of the balcony crew."
         }
       ]
@@ -489,7 +489,7 @@
       "gang": "vanderlinde"
     },
     "villa": {
-      "title": "The Outlaws' Villa",
+      "title": "EUPHONIUM VILLA",
       "text": "Where the college crew gathers. Ocean views, balcony conversations, and no deadlines for once.",
       "gang": "outlaws"
     }

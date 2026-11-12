@@ -1,0 +1,183 @@
+/* =====================================================================
+   COMPACT HUD (phones, short landscape, touch tablets). A deliberate
+   layout, not a shrunken desktop: logo + menu in the top corners, save
+   chip and minimap tucked up top, joystick bottom-left, Jump / Use
+   bottom-right, panels as bottom sheets, dialogue above the thumbs.
+   Loaded last so it wins over game.css / game-mobile.css.
+   ===================================================================== */
+@media (max-width: 760px), (max-height: 520px) and (orientation: landscape), (pointer: coarse) and (max-width: 1100px) {
+  body.game {
+    --edge: max(12px, env(safe-area-inset-left));
+    --edgeR: max(12px, env(safe-area-inset-right));
+    --topY: max(8px, env(safe-area-inset-top));
+    --hudY: calc(var(--topY) + 54px);
+    --ctl-b: max(16px, calc(env(safe-area-inset-bottom) + 8px));
+    --mm: clamp(88px, 26vw, 104px);
+    --stick: 120px;
+  }
+  /* ---- top row: compact logo + compact menu ---- */
+  body.game .hud-top { padding: var(--topY) var(--edgeR) 0 var(--edge); gap: 8px; }
+  body.game .logo { min-width: 44px; min-height: 44px; padding: 3px; gap: 0; justify-content: center; }
+  body.game .logo-text { display: none; }
+  body.game img.logo-mark, body.game .logo-mark { width: 36px; height: 36px; }
+  body.game .menu-toggle { display: inline-flex; align-items: center; justify-content: center; min-width: 64px; min-height: 44px; padding: 0 14px; font-family: var(--font-pixel); font-size: 11px; letter-spacing: .06em; }
+  body.game .recruiter-bar { display: none; position: absolute; top: calc(var(--topY) + 50px); right: var(--edgeR); flex-direction: column; min-width: 200px; max-width: calc(100vw - 24px); max-height: calc(100dvh - var(--topY) - 64px); overflow-y: auto; padding: 8px; z-index: 40; }
+  body.game .recruiter-bar.open { display: flex; }
+  body.game .recruiter-bar .btn { min-height: 44px; justify-content: flex-start; }
+
+  /* ---- save chip: avatar + progress only; chapters open in a drawer ---- */
+  body.game .journey { position: fixed; left: var(--edge); right: auto !important; top: var(--hudY); bottom: auto; width: auto; max-width: calc(100vw - var(--edge) - var(--mm) - var(--edgeR) - 16px); padding: 4px 6px 4px 4px; overflow: visible; max-height: none; z-index: 11; box-sizing: border-box; }
+  body.game .journey:not(.open-m) .player-card { display: flex; align-items: center; gap: 8px; margin: 0; padding: 0; border: 0; }
+  body.game .journey:not(.open-m) #portrait { width: 36px; height: 36px; }
+  body.game .journey:not(.open-m) .save-meta small, body.game .journey:not(.open-m) .save-meta strong { display: none; }
+  body.game .journey:not(.open-m) .save-stats { margin: 0; font-family: var(--font-pixel); font-size: 12px; white-space: nowrap; }
+  body.game .journey:not(.open-m) .journey-toggle { position: static; min-width: 28px; min-height: 36px; display: grid; place-items: center; }
+  body.game .journey:not(.open-m) .journey-toggle::after { content: ''; position: absolute; inset: 0; }
+  body.game .journey:not(.open-m) :is(ol, .chars-toggle, .look) { display: none; }
+
+  /* ---- chapter drawer (bottom sheet) ---- */
+  body:has(.journey.open-m)::after { content: ''; position: fixed; inset: 0; z-index: 29; background: rgba(10, 6, 20, .55); }
+  body.game .journey.open-m { position: fixed; inset: auto 0 0 0; width: auto; max-width: none; max-height: min(84dvh, 680px); overflow-y: auto; overscroll-behavior: contain; padding: 0 0 max(14px, env(safe-area-inset-bottom)); z-index: 30; box-shadow: 0 -4px 0 rgba(10, 6, 20, .6); animation: sheet .2s ease-out; clip-path: none; }
+  body.game .journey.open-m .player-card { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 12px; margin: 0; padding: 12px 12px 12px 14px; background: #261e3a; border-bottom: 2px solid rgba(243, 227, 195, .35); }
+  body.game .journey.open-m #portrait { width: 44px; height: 44px; }
+  body.game .journey.open-m .save-meta strong { font-size: 13px; }
+  body.game .journey.open-m .journey-toggle { margin-left: auto; width: 44px; height: 44px; min-height: 44px; display: grid; place-items: center; font-size: 0; border: 2px solid #f3e3c3; border-radius: 0; align-self: center; transform: none; }
+  body.game .journey.open-m .journey-toggle::before { content: '✕'; font-size: 16px; color: #fff6e6; }
+  body.game .journey.open-m ol { display: grid; grid-auto-flow: row; grid-auto-columns: auto; gap: 6px; padding: 12px 12px 4px; }
+  body.game .journey.open-m li button { flex-direction: row !important; text-align: left !important; min-height: 48px; padding: 0 12px; gap: 12px; font-size: 15px !important; line-height: 1.2; border: 2px solid rgba(243, 227, 195, .22); background: rgba(255, 255, 255, .04); color: #fff6e6; }
+  body.game .journey.open-m li button::before { width: 12px; height: 12px; }
+  body.game .journey.open-m li.done button { color: #b9add6; }
+  body.game .journey.open-m li.done button::after { content: '✓'; margin-left: auto; color: #009fa9; font-weight: 700; }
+  body.game .journey.open-m li.next button { border-color: #009fa9; background: rgba(0, 159, 169, .14); }
+  body.game .journey.open-m li.next button::after { content: 'NEXT'; margin-left: auto; font: 400 9px var(--font-pixel); letter-spacing: .08em; color: #009fa9; }
+  body.game .journey.open-m .chars-toggle { margin: 10px 12px 0; width: auto; min-height: 48px; padding: 0 12px; font-size: 11px; }
+  body.game .journey.open-m .look { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 12px 12px 0; padding-top: 12px; white-space: normal; }
+  body.game .journey.open-m .look > span { grid-column: 1 / -1; }
+  body.game .journey.open-m .look button { min-height: 44px; display: grid; place-items: center; text-align: center; padding: 4px 6px; border-radius: 0; font-size: 12px; }
+  body.game .journey.open-m .look .music-vol { grid-column: 1 / -1; display: block; }
+  body.game .journey.open-m .look input[type=range] { width: 100%; min-height: 32px; }
+  body.game .chars-panel { left: 0; right: 0; bottom: 0; width: auto; max-height: 72dvh; z-index: 31; padding-bottom: env(safe-area-inset-bottom); }
+
+  /* ---- minimap: small, with its two buttons grouped beneath it ---- */
+  body.game .minimap-wrap { position: fixed; top: var(--hudY); right: var(--edgeR); left: auto; bottom: auto; width: var(--mm); height: var(--mm); overflow: visible; border: 0; box-shadow: none; background: transparent; border-radius: 0; z-index: 5; }
+  body.game #minimap { border-radius: 50%; border: 3px solid #f3e3c3; box-shadow: 0 0 0 2px #261e3a; background: #2fb3c9; }
+  body.game .map-btn { left: auto; right: 0; top: calc(100% + 8px); bottom: auto; transform: none; width: 44px; height: 44px; min-width: 44px; display: grid; place-items: center; padding: 0; border: 2px solid #f3e3c3; border-radius: 50%; background: #261e3a; color: #fff6e6; font: 400 12px var(--font-pixel); }
+  body.game .help-btn { position: fixed; top: calc(var(--hudY) + var(--mm) + 8px); right: calc(var(--edgeR) + 52px); bottom: auto; left: auto; width: 44px; height: 44px; z-index: 5; }
+  body.game .controls { top: calc(var(--hudY) + var(--mm) + 60px); left: var(--edge); right: var(--edgeR); width: auto; bottom: auto; z-index: 14; }
+  body.game .hint { display: none; }
+  body.game .toast { top: calc(var(--hudY) + var(--mm) + 64px); left: 50%; transform: translateX(-50%); max-width: calc(100vw - 24px); text-align: center; z-index: 6; }
+
+  /* ---- thumb controls: stick bottom-left, Jump / Use bottom-right ---- */
+  body.game .tc-stick { left: var(--edge); right: auto; bottom: var(--ctl-b); width: var(--stick); height: var(--stick); }
+  body.game .tc-knob { width: 54px; height: 54px; margin: -27px 0 0 -27px; }
+  body.game .tc-btns { left: auto; right: var(--edgeR); bottom: var(--ctl-b); gap: 12px; align-items: flex-end; }
+  body.game .tc-btn { min-width: 64px; height: 64px; font-size: 12px; }
+  body.game #tc-jump { min-width: 76px; height: 56px; margin-bottom: 40px; border-radius: 30px; }
+  body.game .tc-act { min-width: 80px; height: 80px; font-size: 14px; }
+
+  /* ---- one contextual prompt + a compact action sheet, above the thumbs ---- */
+  @media (pointer: coarse) {
+    body.game.touch-ui-on .prompt { left: 50%; right: auto; transform: translateX(-50%); bottom: calc(var(--ctl-b) + var(--stick) + 14px); max-width: calc(100vw - 24px); min-height: 44px; }
+    body.game.touch-ui-on .prompt kbd { font-size: 0; min-width: 26px; height: 26px; display: inline-grid; place-items: center; padding: 0; }
+    body.game.touch-ui-on .prompt kbd::before { content: '▶'; font-size: 11px; }
+    body.game.touch-ui-on .prompt strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60vw; }
+  }
+  body.game.touch-ui-on .tahiti-hints { left: 50%; right: auto; transform: translateX(-50%); bottom: calc(var(--ctl-b) + var(--stick) + 72px); max-width: calc(100vw - 24px); flex-direction: column; align-items: center; justify-content: flex-end; gap: 6px; }
+  body.game .tahiti-hints button { min-height: 44px; }
+  body.game .th-row { display: flex; gap: 6px; max-width: 100%; }
+  body.game .th-sheet { display: none; flex-direction: column; gap: 6px; padding: 8px; background: rgba(38, 30, 58, .96); border: 2px solid #009fa9; }
+  body.game .tahiti-hints.sheet-open .th-sheet { display: flex; }
+  body.game .th-more { min-width: 56px; justify-content: center; }
+
+  /* ---- dialogue: a readable, width-constrained card ---- */
+  body.game .dialogue, body.game.touch-ui-on .dialogue { left: 50%; right: auto; transform: translateX(-50%); width: calc(100vw - 24px); max-width: 560px; bottom: max(12px, env(safe-area-inset-bottom)); max-height: min(58dvh, 440px); overflow-y: auto; overscroll-behavior: contain; padding: 12px; gap: 10px; box-sizing: border-box; }
+  body.game .dlg-text { overflow-wrap: anywhere; }
+  body.game .dlg-topics button { min-height: 44px; flex: 1 1 calc(50% - 6px); }
+
+  /* ---- panels / modals as bottom sheets ---- */
+  body.game .panel { top: auto; left: 0; right: 0; bottom: 0; width: 100%; max-height: min(84dvh, calc(100dvh - var(--hudY))); border-radius: 10px 10px 0 0; border-bottom: 0; box-shadow: 0 -4px 0 var(--ink); padding-bottom: env(safe-area-inset-bottom); }
+  body.game .panel .window-bar { flex: none; }
+  body.game .panel-body { padding: 16px max(16px, env(safe-area-inset-left)) calc(24px + env(safe-area-inset-bottom)); overflow-x: hidden; overflow-wrap: anywhere; }
+  body.game .panel-body img, body.game .panel-body video { max-width: 100%; height: auto; }
+  body.game .pv-stage img, body.game .pv-stage video { max-height: 44dvh; width: auto; max-width: 100%; }
+  body.game .photo-card { padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
+  body.game .photo-card .pc-box { max-height: calc(100dvh - 24px); }
+  body.game .photo-card img { max-height: 58dvh; }
+  body.game .panel-close, body.game .pc-close { min-width: 44px; min-height: 44px; }
+  body.game .minigame { max-width: calc(100vw - 24px); }
+  body.game .bigmap-card { max-width: calc(100vw - 16px); }
+}
+
+/* controls and prompts vanish while anything blocks the world (menus, choices, media) */
+body.touch-ui-on:has(.journey.open-m, #chars-panel:not(.hidden), #dialogue:not(.hidden), .photo-card, #recruiter-bar.open) .touch-ui { display: none; }
+body:has(#panel:not(.hidden), #bigmap:not(.hidden), #minigame:not(.hidden), #tour-modal:not(.hidden), .journey.open-m, #chars-panel:not(.hidden), #dialogue:not(.hidden), .photo-card, #controls:not(.hidden)) :is(.prompt, .tahiti-hints) { display: none !important; }
+/* decorative overlays never intercept input */
+.world-label, .gym-banner, .gym-hud, .visit-fade { pointer-events: none; }
+
+@media (max-height: 520px) and (orientation: landscape) {
+  body.game { --hudY: calc(var(--topY) + 50px); --mm: 80px; --stick: 104px; }
+  body.game .journey.open-m { inset: 0 auto 0 0; width: min(420px, 62vw); max-height: none; border-radius: 0; box-shadow: 4px 0 0 rgba(10, 6, 20, .6); padding-top: env(safe-area-inset-top); }
+  body.game .journey.open-m .look { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  body.game .panel { inset: var(--topY) var(--edgeR) max(8px, env(safe-area-inset-bottom)) auto; width: min(460px, 56vw); max-height: none; border-radius: 0; border-bottom: var(--border); box-shadow: var(--shadow); }
+  body.game .help-btn { top: var(--hudY); right: calc(var(--edgeR) + var(--mm) + 60px); }
+  body.game .map-btn { top: 0; bottom: auto; right: calc(100% + 8px); }
+  body.game .toast { top: calc(var(--topY) + 4px); }
+  body.game .dialogue, body.game.touch-ui-on .dialogue { width: min(520px, calc(100vw - 24px)); max-height: 62dvh; }
+  body.game .chars-panel { left: 0; right: auto; width: min(420px, 62vw); top: 0; bottom: 0; max-height: none; }
+  body.game.touch-ui-on .prompt { bottom: calc(var(--ctl-b) + 4px); }
+  body.game.touch-ui-on .tahiti-hints { bottom: calc(var(--ctl-b) + 56px); }
+}
+
+/* a sheet / modal owns the screen: the floating HUD pieces step aside instead of drawing over it */
+body:has(#panel:not(.hidden), #bigmap:not(.hidden), #minigame:not(.hidden), .photo-card, .journey.open-m, #chars-panel:not(.hidden)) :is(.minimap-wrap, .help-btn, .toast) { visibility: hidden; }
+@media (max-width: 760px), (max-height: 520px) and (orientation: landscape), (pointer: coarse) and (max-width: 1100px) {
+  body:has(#panel:not(.hidden), #minigame:not(.hidden), .photo-card) .journey:not(.open-m) { visibility: hidden; }
+  body.game .panel { z-index: 20; max-height: min(84dvh, calc(100dvh - var(--topY) - 60px)); }
+}
+
+/* ---- phone polish round 2 ---- */
+@media (max-width: 760px), (max-height: 520px) and (orientation: landscape), (pointer: coarse) and (max-width: 1100px) {
+  /* drawer: game.css forces right:auto !important, so win it explicitly */
+  body.game .journey.open-m { left: 0 !important; right: 0 !important; width: 100vw; max-width: 100vw !important; box-sizing: border-box; }
+  /* save chip: just avatar + count */
+  body.game .journey:not(.open-m) { padding: 3px 8px 3px 3px; max-width: none; width: auto; }
+  body.game .journey:not(.open-m) #portrait { width: 30px; height: 30px; }
+  body.game .journey:not(.open-m) .journey-toggle { border: 0; min-width: 20px; min-height: 30px; padding: 0; font-size: 11px; }
+  body.game .journey:not(.open-m) .save-stats { font-size: 11px; }
+  body.game .journey:not(.open-m) .player-card { gap: 6px; }
+  /* place labels: smaller, wrap instead of running across the screen */
+  body.game .world-label { font-size: 8px; max-width: 44vw; white-space: normal; text-align: center; line-height: 1.25; padding: 4px 6px 3px 10px; overflow-wrap: anywhere; }
+  /* Jump / Use: one tidy thumb arc in the bottom-right */
+  body.game .tc-btns { display: block; width: 150px; height: 136px; gap: 0; }
+  body.game .tc-act { position: absolute; right: 0; bottom: 0; min-width: 78px; width: 78px; height: 78px; }
+  body.game #tc-jump { position: absolute; right: 66px; bottom: 52px; margin: 0; min-width: 64px; width: 64px; height: 64px; border-radius: 50%; padding: 0; }
+}
+
+/* ---- interaction cards (E): anchored to the top, fit the visible screen, compact type ---- */
+@media (max-width: 760px), (max-height: 520px) and (orientation: landscape), (pointer: coarse) and (max-width: 1100px) {
+  body.game .panel, body.game .chars-panel {
+    top: max(8px, env(safe-area-inset-top)); bottom: auto; left: max(8px, env(safe-area-inset-left)); right: max(8px, env(safe-area-inset-right));
+    width: auto; max-width: none; height: auto;
+    max-height: calc(100vh - 16px); max-height: calc(100dvh - max(8px, env(safe-area-inset-top)) - max(8px, env(safe-area-inset-bottom)) - 8px);
+    border-radius: 0; border: var(--border); box-shadow: var(--shadow); padding-bottom: 0; z-index: 20; animation: winopen .16s steps(4);
+  }
+  body.game .panel .window-bar { position: sticky; top: 0; z-index: 2; flex: none; padding: 4px 6px 4px 10px; }
+  body.game .panel .window-bar .title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+  body.game .panel-body { min-height: 0; flex: 1 1 auto; padding: 10px 12px calc(14px + env(safe-area-inset-bottom)); font-size: 14.5px; line-height: 1.45; overflow-x: hidden; overflow-wrap: anywhere; }
+  body.game .panel-body p { margin: 0 0 8px; font-size: 14.5px; line-height: 1.45; }
+  body.game .panel-body h2 { font-size: 19px; line-height: 1.2; margin: 0 0 4px; overflow-wrap: anywhere; }
+  body.game .panel-body h3 { font-size: 15px; line-height: 1.25; margin: 10px 0 4px; }
+  body.game .panel-body .eyebrow { font-size: 10.5px; margin: 0 0 4px; }
+  body.game .panel-body .subtitle { font-size: 14px; margin-bottom: 6px; }
+  body.game .panel-body .chapter-head { gap: 10px; margin-bottom: 6px; }
+  body.game .panel-body .mini-portrait { width: 44px; height: 44px; }
+  body.game .panel-body :is(.highlights, .panel-projects, .gym-menu, .timetable) { gap: 6px; margin: 8px 0; }
+  body.game .panel-body .highlights li { padding-left: 16px; }
+  body.game .panel-body .chips { gap: 4px; margin: 4px 0; }
+  body.game .panel-body .chips li, body.game .panel-body .sk-chip, body.game .panel-body [class*="chip"] { font-size: 11px; padding: 3px 7px; line-height: 1.2; }
+  body.game .panel-body .btn { min-height: 44px; font-size: 11px; padding: 0 10px; }
+  body.game .panel-body .transmit { margin: 10px 0 6px; gap: 6px; }
+  body.game .panel-body .mem-hint { font-size: 11.5px; padding: 6px 8px; }
+  body.game .panel-body table, body.game .panel-body pre { max-width: 100%; overflow-x: auto; }
+  body.game .panel .panel-close { width: 44px; height: 36px; min-height: 36px; margin: -6px -4px -6px 0; font-size: 16px; }
+}

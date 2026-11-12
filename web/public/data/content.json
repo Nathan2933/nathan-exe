@@ -1,4 +1,4 @@
-﻿{
+{
     "meta":  {
                  "siteTitle":  "NATHAN.EXE",
                  "tagline":  "A portfolio you can play.",
@@ -6,7 +6,7 @@
              },
     "profile":  {
                     "name":  "Nathan Jerald",
-                    "role":  "IT Undergraduate Â· Full-Stack \u0026 Cloud-Native Developer",
+                    "role":  "IT Undergraduate | Full-Stack \u0026 Cloud-Native Developer",
                     "location":  "Tiruchirappalli, Tamil Nadu, India",
                     "availability":  "",
                     "summary":  "I\u0027m Nathan, an Information Technology undergraduate at Thiagarajar College of Engineering who enjoys turning ideas into working software. My projects span full-stack applications, cloud-native security monitoring and blockchain-backed systems, with a growing interest in building memorable interactive experiences. NATHAN.EXE is where I bring that engineering curiosity together with the personal chapters that shaped me.",
@@ -74,7 +74,7 @@
                          "district":  "monsoon-campus",
                          "title":  "The Next Chapter",
                          "subtitle":  "Thiagarajar College of Engineering, Madurai",
-                         "period":  "2023 â€“ 2027",
+                         "period":  "2023 – 2027",
                          "body":  [
                                       "At Thiagarajar College of Engineering in Madurai, I continued my B.Tech in Information Technology. TCE became the place where coursework met real projects: hackathon builds, technical events, team collaboration, and the first versions of ideas that became much bigger.",
                                       "The wins were exciting, but so were the ordinary parts of learning: debugging, presenting, and figuring out how to ship something with a team."
@@ -82,7 +82,7 @@
                          "highlights":  [
                                             "B.Tech, Information Technology",
                                             "Hack Odyssey 2K25 winner with Aratro",
-                                            "IT Association office bearer Â· E-Cell"
+                                            "IT Association office bearer · E-Cell"
                                         ],
                          "media":  [
 
@@ -163,7 +163,7 @@
                          "pitch":  "Tracing agricultural supply chains from farmers to distribution, with blockchain-backed workflows.",
                          "description":  "Agricultural supply flows need clear visibility across farmers, warehouses and ration shops. In a team, I developed warehouse and inventory workflows and integrated Python-backed processes with Solidity smart contracts on an Ethereum/Ganache setup, covering MSP information, quality checks and inventory tracking. Won 1st place at Hack Odyssey 2K25, a 24-hour hackathon.",
                          "architecture":  [
-                                              "Farmer â†’ Warehouse â†’ Ration shop supply flow",
+                                              "Farmer → Warehouse → Ration shop supply flow",
                                               "Python-backed workflows: warehouse, inventory, quality checks, MSP information",
                                               "Solidity smart contracts on a local Ethereum chain (Ganache) record each step"
                                           ],
@@ -394,14 +394,14 @@
                        {
                            "role":  "Career Preview Program Intern",
                            "org":  "Hewlett Packard Enterprise (remote)",
-                           "period":  "Feb â€“ Jun 2026",
+                           "period":  "Feb – Jun 2026",
                            "summary":  "Contributed to a team-built Kubernetes security logging and monitoring project, integrating Falco event detection and Grafana dashboards for better cluster visibility.",
                            "logo":  "/assets/logos/career_logos/hpe.png"
                        },
                        {
                            "role":  "Testing Intern",
                            "org":  "SEZ US (remote)",
-                           "period":  "Jun â€“ Oct 2025",
+                           "period":  "Jun – Oct 2025",
                            "summary":  "Tested web and mobile functionality, documented defects, verified fixes and gave usability feedback, using tools including Reflect and BugBug.io.",
                            "logo":  "/assets/logos/career_logos/sez-us.jpg"
                        },
@@ -423,9 +423,9 @@
     "achievements":  [
                          {
                              "title":  "Hack Odyssey 2K25: Winner",
-                             "org":  "External Â· with Aratro",
+                             "org":  "External · with Aratro",
                              "year":  "2025",
-                             "detail":  "24-hour hackathon, â‚¹15,000 prize money.",
+                             "detail":  "24-hour hackathon, ₹15,000 prize money.",
                              "images":  [
                                             "/uploads/hack_odyssey-mw7jqglv.jpg"
                                         ]
@@ -468,7 +468,7 @@
                          },
                          {
                              "title":  "HackFest 2025: Runner-up",
-                             "org":  "IT Events Â· TCE Event Scheduler",
+                             "org":  "IT Events · TCE Event Scheduler",
                              "year":  "2025",
                              "detail":  "Six-hour hackathon.",
                              "images":  [
@@ -539,7 +539,6 @@
                                    "Back for another session? The Iron Yard keeps score in clean reps, not words."
                                ],
                      "topics":  [
-                                    "Let\u0027s hit a heavy set on the rack! :: Three clean reps! Tight groove, chest up, push through the floor! [action:gym-lift]",
                                     "How would you describe Nathan\u0027s fitness journey? :: Roughly 100 kg down to 60, then built back up to a solid 75 kg. One habit: showing up.",
                                     "What is the secret to recovery? :: Quality sleep, adequate protein, and never underestimating post-workout nutrition."
                                 ]
@@ -547,7 +546,7 @@
                  {
                      "id":  "guru",
                      "name":  "Guru",
-                     "role":  "Best friend Â· Winter Campus",
+                     "role":  "Best friend · Winter Campus",
                      "district":  "winter-campus",
                      "color":  "#2f5f9a",
                      "skin":  "fair",
@@ -578,7 +577,7 @@
                  {
                      "id":  "shabeer",
                      "name":  "Shabeer",
-                     "role":  "Childhood friend Â· Montfort",
+                     "role":  "Childhood friend · Montfort",
                      "district":  "lake-park",
                      "color":  "#3f9a72",
                      "skin":  "fair",
@@ -610,7 +609,7 @@
                  {
                      "id":  "anu",
                      "name":  "Anu",
-                     "role":  "Friend Â· TCE",
+                     "role":  "Friend · TCE",
                      "district":  "monsoon-campus",
                      "color":  "#3f9a72",
                      "skin":  "fair",
@@ -695,7 +694,7 @@
                  {
                      "id":  "shabesh",
                      "name":  "Shabesh",
-                     "role":  "Filming the college Â· TCE",
+                     "role":  "Filming the college · TCE",
                      "district":  "monsoon-campus",
                      "color":  "#ffb347",
                      "skin":  "fair",
@@ -724,7 +723,7 @@
                  {
                      "id":  "harris",
                      "name":  "Harris",
-                     "role":  "Pilot Â· Airport",
+                     "role":  "Pilot · Airport",
                      "district":  "lighthouse",
                      "color":  "#7a4a2a",
                      "skin":  "brown",
@@ -762,7 +761,7 @@
                      "district":  "city-park",
                      "id":  "soap",
                      "name":  "Tyler Durden",
-                     "role":  "Fight Club Â· Basement",
+                     "role":  "Fight Club · Basement",
                      "theme":  "fight",
                      "color":  "#8a2a22",
                      "skin":  "tan",
@@ -797,7 +796,7 @@
                      "district":  "city-park",
                      "id":  "cal",
                      "name":  "Arthur Morgan",
-                     "role":  "Outlaw Â· Western camp",
+                     "role":  "Outlaw · Western camp",
                      "theme":  "western",
                      "color":  "#6b4a32",
                      "skin":  "tan",
@@ -833,7 +832,7 @@
                      "district":  "city-park",
                      "id":  "vesper",
                      "name":  "Moon Knight",
-                     "role":  "Knight of the moon Â· Moonlit court",
+                     "role":  "Knight of the moon · Moonlit court",
                      "theme":  "moon",
                      "color":  "#9fb4d8",
                      "skin":  "tan",
@@ -867,7 +866,7 @@
                      "district":  "city-park",
                      "id":  "skip",
                      "name":  "Spider-Man",
-                     "role":  "Friendly neighbourhood Â· Rooftop",
+                     "role":  "Friendly neighbourhood · Rooftop",
                      "theme":  "spider",
                      "color":  "#c4302b",
                      "skin":  "fair",
@@ -901,7 +900,7 @@
                      "district":  "city-park",
                      "id":  "hale",
                      "name":  "Daredevil",
-                     "role":  "Hell\u0027s Kitchen Â· Red alley",
+                     "role":  "Hell\u0027s Kitchen · Red alley",
                      "theme":  "dd",
                      "color":  "#5a1a22",
                      "skin":  "fair",
@@ -936,7 +935,7 @@
                      "district":  "city-park",
                      "id":  "ollie",
                      "name":  "Richard Hendricks",
-                     "role":  "Founder, Pied Piper Â· Startup desk",
+                     "role":  "Founder, Pied Piper · Startup desk",
                      "theme":  "sv",
                      "color":  "#4a5a7a",
                      "skin":  "fair",
@@ -971,7 +970,7 @@
                      "glasses":  false,
                      "id":  "logeshwaran",
                      "name":  "Logeshwaran",
-                     "role":  "Builder Â· The Garage",
+                     "role":  "Builder · The Garage",
                      "district":  "garage",
                      "color":  "#c9d8e6",
                      "skin":  "brown",
@@ -999,7 +998,7 @@
                      "glasses":  false,
                      "id":  "piranav",
                      "name":  "Piranav",
-                     "role":  "Working on his laptop Â· TCE",
+                     "role":  "Working on his laptop · TCE",
                      "district":  "monsoon-campus",
                      "color":  "#2a3a6a",
                      "skin":  "fair",
@@ -1023,7 +1022,7 @@
                  {
                      "id":  "prince",
                      "name":  "Prince",
-                     "role":  "School friend Â· Developer \u0026 Gamer",
+                     "role":  "School friend · Developer \u0026 Gamer",
                      "district":  "winter-campus",
                      "color":  "#4a5a7a",
                      "skin":  "tan",
@@ -1133,7 +1132,7 @@
                           "tagline":  "THE RESTART",
                           "institution":  "Thiagarajar College of Engineering",
                           "place":  "Madurai",
-                          "detail":  "B.Tech Information Technology Â· 2023 â€“ 2027",
+                          "detail":  "B.Tech Information Technology · 2023 – 2027",
                           "district":  "monsoon-campus",
                           "station":  "monsoon",
                           "npc":  "anu",

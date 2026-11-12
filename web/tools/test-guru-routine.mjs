@@ -304,7 +304,10 @@ async function runTests() {
 
     // Walk / Idle update
     player.update(0.1, { x: 0, y: 0, z: 0 }, 0);
-    assert(player._xrayGhosts.every((g) => g.visible === true), 'All X-ray ghosts are visible while on foot');
+    assert(player._xrayGhosts.every((g) => g.visible === false), 'X-ray ghosts stay hidden while no large structure blocks Nathan');
+    player.xrayBlocked = true;
+    player.update(0.1, { x: 0, y: 0, z: 0 }, 0);
+    assert(player._xrayGhosts.every((g) => g.visible === true), 'All X-ray ghosts are visible while a building blocks Nathan');
 
     // Mount scooty or bike
     player.riding = true;

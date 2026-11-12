@@ -6,12 +6,25 @@ import { unregisterMaterials, unregisterVertexColors, isVertexColorCandidate, me
 import { tileAt } from './tiled.js';
 import { Character, OUTFITS, appearanceToOutfit } from './player.js';
 import { buildRailway } from './railway.js';
+import { XRAY_OCCLUDER_TYPES } from './xray.js';
 import { buildRain } from './weather.js';
 
 // Builds the 3D town from a Tiled map (see tiled.js) using kit pieces.
 // Static meshes are merged by material + 20m spatial chunk afterwards to keep draw calls and culling efficient.
 
 // Top surface height per ground material (sidewalks get a real kerb).
+const SAND_SHADES = [0.975, 1, 1.02];
+// Tahiti's soft beach. The *displayed* targets are base #E6C58F, shadow #D3AF77, highlight #F0D6A8.
+// The scene is lit hot (hemisphere 1.7 + sun 2.5) and the grade pass (retro.js) adds saturation/contrast
+// without sRGB-encoding, so a material colour of #E6C58F rendered as saturated orange (~#FFA733). These
+// linear material colours were solved against the rendered frame so the on-screen result lands on the targets.
+const TAHITI_SAND_HEX = 0xe6c58f;           // tile colour in tahiti_ground.tsj (identifies the Tahiti sand tile)
+const TAHITI_SAND = { base: [0.680, 0.643, 0.574], shadow: [0.656, 0.612, 0.534], light: [0.693, 0.671, 0.616] };  // shadow/light sit ~40% of the way from the base: barely-there grain
+const _sandCol = (rgb) => new THREE.Color().setRGB(rgb[0], rgb[1], rgb[2]).getHex();
+const tahitiSand = (i, j, court) => { const n = (((i * 7 + j * 13 + ((i ^ j) & 3)) * 2654435761) >>> 0) % 20; return _sandCol(!court && n === 0 ? TAHITI_SAND.shadow : !court && n === 10 ? TAHITI_SAND.light : TAHITI_SAND.base); };
+// volleyball courts (found from their nets) keep one flat, clean sand tone so the playing surface reads clearly
+const courtRects = (map) => (map.objects || []).filter((o) => o.type === 'volley_net').map((o) => { const r = (o.props?.rot ?? o.rot ?? 0) * Math.PI / 180; return { x: o.x, z: o.z, ux: -Math.cos(r), uz: -Math.sin(r), wx: -Math.sin(r), wz: Math.cos(r) }; });
+const inCourtRect = (cs, x, z) => cs.some((c) => Math.abs((x - c.x) * c.ux + (z - c.z) * c.uz) < 7.4 && Math.abs((x - c.x) * c.wx + (z - c.z) * c.wz) < 5.4);
 const HEIGHT = { road: 0.02, road_line: 0.02, sidewalk: 0.14, plaza: 0.08, concrete: 0.07, rubber: 0.06, water: 0.008, flowerbed: 0.2, boardwalk: 0.25 };
 const DEFAULT_H = 0.04;
 export const groundHeight = (type) => HEIGHT[type] ?? DEFAULT_H;
@@ -84,6 +97,7 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
   const bayScreens = []; // Garage project bays, by index
   const floors = []; // raised walkable surfaces (station platforms...): {minX,maxX,minZ,maxZ,h}
   const beacons = []; // instanced checkpoint markers
+  const rooms = [];   // buildings with roof cutaways (see updateBeacons)
   const winMatCache = new Map(); // reuse window pane materials within this world so panes merge cleanly
   const R = map.props.islandRadius || 44;
 
@@ -96,7 +110,15 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
     p.setX(i, x * k); p.setZ(i, z * k);
   }
   geo.computeVertexNormals();
-  const island = new THREE.Mesh(geo, [mat(0xd9a86a), mat(0xffe3a6), mat(0xa9774a)]);
+  // the base disc shows past the shoreline tiles: colour it from the map's own sand tile so no
+  // second (yellow) sand tone appears between the water and the beach
+  let sandHex = 0xe0c391;
+  for (const t of map.tiles.values()) if (t.type === 'sand') { sandHex = new THREE.Color(t.color).getHex(); break; }
+  const shade = (k) => new THREE.Color(sandHex).multiplyScalar(k).getHex();
+  // Tahiti: top = base sand, exposed shoreline side/underside = the shadow sand (all pre-compensated for the lighting)
+  const tahitiBeach = sandHex === TAHITI_SAND_HEX;
+  const island = new THREE.Mesh(geo, tahitiBeach ? [mat(_sandCol(TAHITI_SAND.shadow)), mat(_sandCol(TAHITI_SAND.base)), mat(_sandCol(TAHITI_SAND.shadow))]
+    : [mat(shade(0.82)), mat(sandHex), mat(shade(0.68))]);
   island.position.y = -1.5; island.receiveShadow = true; island.userData.dynamic = true;
   root.add(island);
   const sea = new THREE.Mesh(_seaGeo, mat(0x2fb3c9));
@@ -105,17 +127,22 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
 
   // === ground tiles (greedy runs per row -> few boxes) ===
   const W = map.width, half = map.half;
+  const courts = courtRects(map);
   for (let j = 0; j < map.height; j++) {
     let i = 0;
     while (i < W) {
       const gid = map.ground[j * W + i];
       if (!gid) { i++; continue; }
-      let e = i + 1;
-      while (e < W && map.ground[j * W + e] === gid) e++;
       const tile = map.tiles.get(gid);
+      let e = i + 1;
+      // sand is laid tile by tile in three close shades of the one sand colour (subtle grain, no second tone);
+      // everything else stays in greedy runs
+      if (tile.type !== 'sand') while (e < W && map.ground[j * W + e] === gid) e++;
       const h = groundHeight(tile.type);
       const top = Math.max(h, -0.3);
-      const box = new THREE.Mesh(new THREE.BoxGeometry(e - i, top + 0.3, 1), mat(new THREE.Color(tile.color).getHex()));
+      const shade = tile.type === 'sand' ? SAND_SHADES[((i * 7 + j * 13 + ((i ^ j) & 3)) % 3 + 3) % 3] : 1;
+      const isTahitiSand = tile.type === 'sand' && new THREE.Color(tile.color).getHex() === TAHITI_SAND_HEX;
+      const box = new THREE.Mesh(new THREE.BoxGeometry(e - i, top + 0.3, 1), mat(isTahitiSand ? tahitiSand(i, j, inCourtRect(courts, i - half + 0.5, j - half + 0.5)) : shade === 1 ? new THREE.Color(tile.color).getHex() : new THREE.Color(tile.color).multiplyScalar(shade).getHex()));
       box.position.set(i - half + (e - i) / 2, (top - 0.3) / 2, j - half + 0.5);
       box.receiveShadow = true; box.castShadow = false;
       root.add(box);
@@ -156,6 +183,7 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
     piece.obj.position.set(x, tile ? Math.max(0, groundHeight(tile.type)) : 0, z);
     piece.obj.rotation.y = (-rot * Math.PI) / 180;
     root.add(piece.obj);
+    if (XRAY_OCCLUDER_TYPES.has(type)) { piece.obj.userData.xrayOccluder = true; piece.obj.userData.xrayType = type;piece.obj.userData.xrayApi = piece.api || null; }
     if (piece.dynamic) piece.obj.userData.dynamic = true;
     if (piece.animate) animated.push(piece.animate);
     if (type === 'bench') {
@@ -164,6 +192,17 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
       seats.push({ x: x + 0.85 * Math.sin(a), z: z + 0.85 * Math.cos(a), id: `seat:${x.toFixed(1)},${z.toFixed(1)}`, kind: 'seat', seat: { x: sx, z: sz, heading: a }, radius: 1.3, visited: false, district: 'plaza' });
     }
     if (piece.api) apis[props.variant ? `${type}_${props.variant}` : type] = piece.api;
+    if (piece.api?.isInside) {
+      // closed-roof interiors: markers inside stay hidden until the cutaway opens
+      piece.obj.updateMatrixWorld(true);
+      // use the true interior footprint (the full bbox also covers porch, awning, signs and rooftop props,
+      // which wrongly hid markers standing outside the door)
+      const rb = new THREE.Box3();
+      const ib = piece.api.interiorBounds;
+      if (ib) for (const [cx, cz] of [[ib.minX, ib.minZ], [ib.minX, ib.maxZ], [ib.maxX, ib.minZ], [ib.maxX, ib.maxZ]]) rb.expandByPoint(new THREE.Vector3(cx, 0, cz).applyMatrix4(piece.obj.matrixWorld));
+      else rb.setFromObject(piece.obj);
+      rooms.push({ minX: rb.min.x + 0.4, maxX: rb.max.x - 0.4, minZ: rb.min.z + 0.4, maxZ: rb.max.z - 0.4, api: piece.api });
+    }
     if (piece.nightGlow) nightGlow.push(...piece.nightGlow);
     // Night dressing for buildings: lit windows + street lamps (window materials reused so static panes merge cleanly)
     {
@@ -220,14 +259,20 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
   }
 
   // ---------- interactables ----------
-  // Checkpoint marker: registered into 3 instanced layers (disc, ring, light column)
-  // so ~140 checkpoints cost 3 draw calls total instead of ~420.
+  const isTahiti = map.props?.island === 'tahiti';
   const beacon = (x, _y, z, { small = false, pillar: withPillar = true } = {}) => {
-    void withPillar;
-    const R = small ? 0.62 : 0.95;
-    const hPillar = small ? 1.6 : 2.4;
+    const R = small ? 0.65 : 0.95;
+    const usePillar = isTahiti ? false : withPillar;
     const tile = tileAt(map, x, z);
-    const by = (tile ? Math.max(0, groundHeight(tile.type)) : 0) + 0.04;
+    let fh = null;
+    for (let fi = 0; fi < floors.length; fi++) {
+      const f = floors[fi];
+      if (x >= f.minX && x <= f.maxX && z >= f.minZ && z <= f.maxZ) { fh = f.h; break; }
+    }
+    // indoors the tall light column looks like a solid slab on the floor: keep just the soft disc + ring
+    const hPillar = usePillar && fh === null ? (small ? 1.6 : 2.4) : 0;
+    // indoors sit above rugs (up to ~0.06 thick) so the glow is never covered
+    const by = fh !== null ? fh + 0.09 : (tile ? Math.max(0, groundHeight(tile.type)) : 0) + 0.04;
     const api = {
       group: { position: new THREE.Vector3(x, by, z), visible: true, userData: { isBeacon: true } },
       gem: { scale: { x: 1, setScalar(s) { this.x = s; } } },
@@ -272,7 +317,11 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
     const it = { x: o.x, z: o.z, visited: false, id: si ? `vehicle:scooty-${si}` : 'vehicle:scooty', kind: 'vehicle', vtype: 'scooty', label: o.props?.name || "Guru's Scooty", model, heading, home: { x: o.x, z: o.z, heading }, district: o.props?.district || (map.props?.island === 'tahiti' ? 'tahiti' : 'winter-campus'), radius: 1.4 };
     it.beacon = beacon(o.x, 1.6, o.z, { small: true }); hitBox(it, 1.2, 2, 1.4); interactables.push(it);
   });
-  for (const it of seats) { it.beacon = beacon(it.x, 1.2, it.z, { small: true }); hitBox(it, 1.4, 1.6, 1.4); interactables.push(it); }
+  for (const it of seats) {
+    if (!isTahiti) it.beacon = beacon(it.x, 1.2, it.z, { small: true });
+    hitBox(it, 1.4, 1.6, 1.4);
+    interactables.push(it);
+  }
   for (const o of map.interact) {
     const pr = o.props;
     const base = { x: o.x, z: o.z, visited: false };
@@ -395,7 +444,7 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
     const discAlphas = new Float32Array(N);
     const discAlphaAttr = new THREE.InstancedBufferAttribute(discAlphas, 1);
     discGeo.setAttribute('aAlpha', discAlphaAttr);
-    const discMat = makeInstancedAlphaMat({ color: 0xffa040, map: radialTex(), transparent: true, depthWrite: false, blending: THREE.NormalBlending, side: THREE.DoubleSide });
+    const discMat = makeInstancedAlphaMat({ color: 0xffa848, map: radialTex(), transparent: true, depthWrite: false, blending: THREE.NormalBlending, side: THREE.DoubleSide });
     markerMats.push({ mat: discMat, day: discMat.color.clone() });
     const discInst = new THREE.InstancedMesh(discGeo, discMat, N);
 
@@ -404,7 +453,7 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
     const ringAlphas = new Float32Array(N);
     const ringAlphaAttr = new THREE.InstancedBufferAttribute(ringAlphas, 1);
     ringGeo.setAttribute('aAlpha', ringAlphaAttr);
-    const ringMat = makeInstancedAlphaMat({ color: 0xff7a35, transparent: true, depthWrite: false, side: THREE.DoubleSide });
+    const ringMat = makeInstancedAlphaMat({ color: 0xff8838, transparent: true, depthWrite: false, side: THREE.DoubleSide });
     markerMats.push({ mat: ringMat, day: ringMat.color.clone() });
     const ringInst = new THREE.InstancedMesh(ringGeo, ringMat, N);
 
@@ -413,7 +462,7 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
     const pillarAlphas = new Float32Array(N);
     const pillarAlphaAttr = new THREE.InstancedBufferAttribute(pillarAlphas, 1);
     pillarGeo.setAttribute('aAlpha', pillarAlphaAttr);
-    const pillarMat = makeInstancedAlphaMat({ color: 0xffa040, map: pillarTex(), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
+    const pillarMat = makeInstancedAlphaMat({ color: 0xffb058, map: pillarTex(), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
     markerMats.push({ mat: pillarMat, day: pillarMat.color.clone() });
     const pillarInst = new THREE.InstancedMesh(pillarGeo, pillarMat, N);
 
@@ -428,7 +477,14 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
     const updateBeacons = (t) => {
       for (let i = 0; i < N; i++) {
         const b = beacons[i], api = b.api;
-        if (!api.group.visible) {
+        b.pr += (api.prom - b.pr) * 0.1;
+        const pr = b.pr;
+        let roofed = false;
+        for (let ri = 0; ri < rooms.length; ri++) {
+          const r = rooms[ri], q = api.group.position;
+          if (q.x > r.minX && q.x < r.maxX && q.z > r.minZ && q.z < r.maxZ && !(r.api.isOpen ? r.api.isOpen() : r.api.isInside())) { roofed = true; break; }
+        }
+        if (!api.group.visible || pr <= 0.02 || roofed) {
           _m4.makeScale(0, 0, 0);
           discInst.setMatrixAt(i, _m4);
           ringInst.setMatrixAt(i, _m4);
@@ -436,24 +492,28 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
           discAlphas[i] = 0; ringAlphas[i] = 0; pillarAlphas[i] = 0;
           continue;
         }
-        b.pr += (api.prom - b.pr) * 0.1;
-        const pr = b.pr;
         const k = 0.5 + 0.5 * Math.sin(t * 2.6 + b.x);
         const gp = api.group.position;
         const ds = b.R * api.gem.scale.x;
         _m4.makeScale(ds, 1, ds); _m4.setPosition(gp.x, gp.y, gp.z);
         discInst.setMatrixAt(i, _m4);
-        discAlphas[i] = (0.4 + k * 0.3) * Math.min(1.2, pr);
+        discAlphas[i] = (0.28 + k * 0.22) * Math.min(1.0, pr);
 
         const rs = (1 + k * 0.07) * (pr > 1 ? 1 + (pr - 1) * 0.35 : 1);
         api.ring.scale.x = rs;
         _m4.makeScale(b.R * rs, 1, b.R * rs); _m4.setPosition(gp.x, gp.y + 0.01, gp.z);
         ringInst.setMatrixAt(i, _m4);
-        ringAlphas[i] = Math.min(1, 0.35 + 0.65 * pr);
+        ringAlphas[i] = Math.min(0.85, 0.2 + 0.5 * pr);
 
-        _m4.makeScale(b.R, b.hPillar, b.R); _m4.setPosition(gp.x, gp.y, gp.z);
-        pillarInst.setMatrixAt(i, _m4);
-        pillarAlphas[i] = (0.28 + k * 0.22) * Math.min(1.3, pr);
+        if (b.hPillar > 0) {
+          _m4.makeScale(b.R, b.hPillar, b.R); _m4.setPosition(gp.x, gp.y, gp.z);
+          pillarInst.setMatrixAt(i, _m4);
+          pillarAlphas[i] = (0.16 + k * 0.12) * Math.min(1.0, pr);
+        } else {
+          _m4.makeScale(0, 0, 0);
+          pillarInst.setMatrixAt(i, _m4);
+          pillarAlphas[i] = 0;
+        }
       }
       discInst.instanceMatrix.needsUpdate = true;
       ringInst.instanceMatrix.needsUpdate = true;
@@ -882,6 +942,9 @@ function mergeStatic(root, winSet = new Set()) {
   const victims = [];
   const _box = new THREE.Box3();
   const _ctr = new THREE.Vector3();
+  // X-ray: geometry of tagged large structures merges only with itself, and the
+  // merged mesh keeps the tag so Nathan's occlusion gate can still find it.
+  const occluderOf = (o) => { for (let p = o; p && p !== root; p = p.parent) if (p.userData.xrayOccluder) return p; return null; };
   root.traverse((o) => {
     if (o === root) return;
     // skip anything inside a dynamic subtree
@@ -893,9 +956,10 @@ function mergeStatic(root, winSet = new Set()) {
       _box.setFromObject(o);
       _box.getCenter(_ctr);
       const gx = Math.floor(_ctr.x / cs), gz = Math.floor(_ctr.z / cs);
-      const key = `${o.material.side}|${o.castShadow ? 1 : 0}|${gx}|${gz}`;
+      const occ = occluderOf(o);
+      const key = `${o.material.side}|${o.castShadow ? 1 : 0}|${gx}|${gz}|${occ ? occ.uuid : ''}`;
       let entry = vcGroups.get(key);
-      if (!entry) { entry = { side: o.material.side, cast: o.castShadow, meshes: [] }; vcGroups.set(key, entry); }
+      if (!entry) { entry = { side: o.material.side, cast: o.castShadow, meshes: [], occ }; vcGroups.set(key, entry); }
       entry.meshes.push(o);
       return;
     }
@@ -906,23 +970,25 @@ function mergeStatic(root, winSet = new Set()) {
       _box.getCenter(_ctr);
       gx = Math.floor(_ctr.x / CHUNK); gz = Math.floor(_ctr.z / CHUNK);
     }
-    const key = `${o.material.uuid}|${o.castShadow ? 1 : 0}|${gx}|${gz}`;
+    const occ = occluderOf(o);
+    const key = `${o.material.uuid}|${o.castShadow ? 1 : 0}|${gx}|${gz}|${occ ? occ.uuid : ''}`;
     let entry = matGroups.get(key);
-    if (!entry) { entry = { material: o.material, cast: o.castShadow, meshes: [] }; matGroups.set(key, entry); }
+    if (!entry) { entry = { material: o.material, cast: o.castShadow, meshes: [], occ }; matGroups.set(key, entry); }
     entry.meshes.push(o);
   });
 
   const mergedMeshes = [];
-  for (const { side, cast, meshes } of vcGroups.values()) {
+  for (const { side, cast, meshes, occ } of vcGroups.values()) {
     if (meshes.length < 2) continue;
     const merged = mergeVertexColorMeshes(meshes, { worldSpace: true, trackPalette: true });
     if (!merged) continue;
     for (let i = 0; i < meshes.length; i++) victims.push(meshes[i]);
     const m = new THREE.Mesh(merged, vcWorldMat(side));
     m.castShadow = cast; m.receiveShadow = true;
+    if (occ) { m.userData.xrayOccluder = true; m.userData.xrayApi = occ.userData.xrayApi; m.userData.xrayType = occ.userData.xrayType; }
     mergedMeshes.push(m);
   }
-  for (const { material, cast, meshes } of matGroups.values()) {
+  for (const { material, cast, meshes, occ } of matGroups.values()) {
     if (meshes.length < 2) continue;
     const geos = [];
     for (let i = 0; i < meshes.length; i++) {
@@ -940,6 +1006,7 @@ function mergeStatic(root, winSet = new Set()) {
     merged.computeBoundingSphere();
     const m = new THREE.Mesh(merged, material);
     m.castShadow = cast; m.receiveShadow = true;
+    if (occ) { m.userData.xrayOccluder = true; m.userData.xrayApi = occ.userData.xrayApi; m.userData.xrayType = occ.userData.xrayType; }
     mergedMeshes.push(m);
   }
   for (const v of victims) {

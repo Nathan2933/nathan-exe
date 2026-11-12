@@ -83,14 +83,20 @@ async function runTests() {
   // Test 2: Walk-in transition & full fade-out
   console.log('\n== Test 2: Walk-In Transition & Zero-Opacity Cutaway ==');
   // Outside: player at (0, 7) in hideout local space
-  piece.animate(0, { playerPos: { x: 0, z: 7 } });
+  piece.animate(0, { playerPos: { x: 0, z: 9 } });
   assert(piece.api.isInside() === false, 'Still outside at z = 7');
   assert(shellMeshes[0].material.opacity === 1, 'Opacity remains 1 when standing outside');
+
+  // Standing beside the walls / right at the entrance (outside) never fades anything
+  for (const [x, z] of [[0, 5.6], [0, 6.5], [-7.4, 0], [7.4, 0], [0, -5.6], [3, 5.4]]) {
+    for (let f = 1; f <= 30; f++) piece.animate(0.01 * f, { playerPos: { x, z } });
+    assert(shellMeshes[0].material.opacity === 1 && piece.api.isOpen() === false, `Opaque while outside at (${x}, ${z})`);
+  }
 
   // Step inside doorway: player at (0, 4) in hideout local space (door threshold is z < hd + 0.45 = 5.45)
   piece.animate(0.016, { playerPos: { x: 0, z: 4 } });
   const firstFrameOpacity = shellMeshes[0].material.opacity;
-  assert(firstFrameOpacity < 1.0 && firstFrameOpacity > 0.8, `Fade eases smoothly on entry (first frame opacity: ${firstFrameOpacity.toFixed(3)})`);
+  assert(firstFrameOpacity < 1.0 && firstFrameOpacity >= 0.7, `Fade starts immediately on entry (first frame opacity: ${firstFrameOpacity.toFixed(3)})`);
   assert(shellMeshes[0].material.transparent === true, 'Becomes transparent during fade');
   assert(shellMeshes[0].material.depthWrite === false, 'Disables depthWrite during fade to prevent depth blocking');
 
@@ -107,13 +113,13 @@ async function runTests() {
   // Test 3: Walk-out transition & restoration of solid exterior
   console.log('\n== Test 3: Walk-Out Transition & Full Solid Restoration ==');
   // Step outside: player at (0, 6) in hideout local space (outside door boundary)
-  piece.animate(1.0, { playerPos: { x: 0, z: 6 } });
+  piece.animate(1.0, { playerPos: { x: 0, z: 9 } });
   assert(shellMeshes[0].material.visible === true, 'Shell materials become visible again as fade begins recovering');
   assert(shellMeshes[0].material.opacity > 0, `Opacity begins increasing (found ${shellMeshes[0].material.opacity.toFixed(3)})`);
 
   // Simulate outward progression to steady state (50 frames)
   for (let f = 1; f <= 50; f++) {
-    piece.animate(1.0 + 0.016 * f, { playerPos: { x: 0, z: 7 } });
+    piece.animate(1.0 + 0.016 * f, { playerPos: { x: 0, z: 9 } });
   }
 
   assert(shellMeshes[0].material.opacity === 1, `Opacity finishes at exact 1.0 (found ${shellMeshes[0].material.opacity})`);
@@ -126,30 +132,30 @@ async function runTests() {
   // Test 4: Midway turnaround and smooth reversal
   console.log('\n== Test 4: Midway Turnaround & Bidirectional Reversal ==');
   // Start from outside (fade = 1.0)
-  // Step inside for 5 frames to reach ~0.5 fade
-  for (let f = 1; f <= 5; f++) {
+  // Step inside for 2 frames to reach ~0.5 fade (fast 50-80ms transition)
+  for (let f = 1; f <= 2; f++) {
     piece.animate(2.0 + 0.016 * f, { playerPos: { x: 0, z: 2 } });
   }
   const midFadeEnter = shellMeshes[0].material.opacity;
-  assert(midFadeEnter > 0.4 && midFadeEnter < 0.65, `Reached midway fade entering: ${midFadeEnter.toFixed(3)}`);
+  assert(midFadeEnter > 0.3 && midFadeEnter < 0.8, `Reached midway fade entering: ${midFadeEnter.toFixed(3)}`);
 
   // Turn around immediately and step outside
-  piece.animate(2.1, { playerPos: { x: 0, z: 7 } });
+  piece.animate(2.1, { playerPos: { x: 0, z: 9 } });
   const midFadeReverse1 = shellMeshes[0].material.opacity;
   assert(midFadeReverse1 > midFadeEnter, `Fade immediately reverses upward towards 1.0: ${midFadeReverse1.toFixed(3)} > ${midFadeEnter.toFixed(3)}`);
 
   // Let it fully recover outside
   for (let f = 1; f <= 50; f++) {
-    piece.animate(2.1 + 0.016 * f, { playerPos: { x: 0, z: 7 } });
+    piece.animate(2.1 + 0.016 * f, { playerPos: { x: 0, z: 9 } });
   }
   assert(shellMeshes[0].material.opacity === 1.0, 'Smoothly recovered back to 1.0 after mid-entry reversal');
 
   // Reverse test: start entering again, go midway, and continue inside
-  for (let f = 1; f <= 5; f++) {
+  for (let f = 1; f <= 2; f++) {
     piece.animate(3.0 + 0.016 * f, { playerPos: { x: 0, z: 0 } });
   }
   const midFadeEnter2 = shellMeshes[0].material.opacity;
-  assert(midFadeEnter2 > 0.4 && midFadeEnter2 < 0.65, `Reached midway fade entering again: ${midFadeEnter2.toFixed(3)}`);
+  assert(midFadeEnter2 > 0.3 && midFadeEnter2 < 0.8, `Reached midway fade entering again: ${midFadeEnter2.toFixed(3)}`);
 
   // Continue inside to completion
   for (let f = 1; f <= 50; f++) {
@@ -169,13 +175,17 @@ async function runTests() {
   piece.animate(5.0, { playerPos: { x: -8.4, z: 0 } });
   assert(shellMeshes[0].material.opacity === 1.0, 'West side outside wall (bottle cap path) does not trigger interior fade');
 
-  // North garden: world z = -18 (hideout at -11 -> local z = -7)
+  // North garden: world z = -18 (hideout at -11 -> local z = -7) triggers camera occlusion fade (behind house), not interior fade
   piece.animate(5.1, { playerPos: { x: 0, z: -7 } });
-  assert(shellMeshes[0].material.opacity === 1.0, 'North garden path does not trigger interior fade');
+  assert(piece.api.isInside() === false, 'North garden path does not trigger interior fade');
 
+  // Reset to outside east
+  for (let f = 1; f <= 50; f++) {
+    piece.animate(5.2 + 0.016 * f, { playerPos: { x: 8.4, z: 0 } });
+  }
   // East yard: local x = 8.4
-  piece.animate(5.2, { playerPos: { x: 8.4, z: 0 } });
   assert(shellMeshes[0].material.opacity === 1.0, 'East yard does not trigger interior fade');
+  assert(piece.api.isInside() === false, 'East yard isOutside');
 
   console.log(`\nVerification complete: ${passedTests}/${totalTests} tests passed.`);
 }
@@ -184,3 +194,14 @@ runTests().catch((err) => {
   console.error('Test execution error:', err);
   process.exit(1);
 });
+
+// Doorway pause: standing on the threshold slab after entering must not flicker
+{
+  const pc = KIT.hideout_house();
+  const hd = 5;
+  pc.animate(0, { playerPos: { x: 0, z: 6 } });
+  for (let f = 1; f <= 10; f++) pc.animate(0.016 * f, { playerPos: { x: 0, z: 3 }, prevPlayerPos: { x: 0, z: 6 } });
+  const ops = [];
+  for (let f = 1; f <= 20; f++) { pc.animate(1 + 0.016 * f, { playerPos: { x: 0, z: hd - 0.15 }, prevPlayerPos: { x: 0, z: hd - 0.15 } }); ops.push(pc.api.isInside()); }
+  console.log(ops.every(Boolean) ? 'PASS: no flicker while paused in the doorway slab' : (process.exitCode = 1, 'FAIL: doorway flicker'));
+}

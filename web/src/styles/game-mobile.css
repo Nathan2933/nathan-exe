@@ -1,0 +1,115 @@
+/* =====================================================================
+   Mobile / touch pass: on-screen controls, 44px targets, safe areas,
+   short-landscape layout. Desktop (fine pointer, roomy window) is untouched.
+   Loaded after game.css so it can refine the base rules.
+   ===================================================================== */
+body.game { height: 100dvh; }
+body.game .hud-top { padding-left: max(var(--gutter), env(safe-area-inset-left)); padding-right: max(var(--gutter), env(safe-area-inset-right)); }
+.journey { left: max(var(--gutter), env(safe-area-inset-left)); }
+
+/* ---- on-screen controls ---- */
+.touch-ui { display: none; }
+body.touch-ui-on.started .touch-ui { display: block; }
+body.touch-ui-on.cine-on .touch-ui { display: none; }
+.tc-stick, .tc-btn { touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+.tc-stick {
+  position: fixed; z-index: 12; width: 112px; height: 112px; border-radius: 50%;
+  right: max(var(--gutter), calc(env(safe-area-inset-right) + 8px)); bottom: max(18px, calc(env(safe-area-inset-bottom) + 10px));
+  background: rgba(38, 30, 58, .55); border: 3px solid rgba(243, 227, 195, .75);
+  box-shadow: inset 0 0 0 6px rgba(38, 30, 58, .35);
+}
+.tc-stick.on { background: rgba(38, 30, 58, .75); }
+.tc-knob { position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; margin: -26px 0 0 -26px; border-radius: 50%; background: #009fa9; border: 3px solid #f3e3c3; box-shadow: 0 3px 0 rgba(10, 6, 20, .5); pointer-events: none; }
+.tc-stick:not(.on) .tc-knob { transition: transform .12s ease-out; }
+.tc-btns { position: fixed; z-index: 12; display: flex; gap: 10px; align-items: flex-end;
+  right: max(var(--gutter), calc(env(safe-area-inset-right) + 8px)); bottom: calc(max(18px, calc(env(safe-area-inset-bottom) + 10px)) + 124px); }
+.tc-btn {
+  min-width: 56px; height: 56px; padding: 0 12px; border-radius: 50%; cursor: pointer;
+  font: 400 13px var(--font-pixel); letter-spacing: .04em; color: #261e3a;
+  background: #f3e3c3; border: 3px solid #261e3a; box-shadow: 0 3px 0 rgba(10, 6, 20, .55);
+}
+#tc-jump { border-radius: 28px; padding: 0 16px; font-size: 11px; background: #cfe9ea; }
+.tc-act { background: #009fa9; color: #fff6e6; }
+.tc-btn.down { transform: translateY(3px); box-shadow: none; filter: brightness(1.15); }
+/* keep the floating prompt / hints clear of the controls */
+@media (pointer: coarse) { body.touch-ui-on .prompt { left: max(var(--gutter), env(safe-area-inset-left)); right: auto; transform: none; max-width: calc(100vw - 2 * var(--gutter) - 140px); bottom: calc(max(16px, env(safe-area-inset-bottom)) + 130px); animation: none; } }
+body.touch-ui-on .tahiti-hints { left: max(var(--gutter), env(safe-area-inset-left)); transform: none; justify-content: flex-start; max-width: calc(100vw - 2 * var(--gutter) - 140px); bottom: calc(max(16px, env(safe-area-inset-bottom)) + 196px); }
+body.touch-ui-on .hint { display: none; }
+
+/* ---- touch devices: 44 x 44 minimum targets, no hover-only affordances ---- */
+@media (pointer: coarse), (max-width: 760px) {
+  body.game .btn, .tour-btn, .menu-toggle, .chars-toggle, .travel-skip, .boot-skip, .dlg-topics button, .tahiti-hints button, .chars-visit, .mg-actions .btn { min-height: 44px; }
+  .tour-btn { min-width: 44px; padding-left: 14px; padding-right: 14px; font-size: 10px; }
+  .panel-close { width: 44px; height: 44px; font-size: 16px; margin: -10px -8px -10px 0; }
+  .help-btn { width: 44px; height: 44px; }
+  .map-btn { min-width: 44px; min-height: 44px; bottom: -8px; font-size: 12px; background: transparent; border: 0; }
+  .journey-toggle { min-width: 44px; min-height: 44px; }
+  .journey li button { min-height: 44px; }
+  .look button { min-height: 44px; padding: 4px 10px; }
+  .recruiter-bar .btn { justify-content: flex-start; }
+  .dlg-topics button { padding: 8px 12px; }
+  .chars-visit { padding: 0 12px; display: inline-flex; align-items: center; }
+  .boot .boot-start { min-height: 56px; padding: 0 12px; }
+}
+@media (hover: none) { .btn:hover, .tour-btn:hover { transform: none; } }
+
+/* ---- phones, portrait + landscape ---- */
+@media (max-width: 760px), (max-height: 520px) and (orientation: landscape) {
+  .panel-body { -webkit-overflow-scrolling: touch; padding-bottom: calc(24px + env(safe-area-inset-bottom)); }
+  .tour-modal, .finale-card, .bigmap-card, .minigame, .controls { max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); overflow-y: auto; overscroll-behavior: contain; }
+  .tour-modal .tm-row, .tour-card .tc-row, .mg-actions { flex-direction: column; align-items: stretch; }
+  .tour-modal .tm-row .tour-btn, .tour-card .tc-row .tour-btn { width: 100%; }
+  .bigmap { padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); }
+  .bigmap-card { display: flex; flex-direction: column; max-height: 100%; }
+  #bigmap-canvas { max-width: 100%; height: auto; min-height: 0; max-height: calc(100dvh - 130px); object-fit: contain; }
+  .controls { left: var(--gutter); right: var(--gutter); }
+  .controls-list { grid-template-columns: minmax(0, auto) minmax(0, 1fr); }
+  .controls-list dt { white-space: normal; }
+  .toast { max-width: calc(100vw - 2 * var(--gutter)); }
+  .world-label { font-size: 10px; padding: 3px 5px 2px; }
+}
+@media (max-width: 400px) {
+  .logo-text { font-size: 12px; }
+  .logo { gap: 6px; padding-right: 8px; }
+  .dlg-topics button { flex: 1 1 100%; }
+  .tour-card { width: calc(100vw - 2 * var(--gutter)); }
+}
+
+/* ---- short landscape (phones on their side) ---- */
+@media (max-height: 520px) and (orientation: landscape) {
+  .hud-top { padding-top: max(6px, env(safe-area-inset-top)); }
+  .logo-mark, img.logo-mark, body.game img.logo-mark { width: 32px; height: 32px; }
+  .recruiter-bar { top: calc(max(6px, env(safe-area-inset-top)) + 46px); max-height: calc(100dvh - 70px); overflow-y: auto; }
+  .minimap-wrap { top: calc(max(6px, env(safe-area-inset-top)) + 50px); width: 76px; height: 76px; }
+  .help-btn { top: calc(max(6px, env(safe-area-inset-top)) + 52px); right: calc(max(var(--gutter), env(safe-area-inset-right)) + 84px); }
+  .journey { max-height: calc(100dvh - 90px); }
+  .panel { top: max(8px, env(safe-area-inset-top)); bottom: max(8px, env(safe-area-inset-bottom)); left: auto; right: max(8px, env(safe-area-inset-right)); width: min(460px, 56vw); max-height: none; border-radius: 0; border-bottom: var(--border); box-shadow: var(--shadow); }
+  .dialogue { width: min(560px, calc(100vw - 280px)); bottom: max(8px, env(safe-area-inset-bottom)); padding: 8px 10px; }
+  body.touch-ui-on .dialogue { left: 50%; transform: translateX(-50%); width: min(520px, calc(100vw - 290px)); bottom: max(8px, env(safe-area-inset-bottom)); }
+  .dlg-portrait { width: 40px; height: 40px; }
+  .dlg-text { font-size: 13.5px; min-height: 0; margin: 2px 0; }
+  .tour-card { top: calc(max(6px, env(safe-area-inset-top)) + 46px); bottom: auto; left: auto; right: max(8px, env(safe-area-inset-right)); transform: none; width: min(320px, 44vw); }
+  .tc-stick { width: 96px; height: 96px; bottom: max(10px, env(safe-area-inset-bottom)); }
+  .tc-knob { width: 44px; height: 44px; margin: -22px 0 0 -22px; }
+  .tc-btns { bottom: max(14px, env(safe-area-inset-bottom)); right: calc(max(var(--gutter), env(safe-area-inset-right) + 8px) + 112px); }
+  @media (pointer: coarse) { body.touch-ui-on .prompt { bottom: max(10px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); max-width: calc(100vw - 340px); } }
+  body.touch-ui-on .tahiti-hints { bottom: calc(max(10px, env(safe-area-inset-bottom)) + 60px); left: 50%; transform: translateX(-50%); justify-content: center; max-width: calc(100vw - 340px); }
+  .chars-panel { top: calc(max(6px, env(safe-area-inset-top)) + 46px); max-height: calc(100dvh - 60px); right: auto; width: min(340px, 50vw); }
+  .minigame { top: max(8px, env(safe-area-inset-top)); transform: translateX(-50%); }
+}
+
+/* the save card must never run under the joystick */
+body.touch-ui-on .journey { max-width: calc(100vw - 2 * var(--gutter) - 132px); box-sizing: border-box; }
+@media (min-width: 761px) and (min-height: 521px) { body.touch-ui-on .journey { max-width: 210px; } }
+.journey.open-m { z-index: 13; }
+
+/* full-screen / sheet UI owns the screen: tuck the on-screen controls away until it closes */
+body.touch-ui-on:has(#panel:not(.hidden), #bigmap:not(.hidden), #minigame:not(.hidden), #tour-modal:not(.hidden), #travel:not(.hidden), #finale:not(.hidden), #ko:not(.hidden), #controls:not(.hidden)) .touch-ui { display: none; }
+
+/* narrow phones: the collapsed save card keeps name + count readable beside the joystick */
+@media (max-width: 420px) {
+  .journey:not(.open-m) .save-meta small { display: none; }
+  .journey:not(.open-m) .player-card { grid-template-columns: 36px minmax(0, 1fr) 44px; gap: 6px; align-items: center; }
+  .player-card strong { font-size: 11px; overflow-wrap: normal; word-break: normal; }
+  .journey:not(.open-m) .player-card .journey-toggle { margin: 0; }
+}
