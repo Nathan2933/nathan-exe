@@ -41,6 +41,7 @@ const ACTIVITIES = {
     gaming: { w: 5, owner: 'tahiti_sf2', slots: [[-16.6, -8.65, 'sittype', 180]], lines: ['One more round.', 'Arok, did you see that?', 'Clutch!'] },
     coding: { w: 5, owner: 'tahiti_sf1', slots: [[-4.5, -6.0, 'sittype', 180]], lines: ['Just one more commit.', "It works. Don't touch it."] },
     finance_sh: { w: 5, owner: 'tahiti_sf5', slots: [[13.74, 12.83, 'look', 45]], poses: ['look', 'phone', 'look', 'type'], lines: ['Another week, another deposit.', 'Look at that progress bar.', 'Budget first, fun second.', 'Small coins, big goals.'] },
+    news: { w: 5, owner: 'tahiti_sf6', slots: [[-22.62, 0.06, 'look', 149]], poses: ['look', 'look', 'cheer', 'phone', 'look'], lines: ['Tea first, world problems later.', 'Page three has opinions. Strong ones.', 'Nobody is wrong until the tea cools.', 'Good paper. Questionable crossword.'] },
     photowalk: { w: 2, owner: 'tahiti_sf5', roam: true, slots: [[-12.4, -23.6, 'film', 150], [...on('vg', 2.8, 1.2), 'film', seaFace('vg')], [-14.6, -2.2, 'film', 200]], lines: ['Golden hour. Perfect.', 'Got it.'] },
     rest: { w: 4, owner: 'harris', slots: [[-9.25, -14.05, 'sleep', 0, { bed: { y: 0.83, approach: [-11.1, -14.05] } }]], lines: ['Five minutes. Then I fly.', "Pilot's break.", 'Zzz...'] },
     campfire: { w: 3, slots: [[-18.0, -3.6, 'sing', 90, { free: true }], [-14.8, -3.6, 'sing', -90, { free: true }], [-16.4, -5.1, 'sing', 0]], lines: ['♪ la la la ♪', '♪ one more verse ♪', 'Okay, okay, story time.', 'And then the bike just stopped. In the middle of the road.'] },
@@ -70,6 +71,9 @@ const ACTIVITIES = {
     selfie: { w: 1, slots: [[17.4, -1.6, 'phone', 135], [17.9, -2.5, 'cheer', 135], [16.9, -2.7, 'look', 135]], lines: ['Smile!', 'One more, someone blinked.'] },
   },
 };
+// Harish: studies at his outdoor table all day. He is not a "brain" (no roaming, sports or events); study() keeps him seated.
+const HARISH = 'tahiti_cf10';
+const STUDY = { seat: V(18.0, 19.0), ring: V(18.0, 21.15), face: 0 };
 const TERMINAL = V(-15.6, 13.2);       // where Harris meets Nathan
 const VG_MEET = V(-13.8, -1.4);        // courtyard
 const POSE_DANCES = ['dance1', 'dance2', 'dance3'];
@@ -84,7 +88,8 @@ const PROFILE = {
   tahiti_sf2: { home: [80, 140], roam: 0.35 },   // Prince
   tahiti_sf3: { home: [65, 120], roam: 0 },      // Jeswin: stays at his outdoor studio workstation
   tahiti_sf4: { home: [90, 160], roam: 0.3 },    // Arok
-  tahiti_sf5: { home: [60, 110], roam: 0.25 },   // Shabeer: keeps to his savings board, with the odd photo walk
+  tahiti_sf5: { home: [60, 110], roam: 0.25 },
+  tahiti_sf6: { home: [50, 95], roam: 0.45 },    // Vijay: reads at his news corner, drifts to the fire, the courtyard and the beach   // Shabeer: keeps to his savings board, with the odd photo walk
   tahiti_cf1: { home: [50, 95], roam: 0.55 },    // Anu
   tahiti_cf2: { home: [45, 85], roam: 0.6 },     // Shabesh
   tahiti_cf3: { home: [55, 100], roam: 0.5 },    // Logesh
@@ -124,7 +129,7 @@ export function createTahiti(ctx) {
   let brains = [], bubbles = [], layer = null, party = { vg: 0, ol: 0 }, partyLights = {}, passenger = null, buddy = null;
   let photo = null, session = null, lastPhotoInfo = null, race = null, hunt = null, lastHint = 0;
   let lastDepart = { vg: 0, ol: 0 }, inHideout = false, hideoutSince = 0;
-  let epoch = 0, buddyTimer = 0, treasureItems = [], photoSpotList = [];
+  let epoch = 0, buddyTimer = 0, treasureItems = [], photoSpotList = [], study = null;
   const harris = () => brains.find((b) => b.id === 'harris');
   const P = () => player.group.position;
   const dist = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
@@ -201,7 +206,13 @@ export function createTahiti(ctx) {
   function taken(group, act, i, except) { return brains.some((b) => b !== except && b.group === group && b.act === act && b.slotI === i); }
   function freeSlot(group, act, except) {
     const n = ACTIVITIES[group][act].slots.length;
-    const order = [...Array(n).keys()].sort(() => Math.random() - 0.5);
+    let order = [...Array(n).keys()].sort(() => Math.random() - 0.5);
+    if (act === 'volley') {
+      // fill the emptier side first so a court never ends up with everyone on one side (nobody to play against)
+      const cnt = [0, 0];
+      brains.forEach((o) => { if (o !== except && o.group === group && o.act === 'volley' && o.slotI != null) cnt[slotOf(group, 'volley', o.slotI).opts.vb]++; });
+      order = order.sort((x, y) => cnt[slotOf(group, 'volley', x).opts.vb] - cnt[slotOf(group, 'volley', y).opts.vb]);
+    }
     return order.find((i) => {
       if (taken(group, act, i, except)) return false;
       const s = slotOf(group, act, i);
@@ -293,7 +304,7 @@ export function createTahiti(ctx) {
     // unreachable land goal (swim spots and group events keep the direct walk): never beeline through water/buildings or park at the rim; wait and head home instead
     if (!path.length && !b.forced && ctx.nav.isWalkable(x, z) && Math.hypot(x - p.x, z - p.z) > 0.6) { release(b); b.mode = 'idle'; b.then = null; b.wake = performance.now() + 3000 + Math.random() * 3000; b.goHome = true; return false; }
     b.path = path.length ? path : [{ x, z }];
-    b.goal = { x, z }; b.then = then; b.run = run; b.mode = 'walk';
+    b.goal = { x, z }; b.then = then; b.run = run; b.mode = 'walk'; b.retries = 0; b.stallT = 0;
     b.it.character.pose = null;
     return true;
   }
@@ -378,13 +389,30 @@ export function createTahiti(ctx) {
     }
     return pushed;
   }
+  // A summoned NPC that cannot make progress: retry the route, then a nearby free spot, and only then place them.
+  function recoverStall(b) {
+    b.stallT = 0; b.retries = (b.retries || 0) + 1;
+    const gp = b.it.character.group.position, goal = b.goal;
+    if (!goal) return;
+    if (b.retries === 1) { const path = ctx.nav.findPath(gp.x, gp.z, goal.x, goal.z); if (path.length) { b.path = path; b.stuck = 0; } }
+    else if (b.retries === 2) {
+      for (const rad of [0.9, 1.5, 2.1]) for (let k = 0; k < 8; k++) {
+        const a = (k / 8) * Math.PI * 2, x = goal.x + Math.cos(a) * rad, z = goal.z + Math.sin(a) * rad;
+        if (!ctx.nav.isWalkable(x, z) || brains.some((o) => o !== b && dist(o.it.character.group.position, { x, z }) < 1.0)) continue;
+        const path = ctx.nav.findPath(gp.x, gp.z, x, z);
+        b.goal = { x, z }; b.path = path.length ? path : [{ x, z }]; if (b.rush) { b.rush.x = x; b.rush.z = z; }
+        b.stuck = 0; return;
+      }
+    } else if (b.rush) snapToRush(b);
+    else { b.path = []; b.mode = 'idle'; const f = b.then; b.then = null; f?.(); }
+  }
   function release(b) { b.act = null; b.slotI = null; b.it.character.pose = null; b.swim = false; }
 
   const vel = new THREE.Vector3();
   function tickBrain(b, dt, t, now) {
     const it = b.it, ch = it.character, gp = ch.group.position;
     if (it.frozen || b.riding || b.vball) return;                // cinematic, on a bike, or playing volleyball
-    if (b.rush && !b.rush.done && now - b.rush.t0 > ASSEMBLE_MS) snapToRush(b);
+    if (b.rush && !b.rush.done && now - b.rush.t0 > (b.rush.limit || ASSEMBLE_MS)) snapToRush(b);
     vel.set(0, 0, 0);
     const talking = state.talkingTo === it;
     if (talking && (b.onBed || b.bedMove?.entering)) stepOffBed(b, () => { b.mode = 'talk'; });
@@ -415,6 +443,9 @@ export function createTahiti(ctx) {
       // a visitor has just arrived: stop and face Nathan, then carry on once the hold runs out
       ch.pose = null;
       const p = P(); ch.heading += Math.atan2(Math.sin(Math.atan2(p.x - gp.x, p.z - gp.z) - ch.heading), Math.cos(Math.atan2(p.x - gp.x, p.z - gp.z) - ch.heading)) * Math.min(1, dt * 8);
+    } else if (b.mode === 'walk' && !b.path?.length) {
+      // a walker with nothing to walk along would otherwise hang forever
+      b.mode = 'idle'; const f = b.then; b.then = null; f?.();
     } else if (b.mode === 'walk' && b.path?.length) {
       const wp = b.path[0], dx = wp.x - gp.x, dz = wp.z - gp.z, d = Math.hypot(dx, dz);
       const sp = b.forced ? 7.2 : b.run ? 3.4 : 1.8;
@@ -436,8 +467,9 @@ export function createTahiti(ctx) {
             if (ex * ex + ez * ez < aheadR2) { ahead = true; break; }
           }
         }
+        if (ahead && b.forced && (b.stallT = (b.stallT || 0) + dt) > 1.4) recoverStall(b);
         if (!ahead) {
-          b.stuck = 0; b.stallCount = 0;
+          b.stuck = 0; b.stallCount = 0; b.stallT = 0;
           const s = Math.min(sp * dt, d); gp.x += (dx / d) * s; gp.z += (dz / d) * s;
           if (keepOffCourts(b, gp)) { if ((b.pushT = (b.pushT || 0) + dt) > 1.2) { b.pushT = 0; b.path.shift(); if (!b.path.length) { const f = b.then; b.then = null; b.mode = 'idle'; f?.(); } } } else b.pushT = 0;
           vel.set(dx / d, 0, dz / d).multiplyScalar(sp);
@@ -512,6 +544,37 @@ export function createTahiti(ctx) {
     it.hit.position.set(gp.x, 1.3, gp.z);
   }
 
+  // ---------- Harish: always studying at his table ----------
+  // Stays pinned to his chair. Cycles reading, writing notes and the odd glance up; chatting with Nathan
+  // makes him look up and towards Nathan (still seated), and he goes straight back to his books afterwards.
+  function studyTick(dt, t, now) {
+    const s = study; if (!s) return;
+    const it = s.it, ch = it.character, gp = ch.group.position;
+    const talking = state.talkingTo === it;
+    gp.x = STUDY.seat.x; gp.z = STUDY.seat.z; gp.y = ctx.heightAt(gp.x, gp.z);
+    ch.pose = 'study';
+    ch.heading += angDiff(ch.heading, (STUDY.face * Math.PI) / 180) * Math.min(1, dt * 4);
+    if (talking) {
+      s.wasTalking = true; ch.studyWrite = 0; ch.studyUp = 1;
+    } else {
+      if (s.wasTalking) { s.wasTalking = false; s.mode = 'read'; s.until = now + 6000 + Math.random() * 4000; ch.lookAt(null); }   // straight back to the books
+      if (now > s.until) {
+        const r = Math.random();
+        s.mode = s.mode === 'look' ? (r < 0.5 ? 'read' : 'write') : r < 0.16 ? 'look' : s.mode === 'read' ? 'write' : 'read';
+        s.until = now + (s.mode === 'look' ? 1800 + Math.random() * 1800 : 7000 + Math.random() * 7000);
+        s.lookAtNathan = dist(P(), gp) < 7 && Math.random() < 0.5;
+      }
+      ch.studyWrite = s.mode === 'write' ? 1 : 0;
+      ch.studyUp = s.mode === 'look' ? 1 : 0;
+      ch.lookAt(s.mode === 'look' && s.lookAtNathan ? P() : null);
+    }
+    it.x = gp.x; it.z = gp.z;
+    it.beacon.group.visible = true;
+    it.beacon.group.position.set(STUDY.ring.x, ctx.heightAt(STUDY.ring.x, STUDY.ring.z) + 0.04, STUDY.ring.z);
+    it.hit.position.set(gp.x, 1.1, gp.z);
+    ch.update(dt, _zeroV, t);
+  }
+
   // ---------- treasure hunt ----------
   // a trail: the clue board gives the first clue, each chest holds the next one
   const TREASURE = [
@@ -529,7 +592,14 @@ export function createTahiti(ctx) {
     enter() {
       epoch++;
       layer = document.createElement('div'); layer.className = 'tahiti-bubbles'; document.body.append(layer);
-      brains = ctx.world.npcs.filter((it) => it.npcId === 'harris' || it.npcId.startsWith('tahiti_')).map((it) => {
+      study = null;
+      const hIt = ctx.world.npcs.find((it) => it.npcId === HARISH);
+      if (hIt) {
+        hIt.brain = true; hIt.seated = true; hIt.radius = 3.0;
+        hIt.ringAt = { x: STUDY.ring.x, z: STUDY.ring.z }; hIt.approach = { x: STUDY.ring.x, z: STUDY.ring.z - 0.1 }; hIt.visitSpot = { x: STUDY.ring.x, z: STUDY.ring.z };
+        study = { it: hIt, mode: 'read', until: 0, wasTalking: false, writeT: 0, upT: 0 };
+      }
+      brains = ctx.world.npcs.filter((it) => it.npcId !== HARISH && (it.npcId === 'harris' || it.npcId.startsWith('tahiti_'))).map((it) => {
         const group = it.npcId.startsWith('tahiti_cf') ? 'ol' : 'vg';
         it.brain = true;
         const b = { id: it.npcId, it, group, mode: 'idle', act: null, slotI: null, hstate: it.npcId === 'harris' ? 'ARRIVING' : null, _offDt: 0 };
@@ -572,7 +642,7 @@ export function createTahiti(ctx) {
       disposeObj(bb.mesh); bb.mesh = null; disposeObj(bb.ring); bb.ring = null;
       treasureItems = []; photoSpotList = []; _sepList.length = 0;
       hud?.remove(); hud = null; layer?.remove(); layer = null;
-      bubbles = []; brains = []; party = { vg: 0, ol: 0 }; partyNathan = null;
+      bubbles = []; brains = []; study = null; party = { vg: 0, ol: 0 }; partyNathan = null;
       if (partyView) { ctx.setView(null); partyView = null; }
       passenger = null; buddy = null; photo = null; session = null; lastPhotoInfo = null; race = null;
       state.joined = null; state.photoPath = false;
@@ -580,6 +650,7 @@ export function createTahiti(ctx) {
     harrisState() { return harris()?.hstate; },
     inMatch: () => !!state.volley || !!state.hoop,
     getNpcActivity(npcId) {
+      if (study && npcId === HARISH) return { act: 'study', mode: 'stay', pose: 'study', riding: false, forced: false, hstate: null };
       const b = brains.find((x) => x.id === npcId);
       if (!b) return null;
       return { act: b.act, mode: b.mode, pose: b.it?.character?.pose, riding: !!b.riding, forced: !!b.forced, hstate: b.hstate || null };
@@ -629,6 +700,7 @@ export function createTahiti(ctx) {
       if (photo) photoTick(dt);
       if (race) raceTick(dt);
       partyNathanTick();
+      studyTick(dt, t, now);
       for (const g of ['vg', 'ol']) courtTick(courts[g], dt, t, now);
       hoopTick(dt, t, now);
       festiveTick(t);
@@ -1026,15 +1098,15 @@ export function createTahiti(ctx) {
   // Summon an NPC cleanly along the navigation grid without teleporting.
   // Every group activity assembles through here: the member runs to an assigned slot and, if the
   // walk cannot finish within ASSEMBLE_MS, is placed there safely (see tickBrain), so the activity never stalls.
-  function rushTo(b, x, z, then) {
+  function rushTo(b, x, z, then, limit) {
     release(b); b.forced = true; b.vball = false;
     if (b.rush) b.rush.done = true;
-    const r = { x, z, t0: performance.now(), done: false };
+    const r = { x, z, t0: performance.now(), done: false, limit: limit || ASSEMBLE_MS };
     b.rush = r;
     r.fire = () => { if (r.done) return; r.done = true; if (b.rush === r) b.rush = null; then?.(); };
     goTo(b, x, z, r.fire, true);
   }
-  const assembling = () => { const now = performance.now(); return brains.some((b) => b.rush && !b.rush.done && now - b.rush.t0 < ASSEMBLE_MS + 600); };
+  const assembling = () => { const now = performance.now(); return brains.some((b) => b.rush && !b.rush.done && now - b.rush.t0 < (b.rush.limit || ASSEMBLE_MS) + 600); };
   function snapToRush(b) {
     const r = b.rush, gp = b.it.character.group.position;
     b.onBed = null; b.bedMove = null; b.path = []; b.then = null;
@@ -1758,7 +1830,7 @@ export function createTahiti(ctx) {
       if (b.group !== c.g) continue;
       const on = b.mode === 'stay' && b.act === 'volley' && now <= b.until;
       if (on) { const s = slotOf(b.group, 'volley', b.slotI); const p = c.cache.get(b) || { b, skill: 1 }; p.side = s.opts.vb; p.home = V(s.x, s.z); c.cache.set(b, p); list.push(p); }
-      if (!c.match) b.vball = on;
+      else if (!c.match && b.vball) b.vball = false;
     }
     return list;
   }
@@ -1768,13 +1840,20 @@ export function createTahiti(ctx) {
     const sides = [0, 1].map((s) => c.players.filter((p) => p.side === s));
     const live = sides[0].length && sides[1].length;
     const mine = state.volley === c;
+    if (!c.match) {
+      // ambient rally needs two sides: until then (or once it breaks up) everyone is a normal brain again, so nobody freezes
+      for (const p of c.players) {
+        const was = p.b.vball; p.b.vball = !!live;
+        if (was && !live && p.b.act === 'volley' && p.b.slotI != null) { const s = slotOf(p.b.group, 'volley', p.b.slotI); p.b.it.character.pose = s.pose; p.b.it.character.heading = s.face; p.b.face = s.face; }
+      }
+    }
     if (!live) { if (c.phase !== 'idle') { c.phase = 'idle'; if (!courts.vg?.match && !courts.ol?.match) hideBall(); } return; }
     if (c.phase === 'idle') { c.phase = 'serve'; c.wait = 1.4; c.server = rand(sides[c.serveSide]); }
     if (c.phase === 'gather') {
       const ready = c.players.filter((p) => p.nathan || p.b.vball).length;
       c.gatherT += dt;
       if (ready === c.players.length) { c.phase = 'serve'; c.wait = 6; c.server = c.players[0]; ctx.toast('Everyone\'s in. Press Space to serve!'); }
-      else if (c.gatherT > 2.5) { for (const p of c.players) if (p.b && !p.b.vball) { const gp = p.b.it.character.group.position; gp.x = p.home.x; gp.z = p.home.z; p.b.mode = 'vb'; p.b.vball = true; } }
+      else if (c.gatherT > 6.5) { for (const p of c.players) if (p.b && !p.b.vball) { if (p.b.rush && !p.b.rush.done) snapToRush(p.b); else { const gp = p.b.it.character.group.position; gp.x = p.home.x; gp.z = p.home.z; gp.y = ctx.heightAt(gp.x, gp.z); p.b.mode = 'vb'; p.b.forced = true; p.b.vball = true; } } }
     }
     // only one ball in the world: the match court, else the nearest live court
     const showMe = mine || (!state.volley && dist(P(), COURT[c.g].c) < 30);
@@ -1805,6 +1884,10 @@ export function createTahiti(ctx) {
     for (const p of c.players) {
       if (p.nathan || !p.b.vball) continue;                 // still walking over to the court
       const ch = p.b.it.character, gp = ch.group.position;
+      if (state.talkingTo === p.b.it) {           // chatting with Nathan mid-match: stand still and face him
+        const pp = P(); ch.heading += Math.atan2(Math.sin(Math.atan2(pp.x - gp.x, pp.z - gp.z) - ch.heading), Math.cos(Math.atan2(pp.x - gp.x, pp.z - gp.z) - ch.heading)) * Math.min(1, dt * 8);
+        vel.set(0, 0, 0); gp.y = ctx.heightAt(gp.x, gp.z); ch.update(dt, vel, t); continue;
+      }
       let tx = p.home.x, tz = p.home.z, sp = 1.6;
       if (c.phase === 'fly' && c.recv === p && !c.checked) { tx = c.land.x + (p.off?.x || 0); tz = c.land.z + (p.off?.z || 0); sp = 3.8; }
       const dx = tx - gp.x, dz = tz - gp.z, d = Math.hypot(dx, dz);
@@ -1865,14 +1948,14 @@ export function createTahiti(ctx) {
         const ep = epoch;
         ctx.onActivity?.(`volley-${c.g}`);
         ctx.toast(scorer === 0 ? `Your team wins ${c.score[0]}–${c.score[1]}!` : `${teamName(c, 1)} wins ${c.score[1]}–${c.score[0]}.`);
-        setTimeout(() => { if (ep === epoch) endMatch(); }, 1800); c.phase = 'over';
+        setTimeout(() => { if (ep === epoch && state.volley === c && c.phase === 'over') endMatch(); }, 1800); c.phase = 'over';
       }
     }
   }
   function startMatch(g) {
     if (state.volley) return;
     const c = courts[g]; if (!c) return;
-    let crew = brains.filter((b) => b.group === g && b.id !== 'harris' && !b.riding).sort((a, b) => dist(a.it.character.group.position, COURT[g].c) - dist(b.it.character.group.position, COURT[g].c)).slice(0, 3);   // 2 v 2: Nathan + 1 against 2
+    let crew = brains.filter((b) => b.group === g && b.id !== 'harris' && !b.riding && !b.it.frozen && !b.it.passenger).sort((a, b) => dist(a.it.character.group.position, COURT[g].c) - dist(b.it.character.group.position, COURT[g].c)).slice(0, 3);   // 2 v 2: Nathan + 1 against 2
     if (crew.length < 2) return;
     const teamA = [], teamB = [];
     const byId = (id) => brains.find((b) => b.id === id && !b.riding);
@@ -1896,7 +1979,9 @@ export function createTahiti(ctx) {
     const hA = homes(teamA.length + 1, 0), hB = homes(teamB.length, 1);
     c.players = [{ nathan: true, side: 0, home: hA[0] }, ...teamA.map((b, i) => ({ b, side: 0, home: hA[i + 1] })), ...teamB.map((b, i) => ({ b, side: 1, home: hB[i] }))];
     // everyone walks over first (nav paths); the first serve waits until all are in position
-    for (const p of c.players) if (p.b) { p.skill = 1; const b = p.b; rushTo(b, p.home.x, p.home.z, () => { b.mode = 'vb'; b.vball = true; bubble(b.it, rand(['I\'m in!', 'Let\'s go!', 'Ready!']), 1.6); }); }
+    // ambient players who are not in the match go back to their routine instead of freezing on the court
+    resume(brains.filter((b) => b.group === g && b.act === 'volley' && !c.players.some((p) => p.b === b)));
+    for (const p of c.players) if (p.b) { p.skill = 1; const b = p.b; rushTo(b, p.home.x, p.home.z, () => { b.mode = 'vb'; b.vball = true; bubble(b.it, rand(['I\'m in!', 'Let\'s go!', 'Ready!']), 1.6); }, 5500); }
     state.joined = null; state.path = [];
     const h = hA[0]; P().set(h.x, ctx.heightAt(h.x, h.z), h.z); player.heading = (cface(g, 0) * Math.PI) / 180;
     c.match = true; c.score = [0, 0]; c.phase = 'gather'; c.gatherT = 0; c.serveSide = 0; c.server = c.players[0];
@@ -1905,7 +1990,7 @@ export function createTahiti(ctx) {
   }
   function endMatch(silent) {
     const c = state.volley; if (!c) return;
-    const crew = c.players.filter((p) => p.b).map((p) => p.b); crew.forEach((b) => { b.vball = false; }); resume(crew);
+    const crew = c.players.filter((p) => p.b).map((p) => p.b); crew.forEach((b) => { b.vball = false; b.stallT = 0; b.retries = 0; }); resume(crew);
     c.match = false; c.players = []; c.phase = 'idle'; state.volley = null;
     hideBall(); hud?.classList.add('hidden');
     if (!silent) player.pose = null;
@@ -2039,6 +2124,8 @@ export function createTahiti(ctx) {
       if (!who.nathan) { const b = who.b; goTo(b, spot.x, spot.z, () => { b.mode = 'bb'; s.phase = 'npcAim'; s.t = 0; faceRimB(b); b.it.character.pose = null; }, false); }
       else state.path = [{ x: spot.x, z: spot.z }];
       passTo(who);
+    } else if (s.phase === 'walk' && !who.nathan && s.t > 6 && who.b) {
+      const b = who.b; b.path = []; b.then = null; b.mode = 'bb'; s.phase = 'npcAim'; s.t = 0; faceRimB(b); b.it.character.pose = null;   // never wait forever for an unreachable spot
     } else if (s.phase === 'walk' && who.nathan) {
       if (dist(P(), spot) < 0.7 || (bb.hold === who && s.t > 2.5)) { s.phase = 'aim'; s.t = 0; faceRim(who); }
     } else if (s.phase === 'aim') {

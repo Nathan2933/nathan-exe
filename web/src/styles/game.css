@@ -1185,3 +1185,16 @@ body.game .gh-first { font-family: var(--font-mono); font-size: 10px; padding: 1
   .tour-btn { min-height: 40px; }
   .tour-btn.primary { min-height: 44px; }
 }
+
+/* ---- loading progress on the title screen (real progress, see LOAD in main.js) ---- */
+.boot .boot-load { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 10px; min-height: 52px; }
+.boot .boot-bar { display: flex; gap: 3px; padding: 4px; border: 3px solid #0a1530; background: #0a1530; box-shadow: 0 0 0 2px #2f8f8a; width: min(76vw, 260px); }
+.boot .boot-bar i { flex: 1; height: 12px; background: #22346b; }
+.boot .boot-bar i.on { background: #f2a93b; }
+.boot .boot-load-txt { margin: 0; font-family: var(--font-pixel, monospace); font-size: clamp(11px, 3vw, 14px); letter-spacing: .08em; color: #fff1d6; }
+.boot.loaded .boot-load { display: none; }
+.boot .boot-load.failed { display: none; }
+.boot .boot-err { display: flex; flex-direction: column; align-items: center; gap: 10px; max-width: min(86vw, 360px); text-align: center; color: #ffb199; font-family: var(--font-pixel, monospace); font-size: 13px; line-height: 1.5; margin-top: 10px; }
+.boot .boot-err.hidden { display: none; }
+.boot .boot-err .btn { background: #f2a93b; color: #0a1530; min-height: 44px; padding: 0 22px; }
+@media (max-height: 460px) { .boot .boot-load { margin-top: 2px; min-height: 40px; } }

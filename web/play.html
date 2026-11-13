@@ -19,6 +19,8 @@
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:image" content="uploads/og-image.png" />
+    <link rel="preload" href="/fonts/silkscreen-400.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/bangers-400.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="/src/styles/base.css" />
     <link rel="stylesheet" href="/src/styles/game.css" />
     <link rel="stylesheet" href="/src/styles/game-mobile.css" />
@@ -133,6 +135,11 @@
         <h1 class="boot-title" aria-label="Nathan">NATHAN</h1>
         <canvas id="boot-hero" aria-hidden="true"></canvas>
       </div>
+      <div class="boot-load" id="boot-load" role="progressbar" aria-label="Loading the islands" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div class="boot-bar" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <p class="boot-load-txt" id="boot-load-txt">LOADING 0%</p>
+      </div>
+      <div class="boot-err hidden" id="boot-err" role="alert"><span id="boot-err-msg"></span><button type="button" class="btn" id="boot-retry" onclick="location.reload()">Retry</button></div>
       <button type="button" class="boot-start hidden" id="boot-start" aria-label="Press start"><i aria-hidden="true">▶</i> PRESS START <i aria-hidden="true">◀</i></button>
       <a class="boot-skip" href="./">Skip to portfolio</a>
     </div>

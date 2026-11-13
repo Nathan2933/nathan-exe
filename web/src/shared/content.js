@@ -1,3 +1,4 @@
+import { fetchRetry } from '../game/net.js';
 // Shared content loading + helpers used by the game, portfolio and admin pages.
 
 // Story order. `optional` districts don't count towards completing the save file.
@@ -14,9 +15,7 @@ export const MAIN_DISTRICTS = DISTRICTS.filter((d) => !d.optional);
 
 export async function loadContent() {
   const base = import.meta.env.BASE_URL || '/';
-  const res = await fetch(`${base}data/content.json?v=${Date.now()}`, { cache: 'no-store' });
-  if (!res.ok) throw new Error(`Could not load content (${res.status})`);
-  return res.json();
+  return fetchRetry(`${base}data/content.json?v=${typeof __BUILD_ID__ === 'string' ? __BUILD_ID__ : 'dev'}`);
 }
 
 const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };

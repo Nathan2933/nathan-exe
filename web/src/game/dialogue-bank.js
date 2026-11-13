@@ -37,6 +37,47 @@ export const BANK = {
     goodbye: "Come find me when you're ready.",
   },
 
+  vijay: {
+    first: [c('Good to see you back here. How have you been?'), n('Busy. You?'), c("Same. Somehow there's still time for a school reunion."), n('Does this count as one?'), c('Two people and a good bench. Officially yes.')],
+    repeats: [
+      [n('Still remember that argument with the lecturer?'), c('One by zero is infinity. I still stand by it.'), n('You certainly made that class unforgettable.'), c('At least we got a good story out of it.')],
+      [n('Still following politics?'), c("Yes, but today's discussion comes with snacks."), n('Now that sounds promising.'), c('Debates go better when nobody is hungry.')],
+      [n('Can we have one peaceful conversation?'), c('Definitely. Tea first, world problems later.'), n('I was hoping you would say that.'), c('I contain multitudes. Also biscuits.')],
+      [n('Look at us, back where it started.'), c('Some things never change. The bell still rings at the worst possible moment.'), n('You always said that.'), c('And I was always right.')],
+    ],
+    activity: [
+      { id: 'news', when: (x) => x.act === 'news', lines: [n('Anything good in the paper?'), c('Plenty to discuss. Pull up a chair, I will start with the crossword.'), n('That is not politics.'), c('It is if you argue about the answers.')] },
+    ],
+    topics: [
+      { id: 'lecturer', q: 'Remember the lecturer?', lines: [n('Still remember that argument with the lecturer?'), c('One by zero is infinity. I still stand by it.'), n('You certainly made that class unforgettable.'), c('At least we got a good story out of it.')] },
+      { id: 'politics', q: 'Still following politics?', lines: [c("Yes, but today's discussion comes with snacks."), n('Now that sounds promising.'), c('A good debate needs two sides and one plate of something crunchy.')] },
+      { id: 'peace', q: 'One peaceful chat?', lines: [c('Definitely. Tea first, world problems later.'), n('Deal.'), c('See? I can be reasonable. Once in a while.')] },
+      { id: 'school', q: 'Remember school?', lines: [c('Of course. Same uniform, bigger opinions.'), n('Mine were smaller.'), c('Yours came with better handwriting.')] },
+      { id: 'island', q: 'What do you think of this place?', when: (x) => x.level !== 'tahiti', lines: [c('Very peaceful. Ideal for a debate. Not that I am looking for one.'), n('Sure you are not.'), c('Fine, a small one.')] },
+      { id: 'tahiti-break', q: 'Taking a break?', when: onTahiti, lines: [c('Yes. Even world affairs can wait until after tea.'), n('Even the big ones?'), c('The big ones wait the longest. They are used to it.')] },
+    ],
+    goodbye: 'Come back soon. I will save you a seat and the last biscuit.',
+  },
+
+  harish: {
+    first: [n('Still studying?'), c('Yeah. Come sit for a bit. How have you been?'), n('Pretty good. Busy, but good.'), c("Glad to hear it. It's nice out here today.")],
+    repeats: [
+      [n('Need anything?'), c("I'm good. There's space here if you want some company."), n('Maybe for a minute.'), c('Take your time. No rush on my side either.')],
+      [n('What are you reading?'), c('Just going over my notes. Some of it is starting to make sense.'), n('That is the hard part.'), c('It is. Slowly, though.')],
+      [n('How is the studying going?'), c('Steady. A little each day adds up more than you would think.'), n('That sounds like a good plan.'), c('It works for me. How about you?')],
+    ],
+    activity: [
+      { id: 'study', when: (x) => x.act === 'study', lines: [n('Mind if I interrupt?'), c('Not at all. I was glad for the break.'), n('You sure?'), c('Honestly, yes. Sit down. Tell me what you have been up to.')] },
+    ],
+    topics: [
+      { id: 'sit', q: 'Mind if I stay a while?', lines: [c('Of course not. It is nicer with company.'), n('Thanks, Harish.'), c('Anytime.')] },
+      { id: 'notes', q: 'Can I see your notes?', lines: [c('Sure, though my handwriting is not the best.'), n('It looks neat to me.'), c('Kind of you to say. I try.')] },
+      { id: 'help', q: 'Can I help with anything?', lines: [c('That is thoughtful. I am fine right now, but ask me if you ever need a hand.'), n('I will.'), c('Same goes for me.')] },
+      { id: 'spot', q: 'Nice spot you have here', lines: [c('Thanks. Good light, a bit of green, and it is quiet.'), n('I can see why you picked it.'), c('It helps me focus. Most days.')] },
+    ],
+    goodbye: 'Take care, Nathan. Come back whenever you like.',
+  },
+
   prince: {
     first: [n("You've been playing all afternoon?"), c('Went for a run first.'), n('And lunch?'), c('I knew you were going to ask.')],
     repeats: [

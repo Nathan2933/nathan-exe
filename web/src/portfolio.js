@@ -62,13 +62,11 @@ const resultsFor = (c, p) => {
 function characterFile(c) {
   const p = c.profile || {};
   const resume = safeUrl(p.resumeUrl);
-  const count = (c.projects || []).length;
   return `
     <section id="about" class="window section hero" aria-labelledby="about-h">
       <div class="window-bar"><span class="title">character_file / 001</span></div>
       <div class="section-body hero-grid">
         <div class="hero-text">
-        <p class="kicker">CHARACTER FILE / 001</p>
         <h1 id="about-h">${esc((p.name || '').toUpperCase())}</h1>
         <p class="role">${esc(p.role)}</p>
         ${p.location ? `<p class="loc">${esc(p.location)}</p>` : ''}
@@ -78,11 +76,6 @@ function characterFile(c) {
           <a class="btn" href="#projects">Projects</a>
           <a class="btn" href="#contact">Contact</a>
         </div>
-        <dl class="stat-row">
-          <div><dt>Missions logged</dt><dd>${count}</dd></div>
-          <div><dt>Trophies</dt><dd>${(c.achievements || []).length}</dd></div>
-          <div><dt>Career entries</dt><dd>${(c.experience || []).length}</dd></div>
-        </dl>
         <details class="more">
           <summary>Read the full profile</summary>
           ${paras(p.about)}
@@ -164,7 +157,7 @@ function missionCard(c, p, i) {
 }
 
 function missions(c, sorted) {
-  return section('projects', 'mission_board/', 'Mission Board', `
+  return section('projects', 'mission_board/', 'Projects', `
     <p class="sub">${sorted.length} missions on file.</p>
     <div class="mission-grid">${sorted.map((p, i) => missionCard(c, p, i)).join('')}</div>`);
 }
@@ -248,7 +241,7 @@ function wireSkillTabs() {
 function careerLog(c) {
   const exp = c.experience || [];
   if (!exp.length) return '';
-  return section('experience', 'career.log', 'Career Log', `
+  return section('experience', 'career.log', 'Experience', `
     <ol class="career">${exp.map((e) => `
       <li>
         <div class="row-head"><h3>${esc(e.role)}</h3>${e.period ? `<span>${esc(e.period)}</span>` : ''}</div>
@@ -303,7 +296,7 @@ function terminal(c) {
 function missionList(sorted) {
   return `
     <section class="window section quick" aria-labelledby="quick-h">
-      <div class="window-bar"><span class="flag" aria-hidden="true"></span><span class="title" id="quick-h">Missions (projects)</span></div>
+      <div class="window-bar"><span class="flag" aria-hidden="true"></span><span class="title" id="quick-h">Projects</span></div>
       <ul class="quick-list">${sorted.map((p) => `
         <li><button type="button" data-details="${esc(p.id)}">
           <b>${esc(p.title.split(':')[0])}</b>
@@ -484,7 +477,8 @@ placeMenu();
 document.getElementById('portrait').src = portraitURL();
 if (params.has('nowebgl')) notice("Your browser couldn't start the 3D version, so here's the classic portfolio.");
 
-loadContent().then(render).catch((err) => {
+loadContent().then((c) => { render(c); window.nxLoader?.page(); }).catch((err) => {
   console.error(err);
   main.innerHTML = '<p class="loading">Could not load portfolio content. Please refresh.</p>';
+  window.nxLoader?.fail('Could not load the archive. Check your connection and try again.');
 });

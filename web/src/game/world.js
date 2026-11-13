@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { fetchRetry } from './net.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { KIT, buildHorse, buildBicycle, buildMotorbike, buildScooty, mat, C, pruneGlowMats } from './kit.js';
 import { unregisterMaterials, unregisterVertexColors, isVertexColorCandidate, mergeVertexColorMeshes } from './palette.js';
@@ -65,12 +66,14 @@ function makeInstancedAlphaMat(opts) {
 }
 
 /** Optional Blender replacements listed in public/assets/kit/manifest.json */
+// Optional Blender models: only requested when a manifest was shipped with the build, so a plain
+// deployment never makes a request that is bound to 404.
+const HAS_KIT_MANIFEST = Object.keys(import.meta.glob('../../public/assets/kit/manifest.json')).length > 0;
 export async function loadKitOverrides(base) {
   const out = new Map();
+  if (!HAS_KIT_MANIFEST) return out;
   try {
-    const res = await fetch(`${base}assets/kit/manifest.json`, { cache: 'no-store' });
-    if (!res.ok) return out;
-    const list = await res.json();
+    const list = await fetchRetry(`${base}assets/kit/manifest.json`, { tries: 2 });
     const loader = new GLTFLoader();
     await Promise.all((list.pieces || []).map(async (name) => {
       try {

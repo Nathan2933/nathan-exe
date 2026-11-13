@@ -6,10 +6,10 @@
              },
     "profile":  {
                     "name":  "Nathan Jerald",
-                    "role":  "IT Undergraduate | Full-Stack \u0026 Cloud-Native Developer",
+                    "role":  "IT Undergraduate | Learning, building & figuring things out",
                     "location":  "Tiruchirappalli, Tamil Nadu, India",
                     "availability":  "",
-                    "summary":  "I\u0027m Nathan, an Information Technology undergraduate at Thiagarajar College of Engineering who enjoys turning ideas into working software. My projects span full-stack applications, cloud-native security monitoring and blockchain-backed systems, with a growing interest in building memorable interactive experiences. NATHAN.EXE is where I bring that engineering curiosity together with the personal chapters that shaped me.",
+                    "summary":  "I\u0027m Nathan, an IT undergraduate at Thiagarajar College of Engineering. I like figuring out how things work, building things with what I learn, and occasionally fixing something I broke five minutes earlier. Outside tech, I\u0027m usually watching a film or finding someone to discuss it with. NATHAN.EXE brings together the things I build, the people I know, and a few stories along the way.",
                     "about":  [
                                   "I like building things that people can use, not just prototypes that look impressive in screenshots. At TCE, I\u0027ve explored full-stack web development, cloud and security tooling, and team-based hackathons. From an agricultural supply-chain platform to Kubernetes security monitoring, I enjoy moving between the user experience and the systems behind it.",
                                   "Outside code, fitness has been a long-running part of my life: my journey moved from roughly 100 kg to 60 kg, and later to around 75 kg. I\u0027ve also experienced studying abroad and beginning a new chapter at TCE in Madurai. This portfolio tells those stories as a small playable town, while keeping the actual work, resume and contact details one click away."
@@ -1046,6 +1046,34 @@
                                     "Crack any interesting security flags lately? :: Pwned a binary exploitation box yesterday. Buffer overflow straight into root shell. Pure dopamine.",
                                     "Defense in depth, right? :: Always. Bound your memory, sanitize inputs, and never trust unauthenticated packets.",
                                     "What are you playing on your phone? :: High-reflex mobile games until my fingers freeze!"
+                                ]
+                 },
+                 {
+                     "id":  "vijay",
+                     "name":  "Vijay Krishnan",
+                     "role":  "School friend · Montfort",
+                     "district":  "lake-park",
+                     "color":  "#8a3a4e",
+                     "skin":  "tan",
+                     "build":  1,
+                     "height":  1,
+                     "hair":  "short",
+                     "hairColor":  "#1b1716",
+                     "top":  "jacket",
+                     "topColor":  "#8a3a4e",
+                     "pants":  "jeans",
+                     "pantsColor":  "#c9b78a",
+                     "shoes":  "#f6f3ec",
+                     "glasses":  true,
+                     "beard":  "none",
+                     "species":  "human",
+                     "accessory":  null,
+                     "lines":  [
+                                   "Good to see you back here. How have you been?"
+                               ],
+                     "topics":  [
+                                    "Still remember that argument with the lecturer? :: One by zero is infinity. I still stand by it.",
+                                    "Still following politics? :: Yes, but today's discussion comes with snacks."
                                 ]
                  }
              ],

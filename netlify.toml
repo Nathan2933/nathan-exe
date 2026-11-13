@@ -10,7 +10,29 @@
     Cache-Control = "public, max-age=31536000, immutable"
 
 [[headers]]
+  for = "/fonts/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# HTML, data and maps are always revalidated, so a new deploy is picked up at once and
+# a page can never load old scripts (script and data URLs carry the build id)
+[[headers]]
   for = "/data/*"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/maps/*"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/"
   [headers.values]
     Cache-Control = "no-cache"
 

@@ -12,6 +12,7 @@ export const CANONICAL_MAP = {
   akshai: 'akshai',
   logeshwaran: 'logeshwaran',
   piranav: 'pranav',
+  vijay: 'vijay',
   shabesh: 'shabesh',
   thianesh: 'thianesh',
   naveen: 'naveen',
@@ -29,6 +30,7 @@ export const CANONICAL_MAP = {
   tahiti_sf3: 'jeswin',
   tahiti_sf4: 'arok',
   tahiti_sf5: 'shabeer',
+  tahiti_sf6: 'vijay',
   tahiti_cf1: 'anu',
   tahiti_cf2: 'shabesh',
   tahiti_cf3: 'logeshwaran',
@@ -38,6 +40,7 @@ export const CANONICAL_MAP = {
   tahiti_cf7: 'sathesh',
   tahiti_cf8: 'naveen',
   tahiti_cf9: 'sivasuthan',
+  tahiti_cf10: 'harish',
 };
 
 // Lightweight helper to pick one item from a list safely

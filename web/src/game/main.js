@@ -1,4 +1,5 @@
-import { initTouchControls } from './touch.js';
+import { initTouchControls, touchInput } from './touch.js';
+import { fetchRetry } from './net.js';
 import * as THREE from 'three';
 import { RetroRenderer } from './retro.js';
 import { applyPalette, SKY } from './palette.js';
@@ -26,6 +27,7 @@ const isTouch = matchMedia('(pointer: coarse)').matches;
 const COMPACT_MQ = '(max-width: 760px), (max-height: 520px) and (orientation: landscape), (pointer: coarse) and (max-width: 1100px)';
 const isCompactUI = () => matchMedia(COMPACT_MQ).matches;
 const BASE = import.meta.env.BASE_URL || '/';
+const BUILD = typeof __BUILD_ID__ === 'string' ? __BUILD_ID__ : 'dev';
 const DEBUG = new URLSearchParams(location.search).has('debug');
 let debugOn = DEBUG;
 
@@ -188,6 +190,7 @@ async function runBoot(loaded) {
   title.ready.then(() => { isLoaded && arm(); });
   await loaded;
   isLoaded = true;
+  $('#boot')?.classList.add('loaded');
   try { sessionStorage.setItem('nathan-exe:booted', '1'); } catch { /* ignore */ }
   title.ready.then(arm);
 }
@@ -363,20 +366,105 @@ scene.add(marker);
 
 const dialogue = new Dialogue($('#dialogue'));
 
-async function init() {
-  await document.fonts.load('32px Silkscreen').catch(() => {});
-  try {
-    [state.content, map] = await Promise.all([loadContent(), loadTiledMap(`${BASE}maps/town.tmj?v=${Date.now()}`)]);
-  } catch (err) {
-    console.error(err);
-    location.replace('./?error=content');
-    return;
+// ---------------- Loading: real progress, retries, nothing fake ----------------
+// Each stage reports how much of it is genuinely done (downloads, parsing, scene build, shader
+// compile, first frame). The bar is just the weighted sum; nothing here is a timer.
+const LOAD = { w: { fonts: 6, content: 14, tahitiFiles: 10, kit: 2, world: 22, ui: 4, warm: 12, tahiti: 30 }, v: {}, shown: -1, label: 'LOADING' };
+function setLoad(key, f = 1, label = '') {
+  LOAD.v[key] = Math.max(LOAD.v[key] || 0, Math.min(1, f));
+  if (label) LOAD.label = label;
+  let sum = 0, tot = 0;
+  for (const k in LOAD.w) { tot += LOAD.w[k]; sum += LOAD.w[k] * (LOAD.v[k] || 0); }
+  const pct = tot ? Math.floor((sum / tot) * 100) : 0;
+  if (pct === LOAD.shown && !label) return;
+  LOAD.shown = pct;
+  const bar = $('#boot-load');
+  if (!bar) return;
+  bar.setAttribute('aria-valuenow', String(pct));
+  const lit = Math.round((pct / 100) * 12);
+  bar.querySelectorAll('.boot-bar i').forEach((c, i) => c.classList.toggle('on', i < lit));
+  const t = $('#boot-load-txt');
+  if (t) t.textContent = `${LOAD.label} ${pct}%`;
+}
+function loadFail(msg) {
+  const e = $('#boot-err');
+  if (!e) return;
+  $('#boot-load')?.classList.add('failed');
+  $('#boot-err-msg').textContent = msg || 'Could not load the islands. Check your connection and try again.';
+  e.classList.remove('hidden');
+  $('#boot-retry')?.focus?.({ preventScroll: true });
+}
+// timer-backed so a hidden tab (rAF paused) can never stall the loading
+const yieldFrame = () => new Promise((r) => { let d = false; const f = () => { if (!d) { d = true; r(); } }; requestAnimationFrame(f); setTimeout(f, 60); });
+// Both islands only need to be resident at once on devices that can afford it; elsewhere Tahiti's files are
+// downloaded and cached up front and the world itself is prepared behind the flight's cloud cover.
+const roomForBoth = () => !isTouch && (navigator.deviceMemory === undefined || navigator.deviceMemory >= 4) && !/[?&]lowmem\b/.test(location.search);
+
+function mergeTahitiNpcs(data, base) {
+  const out = [];
+  const have = new Set((base.npcs || []).map((n) => n.id));
+  const SKIP = new Set(['id', 'name', 'role', 'district', 'lines', 'topics', 'theme', 'companion', 'horseColor', 'scripted', 'sameAs']);
+  for (const n of data.npcs || []) {
+    if (have.has(n.id)) continue;
+    // same person as on Island 01: same model (appearance), Tahiti name and lines
+    const src = n.sameAs && (base.npcs || []).find((x) => x.id === n.sameAs);
+    const look = src ? Object.fromEntries(Object.entries(src).filter(([k]) => !SKIP.has(k))) : {};
+    const merged = { ...look, ...n };
+    if (n.id === 'tahiti_cf2' && !n.extras && look.extras) merged.extras = look.extras;
+    out.push(merged);
   }
+  return out;
+}
+
+/** Build Tahiti once, off-screen, so its shaders, geometry and shadow passes are warm before anyone flies there. */
+async function prewarmTahiti() {
+  const tmap = mapCache.tahiti, raw = state.tahitiRaw;
+  if (!tmap || !raw) return;
+  await yieldFrame();
+  const content = { ...state.content, npcs: [...state.content.npcs, ...mergeTahitiNpcs(raw, state.content)] };
+  const tw = buildWorld(scene, content, tmap, kitOverrides);
+  setLoad('tahiti', 0.45, 'PREPARING TAHITI');
+  await yieldFrame();
+  try { renderer.compile(scene, camera); } catch { /* the swap compiles again */ }
+  setLoad('tahiti', 0.8);
+  await yieldFrame();
+  try { retro.render(scene, camera); } catch { /* ignore */ }
+  scene.remove(tw.root);
+  tw.dispose?.();
+  _nightDirty = true;
+  setLoad('tahiti', 1);
+}
+
+async function init() {
+  try { await initInner(); } catch (err) {
+    console.error(err);
+    loadFail();
+    await new Promise(() => {});   // never reaches "press start" with half a world
+  }
+}
+async function initInner() {
+  setLoad('fonts', 0, 'LOADING');
+  await Promise.all(['32px Silkscreen', '32px Bangers', '16px Inter', '16px "IBM Plex Mono"'].map((f) => document.fonts.load(f).catch(() => {})));
+  setLoad('fonts', 1);
+  const tahitiFiles = Promise.all([
+    fetchRetry(`${BASE}data/tahiti.json?v=${BUILD}`).then((d) => { state.tahitiRaw = d; setLoad('tahitiFiles', 0.4); }),
+    loadTiledMap(`${BASE}${LEVELS.tahiti}?v=${BUILD}`).then((m) => { mapCache.tahiti = m; setLoad('tahitiFiles', 1); }),
+  ]);
+  tahitiFiles.catch(() => {});   // handled where it is awaited below
+  let doneParts = 0;
+  const part = (p) => p.then((v) => { setLoad('content', ++doneParts / 2); return v; });
+  [state.content, map] = await Promise.all([part(loadContent()), part(loadTiledMap(`${BASE}${LEVELS.island1}?v=${BUILD}`))]);
   const overrides = await loadKitOverrides(BASE);
   kitOverrides = overrides;
+  setLoad('kit', 1);
+  await yieldFrame();
   mapCache.island1 = map; state.level = 'island1';
+  setLoad('world', 0.1, 'BUILDING ISLAND 01');
+  await yieldFrame();
   world = buildWorld(scene, state.content, map, overrides);
   nav = makeNav();
+  setLoad('world', 0.7);
+  await yieldFrame();
   const s = state.save;
   const spawn = s.pos && nav.isWalkable(s.pos.x, s.pos.z) ? s.pos : map.spawn || { x: 2, z: 6 };
   player.group.position.set(spawn.x, heightAt(spawn.x, spawn.z), spawn.z);
@@ -386,6 +474,7 @@ async function init() {
   if (s.chapters.includes('iron-yard') || s.minigames.includes('lift')) player.setBuff(true);
   if (GYM_IDS.every((id) => (s.gym || []).includes(id))) player.setJacked(true);
   if (s.finale) world.apis.lighthouse?.setLit(true);
+  setLoad('world', 1);
   setupUI();
   tour.bind();
   setupLabels();
@@ -394,11 +483,23 @@ async function init() {
   camTarget.copy(player.group.position);
   if (state.level === 'island1') guruRoutine.enter();
   if (debugOn) setupDebug();
+  setLoad('ui', 1);
+  await yieldFrame();
   update(0, 0);
-  renderer.compile(scene, camera);
+  setLoad('warm', 0.2, 'WARMING UP');
+  try { renderer.compile(scene, camera); } catch { /* ignore */ }
+  setLoad('warm', 0.6);
+  await yieldFrame();
   renderer.info.reset();
   retro.render(scene, camera);
+  setLoad('warm', 1);
+  await tahitiFiles;
+  if (roomForBoth()) { setLoad('tahiti', 0.1, 'PREPARING TAHITI'); await prewarmTahiti(); }
+  else { LOAD.w.tahiti = 0; setLoad('tahiti', 1); }
+  await yieldFrame();
+  retro.render(scene, camera);   // Island 01 is the last thing drawn, so its frame is the one waiting at "press start"
   state.bootWarmed = true;
+  setLoad('warm', 1, 'READY');
 }
 
 function isDone(it) {
@@ -869,8 +970,8 @@ async function talkTo(it) {
   face(it);
   it.character.lookAt(player.group.position.clone());
   const ch = it.character, p = player.group.position;
-  ch.heading = Math.atan2(p.x - it.x, p.z - it.z);
-  ch.play('wave');
+  if (!it.seated) ch.heading = Math.atan2(p.x - it.x, p.z - it.z);   // people at a table stay seated and only look round
+  ch.play(it.seated ? 'nod' : 'wave');
   ch.talking = true;
   $('#prompt').classList.add('hidden');
   if (addUnique(state.save.talked, it.npcId)) { markVisited(it); persist(); }
@@ -1723,25 +1824,15 @@ async function checkTahitiAccess() {
 }
 async function loadTahitiData() {
   if (state.tahiti) return state.tahiti;
-  const data = await fetch(`${BASE}data/tahiti.json`, { cache: 'no-cache' }).then((r) => r.json());
-  const have = new Set((state.content.npcs || []).map((n) => n.id));
-  const SKIP = new Set(['id', 'name', 'role', 'district', 'lines', 'topics', 'theme', 'companion', 'horseColor', 'scripted', 'sameAs']);
-  for (const n of data.npcs || []) {
-    if (have.has(n.id)) continue;
-    // same person as on Island 01: same model (appearance), Tahiti name and lines
-    const src = n.sameAs && state.content.npcs.find((x) => x.id === n.sameAs);
-    const look = src ? Object.fromEntries(Object.entries(src).filter(([k]) => !SKIP.has(k))) : {};
-    const merged = { ...look, ...n };
-    if (n.id === 'tahiti_cf2' && !n.extras && look.extras) merged.extras = look.extras;
-    state.content.npcs.push(merged);
-  }
+  const data = state.tahitiRaw || await fetchRetry(`${BASE}data/tahiti.json?v=${BUILD}`);
+  state.content.npcs.push(...mergeTahitiNpcs(data, state.content));
   state.tahiti = data;
   return data;
 }
 let journeyTouched = false;
 async function switchLevel(name) {
   if (name === 'tahiti') await loadTahitiData();
-  const m = mapCache[name] || (mapCache[name] = await loadTiledMap(`${BASE}${LEVELS[name]}`));
+  const m = mapCache[name] || (mapCache[name] = await loadTiledMap(`${BASE}${LEVELS[name]}?v=${BUILD}`));
   leaveGym();
   if (state.level === 'tahiti') { tahiti.exit(); $('#tahiti-hints')?.classList.add('hidden'); hintKey = ''; }
   if (state.level === 'island1') { guruRoutine.exit(); }
@@ -1797,6 +1888,7 @@ function liveActivity(npcId) {
 }
 /** A walkable spot facing the person: straight ahead first, then round them; never on water, props, people or across a wall. */
 function standSpotFor(it) {
+  if (it.visitSpot && solidFree(it.visitSpot.x, it.visitSpot.z) && nav.isWalkable(it.visitSpot.x, it.visitSpot.z, 0.32)) return { x: it.visitSpot.x, z: it.visitSpot.z };   // e.g. in front of a study table
   const gp = it.character.group.position, h = it.character.heading;
   const me = player.group.position;
   const floorHere = onFloor(gp.x, gp.z);
@@ -2040,7 +2132,7 @@ async function startFlightInner(to) {
   const from = state.level;
   const jet = world.apis.private_jet;
   if (!jet) return;
-  try { if (to === 'tahiti') await loadTahitiData(); if (!mapCache[to]) mapCache[to] = await loadTiledMap(`${BASE}${LEVELS[to]}`); } catch { /* the swap will load it */ }
+  try { if (to === 'tahiti') await loadTahitiData(); if (!mapCache[to]) mapCache[to] = await loadTiledMap(`${BASE}${LEVELS[to]}?v=${BUILD}`); } catch { /* the swap will load it */ }
   if (!jet.home) { jet.home = jet.group.position.clone(); jet.homeRot = jet.group.rotation.y; }
   closePanel();
   state.minigame = 'flight';
@@ -2055,6 +2147,9 @@ function cineCamera(x, z, zoom) {
 async function cineSwap(c) {
   c.swapping = true;
   await switchLevel(c.to);
+  // finish preparing the destination under the clouds: one hidden frame uploads geometry and shadows
+  try { retro.render(scene, camera); } catch { /* ignore */ }
+  await yieldFrame(); await yieldFrame();
   const jet = world.apis.private_jet;
   jet.setStairs(false); jet.setDoor(false); jet.setPilot(true);
   c.pilot = world.npcs.find((n) => n.npcId === 'harris');
@@ -2502,6 +2597,7 @@ function drawMinimap(t) {
 }
 
 // ---------------- Labels ----------------
+const SIGNED_PLACES = new Set(['AIRPORT']);
 const labelEls = [];
 let labelLayer = null;
 function setupLabels() {
@@ -2512,6 +2608,7 @@ function setupLabels() {
   canvas.after(layer);
   for (const l of world.labels) {
     if (state.level === 'tahiti' && (l.text === 'EUPHONIUM VILLA' || l.text === 'VANDERLINDE GANG' || l.text === 'VANDERLINDE HIDEOUT')) continue;
+    if (SIGNED_PLACES.has(l.text)) continue;
     const d = document.createElement('div');
     d.className = 'world-label';
     d.textContent = l.text;
@@ -2521,18 +2618,57 @@ function setupLabels() {
   }
 }
 const projV = new THREE.Vector3();
+const labelRay = new THREE.Raycaster();
+const labelDir = new THREE.Vector3();
+let labelRR = 0;
+// Labels whose building already carries a readable physical sign are not duplicated as floating text.
+function ctrlRects() {
+  const out = [];
+  for (const sel of ['.tc-stick', '#tc-jump', '#tc-act', '.hud-top > *', '.minimap-wrap', '#hud-nav', '.journey']) {
+    for (const e of document.querySelectorAll(sel)) { if (!e.offsetParent && getComputedStyle(e).position !== 'fixed') continue; const r = e.getBoundingClientRect(); if (r.width && r.height) out.push(r); }
+  }
+  return out;
+}
 function updateLabels() {
   const w = window.innerWidth, h = window.innerHeight;
+  const ppos = player.group.position;
+  const cand = [];
   for (let i = 0; i < labelEls.length; i++) {
     const lbl = labelEls[i];
     projV.copy(lbl.pos).project(camera);
-    const rawX = (projV.x * 0.5 + 0.5) * w, rawY = (-projV.y * 0.5 + 0.5) * h;
-    const disp = rawX < -120 || rawX > w + 120 || rawY < -60 || rawY > h + 60 || projV.z > 1 ? 'none' : '';
+    lbl.sx = (projV.x * 0.5 + 0.5) * w; lbl.sy = (-projV.y * 0.5 + 0.5) * h;
+    if (!lbl.w) { lbl.w = lbl.el.textContent.length * 8 + 28; lbl.h = 26; }
+    const hw = (lbl.w || 80) / 2, lh = lbl.h || 24;
+    // fully inside the viewport (label box is anchored bottom-centre), else hidden, never pinned to an edge
+    let ok = projV.z < 1 && projV.z > -1 && lbl.sx - hw >= 6 && lbl.sx + hw <= w - 6 && lbl.sy - lh >= 6 && lbl.sy <= h - 6;
+    // occlusion: round-robin raycast so labels don't show through unrelated buildings
+    if (ok && i === labelRR % labelEls.length && world.root) {
+      labelDir.copy(lbl.pos).sub(camera.position);
+      const dist = labelDir.length(); labelDir.normalize();
+      labelRay.set(camera.position, labelDir); labelRay.far = dist - 0.3;
+      const blocked = labelRay.intersectObject(world.root, true).some((x) => x.object.visible && x.object.isMesh && !x.object.userData?.noOcclude && x.distance < dist - 0.3);
+      lbl.occ = Math.max(0, Math.min(3, (lbl.occ || 0) + (blocked ? 1 : -1)));
+    }
+    if (ok && (lbl.occ || 0) >= 2) ok = false;
+    lbl.ok = ok; lbl.d = lbl.pos.distanceToSquared(ppos);
+    if (ok) cand.push(lbl);
+  }
+  labelRR++;
+  // priority: nearest landmark first; hide labels that overlap a kept one or a touch control / HUD
+  cand.sort((a, b) => a.d - b.d);
+  const keep = [], blockers = ctrlRects();
+  for (const l of cand) {
+    const r = { left: l.sx - l.w / 2 - 4, right: l.sx + l.w / 2 + 4, top: l.sy - l.h - 4, bottom: l.sy + 4 };
+    const hit = (o) => r.left < o.right && r.right > o.left && r.top < o.bottom && r.bottom > o.top;
+    // keep a kept label kept (hysteresis): only test against higher-priority ones
+    if (blockers.some(hit) || keep.some(hit)) { l.ok = false; continue; }
+    keep.push(r);
+  }
+  for (const lbl of labelEls) {
+    const disp = lbl.ok ? '' : 'none';
     if (lbl.disp !== disp) { lbl.el.style.display = disp; lbl.disp = disp; }
     if (!disp) {
-      const clampedY = Math.max(64, Math.min(h - 28, rawY));
-      const clampedX = Math.max(90, Math.min(w - 90, rawX));
-      const tf = `translate(${Math.round(clampedX)}px, ${Math.round(clampedY)}px) translate(-50%, -100%)`;
+      const tf = `translate(${Math.round(lbl.sx)}px, ${Math.round(lbl.sy)}px) translate(-50%, -100%)`;
       if (lbl.tf !== tf) { lbl.el.style.transform = tf; lbl.tf = tf; }
     }
   }
@@ -2637,7 +2773,7 @@ function walkToInteractable(it) {
   const pos = player.group.position;
   if (Math.hypot(pos.x - it.x, pos.z - it.z) < it.radius) return interact(it);
   state.pendingOpen = it;
-  walkTo(it.x, it.z);
+  walkTo(it.approach?.x ?? it.x, it.approach?.z ?? it.z);
 }
 
 // ---------------- Loop ----------------
@@ -2670,9 +2806,10 @@ function update(dt, t) {
     if (t - lastPersist > 5) { lastPersist = t; persist(); $('#play-time').textContent = formatTime(state.save.seconds); }
   }
 
-  const kx = (keys.has('d') || keys.has('arrowright') ? 1 : 0) - (keys.has('a') || keys.has('arrowleft') ? 1 : 0);
-  const kz = (keys.has('w') || keys.has('arrowup') ? 1 : 0) - (keys.has('s') || keys.has('arrowdown') ? 1 : 0);
-  const running = keys.has('shift');
+  const joy = touchInput.active;
+  const kx = joy ? Math.sign(Math.round(touchInput.x * 1.4)) : (keys.has('d') || keys.has('arrowright') ? 1 : 0) - (keys.has('a') || keys.has('arrowleft') ? 1 : 0);
+  const kz = joy ? Math.sign(Math.round(touchInput.y * 1.4)) : (keys.has('w') || keys.has('arrowup') ? 1 : 0) - (keys.has('s') || keys.has('arrowdown') ? 1 : 0);
+  const running = joy ? touchInput.run : keys.has('shift');
   velocity.set(0, 0, 0);
   const pos = player.group.position;
   const prevPos = state.prevPlayerPos ? state.prevPlayerPos.set(pos.x, pos.y, pos.z) : (state.prevPlayerPos = pos.clone());
@@ -2692,7 +2829,7 @@ function update(dt, t) {
   if (state.seated && (kx || kz || state.path.length)) standUp();
   if (state.joined && (kx || kz || state.path.length)) tahiti.leaveJoin();
   if (state.passengerOf === 'guru' && (kx || kz || state.path.length)) guruRoutine.dismountNathanPassenger();
-  const keyboardMove = !state.mount && !state.passengerOf && state.started && !frozen && !state.ko && !!(kx || kz);
+  const keyboardMove = !state.mount && !state.passengerOf && state.started && !frozen && !state.ko && (joy ? touchInput.mag > 0 : !!(kx || kz));
   if (state.mount) {
     rideUpdate(dt, t, kx, kz, running);
   } else if (state.passengerOf === 'guru') {
@@ -2700,7 +2837,12 @@ function update(dt, t) {
   } else {
   if (keyboardMove) {
     state.path = []; state.pendingOpen = null; marker.visible = false;
-    velocity.addScaledVector(right, kx).addScaledVector(fwd, kz).normalize().multiplyScalar(running ? RUN : SPEED);
+    if (joy) {
+      // analog: direction from the stick (camera-relative), magnitude <= 1, ~20% quicker on touch; dt-scaled below
+      velocity.addScaledVector(right, touchInput.x).addScaledVector(fwd, touchInput.y);
+      if (velocity.lengthSq() > 1) velocity.normalize();
+      velocity.multiplyScalar((running ? RUN : SPEED) * 1.2);
+    } else velocity.addScaledVector(right, kx).addScaledVector(fwd, kz).normalize().multiplyScalar(running ? RUN : SPEED);
   } else if (!frozen && !state.ko && state.path.length) {
     const wp = state.path[0];
     const dx = wp.x - pos.x, dz = wp.z - pos.z;
@@ -2802,6 +2944,7 @@ function update(dt, t) {
   // E-rings: under the feet on Island 01, in front of the character on Tahiti (Guru's own routine moves his ring itself)
   for (const n of world.npcs) {
     if (!n.beacon?.group || n.passenger || (n.npcId === 'guru' && state.level === 'island1')) continue;
+    if (n.ringAt) { n.beacon.group.position.set(n.ringAt.x, heightAt(n.ringAt.x, n.ringAt.z) + 0.04, n.ringAt.z); continue; }   // fixed ring in front of a table
     // in front of the character; when that side faces away from the camera (or is a desk), the nearest open side toward the camera
     const ch = n.character, seated = ch.pose === 'sit' || ch.pose === 'sittype' || ch.pose === 'sleep', off = seated ? 0.7 : 0.95;
     const under = state.level === 'island1';   // Island 01: the ring is centred directly under the NPC's feet

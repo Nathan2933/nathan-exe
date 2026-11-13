@@ -360,11 +360,13 @@ details > summary:hover { color: var(--turq); }
   .mission:hover, .btn:hover { transform: none !important; }
 }
 /* Character File hero: the pixel-art portrait replaces the old HELLO name tag */
-.hero-grid:has(.hero-portrait) { grid-template-columns: minmax(0, 1fr) minmax(300px, 40%); gap: 12px; }
-.name-tag.hero-portrait { transform: none; filter: none; width: 112%; max-width: none; height: auto; aspect-ratio: 1; object-fit: contain; image-rendering: pixelated; justify-self: center; margin: -28px -6% -36px; }
+.hero-grid:has(.hero-portrait) { grid-template-columns: minmax(0, 1fr) minmax(230px, 30%); gap: 12px; align-items: end; }
+.hero .section-body { padding-bottom: 14px; }
+.name-tag.hero-portrait { transform: none; filter: none; width: 84%; max-width: none; height: auto; aspect-ratio: 1; object-fit: contain; image-rendering: pixelated; justify-self: end; align-self: end; margin: -10px 4% -22px 0; }
 @media (max-width: 1000px) {
   .hero-grid:has(.hero-portrait) { grid-template-columns: minmax(0, 1fr); }
-  .name-tag.hero-portrait { width: 100%; max-width: 420px; margin: -12px auto -20px; }
+  .hero-grid:has(.hero-portrait) { align-items: center; }
+  .name-tag.hero-portrait { width: 100%; max-width: 420px; margin: -12px auto -20px; justify-self: center; align-self: auto; }
 }
 
 /* Journey map + Missions side by side: same height, no empty gap under the shorter card */

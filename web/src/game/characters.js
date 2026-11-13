@@ -10,7 +10,7 @@ const ACT = {
   courtyard: 'Dancing', eat: 'Eating', picnic: 'At the picnic', volley: 'Playing volleyball', beach: 'At the beach',
   deck: 'Dancing on the deck', dj: 'DJing', table: 'At the table', railing: 'Watching the sea', lounge: 'Relaxing',
   hoop: 'Shooting hoops', photo_sa: 'Photographing', photo_sh: 'Photographing',
-  photowalk_ol: 'Photo walk', feast: 'Eating', tvgame: 'Playing a game', firepit: 'By the fire', selfie: 'Taking selfies',
+  news: 'Reading the paper', study: 'Studying', photowalk_ol: 'Photo walk', feast: 'Eating', tvgame: 'Playing a game', firepit: 'By the fire', selfie: 'Taking selfies',
 };
 const GURU = { coding: 'Coding', break: 'Taking a break', walk_to_scooty: 'Heading to the scooty', mount: 'Getting on the scooty', riding: 'Out on the scooty', return: 'Riding back', walk_to_pc: 'Heading back to his desk' };
 const POSE = { sit: 'Sitting', sittype: 'At the computer', type: 'At the computer', film: 'Taking photos', phone: 'On the phone', look: 'Looking around', lean: 'Leaning on the wall', gaze: 'Watching the sea', sleep: 'Resting' };

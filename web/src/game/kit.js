@@ -4283,6 +4283,67 @@ export const KIT = {
       animate: (t) => { fills.forEach((f, i) => { const s = 1 + 0.03 * Math.sin(t * 1.2 + i * 2); f.m.scale.x = s; f.m.position.x = f.x0 + (f.w * s) / 2; }); },
     };
   },
+  news_corner() {
+    // Vijay's outdoor discussion spot: a small noticeboard of pinned headlines and a tea table with a
+    // folded newspaper. Face is local +z; the reader stands in front of the board at local x +1.5.
+    const g = new THREE.Group(), k = kit(g);
+    for (const x of [-0.8, 0.8]) k.box(0.1, 1.9, 0.1, 0x5a3a26, x, 0, 0);
+    k.box(1.9, 1.15, 0.08, 0x5a3a26, 0, 0.85, 0);
+    k.box(1.7, 0.95, 0.05, 0xc99b62, 0, 0.95, 0.05, { shadow: false });
+    // pinned sheets with headline bars
+    [[-0.5, 1.35, 0.55, 0.42, 0xfff8ea, 0.05], [0.15, 1.4, 0.5, 0.36, 0xf4e7c4, -0.04], [0.62, 1.22, 0.4, 0.46, 0xfff1d6, 0.03], [-0.45, 0.98, 0.5, 0.3, 0xe7f2ff, -0.03], [0.2, 0.98, 0.55, 0.32, 0xfff8ea, 0.04]].forEach(([x, y, w, h, c, r]) => {
+      k.box(w, h, 0.03, c, x, y - 0.1, 0.09, { rz: r, shadow: false });
+      k.box(w * 0.7, 0.04, 0.03, 0x2a2440, x, y + h * 0.28 - 0.1, 0.11, { shadow: false });
+      k.box(w * 0.5, 0.03, 0.03, 0x7d8fa8, x - w * 0.1, y + h * 0.1 - 0.1, 0.11, { shadow: false });
+      k.box(0.06, 0.06, 0.04, 0xc4302b, x, y + h * 0.45 - 0.1, 0.12, { shadow: false });
+    });
+    k.box(1.9, 0.14, 0.12, 0x2f8f8a, 0, 1.98, 0.0, { shadow: false });
+    // tea table: round top, two stools, cups, a folded newspaper
+    k.cyl(0.55, 0.55, 0.05, 0xd9a066, 2.2, 0.62, 0.9, 16); k.cyl(0.07, 0.07, 0.62, 0x5a3a26, 2.2, 0, 0.9, 8);
+    k.cyl(0.28, 0.28, 0.05, 0x5a3a26, 2.2, 0, 0.9, 12, { shadow: false });
+    k.box(0.5, 0.03, 0.36, 0xfff8ea, 2.05, 0.67, 0.85, { ry: 0.35, shadow: false });
+    k.box(0.38, 0.02, 0.05, 0x2a2440, 2.05, 0.7, 0.83, { ry: 0.35, shadow: false });
+    k.cyl(0.07, 0.06, 0.1, 0xfff8ea, 2.45, 0.67, 0.95, 10); k.cyl(0.07, 0.06, 0.1, 0xff8a3d, 2.38, 0.67, 0.72, 10);
+    k.cyl(0.1, 0.1, 0.03, 0xc4302b, 2.2, 0.67, 1.12, 10, { shadow: false });
+    for (const [x, z] of [[1.55, 1.05], [2.85, 0.75]]) { k.cyl(0.2, 0.2, 0.06, 0x7a4a2a, x, 0.4, z, 10); k.cyl(0.04, 0.04, 0.4, 0x5a3a26, x, 0, z, 6); }
+    return {
+      obj: g,
+      colliders: [{ x: 0, z: 0, w: 1.9, d: 0.3 }, { x: 2.2, z: 0.9, w: 1.1, d: 1.1 }],
+    };
+  },
+  study_corner() {
+    // Harish's outdoor study corner. Origin = his chair; he faces local +z with the table in front of him.
+    // Nathan stands in front of the table (local z +2.1). A woven mat, a table with an open book, a notebook,
+    // a stack of books and a mug, a satchel, and a leafy planter box beside the chair.
+    const g = new THREE.Group(), k = kit(g);
+    k.box(2.9, 0.02, 2.6, 0xd8c49a, 0.1, 0, 0.7, { shadow: false });
+    k.box(2.9, 0.025, 0.07, 0xb7623b, 0.1, 0.0, -0.57, { shadow: false }); k.box(2.9, 0.025, 0.07, 0xb7623b, 0.1, 0.0, 1.97, { shadow: false });
+    // chair: seat top 0.45 (his hips rest on it), low back behind him
+    for (const [x, z] of [[-0.22, -0.22], [0.22, -0.22], [-0.22, 0.22], [0.22, 0.22]]) k.box(0.06, 0.4, 0.06, 0x5a3a26, x, 0, z);
+    k.box(0.52, 0.06, 0.52, 0xb07a4a, 0, 0.4, 0); k.box(0.52, 0.5, 0.06, 0xb07a4a, 0, 0.46, -0.27); k.box(0.4, 0.1, 0.04, 0x2f8f8a, 0, 0.62, -0.23, { shadow: false });
+    // table
+    for (const x of [-0.65, 0.65]) for (const z of [0.62, 1.28]) k.box(0.08, 0.72, 0.08, 0x5a3a26, x, 0, z);
+    k.box(1.6, 0.06, 0.86, 0xd9a066, 0, 0.72, 0.95); k.box(1.62, 0.02, 0.88, 0xc08a52, 0, 0.7, 0.95, { shadow: false });
+    // open book (cover, two page blocks, text lines)
+    k.box(0.66, 0.02, 0.42, 0x2f4a7a, 0, 0.78, 0.78, { shadow: false });
+    k.box(0.3, 0.03, 0.38, 0xfff6e6, -0.16, 0.8, 0.78, { rz: 0.06, shadow: false }); k.box(0.3, 0.03, 0.38, 0xfff1d6, 0.16, 0.8, 0.78, { rz: -0.06, shadow: false });
+    for (let i = 0; i < 4; i++) { k.box(0.2, 0.006, 0.016, 0x6a6a7a, -0.16, 0.835, 0.64 + i * 0.07, { shadow: false }); k.box(0.2, 0.006, 0.016, 0x6a6a7a, 0.16, 0.835, 0.64 + i * 0.07, { shadow: false }); }
+    // notebook with a pencil, to his right
+    k.box(0.32, 0.025, 0.42, 0xffd257, 0.52, 0.78, 0.84, { ry: -0.15 }); k.box(0.03, 0.03, 0.4, 0x3a3a46, 0.37, 0.8, 0.84, { ry: -0.15, shadow: false });
+    for (let i = 0; i < 5; i++) k.box(0.2, 0.006, 0.014, 0x7d8fa8, 0.54, 0.806, 0.7 + i * 0.07, { ry: -0.15, shadow: false });
+    k.box(0.2, 0.014, 0.014, 0xe0a030, 0.5, 0.815, 0.78, { ry: 0.9, shadow: false });
+    // book stack and a mug, to his left
+    k.box(0.4, 0.07, 0.3, 0xc4302b, -0.55, 0.78, 0.62, { ry: 0.1 }); k.box(0.38, 0.06, 0.28, 0x3a8a5a, -0.55, 0.85, 0.62, { ry: -0.12 }); k.box(0.34, 0.05, 0.26, 0x7a4a8a, -0.55, 0.91, 0.62, { ry: 0.2 });
+    k.cyl(0.07, 0.06, 0.1, 0xfff8ea, -0.45, 0.78, 1.15, 10); k.cyl(0.055, 0.055, 0.01, 0x8a4a2a, -0.45, 0.87, 1.15, 10, { shadow: false });
+    // a pot of greenery on the table corner
+    k.cyl(0.09, 0.07, 0.1, 0xb7623b, 0.62, 0.78, 1.2, 8); k.mesh(new THREE.IcosahedronGeometry(0.11, 0), 0x4faa5a, 0.62, 0.95, 1.2);
+    // satchel leaning on the chair
+    k.box(0.36, 0.28, 0.14, 0x7a4a2a, -0.78, 0, -0.1, { ry: 0.3 }); k.box(0.36, 0.06, 0.16, 0x5a3a26, -0.78, 0.26, -0.1, { ry: 0.3, shadow: false });
+    // planter box with leafy greenery
+    k.box(0.9, 0.34, 0.38, 0x8a5a36, 1.05, 0, -0.45); k.box(0.8, 0.04, 0.3, 0x4a3022, 1.05, 0.33, -0.45, { shadow: false });
+    for (let i = 0; i < 4; i++) k.mesh(new THREE.IcosahedronGeometry(0.2 + (i % 2) * 0.05, 0), i % 2 ? 0x5aa85a : 0x3f8f4a, 0.78 + i * 0.18, 0.55, -0.45);
+    return { obj: g, colliders: [{ x: 0, z: 0, w: 0.56, d: 0.56 }, { x: 0, z: 0.95, w: 1.6, d: 0.86 }, { x: 1.05, z: -0.45, w: 0.9, d: 0.38 }] };
+  },
   food_table() {
     const g = new THREE.Group(), k = kit(g);
     k.box(1.6, 0.7, 0.7, 0xb07a4a, 0, 0, 0); k.box(1.66, 0.04, 0.76, 0xfff6e6, 0, 0.7, 0);

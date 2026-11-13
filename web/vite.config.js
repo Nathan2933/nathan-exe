@@ -222,6 +222,8 @@ Rules:
 export default defineConfig(({ command }) => ({
   base: process.env.VITE_BASE || '/',
   plugins: [adminApi()],
+  // one id per build: data and map URLs carry it, so a new deploy can never mix with old cached files
+  define: { __BUILD_ID__: JSON.stringify(Date.now().toString(36)) },
   build: {
     outDir: 'dist',
     assetsDir: 'assets',

@@ -615,6 +615,18 @@ export class Character {
       } else if (P === 'sittype') {
         pm('hipY', -0.32); pm('th0', -1.45); pm('th1', -1.45); pm('kn0', 1.45); pm('kn1', 1.45); pm('spineX', 0.12); pm('headX', 0.28);
         pm('sx0', -1.0); pm('sx1', -1.0); pm('el0', -0.75 + 0.12 * Math.sin(t * 14)); pm('el1', -0.75 + 0.12 * Math.sin(t * 15 + 1));
+      } else if (P === 'study') {
+        // seated at a table: reading (holds a book, turns a page now and then), writing notes, or looking up.
+        // studyWrite / studyUp are targets set by the island brain; they are damped here so the changes blend.
+        this.sW = damp(this.sW || 0, this.studyWrite || 0, 3, dt); this.sU = damp(this.sU || 0, this.studyUp || 0, 4, dt);
+        const wr = this.sW, up = this.sU, rd = 1 - wr, turn = Math.pow(Math.max(0, Math.sin(t * 0.8)), 8);
+        pm('hipY', -0.32); pm('th0', -1.45); pm('th1', -1.45); pm('kn0', 1.45); pm('kn1', 1.45);
+        pm('spineX', (0.1 * rd + 0.17 * wr) * (1 - up) - 0.02 * up);
+        pm('headX', (0.3 * rd + 0.42 * wr) * (1 - up) - 0.04 * up);
+        pm('sx0', (-0.95 * rd - 0.8 * wr) * (1 - up) - 0.55 * up); pm('el0', (-0.85 * rd - 0.6 * wr) * (1 - up) - 0.7 * up);
+        pm('sx1', ((-0.95 - 0.3 * turn) * rd - 1.0 * wr) * (1 - up) - 0.55 * up);
+        pm('el1', ((-0.85 - 0.45 * turn) * rd + (-0.75 + 0.1 * Math.sin(t * 7)) * wr) * (1 - up) - 0.7 * up);
+        pm('headY', Math.sin(t * 0.6) * 0.06 * up);
       } else if (P === 'film') {
         pm('sx1', -1.35); pm('el1', -0.55); pm('sx0', -1.15); pm('el0', -0.9); pm('headX', 0.06); pm('spineY', Math.sin(t * 0.5) * 0.35);
       } else if (P === 'aim') {

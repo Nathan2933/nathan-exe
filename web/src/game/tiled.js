@@ -1,3 +1,4 @@
+import { fetchRetry } from './net.js';
 // Loads a Tiled JSON map (.tmj) + its external tilesets (.tsj) and converts it
 // into world-space data (1 tile = 1 metre, origin at the map centre).
 //
@@ -12,15 +13,13 @@
 //   object layer "rail"      · one closed polygon: the Memory Line track
 
 export async function loadTiledMap(url) {
-  const res = await fetch(url, { cache: 'no-store' });
-  if (!res.ok) throw new Error(`Map ${url}: ${res.status}`);
-  const map = await res.json();
+  const map = await fetchRetry(url);
   const base = url.slice(0, url.lastIndexOf('/') + 1);
 
   // gid -> { type, color, walkable }
   const tiles = new Map();
   for (const ts of map.tilesets) {
-    const def = ts.source ? await (await fetch(base + ts.source, { cache: 'no-store' })).json() : ts;
+    const def = ts.source ? await fetchRetry(base + ts.source) : ts;
     for (const t of def.tiles || []) {
       const p = propsOf(t);
       tiles.set(ts.firstgid + t.id, {

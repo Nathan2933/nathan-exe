@@ -294,6 +294,50 @@
       ],
       "sameAs": "shabeer",
       "extras": ""
+    },
+    {
+      "id": "tahiti_sf6",
+      "name": "Vijay Krishnan",
+      "role": "Vanderlinde Gang · The Debater",
+      "district": "tahiti",
+      "lines": [
+        "Good to see you out here. Tea first, world problems later."
+      ],
+      "topics": [
+        "Taking a break? :: Yes. Even world affairs can wait until after tea."
+      ],
+      "sameAs": "vijay",
+      "extras": ""
+    },
+    {
+      "id": "tahiti_cf10",
+      "name": "Harish",
+      "role": "Euphonium · The Kind Student",
+      "district": "tahiti",
+      "lines": [
+        "Hey Nathan. Good to see you. Come sit for a bit."
+      ],
+      "topics": [
+        "Still studying? :: Yeah. Come sit for a bit. How have you been?",
+        "Need anything? :: I'm good. There's space here if you want some company.",
+        "Mind if I stay a while? :: Of course not. It's nicer with company."
+      ],
+      "species": "human",
+      "skin": "tan",
+      "hair": "short",
+      "hairColor": "#1d1511",
+      "top": "tee",
+      "topColor": "#5f8f7a",
+      "pants": "jeans",
+      "pantsColor": "#4a5a78",
+      "shoes": "#e8e2d4",
+      "beard": "none",
+      "beardColor": "#1d1511",
+      "glasses": true,
+      "build": 1,
+      "height": 1.08,
+      "color": "#5f8f7a",
+      "extras": ""
     }
   ],
   "overrides": {
