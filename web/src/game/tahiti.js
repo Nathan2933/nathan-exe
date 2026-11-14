@@ -40,7 +40,7 @@ const ACTIVITIES = {
     stream: { w: 5, owner: 'tahiti_sf4', slots: [[-18.45, -7.4, 'sittype', -90]], lines: ['Chat, say hi to Nathan!', "We're live!", 'Thanks for the follow!'] },
     gaming: { w: 5, owner: 'tahiti_sf2', slots: [[-16.6, -8.65, 'sittype', 180]], lines: ['One more round.', 'Arok, did you see that?', 'Clutch!'] },
     coding: { w: 5, owner: 'tahiti_sf1', slots: [[-4.5, -6.0, 'sittype', 180]], lines: ['Just one more commit.', "It works. Don't touch it."] },
-    finance_sh: { w: 5, owner: 'tahiti_sf5', slots: [[13.74, 12.83, 'look', 45]], poses: ['look', 'phone', 'look', 'type'], lines: ['Another week, another deposit.', 'Look at that progress bar.', 'Budget first, fun second.', 'Small coins, big goals.'] },
+    finance_sh: { w: 5, owner: 'tahiti_sf5', slots: [[10.94, -23.67, 'look', 45]], poses: ['look', 'phone', 'look', 'type'], lines: ['Another week, another deposit.', 'Look at that progress bar.', 'Budget first, fun second.', 'Small coins, big goals.'] },
     news: { w: 5, owner: 'tahiti_sf6', slots: [[-22.62, 0.06, 'look', 149]], poses: ['look', 'look', 'cheer', 'phone', 'look'], lines: ['Tea first, world problems later.', 'Page three has opinions. Strong ones.', 'Nobody is wrong until the tea cools.', 'Good paper. Questionable crossword.'] },
     photowalk: { w: 2, owner: 'tahiti_sf5', roam: true, slots: [[-12.4, -23.6, 'film', 150], [...on('vg', 2.8, 1.2), 'film', seaFace('vg')], [-14.6, -2.2, 'film', 200]], lines: ['Golden hour. Perfect.', 'Got it.'] },
     rest: { w: 4, owner: 'harris', slots: [[-9.25, -14.05, 'sleep', 0, { bed: { y: 0.83, approach: [-11.1, -14.05] } }]], lines: ['Five minutes. Then I fly.', "Pilot's break.", 'Zzz...'] },
@@ -63,9 +63,9 @@ const ACTIVITIES = {
     photo_sa: { w: 5, owner: 'tahiti_cf7', slots: [[2.6, 4.0, 'film', 180]], poses: ['film', 'look', 'phone', 'film', 'look'], lines: ['Let me fix the white balance.', 'Shutter at 1/250. Nice.', 'Shabesh, look at this frame.'] },
     photo_sh: { w: 5, owner: 'tahiti_cf2', slots: [[4.2, 2.6, 'film', 180]], poses: ['look', 'film', 'phone', 'cheer', 'film'], lines: ['Okay that one is wallpaper material.', 'Sathesh, check the light over there.', 'Hold on, reviewing the shots.'] },
     photowalk_ol: { w: 3, owners: ['tahiti_cf2', 'tahiti_cf7'], roam: true, slots: [[...on('ol', -4, 1.0), 'film', seaFace('ol')], [26.6, -17.8, 'film', 200], [7.5, -9.5, 'film', 250], [32.6, -15.0, 'film', 90]], lines: ['Golden hour!', 'One for the album.', 'Look at that sky.'] },
-    finance_sv: { w: 5, owner: 'tahiti_cf9', slots: [[7.44, 18.83, 'look', 45]], poses: ['look', 'phone', 'look', 'type'], lines: ['Green day. Stay patient.', 'Diversify, then leave it alone.', 'Wealth is what you do not need.', 'Check the ledger, not the noise.'] },
+    finance_sv: { w: 5, owner: 'tahiti_cf9', slots: [[7.94, 7.83, 'look', 45]], poses: ['look', 'phone', 'look', 'type'], lines: ['Green day. Stay patient.', 'Diversify, then leave it alone.', 'Wealth is what you do not need.', 'Check the ledger, not the noise.'] },
     feast: { w: 5, owner: 'tahiti_cf4', slots: [[18.6, -12.35, 'eat', 180]], poses: ['eat', 'eat', 'sit', 'eat', 'cheer'], lines: ['Round two of snacks.', 'This is training. For the contest.', 'Who wants to challenge me?', 'Mmm. Undefeated.'] },
-    tvgame: { w: 5, owner: 'tahiti_cf5', slots: [[16.9, 14.15, 'sittype', 180]], poses: ['sittype', 'sittype', 'cheer', 'sittype'], lines: ['Boss level!', 'Nathan, grab the other controller.', 'NO. One more try.', 'High score!'] },
+    tvgame: { w: 5, owner: 'tahiti_cf5', slots: [[27.4, 11.15, 'sittype', 180]], poses: ['sittype', 'sittype', 'cheer', 'sittype'], lines: ['Boss level!', 'Nathan, grab the other controller.', 'NO. One more try.', 'High score!'] },
     firepit: { w: 2, slots: [[28.0, -16.2, 'sing', 0, { free: true }], [30.2, -14.0, 'sing', -90, { free: true }], [25.8, -14.0, 'sing', 90, { free: true }], [28.0, -12.2, 'sit', 180]], lines: ['Fire\'s perfect tonight.', '♪ one more song ♪', 'Who\'s got the marshmallows?'] },
     volley: { w: 3, owners: ['tahiti_cf3', 'tahiti_cf6', 'tahiti_cf8'], slots: volleySlots('ol'), lines: ['Mine!', 'Set it up!', 'Spike it!', 'Out! That was out!'] },
     selfie: { w: 1, slots: [[17.4, -1.6, 'phone', 135], [17.9, -2.5, 'cheer', 135], [16.9, -2.7, 'look', 135]], lines: ['Smile!', 'One more, someone blinked.'] },
@@ -73,7 +73,7 @@ const ACTIVITIES = {
 };
 // Harish: studies at his outdoor table all day. He is not a "brain" (no roaming, sports or events); study() keeps him seated.
 const HARISH = 'tahiti_cf10';
-const STUDY = { seat: V(18.0, 19.0), ring: V(18.0, 21.15), face: 0 };
+const STUDY = { seat: V(-32.0, 5.0), ring: V(-32.0, 7.15), face: 0 };
 const TERMINAL = V(-15.6, 13.2);       // where Harris meets Nathan
 const VG_MEET = V(-13.8, -1.4);        // courtyard
 const POSE_DANCES = ['dance1', 'dance2', 'dance3'];
@@ -1728,10 +1728,10 @@ export function createTahiti(ctx) {
   function tvGame() {
     const ak = brainOf('tahiti_cf5');
     const tv = ctx.world.apis.tv_corner;
-    state.joined = { x: 18.1, z: 14.15, pose: 'sittype', face: Math.PI, swim: false }; state.path = [];
+    state.joined = { x: 28.6, z: 11.15, pose: 'sittype', face: Math.PI, swim: false }; state.path = [];
     if (ak) {
-      const ap = ak.it.character.group.position; ap.x = 16.9; ap.z = 14.15;   // already on his seat: no walk while the game runs
-      bring(ak, 16.9, 14.15, 'sittype', 180); bubble(ak.it, 'Player two has entered the game!', 2.6); }
+      const ap = ak.it.character.group.position; ap.x = 27.4; ap.z = 11.15;   // already on his seat: no walk while the game runs
+      bring(ak, 27.4, 11.15, 'sittype', 180); bubble(ak.it, 'Player two has entered the game!', 2.6); }
     tv?.setBusy?.(true);
     ctx.minigame(`<h2>PIXEL DEFENDERS</h2><p class="muted">← → (or A / D) move · SPACE fire · Akshai plays the orange ship. 60 seconds, 3 lives.</p>
       <canvas id="pd" width="240" height="180" style="width:100%;max-width:480px;aspect-ratio:4/3;image-rendering:pixelated;background:#0d0f24;display:block;margin:0 auto;border:2px solid #fff6e6"></canvas>

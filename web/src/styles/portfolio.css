@@ -81,19 +81,41 @@ section[id] { scroll-margin-top: calc(var(--head-h) + 16px); }
 
 /* ---------- sidebar: player card ---------- */
 .side { position: sticky; top: calc(var(--head-h) + 20px); }
-.side-card { background: var(--turq); border: 3px solid var(--navy); border-radius: 8px; box-shadow: 0 0 0 3px var(--cyan), 6px 6px 0 3px rgba(16, 31, 69, .55); padding: 20px 16px; display: grid; gap: 18px; }
-.side-id { display: grid; gap: 10px; justify-items: center; text-align: center; }
-.portrait { width: 120px; height: 120px; image-rendering: pixelated; border: 3px solid var(--navy); background: var(--ivory); box-shadow: 3px 3px 0 var(--navy); }
+.side-card { background: var(--turq); border: 3px solid var(--navy); border-radius: 8px; box-shadow: 0 0 0 3px var(--cyan), 6px 6px 0 3px rgba(16, 31, 69, .55); padding: 14px 14px 16px; display: grid; gap: 12px; }
+.side-id { display: grid; gap: 8px; justify-items: center; text-align: center; }
+.portrait { width: 104px; height: 104px; image-rendering: pixelated; border: 3px solid var(--navy); background: var(--ivory); box-shadow: 3px 3px 0 var(--navy); }
 .p-label { margin: 0; font-family: var(--font-pixel); font-size: 15px; color: var(--sun); letter-spacing: .08em; text-shadow: 2px 2px 0 var(--navy); }
 .p-name { margin: 0; font-family: var(--font-pixel); font-size: 16px; line-height: 1.2; color: var(--ivory); text-shadow: 2px 2px 0 var(--navy); }
 .menu-btn { display: none; }
-.side-nav { display: grid; gap: 4px; font-family: var(--font-pixel); font-size: 14px; }
-.side-nav a { display: flex; align-items: center; gap: 12px; padding: 7px 12px; text-decoration: none; border: 2px solid transparent; border-radius: 4px; color: var(--ivory); text-transform: uppercase; letter-spacing: .04em; text-shadow: 1px 1px 0 var(--navy); transition: background .12s; }
-.side-nav a i { width: 10px; height: 10px; border: 2px solid currentColor; flex: none; }
+.side-nav { display: grid; gap: 2px; font-family: var(--font-pixel); font-size: 14px; }
+.side-nav a { display: flex; align-items: center; gap: 10px; padding: 3px 10px; text-decoration: none; border: 2px solid transparent; border-radius: 4px; color: var(--ivory); text-transform: uppercase; letter-spacing: .04em; text-shadow: 1px 1px 0 var(--navy); transition: background .12s; }
+.side-nav a i { width: 32px; height: 32px; flex: none; display: grid; place-items: center; }
+.side-nav a i svg { width: 28px; height: 28px; display: block; image-rendering: pixelated; }
 .side-nav a:hover { background: #12b6bf; border-color: var(--cyan); }
-.side-nav a:hover i { background: var(--cyan); }
 .side-nav a[aria-current] { background: var(--sun); color: var(--navy); border-color: var(--navy); text-shadow: none; box-shadow: 2px 2px 0 var(--navy); }
-.side-nav a[aria-current] i { background: var(--navy); border-color: var(--navy); }
+/* desktop: sidebar fills the viewport below the navbar, ~22px left at the bottom */
+@media (min-width: 821px) and (min-height: 481px) {
+  /* the card is fixed (static left position keeps it in its column) so the footer can never push it up under the navbar */
+  .side { align-self: start; height: 0; }
+  .side-card { position: fixed; top: calc(var(--head-h) + 28px); width: var(--side-w, 250px); height: calc(100dvh - var(--head-h) - 28px - 24px); box-sizing: border-box; display: flex; flex-direction: column; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; z-index: 15; }
+  .side-card::-webkit-scrollbar { display: none; }
+  .side-nav { gap: 8px; }
+  .side-card { border-radius: 6px; }
+  .side-hud { margin-top: auto; flex: 1 1 140px; min-height: 130px; container-type: size; display: grid; align-content: center; justify-items: center; gap: 6px; padding: 8px; background: rgba(16, 31, 69, .28); border: 2px solid var(--navy); border-radius: 4px; box-shadow: inset 0 0 0 2px var(--cyan); font-family: var(--font-pixel); }
+  .hud-art { position: relative; margin: 0; width: min(100cqw, 190px, calc(100cqh - 26px)); aspect-ratio: 1; border: 2px solid var(--navy); box-shadow: 0 0 0 2px var(--cyan); background: #0a7f86; overflow: hidden; }
+  .hud-art img { display: block; width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
+  .tv-glow { position: absolute; left: 15%; top: 35%; width: 5%; height: 26%; background: #7ff6ff; mix-blend-mode: screen; opacity: 0; animation: tvflick 3.2s steps(1) infinite; pointer-events: none; }
+  @keyframes tvflick { 0%, 100% { opacity: 0; } 20% { opacity: .35; } 25% { opacity: .1; } 60% { opacity: .3; } 66% { opacity: 0; } }
+  .hud-title { margin: 0; font-size: 10px; line-height: 1.4; letter-spacing: .08em; color: var(--sun); text-shadow: 1px 1px 0 var(--navy); text-align: center; }
+  .side-card { border: 3px solid var(--cyan); border-radius: 8px; box-shadow: 0 0 0 2px var(--navy), 0 0 16px 4px rgba(25, 226, 237, .55); }
+  .side-nav a { padding: 5px 12px; background: #0a8f99; border: 2px solid var(--navy); box-shadow: inset 0 0 0 2px var(--cyan); border-radius: 4px; position: relative; }
+  .side-nav a:hover { background: #12b6bf; border-color: var(--navy); }
+  .side-nav a[aria-current] { background: var(--sun); box-shadow: inset 0 0 0 2px #fff7a8, 3px 3px 0 var(--navy); }
+  .side-nav a[aria-current]::after { content: "▶"; margin-left: auto; font-size: 12px; }
+  .side-hud { background: #0a8f99; border-width: 3px; box-shadow: inset 0 0 0 2px var(--cyan); }
+  .side-actions { padding-top: 0; }
+}
+@media (max-width: 820px), (max-height: 480px) { .side-hud { display: none; } }
 .side-actions { display: grid; gap: 10px; }
 .side-actions .btn { min-height: 46px; font-size: 16px; }
 .side-actions .btn:not(.primary) { background: var(--turq); border-color: var(--navy); box-shadow: 3px 3px 0 var(--navy), inset 0 0 0 2px var(--cyan); }
@@ -114,12 +136,12 @@ details > summary:hover { color: var(--turq); }
 
 /* ---------- character file ---------- */
 .hero-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 24px; align-items: center; }
-.hero .section-body { padding-top: 22px; }
+.hero .section-body { padding-top: 14px; }
 .kicker { font-family: var(--font-pixel); font-size: 14px; color: var(--blue); margin: 0 0 6px; letter-spacing: .08em; }
-.hero h1 { font-family: var(--font-pixel); font-weight: 400; font-size: clamp(30px, 5vw, 54px); line-height: 1.02; margin: 0 0 10px; color: var(--navy); }
+.hero h1 { font-family: var(--font-pixel); font-weight: 400; font-size: clamp(28px, 3.9vw, 46px); line-height: 1.02; margin: 0 0 6px; color: var(--navy); }
 .role { font-weight: 700; margin: 0 0 2px; color: var(--navy); font-size: 17px; }
-.loc { margin: 0 0 14px; font-family: var(--font-mono); font-size: 13px; color: var(--blue); font-weight: 600; }
-.summary { margin: 0 0 18px; font-size: 16px; }
+.loc { margin: 0 0 8px; font-family: var(--font-mono); font-size: 13px; color: var(--blue); font-weight: 600; }
+.summary { margin: 0 0 12px; font-size: 16px; line-height: 1.5; letter-spacing: 0; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .stat-row { display: flex; flex-wrap: wrap; gap: 0; margin: 20px 0 14px; border: var(--line); width: fit-content; max-width: 100%; background: #fff; }
 .stat-row div { padding: 8px 18px; border-right: var(--line); }
@@ -137,7 +159,7 @@ details > summary:hover { color: var(--turq); }
 
 /* ---------- dashboard row: journey map + quick missions ---------- */
 .duo { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 24px; align-items: start; min-width: 0; }
-.journey { list-style: none; margin: 12px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 26px; }
+.journey { list-style: none; margin: 12px 0 0; padding: 0; display: grid; grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr)); gap: 26px; }
 .chapter { display: grid; gap: 8px; position: relative; align-content: start; text-align: center; }
 .chapter:not(:last-child)::after { content: '▶'; position: absolute; right: -21px; top: 46px; color: var(--navy); font-size: 16px; }
 .ch-preview { width: 100%; aspect-ratio: 36 / 22; border: 2px solid var(--navy); background: linear-gradient(var(--tone-sky, #bfe9f5) 0 58%, var(--tone-ground, #6fbf4a) 58% 100%); background-size: cover; background-position: center; position: relative; image-rendering: pixelated; }
@@ -253,21 +275,13 @@ details > summary:hover { color: var(--turq); }
 .slot { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 4px 8px; background: var(--cream); border: 0; color: var(--navy);
   clip-path: polygon(0 4px, 2px 4px, 2px 2px, 4px 2px, 4px 0, calc(100% - 4px) 0, calc(100% - 4px) 2px, calc(100% - 2px) 2px, calc(100% - 2px) 4px, 100% 4px, 100% calc(100% - 4px), calc(100% - 2px) calc(100% - 4px), calc(100% - 2px) calc(100% - 2px), calc(100% - 4px) calc(100% - 2px), calc(100% - 4px) 100%, 4px 100%, 4px calc(100% - 2px), 2px calc(100% - 2px), 2px calc(100% - 4px), 0 calc(100% - 4px));
   box-shadow: inset 0 0 0 1px var(--navy); }
-.slot-icon { position: relative; width: 44px; height: 44px; display: grid; place-items: center; }
-.slot-icon img { width: 40px; height: 40px; object-fit: contain; display: block; }
-.sym { min-width: 40px; height: 40px; display: grid; place-items: center; padding: 0 3px; border: 2px solid var(--navy); background: var(--sun); color: var(--navy); font-family: var(--font-pixel); font-size: 13px; line-height: 1; }
-.learn { position: absolute; top: -6px; right: -18px; background: var(--sun); color: var(--navy); border: 1px solid var(--navy); font-family: var(--font-pixel); font-size: 8px; padding: 1px 3px; line-height: 1.2; text-transform: uppercase; }
+.slot-icon { position: relative; width: 52px; height: 52px; display: grid; place-items: center; background: #fff; border: 1px solid var(--navy); }
+.slot-icon img { width: 36px; height: 36px; object-fit: contain; display: block; }
+.sym { width: 100%; height: 100%; display: grid; place-items: center; color: var(--navy); font-family: var(--font-pixel); font-size: 12px; line-height: 1; white-space: nowrap; }
+.learn { position: absolute; top: -8px; right: -12px; z-index: 1; background: var(--sun); color: var(--navy); border: 1px solid var(--navy); font-family: var(--font-pixel); font-size: 8px; padding: 1px 3px; line-height: 1.2; text-transform: uppercase; }
 .slot-name { font-family: var(--font-mono); font-size: 11.5px; line-height: 1.2; text-align: center; overflow-wrap: anywhere; max-width: 100%; }
 @media (max-width: 520px) { .slots { grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 6px; } .slot-name { font-size: 10.5px; } }
 /* ---------- career log ---------- */
-.career { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 10px; }
-.career li { padding: 12px 14px 12px 22px; border: 2px solid var(--navy); border-left: 6px solid var(--turq); border-radius: 4px; background: #fff; position: relative; }
-.career li::before { content: ''; position: absolute; left: -11px; top: 16px; width: 12px; height: 12px; background: var(--sun); border: 2px solid var(--navy); }
-.row-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
-.row-head h3 { margin: 0; font-size: 17px; color: var(--navy); }
-.row-head span { font-family: var(--font-mono); font-size: 12.5px; font-weight: 600; color: var(--blue); }
-.career .org { margin: 0 0 4px; font-weight: 700; color: var(--turq); }
-.career p { margin: 4px 0 0; }
 
 /* ---------- trophies ---------- */
 .filters { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 14px; }
@@ -312,6 +326,7 @@ details > summary:hover { color: var(--turq); }
 @media (max-width: 1000px) {
   .top-nav a { padding: 6px 7px; font-size: 12px; }
   .shell { grid-template-columns: 210px minmax(0, 1fr); gap: 20px; }
+  .side { --side-w: 210px; }
   .portrait { width: 96px; height: 96px; }
   .hero-grid { grid-template-columns: minmax(0, 1fr); }
   .postcard { max-width: 340px; justify-self: center; transform: rotate(2deg); }
@@ -356,17 +371,18 @@ details > summary:hover { color: var(--turq); }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
+  .tv-glow { animation: none; opacity: 0; }
   .mission, .btn, .side-nav a, .top-nav a { transition: none !important; }
   .mission:hover, .btn:hover { transform: none !important; }
 }
 /* Character File hero: the pixel-art portrait replaces the old HELLO name tag */
-.hero-grid:has(.hero-portrait) { grid-template-columns: minmax(0, 1fr) minmax(230px, 30%); gap: 12px; align-items: end; }
-.hero .section-body { padding-bottom: 14px; }
-.name-tag.hero-portrait { transform: none; filter: none; width: 84%; max-width: none; height: auto; aspect-ratio: 1; object-fit: contain; image-rendering: pixelated; justify-self: end; align-self: end; margin: -10px 4% -22px 0; }
+.hero-grid:has(.hero-portrait) { grid-template-columns: minmax(0, 1fr) minmax(230px, 30%); gap: 12px; align-items: center; }
+.hero .section-body { padding-bottom: 12px; }
+.name-tag.hero-portrait { transform: none; filter: none; width: 68%; max-width: none; height: auto; aspect-ratio: 1; object-fit: contain; image-rendering: pixelated; justify-self: end; align-self: center; margin: 0 4% 0 0; }
 @media (max-width: 1000px) {
   .hero-grid:has(.hero-portrait) { grid-template-columns: minmax(0, 1fr); }
   .hero-grid:has(.hero-portrait) { align-items: center; }
-  .name-tag.hero-portrait { width: 100%; max-width: 420px; margin: -12px auto -20px; justify-self: center; align-self: auto; }
+  .name-tag.hero-portrait { width: 100%; max-width: 420px; margin: 0 auto; justify-self: center; align-self: auto; }
 }
 
 /* Journey map + Missions side by side: same height, no empty gap under the shorter card */
@@ -442,7 +458,7 @@ body.portfolio, .shell, main { max-width: 100%; }
   /* balanced action grid */
   .hero-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
   .hero-actions .btn { width: 100%; min-height: 48px; justify-content: center; padding: 0 6px; font-size: 12px; text-align: center; }
-  .name-tag.hero-portrait { width: min(78vw, 340px); margin: 0 auto -8px; }
+  .name-tag.hero-portrait { width: min(78vw, 340px); margin: 0 auto; }
   .hero-grid { gap: 14px; }
 }
 @media (max-width: 560px) {
@@ -474,3 +490,397 @@ body.portfolio, .shell, main { max-width: 100%; }
   .mission-dialog .md-links { display: grid; grid-template-columns: 1fr; }
   .mission-dialog .md-links .btn { min-height: 48px; width: 100%; }
 }
+
+/* Journey: keep tag / title / meta / link on shared horizontal lines across the three cards */
+@media (min-width: 821px) {
+  .journey .chapter { grid-row: span 5; grid-template-rows: subgrid; gap: 8px; }
+  .journey .ch-main { display: contents; }
+  .journey .ch-tag { min-height: 1.2em; }
+  .journey .ch-meta { align-self: start; }
+  .journey .ch-open { align-self: start; }
+}
+/* Character file title bar a bit larger */
+.hero .window-bar { font-size: 16px; padding: 9px 18px; }
+@media (max-width: 520px) { .hero .window-bar { font-size: 15px; padding: 10px 14px; } }
+
+/* project list icons */
+.quick-list button { grid-template-columns: 38px minmax(0, 1fr) auto; column-gap: 12px; }
+.q-ico { grid-row: 1 / 3; grid-column: 1; align-self: center; width: 38px; height: 38px; padding: 3px; background: #fff; border: 2px solid var(--navy); box-shadow: 2px 2px 0 var(--navy); display: block; }
+.q-ico svg { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
+.quick-list b { grid-column: 2; }
+.quick-list span:not(.q-ico) { grid-column: 2; }
+.quick-list i { grid-column: 3; }
+.quick-list button:hover .q-ico { background: var(--sun); }
+
+/* project dialog: fit on screen (two columns on wide screens) */
+.md-shot { max-height: 34dvh; object-fit: cover; }
+@media (min-width: 821px) {
+  .mission-dialog { width: min(1080px, calc(100vw - 32px)); }
+  .md-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 20px; align-items: start; }
+  .md-shot { max-height: 40dvh; }
+  .md-body { padding-top: 16px; padding-bottom: 16px; }
+  .md-text section:first-child h3 { margin-top: 0; }
+}
+
+/* =====================================================================
+   Retro game-card system (shared) · highlights · project logos ·
+   journey art · CAREER.LOG redesign
+   ===================================================================== */
+body.portfolio { --teal-ink: #007a84; --hl: #fff0a0; --card-shadow: 4px 4px 0 rgba(16, 31, 69, .85); }
+
+/* text emphasis: restrained */
+.hl-n { color: var(--navy); font-weight: 700; }
+.hl-t { color: var(--teal-ink); font-weight: 700; }
+mark.hl-y { background: var(--hl); color: var(--navy); font-weight: 700; padding: 0 3px; border-radius: 2px; }
+
+/* shared card: cream surface, navy border, teal accent, hard shadow */
+.mission, .trophy, .strip-list li, .mem-card, .journey .chapter, .rc-card {
+  background: var(--ivory); border: 3px solid var(--navy); border-radius: 6px; box-shadow: var(--card-shadow);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.trophy, .strip-list li, .mem-card { border-width: 2px; box-shadow: 3px 3px 0 rgba(16, 31, 69, .85); }
+.rc-card { background: #fff; }
+.mission { border-top: 3px solid var(--navy); }
+.mission:hover, .trophy:hover, .strip-list li:hover, .rc-card:hover, .mem-card:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 rgba(16, 31, 69, .85); }
+.mission:active, .trophy:active, .rc-card:active, .strip-list li:active { transform: translate(1px, 1px); box-shadow: 2px 2px 0 rgba(16, 31, 69, .85); }
+.mission:focus-within, .rc-card:focus-within, .trophy:focus-within { outline: 3px solid var(--cyan); outline-offset: 2px; }
+.journey .chapter { padding: 10px; }
+.journey .chapter:hover { transform: none; }
+.m-id, .ch-tag, .cp-label, .t-meta { font-family: var(--font-pixel); }
+.m-id { font-size: 11px; }
+.m-year, .t-meta { font-family: var(--font-pixel); font-size: 11px; }
+.mission .m-body { border-top: 0; }
+
+/* project logo beside title + text */
+.p-row { display: flex; align-items: center; gap: 12px; margin: 8px 0 6px; min-width: 0; }
+.p-text { min-width: 0; flex: 1 1 auto; }
+.p-text h2, .p-text h3 { margin: 0 0 4px; }
+.p-text .m-pitch { margin: 0; }
+.p-logo { flex: none; width: 56px; height: 56px; display: grid; place-items: center; background: transparent; border: 0; box-shadow: none; padding: 0; }
+.p-logo.lg { width: 72px; height: 72px; }
+.p-logo img { width: 100%; height: 100%; object-fit: contain; display: block; background: transparent; }
+.p-logo.is-icon .q-ico { width: 100%; height: 100%; background: transparent; border: 0; box-shadow: none; padding: 6px; }
+.quick-list .p-logo { grid-row: 1 / 3; grid-column: 1; width: 38px; height: 38px; align-self: center; }
+.quick-list .p-logo.is-icon .q-ico { padding: 2px; }
+.quick-list button:hover .q-ico { background: transparent; }
+.md-media .p-row { margin-top: 4px; }
+
+/* journey building art */
+.ch-preview.has-img { background: transparent; border: 0; aspect-ratio: 36 / 22; display: flex; align-items: flex-end; justify-content: center; image-rendering: auto; }
+.ch-preview.has-img img { width: 100%; height: 100%; object-fit: contain; object-position: center bottom; display: block; image-rendering: pixelated; filter: drop-shadow(0 3px 0 rgba(16, 31, 69, .35)); }
+.ch-preview.has-img span { left: 0; top: 0; }
+
+/* CAREER.LOG */
+.career-section .section-body { padding-bottom: 28px; }
+.eyebrow { margin: 0 0 2px; font-family: var(--font-pixel); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--navy); display: flex; align-items: center; gap: 12px; }
+.eyebrow::after { content: ''; width: 90px; height: 3px; background: var(--turq); }
+.sub-title { margin: 28px 0 12px; font-family: var(--font-pixel); font-weight: 400; font-size: 22px; letter-spacing: .08em; text-transform: uppercase; color: var(--navy); display: flex; align-items: center; gap: 14px; }
+.sub-title::after { content: ''; width: 90px; height: 3px; background: var(--turq); }
+.career { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 14px; }
+.career-item { display: block; position: relative; min-width: 0; }
+.career.timeline { padding-left: 34px; position: relative; }
+.career.timeline::before { content: ''; position: absolute; left: 7px; top: 14px; bottom: 14px; width: 2px; background: var(--navy); }
+.tl-dot { position: absolute; left: -34px; top: 18px; width: 16px; height: 16px; background: var(--sun); border: 2px solid var(--navy); box-sizing: border-box; }
+.career.leadership { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; margin-top: 0; }
+.career.leadership .career-item { display: flex; }
+.career.leadership .rc-card { flex: 1; }
+.career-card { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 16px; padding: 14px 16px; align-items: center; width: 100%; box-sizing: border-box; }
+.org-logo { width: 76px; height: 76px; display: grid; place-items: center; background: #fff; border: 2px solid var(--navy); border-radius: 6px; box-shadow: 2px 2px 0 rgba(16, 31, 69, .85); padding: 8px; box-sizing: border-box; overflow: hidden; }
+.org-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.cc-body { border-left: 3px solid var(--turq); padding-left: 16px; min-width: 0; }
+.career-card .row-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px 12px; flex-wrap: wrap; }
+.career-card .row-head h3 { margin: 0; font-size: 19px; line-height: 1.25; color: var(--navy); font-weight: 800; flex: 1 1 220px; }
+.date-badge { font-family: var(--font-pixel); font-size: 12px; color: var(--navy); background: #fff; border: 2px solid var(--navy); border-radius: 4px; padding: 3px 9px; white-space: nowrap; }
+.career-card .org { margin: 2px 0 6px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-weight: 700; font-size: 17px; color: var(--teal-ink); }
+.remote-badge { font-style: normal; font-family: var(--font-pixel); font-size: 10px; letter-spacing: .06em; color: var(--navy); border: 2px solid var(--navy); border-radius: 4px; padding: 1px 7px; background: #fff; }
+.cc-sum { margin: 0; font-size: 15px; line-height: 1.5; max-width: 68ch; color: var(--text); }
+.cc-tags { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 10px 0 0; padding: 0; }
+.cc-tags li { font-family: var(--font-mono); font-size: 12.5px; font-weight: 700; padding: 2px 10px; border-radius: 4px; }
+.leadership .career-card { align-items: start; }
+.leadership .org-logo { align-self: start; }
+
+@media (max-width: 900px) {
+  .career.leadership { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 560px) {
+  .career.timeline { padding-left: 26px; }
+  .career.timeline::before { left: 5px; }
+  .tl-dot { left: -26px; width: 14px; height: 14px; }
+  .career-card { grid-template-columns: 56px minmax(0, 1fr); gap: 12px; padding: 12px; align-items: start; }
+  .org-logo { width: 56px; height: 56px; padding: 5px; }
+  .cc-body { padding-left: 12px; }
+  .cc-body { display: flex; flex-direction: column; align-items: flex-start; }
+  .career-card .row-head { display: contents; }
+  .career-card .row-head h3 { order: 1; flex: none; font-size: 17px; }
+  .career-card .org { order: 2; }
+  .career-card .row-head .date-badge { order: 3; margin: 0 0 8px; }   /* date drops below the organisation */
+  .cc-sum { order: 4; } .cc-tags { order: 5; }
+  .p-logo { width: 44px; height: 44px; }
+  .sub-title { font-size: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mission, .trophy, .strip-list li, .rc-card, .mem-card { transition: none !important; }
+  .mission:hover, .trophy:hover, .strip-list li:hover, .rc-card:hover, .mem-card:hover { transform: none !important; }
+}
+.career-section .section-body { display: flex; flex-direction: column; }
+.career-section .eyebrow { order: -1; margin-bottom: 4px; }
+.ch-preview.has-img::after { display: none; }
+.quick-list button span.p-logo { grid-row: 1 / 3; grid-column: 1; width: 38px; height: 38px; white-space: normal; overflow: visible; font-size: inherit; color: inherit; }
+.quick-list button span.p-logo .q-ico { grid-row: auto; grid-column: auto; }
+
+/* ---- revision: mission board back to its original look ---- */
+.mission { background: #fff; border: 3px solid var(--navy); border-radius: 4px; box-shadow: 3px 3px 0 var(--navy); }
+.mission:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 var(--navy), 0 0 0 3px var(--cyan); }
+.mission:active { transform: none; box-shadow: 3px 3px 0 var(--navy); }
+.mission .m-id, .mission .m-year { font-family: var(--font-mono); font-size: 11.5px; }
+
+/* journey: no connector arrows, slightly smaller art */
+.chapter:not(:last-child)::after { display: none !important; content: none !important; }
+.ch-preview.has-img img { width: 86%; height: 100%; margin: 0 auto; }
+
+/* career/leadership: aligned, equal-height cards */
+.eyebrow::after, .sub-title::after { content: none !important; display: none !important; }
+.career-card { grid-template-columns: 76px minmax(0, 1fr); align-items: stretch; }
+.career-card .org-logo { align-self: start; justify-self: center; }
+.career-card .cc-body { display: flex; flex-direction: column; align-self: stretch; }
+.career-card .cc-sum { flex: 0 0 auto; }
+.career-card .cc-tags { margin-top: auto; padding-top: 12px; }
+.leadership .career-card, .leadership .career-item { height: 100%; }
+@media (max-width: 560px) {
+  .career-card { grid-template-columns: 56px minmax(0, 1fr); align-items: stretch; }
+}
+
+/* ---- revision 3 ---- */
+.career-card .org-logo { align-self: center; }
+
+/* mission board: rows share one set of tracks so every part lines up across a row */
+@supports (grid-template-rows: subgrid) {
+  .mission { display: grid; grid-row: span 6; grid-template-rows: subgrid; row-gap: 0; }
+  .mission .m-body { display: contents; }
+  .mission .m-head, .mission h3, .mission .m-pitch, .mission .chips, .mission .m-actions { margin-left: 14px; margin-right: 14px; min-width: 0; }
+  .mission .m-head { padding-top: 12px; align-self: start; }
+  .mission h3 { align-self: start; }
+  .mission .m-pitch { align-self: start; }
+  .mission .chips { align-self: start; margin-top: 10px; }
+  .mission .m-actions { align-self: end; margin-top: 0; padding-bottom: 14px; }
+}
+.mission-grid { align-items: stretch; }
+.mission .m-shot { aspect-ratio: 16 / 7; }
+
+/* journey on phones: content vertically centred against the building */
+@media (max-width: 820px) {
+  .chapter { align-items: center; }
+  .chapter .ch-preview { grid-row: auto; }
+  .chapter .ch-main { align-self: center; }
+}
+
+/* ---- revision 4: arcade card text, 3-up project grid, logo word ---- */
+.logo-small .logo-word { background: none; border: 0; width: auto; height: auto; display: inline; color: var(--ivory); font-size: inherit; text-shadow: inherit; }
+.logo-small .logo-word b { color: var(--sun); }
+.m-pitch, .cc-sum, .ch-meta, .chapter details p, .mem-list p, .mem-card p, .strip-list span, .quick-list span, .t-detail, .sub {
+  font-family: var(--font-pixel); font-size: 12px; line-height: 1.55; letter-spacing: .03em;
+}
+.cc-sum { font-size: 13px; }
+.mission-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 1100px) { .mission-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 680px) { .mission-grid { grid-template-columns: minmax(0, 1fr); } }
+
+
+/* ---- revision 5: one arcade font everywhere ---- */
+body.portfolio, body.portfolio *, body.portfolio button, body.portfolio input, body.portfolio dialog { font-family: var(--font-pixel) !important; }
+body.portfolio p, body.portfolio li, body.portfolio dd, body.portfolio span, body.portfolio a { letter-spacing: .03em; }
+body.portfolio p, body.portfolio li { line-height: 1.55; }
+body.portfolio h3 { font-weight: 400; letter-spacing: .04em; line-height: 1.3; }
+body.portfolio .mission h3, body.portfolio .chapter h3, body.portfolio .trophy h3 { font-size: 14px; }
+body.portfolio .career-card .row-head h3 { font-size: 16px; font-weight: 400; }
+body.portfolio .career-card .org { font-size: 14px; }
+body.portfolio .cc-tags li, body.portfolio .chips li, body.portfolio .chips span { font-size: 11px; }
+body.portfolio b, body.portfolio strong, body.portfolio .hl-n, body.portfolio .hl-t, body.portfolio mark.hl-y { font-weight: 400; }
+
+/* ---- revision 6: bold titles only, smaller terminal text, journey in site palette ---- */
+body.portfolio h1, body.portfolio h2, body.portfolio h3, body.portfolio .p-name, body.portfolio .p-label, body.portfolio .window-bar .title,
+body.portfolio .career-card .row-head h3 { font-weight: 700 !important; }
+#contact .section-body p { font-size: 11px; line-height: 1.7; }
+#contact .sub-h { font-size: 12px; }
+.term { font-size: 11px; }
+.term li { grid-template-columns: 88px minmax(0, 1fr); align-items: baseline; }
+.term .k { white-space: nowrap; font-size: 11px; }
+.term .k::before { content: '>'; margin-right: 4px; }
+
+
+/* ---- journey map: two equal chapter cards + dotted route (consolidated) ---- */
+.j-h { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+#journey { scroll-margin-top: 16px; --j-chrome: 440px; }
+#journey .section-body { padding: 12px 20px 18px; }
+#journey .j-sub { margin: 0 0 8px; color: #0b7d85; font-family: var(--font-pixel); text-transform: uppercase; letter-spacing: .04em; font-size: 13px; }
+.jmap { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: auto 1fr; column-gap: 24px; row-gap: 8px; position: relative; }
+.jmap::before { content: ''; position: absolute; left: 25%; right: 25%; top: 17px; border-top: 4px dotted var(--turq); transform: translateY(-2px); }
+.jmap::after { content: '\00BB\00BB'; position: absolute; left: 50%; top: 17px; transform: translate(-50%, -50%); padding: 0 8px; background: var(--ivory); color: var(--turq); font-family: var(--font-pixel); font-size: 18px; line-height: 1; letter-spacing: -1px; }
+.jstop { display: grid; grid-row: span 2; grid-template-rows: subgrid; row-gap: 8px; min-width: 0; }
+.j-chk { justify-self: center; z-index: 1; min-width: 38px; height: 34px; padding: 0 8px; display: grid; place-items: center; background: var(--sun); color: var(--navy); border: 3px solid var(--navy); border-radius: 8px; box-shadow: 2px 2px 0 var(--turq); font-family: var(--font-pixel); font-size: 15px; }
+.j-card { position: relative; display: flex; flex-direction: column; min-width: 0; background: var(--ivory); border: 3px solid var(--navy); border-radius: 6px; box-shadow: 4px 4px 0 var(--turq); overflow: hidden; }
+.j-card::before, .j-card::after { content: ''; position: absolute; width: 18px; height: 18px; background: var(--sun); z-index: 3; }
+.j-card::before { top: 0; left: 0; clip-path: polygon(0 0, 100% 0, 0 100%); }
+.j-card::after { right: 0; bottom: 0; clip-path: polygon(100% 0, 100% 100%, 0 100%); }
+.j-art { position: relative; height: 150px; display: flex; align-items: flex-end; justify-content: center; overflow: hidden; background: linear-gradient(#9fe0cb, #c9f0e0); image-rendering: pixelated; }
+.j-art::before { content: ""; position: absolute; left: 0; right: 0; bottom: 14%; height: 30%; background: url(/assets/journey/hedge.svg) repeat-x center bottom / auto 100%; image-rendering: pixelated; z-index: 0; }
+.j-art::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 24%; background: url(/assets/journey/grass.svg) repeat-x left bottom / auto 100%; image-rendering: pixelated; z-index: 0; }
+.j-deco { position: absolute; z-index: 1; top: 0; bottom: 0; width: 60%; background-repeat: no-repeat; background-size: auto 100%; pointer-events: none; }
+.j-deco.l { left: 0; background-position: left bottom; } .j-deco.r { right: 0; background-position: right bottom; }
+.j-art img { position: relative; z-index: 2; flex: none; width: auto; height: calc(100% - 3px); max-width: 100%; margin-bottom: 0; object-fit: contain; object-position: center bottom; image-rendering: pixelated; display: block; }
+.j-card .ch-main { display: flex; flex-direction: column; flex: 1; gap: 3px; padding: 10px 16px 14px; text-align: left; align-items: flex-start; }
+.j-card .ch-main > * { max-width: 100%; margin: 0; }
+.j-tag { display: flex; align-items: center; gap: 8px; min-height: 28px; font-family: var(--font-pixel); font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: var(--navy); }
+.j-ico { width: 28px; height: 28px; display: block; flex: none; }
+.j-ico svg { width: 28px; height: 28px; display: block; image-rendering: pixelated; }
+.j-tag b { font-weight: 400; background: #c9efdc; color: #0b6b6f; padding: 3px 8px; border-radius: 3px; }
+.j-card .j-chap { font-family: var(--font-pixel); font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: #0b7d85; min-height: 1.3em; }
+.j-card h3 { font-family: var(--font-pixel); font-weight: 400; font-size: clamp(20px, 2vw, 26px); line-height: 1.1; text-transform: uppercase; color: var(--navy); min-height: 1.1em; }
+.j-inst { font-family: var(--font-pixel); font-size: 13px; line-height: 1.3; letter-spacing: .02em; text-transform: uppercase; color: var(--navy); min-height: 2.6em; }
+.j-meta { font-family: var(--font-pixel); font-size: 12px; letter-spacing: .02em; text-transform: uppercase; color: #0b7d85; min-height: 1.3em; }
+.j-card .j-desc { font-family: var(--font-mono); font-style: normal; font-size: 15px; line-height: 1.35; color: var(--navy); min-height: 2.7em; margin-top: 4px; }
+.j-card .ch-open { margin-top: auto; align-self: flex-start; min-height: 40px; padding: 8px 16px; background: var(--navy); color: var(--sun); border: 3px solid var(--navy); border-radius: 4px; box-shadow: 3px 3px 0 var(--turq); font-family: var(--font-pixel); font-size: 12px; letter-spacing: .04em; text-transform: uppercase; cursor: pointer; }
+.j-card .ch-open:hover { background: var(--turq); color: var(--ivory); }
+@media (max-width: 1100px) { .jmap { column-gap: 14px; } .j-card .ch-main { padding: 10px 12px 12px; } .j-inst { font-size: 12px; } }
+@media (max-width: 1024px), (max-height: 639px) { #journey { --j-chrome: 0px; } .j-art { height: 170px; } }
+@media (max-width: 760px) {
+  #journey .section-body { padding: 12px 14px 16px; }
+  .jmap { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; row-gap: 0; }
+  .jmap::before, .jmap::after { display: none; }
+  .jstop { grid-row: auto; grid-template-rows: auto auto; position: relative; padding-bottom: 30px; }
+  .jstop:last-child { padding-bottom: 0; }
+  .jstop:not(:last-child)::after { content: ''; position: absolute; left: 50%; top: 38px; bottom: -4px; border-left: 4px dotted var(--turq); transform: translateX(-2px); z-index: 0; }
+  .j-card { z-index: 1; }
+  .j-art { height: 150px; }
+  .j-card h3 { font-size: 22px; }
+}
+
+/* ---- desktop: Character File + Journey Map share the first screen (compact padding/gaps/art, no scaling) ---- */
+@media (min-width: 1025px) and (min-height: 680px) {
+  #about { margin-top: -14px; }
+  #about .window-bar, #journey .window-bar { padding-top: 3px; padding-bottom: 3px; font-size: 13px; }
+  #about .section-body { padding: 12px 22px 14px; }
+  #about .hero-grid:has(.hero-portrait) { grid-template-columns: minmax(0, 1fr) auto; gap: 16px; }
+  #about h1 { font-size: clamp(28px, 3.4vw, 42px); margin-bottom: 6px; }
+  #about .role { font-size: 15px; margin: 0; }
+  #about .loc { margin: 0 0 6px; font-size: 12px; }
+  #about .summary { margin: 0 0 8px; font-size: 14px; line-height: 1.4; max-width: none; }
+  #about .hero-actions .btn { min-height: 34px; padding-top: 4px; padding-bottom: 4px; }
+  #about .name-tag.hero-portrait { width: clamp(120px, 24vh, 220px); margin: 0 8px 0 0; }
+  #journey { --j-chrome: 660px; margin-top: -14px; position: relative; }
+  #journey .section-body { padding: 8px 18px 8px; }
+  #journey .j-sub { position: absolute; top: 4px; right: 16px; margin: 0; font-size: 11px; color: var(--ivory); text-shadow: 1px 1px 0 var(--navy); }
+  .jmap { row-gap: 6px; }
+  .jmap::before, .jmap::after { top: 15px; }
+  .j-chk { height: 26px; min-width: 34px; font-size: 13px; }
+  .jmap::before, .jmap::after { top: 13px; }
+  .j-card .ch-main { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-content: start; align-items: center; column-gap: 8px; row-gap: 2px; padding: 8px 14px 10px; }
+  .j-card .ch-main > * { grid-column: 1 / -1; }
+  .j-card .ch-main > .j-chap { min-height: 0; }
+  .j-card .ch-open { justify-self: start; }
+  .j-tag { min-height: 24px; } .j-ico, .j-ico svg { width: 24px; height: 24px; }
+  .j-card h3 { font-size: clamp(17px, 1.6vw, 21px); }
+  .j-inst { min-height: 2.6em; font-size: 12px; }
+  .j-card .j-desc { min-height: 0; margin-top: 2px; font-size: 14px; }
+  .j-card .ch-open { min-height: 30px; padding: 3px 12px; margin-top: 4px; font-size: 11px; }
+}
+
+/* desktop first screen: Character File + Journey Map fill the viewport below the navbar; Mission Board starts below the fold.
+   Fonts, portrait and illustration scale with viewport height; the Character File only tops itself up to the exact remaining height. */
+@media (min-width: 1025px) and (min-height: 680px) {
+  main { --art: clamp(84px, calc(84px + (100svh - 768px) * .55), 160px); --jk: calc(256px + (100svh - 768px) * .18); }
+  .j-art { height: var(--art); }
+  /* card text: bigger, readable, vh-scaled; chapter label becomes a pill; description and button share the last row */
+  .j-card .ch-main { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-content: start; align-items: center; column-gap: 12px; row-gap: clamp(3px, .6svh, 6px); padding: clamp(8px, 1.3svh, 14px) 16px clamp(8px, 1.3svh, 14px); }
+  .j-card .ch-main > * { grid-column: 1 / -1; }
+  .j-card .ch-main > h3 { grid-column: 1; grid-row: 1; font-size: clamp(19px, 2.9svh, 28px); }
+  .j-card .ch-main > .j-chap { grid-column: 2; grid-row: 1; justify-self: end; align-self: center; min-height: 0; background: var(--navy); color: var(--sun); padding: 4px 9px; border-radius: 3px; font-size: clamp(10.5px, 1.5svh, 13px); letter-spacing: .06em; }
+  .j-inst { font-size: clamp(12.5px, 1.85svh, 16px); line-height: 1.3; min-height: 2.6em; letter-spacing: .03em; }
+  .j-meta { font-size: clamp(12px, 1.7svh, 15px); letter-spacing: .03em; }
+  .j-card .ch-main > .j-desc { grid-column: 1; grid-row: 4; align-self: center; font-size: clamp(14px, 2svh, 17px); line-height: 1.3; min-height: 0; margin: 0; }
+  .j-card .ch-main > .ch-open { grid-column: 2; grid-row: 4; align-self: center; justify-self: end; margin: 0; min-height: clamp(32px, 4.4svh, 42px); padding: 4px 14px; font-size: clamp(11px, 1.55svh, 13px); white-space: nowrap; }
+  #about { min-height: calc(100svh - 72px - 14px - var(--jk) - var(--art) - 16px); display: flex; flex-direction: column; }
+  #about .section-body { flex: 1; display: grid; align-content: center; padding: 6px 18px 8px; }
+  #about .hero-grid:has(.hero-portrait) { grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+  #about h1 { font-size: clamp(30px, min(3.6vw, 6svh), 58px); margin-bottom: 2px; line-height: 1; }
+  #about .role { font-size: clamp(14.5px, 2svh, 20px); margin: 0 0 2px; letter-spacing: .02em; }
+  #about .loc { font-size: clamp(12.5px, 1.75svh, 17px); margin: 0 0 4px; }
+  #about .summary { font-size: clamp(15px, 2svh, 20px); line-height: 1.4; margin: 0 0 8px; max-width: none; letter-spacing: 0; font-weight: 400; color: #4a587c; }
+  #about .name-tag.hero-portrait { width: clamp(150px, 33.5svh, 340px); margin: 0 4px 0 0; align-self: center; }
+}
+
+/* ---- phone menu panel: fills the screen under the header (no empty navy gap below the card) ---- */
+@media (max-width: 820px) {
+  .side:has(.side-nav.open) { height: calc(100dvh - var(--head-h) - env(safe-area-inset-top)); }
+  .side:has(.side-nav.open) .side-card { min-height: 100%; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; padding-bottom: calc(18px + env(safe-area-inset-bottom)); }
+  .side-nav.open { flex: 1 1 auto; grid-template-columns: minmax(0, 1fr); align-content: space-evenly; font-size: 15px; }
+  .side-nav.open a { min-height: 52px; }
+  .side-nav.open + .side-actions { flex: none; grid-template-columns: minmax(0, 1fr); gap: 10px; padding-bottom: 0; }
+}
+
+/* ---- desktop: the Mission Board fits one screen (3 x 2 cards, no scrolling to read) ---- */
+@media (min-width: 1025px) and (min-height: 680px) {
+  #projects { min-height: calc(100svh - var(--head-h) - 56px); display: flex; flex-direction: column; }
+  #projects .section-body { flex: 1; display: flex; flex-direction: column; padding: 8px 18px 14px; }
+  #projects h2 { font-size: clamp(20px, 3.2svh, 28px); margin: 0 0 2px; }
+  #projects .sub { margin: 0 0 8px; font-size: 11px; }
+  #projects .mission-grid { flex: 1; gap: clamp(10px, 1.6svh, 16px) 16px; grid-template-rows: repeat(2, minmax(0, 1fr)); }
+  #projects .mission { grid-row: auto; grid-template-rows: auto auto auto minmax(0, 1fr) auto auto; min-height: 0; }
+  #projects .mission .m-shot { aspect-ratio: auto; height: clamp(60px, 12svh, 120px); }
+  #projects .mission .m-head { padding-top: 8px; }
+  #projects .mission h3 { margin-top: 4px; margin-bottom: 4px; font-size: clamp(12px, 1.9svh, 15px); }
+  #projects .mission .m-pitch { font-size: clamp(10.5px, 1.5svh, 12px); line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  #projects .mission .chips { margin-top: 6px; flex-wrap: nowrap; overflow: hidden; }
+  #projects .mission .m-actions { padding-bottom: 10px; padding-top: 6px; }
+  #projects .mission .btn.small { min-height: 30px; padding: 3px 12px; font-size: 11px; }
+}
+
+/* project cards: key words highlighted */
+.mission .m-pitch .hl-t { color: var(--navy); background: #fff07a; padding: 0 3px; font-weight: 700 !important; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+
+/* ---- phones only: Experience + Campus Leadership cards (logo + role + org on top, badges, then full-width text) ---- */
+.cc-meta-m { display: none; }
+@media (max-width: 560px) {
+  .career-section .section-body { padding: 16px 12px 20px; }
+  .career, .career.timeline { padding-left: 0; gap: 16px; }
+  .career.timeline::before, .tl-dot { display: none; }
+  .career.leadership { gap: 16px; }
+  .career-card { display: grid; grid-template-columns: 56px minmax(0, 1fr); column-gap: 12px; row-gap: 0; padding: 16px; align-items: center; }
+  .career-card .org-logo { grid-column: 1; grid-row: 1; width: 56px; height: 56px; padding: 5px; align-self: center; justify-self: start; }
+  .career-card .cc-body { display: contents; }
+  .career-card .row-head { display: block; grid-column: 2; grid-row: 1; align-self: end; min-width: 0; }
+  .career-card .row-head h3 { margin: 0; font-size: 15px; line-height: 1.25; overflow-wrap: anywhere; }
+  .career-card .row-head .date-badge, .career-card .org .remote-badge { display: none; }
+  .career-card .org { grid-column: 2; grid-row: 2; margin: 2px 0 0; display: block; font-size: 13px; overflow-wrap: anywhere; align-self: start; }
+  .career-card .cc-meta-m { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .career-card .cc-meta-m .date-badge, .career-card .cc-meta-m .remote-badge { display: inline-block; font-size: 11px; background: #d9f6f6; padding: 3px 8px; }
+  .career-card .cc-sum { grid-column: 1 / -1; margin-top: 12px; max-width: none; }
+  body.portfolio .career-card .cc-sum { font-family: var(--font-mono) !important; font-size: 13.5px; line-height: 1.5; letter-spacing: 0; }
+  .career-card .cc-tags { grid-column: 1 / -1; margin-top: 12px; padding-top: 0; gap: 6px; }
+  body.portfolio .cc-tags li { font-size: 10.5px; padding: 2px 7px; background: var(--sun); border: 2px solid var(--navy); border-radius: 4px; color: var(--navy); }
+  .career-card .cc-sum .hl-t, .career-card .cc-sum .hl-n { background: #fff07a; padding: 0 2px; color: var(--navy); }
+}
+
+/* ---- compact phone navbar: brand, Menu and Play always inside the screen ---- */
+@media (max-width: 400px) {
+  .site-head { gap: 6px; }
+  .logo-small { font-size: 12px; gap: 5px; min-width: 0; }
+  .logo-small .logo-icon { width: 28px; height: 28px; }
+  .site-head .menu-btn { min-width: 0; padding: 0 8px; font-size: 11px; }
+  .site-head .play { padding: 0 9px; font-size: 12px; }
+}
+@media (max-width: 400px) { .play-x { display: none; } }
+@media (max-width: 560px) {
+  body.portfolio .career-card .row-head h3 { font-size: 13px; letter-spacing: .02em; line-height: 1.3; }
+  body.portfolio .career-card .org { font-size: 11.5px; letter-spacing: .02em; line-height: 1.35; }
+  .career-card .cc-meta-m .date-badge, .career-card .cc-meta-m .remote-badge { letter-spacing: .02em; }
+}
+@media (max-width: 560px) {
+  .career-card .org-logo { grid-row: 1 / span 2; }
+  .career-card .row-head { align-self: end; }
+  .career-card .org { align-self: start; }
+}
+@media (min-width: 1025px) and (min-height: 680px) {
+  #projects .mission .m-pitch { -webkit-line-clamp: 3; line-height: 1.85; }
+}
+.mission .m-pitch .hl-t { padding: 0 3px; line-height: 1.2; }

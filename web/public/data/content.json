@@ -160,7 +160,7 @@
                          "title":  "Aratro: Agricultural Supply Chain Platform",
                          "year":  "2025",
                          "featured":  true,
-                         "pitch":  "Tracing agricultural supply chains from farmers to distribution, with blockchain-backed workflows.",
+                         "pitch":  "Tracing agricultural supply chains from farmers to distribution, with blockchain-backed workflows. Built warehouse and inventory workflows with Solidity smart contracts on an Ethereum/Ganache setup.",
                          "description":  "Agricultural supply flows need clear visibility across farmers, warehouses and ration shops. In a team, I developed warehouse and inventory workflows and integrated Python-backed processes with Solidity smart contracts on an Ethereum/Ganache setup, covering MSP information, quality checks and inventory tracking. Won 1st place at Hack Odyssey 2K25, a 24-hour hackathon.",
                          "architecture":  [
                                               "Farmer → Warehouse → Ration shop supply flow",
@@ -192,7 +192,7 @@
                          "title":  "Microservices Security Logging Framework",
                          "year":  "2026",
                          "featured":  true,
-                         "pitch":  "Making Kubernetes activity easier to observe through runtime security alerts and dashboards.",
+                         "pitch":  "Making Kubernetes activity easier to observe through runtime security alerts and dashboards. Combines Falco runtime detection, Grafana dashboards and audit-event visibility.",
                          "description":  "Security events from containers and clusters are hard to review when they live in disconnected logs. During the HPE Career Preview Program, I contributed to a Kubernetes-based monitoring pipeline using Falco detection and Grafana dashboards, combining runtime activity with cluster and audit-event visibility.",
                          "architecture":  [
 
@@ -222,7 +222,7 @@
                          "title":  "TCE Event Scheduler",
                          "year":  "2025",
                          "featured":  false,
-                         "pitch":  "Scheduling department events with practical admin and database workflows.",
+                         "pitch":  "Scheduling department events with practical admin and database workflows. Built in a six-hour hackathon with Flask, SQL and an HTML/CSS frontend.",
                          "description":  "Built during a six-hour hackathon: a Flask and SQL event scheduler with an HTML/CSS frontend, focused on user navigation and database connectivity. Runner-up at HackFest 2025.",
                          "architecture":  [
 
@@ -251,7 +251,7 @@
                          "title":  "CauverySite: Real Estate Management Platform",
                          "year":  "",
                          "featured":  false,
-                         "pitch":  "A role-aware property management platform for sales teams and administrators.",
+                         "pitch":  "A role-aware property management platform for sales teams and administrators, with role-specific dashboards, an employee hierarchy and sales overview modules.",
                          "description":  "Property sales teams need a structured way to manage staff and see business operations. I built an application with Next.js, TypeScript and Tailwind CSS featuring role-specific dashboards, an employee hierarchy, profiles and sales overview modules.",
                          "architecture":  [
 
@@ -277,7 +277,7 @@
                          "title":  "NATHAN.EXE: Play My Save File",
                          "year":  "2026",
                          "featured":  false,
-                         "pitch":  "An interactive game portfolio built around the chapters of my life.",
+                         "pitch":  "An interactive game portfolio built around the chapters of my life: a 2.5D retro town with a playable character, fast travel and collectible stories.",
                          "description":  "A compact 2.5D retro town with a playable character, fast travel on the Memory Line, collectible stories, interactive project exhibits and a recruiter-friendly quick view. In progress.",
                          "architecture":  [
 
@@ -307,7 +307,7 @@
                          "year":  "2021",
                          "featured":  false,
                          "school":  true,
-                         "pitch":  "My first UI project: a desktop app for managing hospital patient records, built in school.",
+                         "pitch":  "My first UI project: a desktop app for managing hospital patient records, built in school. Staff can log in, add and search patient records, saved between sessions in binary files.",
                          "description":  "Built in Class XII at St. Montfort as my first project with a real user interface. A Python desktop app made with Tkinter that lets hospital staff log in, add and search patient records, and keep the data saved between sessions in binary files. It was where I first learned to think about screens, buttons and how someone actually uses software.",
                          "architecture":  [
                                               "Tkinter windows: login, patient records, search",
@@ -409,11 +409,11 @@
                            "role":  "Office Bearer",
                            "org":  "TCE IT Association",
                            "period":  "",
-                           "summary":  "Supported volunteer coordination for technical and cultural events.",
+                           "summary":  "Helped run the department association's technical and cultural events, coordinating volunteers, handling on-ground logistics and keeping teams on schedule.",
                            "logo":  "/assets/logos/tce.png"
                        },
                        {
-                           "role":  "Member",
+                           "role":  "Office Bearer",
                            "org":  "Entrepreneurship Cell, TCE",
                            "period":  "",
                            "summary":  "Helped organise events and activities, including flagship events with 800+ participants, and hosted \"The Good, The Bad \u0026 The Ugly\", a survival-themed entrepreneurship event.",
@@ -1139,7 +1139,19 @@
                           "detail":  "Class XII, 2021",
                           "district":  "lake-park",
                           "station":  "lake",
-                          "npc":  "shabeer"
+                          "npc":  "shabeer",
+                          "journeyCard":  {
+                              "chapter": "Chapter 01",
+                              "title": "The Beginning",
+                              "institutionLines": [
+                                  "St. Montfort,",
+                                  "Higher Secondary School"
+                              ],
+                              "meta": "Trichy / Class XII / 2021",
+                              "description": "Where curiosity took root.",
+                              "tag": "Foundation",
+                              "icon": "book"
+                          }
                       },
                       {
                           "id":  "tomsk",
@@ -1164,6 +1176,18 @@
                           "district":  "monsoon-campus",
                           "station":  "monsoon",
                           "npc":  "anu",
+                          "journeyCard":  {
+                              "chapter": "Chapter 02",
+                              "title": "The Restart",
+                              "institutionLines": [
+                                  "Thiagarajar College",
+                                  "of Engineering"
+                              ],
+                              "meta": "Madurai / B.Tech IT / 2023–2027",
+                              "description": "Learning, building and finding my people.",
+                              "tag": "Build & Explore",
+                              "icon": "code"
+                          },
                           "activities":  true
                       }
                   ]

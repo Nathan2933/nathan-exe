@@ -230,6 +230,10 @@ export default defineConfig(({ command }) => ({
     target: 'es2020',
     chunkSizeWarningLimit: 700,
     rollupOptions: {
+      output: {
+        // three.js in its own long-cached chunk: game code changes never re-download the engine
+        manualChunks(id) { if (/node_modules[\/]three[\/]/.test(id)) return 'three'; },
+      },
       input: {
         main: resolve(ROOT, 'index.html'),
         play: resolve(ROOT, 'play.html'),

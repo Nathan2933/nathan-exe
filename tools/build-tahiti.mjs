@@ -148,10 +148,10 @@ interact.push(point('group', 21.4, -2.6, { id: 'outlaws', title: 'Join Euphonium
 
 // ---- Finance & Ideas Corner: open lawn south of the villa (Siva and Shabeer, side by side) ----
 // Boards face the default camera (south-east), each character stands just right of their board.
-const FIN = { siva: [5.5, 20.0], shab: [11.8, 14.0] };
+const FIN = { siva: [6.0, 9.0], shab: [9.0, -22.5] };   // Siva: SW lawn south of the runway; Shabeer: north lawn beside the Outlaws court
 const finNpc = ([bx, bz]) => [+(bx + 2.2 * Math.SQRT1_2 + 0.55 * Math.SQRT1_2).toFixed(2), +(bz - 2.2 * Math.SQRT1_2 + 0.55 * Math.SQRT1_2).toFixed(2)];
-O('finance_stock', ...FIN.siva, { rot: -45 });
-O('finance_savings', ...FIN.shab, { rot: -45 });
+O('finance_stock', ...FIN.shab, { rot: -45 });      // Shabeer: stock-trading desk
+O('finance_savings', ...FIN.siva, { rot: -45 });    // Siva: investing / wealth board
 route('tahiti_cf9', [finNpc(FIN.siva)], { idles: 'look', faces: '45' });
 route('tahiti_sf5', [finNpc(FIN.shab)], { idles: 'look', faces: '45' });
 

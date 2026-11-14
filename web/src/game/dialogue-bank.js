@@ -33,6 +33,7 @@ export const BANK = {
       { id: 'reading', q: 'What are you reading?', lines: [c('Something on the Silk Road. Traders swapped far more than silk, ideas travelled the same way.')] },
       { id: 'code', q: "How's the code?", lines: [c('It compiles. Ask me again after I stop touching it.')] },
       { id: 'next', q: 'Where next?', lines: [c('Somewhere old. A fort, a market, a street that has been the same for centuries.')] },
+      { id: 'kodai', q: 'Remember the Kodaikanal trip?', lines: [n('Remember coming back from Kodaikanal when our bike hit that pothole?'), c('Of course. We left on a bike and came back with the bike in a van.'), n('All the way to Trichy. That was some return trip.'), c('The bike got a lift. We got a story.')] },
     ],
     goodbye: "Come find me when you're ready.",
   },

@@ -13,7 +13,26 @@ function notice(msg) {
 // ---------- helpers ----------
 const ext = (url) => (String(url).startsWith('mailto:') ? '' : ' target="_blank" rel="noopener"');
 const chips = (items, cls = 'chips') => (items?.length ? `<ul class="${cls}">${items.map((s) => `<li>${esc(s)}</li>`).join('')}</ul>` : '');
-const paras = (arr) => (arr || []).map((t) => `<p>${esc(t)}</p>`).join('');
+const TECH_RE = /\b(Kubernetes|Falco|Grafana|Docker|Python|Solidity|Ethereum|Ganache|Flask|Next\.js|TypeScript|Tailwind CSS|Three\.js|Blender|Reflect|BugBug\.io|React|Node\.js|MongoDB|MySQL|SQLite|Tkinter)\b/g;
+const KEY_RE = /\b((?:19|20)\d\d|Winner|Runner-up|Second runner-up|Hack Odyssey 2K25|Aratro|CauverySite|TCE Event Scheduler|NATHAN\.EXE|Hospital Management System)\b/g;
+const NUM_RE = /\b(\d[\d,]*\+\s+(?:participants|attendees|students|teams|users))/g;
+/** Escapes text, then adds restrained emphasis: navy bold keys, teal tech, yellow for meaningful numbers. */
+function rich(text) {
+  return esc(text == null ? '' : String(text))
+    .replace(NUM_RE, '<mark class="hl-y">$1</mark>')
+    .replace(TECH_RE, '<b class="hl-t">$1</b>')
+    .replace(KEY_RE, '<b class="hl-n">$1</b>');
+}
+const paras = (arr) => (arr || []).map((t) => `<p>${rich(t)}</p>`).join('');
+
+// project logos: existing files only (transparent copies in assets/logos/transparent)
+const PROJECT_LOGOS = {
+  'microservices-security': 'assets/logos/transparent/hpe.png',
+  'tce-event-scheduler': 'assets/logos/transparent/tce.png',
+  'nathan-exe': 'assets/logos/transparent/nat_log.png',
+};
+// retro building art for journey stops (web/public/assets/journey)
+const JOURNEY_IMG = { montfort: 'assets/journey/montfort.png', tce: 'assets/journey/tce.png' };
 
 function section(id, file, title, body, extraCls = '') {
   return `
@@ -70,47 +89,68 @@ function characterFile(c) {
         <h1 id="about-h">${esc((p.name || '').toUpperCase())}</h1>
         <p class="role">${esc(p.role)}</p>
         ${p.location ? `<p class="loc">${esc(p.location)}</p>` : ''}
-        <p class="summary">${esc(p.summary)}</p>
+        <p class="summary">${rich(p.summary)}</p>
         <div class="hero-actions">
           ${resume ? `<a class="btn primary" href="${esc(resume)}" target="_blank" rel="noopener">Resume ↗</a>` : ''}
           <a class="btn" href="#projects">Projects</a>
           <a class="btn" href="#contact">Contact</a>
         </div>
-        <details class="more">
-          <summary>Read the full profile</summary>
-          ${paras(p.about)}
-        </details>
         </div>
         <img class="name-tag hero-portrait" src="assets/nat.png" alt="Pixel-art portrait of Nathan Jerald" width="1254" height="1254">
       </div>
     </section>`;
 }
 
+const J_ICONS = {
+  book: '<svg viewBox="0 0 14 14" shape-rendering="crispEdges" aria-hidden="true"><path fill="#101F45" d="M1 2h5v1h-5zM8 2h5v1h-5zM0 3h1v1h-1zM6 3h2v1h-2zM13 3h1v1h-1zM0 4h1v1h-1zM6 4h2v1h-2zM13 4h1v1h-1zM0 5h1v1h-1zM6 5h2v1h-2zM13 5h1v1h-1zM0 6h1v1h-1zM6 6h2v1h-2zM13 6h1v1h-1zM0 7h1v1h-1zM6 7h2v1h-2zM13 7h1v1h-1zM0 8h1v1h-1zM6 8h2v1h-2zM13 8h1v1h-1zM0 9h1v1h-1zM6 9h2v1h-2zM13 9h1v1h-1zM1 10h12v1h-12z"/><path fill="#FFF5DD" d="M1 3h5v1h-5zM8 3h5v1h-5zM1 4h1v1h-1zM5 4h1v1h-1zM8 4h1v1h-1zM12 4h1v1h-1zM1 5h5v1h-5zM8 5h5v1h-5zM1 6h1v1h-1zM5 6h1v1h-1zM8 6h1v1h-1zM12 6h1v1h-1zM1 7h5v1h-5zM8 7h5v1h-5zM1 8h1v1h-1zM5 8h1v1h-1zM8 8h1v1h-1zM12 8h1v1h-1zM1 9h5v1h-5zM8 9h5v1h-5z"/><path fill="#FFF02A" d="M2 4h3v1h-3zM9 4h3v1h-3zM2 6h3v1h-3zM9 6h3v1h-3zM2 8h3v1h-3zM9 8h3v1h-3z"/></svg>',
+  code: '<svg viewBox="0 0 14 14" shape-rendering="crispEdges" aria-hidden="true"><path fill="#101F45" d="M1 2h12v1h-12zM0 3h1v1h-1zM13 3h1v1h-1zM0 4h1v1h-1zM13 4h1v1h-1zM0 5h1v1h-1zM13 5h1v1h-1zM0 6h1v1h-1zM13 6h1v1h-1zM0 7h1v1h-1zM13 7h1v1h-1zM0 8h1v1h-1zM13 8h1v1h-1zM0 9h1v1h-1zM13 9h1v1h-1zM1 10h12v1h-12z"/><path fill="#FFF5DD" d="M1 3h12v1h-12zM1 4h4v1h-4zM6 4h1v1h-1zM9 4h4v1h-4zM1 5h3v1h-3zM5 5h2v1h-2zM8 5h1v1h-1zM10 5h3v1h-3zM1 6h2v1h-2zM4 6h2v1h-2zM7 6h3v1h-3zM11 6h2v1h-2zM1 7h3v1h-3zM5 7h1v1h-1zM7 7h2v1h-2zM10 7h3v1h-3zM1 8h4v1h-4zM7 8h1v1h-1zM9 8h4v1h-4zM1 9h12v1h-12z"/><path fill="#009FA9" d="M5 4h1v1h-1zM8 4h1v1h-1zM4 5h1v1h-1zM9 5h1v1h-1zM3 6h1v1h-1zM10 6h1v1h-1zM4 7h1v1h-1zM9 7h1v1h-1zM5 8h1v1h-1zM8 8h1v1h-1z"/><path fill="#d9a800" d="M7 4h1v1h-1zM7 5h1v1h-1zM6 6h1v1h-1zM6 7h1v1h-1zM6 8h1v1h-1z"/></svg>',
+};
+// chapter-card copy lives in content.json (education[].journeyCard); scenery art is reusable SVG in assets/journey
+const J_DECO = (id, side) => `<span class="j-deco ${side}" style="background-image:url(assets/journey/deco-${id}-${side}.svg)"></span>`;
+
 function journey(c) {
   const edu = c.education || [];
+  const isTomsk = (e) => /tomsk/i.test(`${e.id || ''} ${e.institution || ''}`);
+  let shown = 0;
   const items = edu.map((e, i) => {
+    if (isTomsk(e)) return '';
+    shown++;
+    const n = String(shown).padStart(2, '0');
     const ch = chapterFor(c, e.district) || {};
     const mems = (c.memories || []).filter((m) => m.district === e.district);
+    const k = e.journeyCard || {};
+    const inst = (k.institutionLines && k.institutionLines.length ? k.institutionLines : [e.institution]).map(esc).join('<br>');
+    const meta = k.meta || [e.place, e.detail].filter(Boolean).join(' / ');
+    const tag = k.tag || '';
     return `
-      <li class="chapter" data-tone="${esc(e.station || '')}">
-        <div class="ch-preview" aria-hidden="true" data-shot="${esc(e.id || '')}"><span>${esc(e.num || String(i + 1).padStart(2, '0'))}</span></div>
-        <div class="ch-main">
-          <p class="ch-tag">${esc(e.tagline)}</p>
-          <h3>${esc(e.institution)}</h3>
-          <p class="ch-meta">${esc(e.place)} · ${esc(e.detail)}</p>
-          <button type="button" class="link-btn ch-open" data-chapter="${i}">Chapter details ›</button>
-          <template class="ch-body">
-            <p class="m-id">${esc(e.tagline)} · ${esc(e.place)}</p>
-            <h2 id="md-title">${esc(e.institution)}</h2>
-            ${ch.title ? `<h3>${esc(ch.title)}${ch.subtitle ? ` · ${esc(ch.subtitle)}` : ''}</h3>` : ''}
-            ${paras(ch.body)}
-            ${chips(ch.highlights)}
-            ${mems.length ? `<ul class="mem-list">${mems.map((m) => `<li><b>${esc(m.title)}</b>${m.year ? ` <span>${esc(m.year)}</span>` : ''}<p>${esc(m.text)}</p></li>`).join('')}</ul>` : ''}
-          </template>
+      <li class="jstop" data-tone="${esc(e.station || '')}">
+        <span class="j-chk" aria-hidden="true">${n}</span>
+        <div class="j-card">
+          <div class="j-art" aria-hidden="true">${JOURNEY_IMG[e.id] ? `${J_DECO(e.id, 'l')}<img src="${JOURNEY_IMG[e.id]}" alt="" width="900" height="648" loading="eager" decoding="async">${J_DECO(e.id, 'r')}` : ''}</div>
+          <div class="ch-main">
+            <p class="j-chap">${esc(k.chapter || `Chapter ${n}`)}</p>
+            <h3>${esc(k.title || e.tagline || '')}</h3>
+            <p class="j-inst">${inst}</p>
+            <p class="j-meta">${esc(meta)}</p>
+            ${k.description ? `<p class="j-desc">${esc(k.description)}</p>` : '<p class="j-desc"></p>'}
+            <button type="button" class="link-btn ch-open" data-chapter="${i}">Chapter details <span aria-hidden="true">&rsaquo;</span></button>
+            <template class="ch-body">
+              <p class="m-id">${/detour/i.test(e.tagline || '') ? '' : `${esc(e.tagline)} · `}${esc(e.place)}</p>
+              <h2 id="md-title">${esc(e.institution)}</h2>
+              ${ch.title ? `<h3>${esc(ch.title)}${ch.subtitle ? ` · ${esc(ch.subtitle)}` : ''}</h3>` : ''}
+              ${paras(ch.body)}
+              ${chips(ch.highlights)}
+              ${mems.length ? `<ul class="mem-list">${mems.map((m) => `<li><b>${esc(m.title)}</b>${m.year ? ` <span>${esc(m.year)}</span>` : ''}<p>${rich(m.text)}</p></li>`).join('')}</ul>` : ''}
+            </template>
+          </div>
         </div>
       </li>`;
   }).join('');
-  return section('journey', 'journey map', 'Journey', `<ol class="journey">${items}</ol>`);
+  return `
+    <section id="journey" class="window section" aria-labelledby="journey-h">
+      <div class="window-bar"><span class="title">journey map</span></div>
+      <div class="section-body"><h2 id="journey-h" class="j-h">Journey</h2><p class="sub j-sub">Two chapters. One adventure.</p><ol class="jmap" style="--n:${shown || 1}">${items}</ol></div>
+    </section>`;
 }
 
 function discipline(c) {
@@ -128,9 +168,24 @@ function discipline(c) {
     ${mems.length ? `<div class="mem-grid">${mems.map((m) => `
       <figure class="mem-card">
         ${m.image ? `<img src="${esc(safeUrl(m.image))}" alt="" loading="lazy">` : '<div class="media-ph" aria-hidden="true"></div>'}
-        <figcaption><b>${esc(m.title)}</b><p>${esc(m.text)}</p></figcaption>
+        <figcaption><b>${esc(m.title)}</b><p>${rich(m.text)}</p></figcaption>
       </figure>`).join('')}</div>` : ''}`);
 }
+
+const logoBox = (p, cls = '') => (PROJECT_LOGOS[p.id]
+  ? `<span class="p-logo ${cls}" aria-hidden="true"><img src="${PROJECT_LOGOS[p.id]}" alt="" loading="lazy" decoding="async"></span>`
+  : `<span class="p-logo is-icon ${cls}" aria-hidden="true">${projectIcon(p.id)}</span>`);
+
+const CARD_PITCH = {
+  aratro: 'Won **1st place** at Hack Odyssey 2K25. Built warehouse and inventory flows on **Solidity** smart contracts.',
+  'microservices-security': 'Real-time **Kubernetes** threat visibility with **Falco** alerts and Grafana dashboards, built at HPE.',
+  'tce-event-scheduler': 'Event scheduler with admin and database workflows, shipped in a **6-hour hackathon** using **Flask**.',
+  cauverysite: 'Role-aware **property management** platform with sales dashboards and an employee hierarchy in **Next.js**.',
+  'nathan-exe': 'This portfolio: an interactive **2.5D retro town** with a playable character, built with **Three.js**.',
+  'hospital-management': 'My first project: a **desktop app** to manage hospital patient records, with staff login and file storage.',
+};
+const CARD_HIDE_TAGS = { 'microservices-security': ['Grafana'] };
+const cardPitch = (p) => (CARD_PITCH[p.id] ? esc(CARD_PITCH[p.id]).replace(/\*\*(.+?)\*\*/g, '<b class="hl-t">$1</b>') : rich(p.pitch));
 
 function missionCard(c, p, i) {
   const links = [
@@ -146,8 +201,8 @@ function missionCard(c, p, i) {
           ${p.year ? `<span class="m-year">${esc(p.year)}</span>` : ''}
         </div>
         <h3>${esc(p.title)}</h3>
-        <p class="m-pitch">${esc(p.pitch)}</p>
-        ${chips(p.stack)}
+        <p class="m-pitch">${cardPitch(p)}</p>
+        ${chips((p.stack || []).filter((t) => !(CARD_HIDE_TAGS[p.id] || []).includes(t)))}
         <div class="m-actions">
           <button class="btn small" type="button" data-details="${esc(p.id)}">View details</button>
           ${links ? `<span class="m-links">${links}</span>` : ''}
@@ -169,17 +224,19 @@ function missionDetails(c, p) {
     p.github && `<a class="btn small" href="${esc(safeUrl(p.github))}" target="_blank" rel="noopener">GitHub ↗</a>`,
     p.demo && `<a class="btn small" href="${esc(safeUrl(p.demo))}" target="_blank" rel="noopener">Live demo ↗</a>`,
   ].filter(Boolean).join('');
-  return `
+  return `<div class="md-grid"><div class="md-media">
     ${p.image ? `<img class="md-shot" src="${esc(safeUrl(p.image))}" alt="" loading="lazy">` : ''}
     <p class="m-id">${p.year ? esc(p.year) : 'Mission file'}${p.featured ? ' · FEATURED' : ''}</p>
-    <h2 id="md-title">${esc(p.title)}</h2>
-    <p class="m-pitch">${esc(p.pitch)}</p>
-    ${p.description ? `<section><h3>Brief</h3><p>${esc(p.description)}</p></section>` : ''}
-    ${arch.length ? `<section><h3>Approach</h3><ol class="arch">${arch.map((a) => `<li>${esc(a)}</li>`).join('')}</ol></section>` : ''}
-    ${p.contribution ? `<section><h3>My contribution</h3><p>${esc(p.contribution)}</p></section>` : ''}
+    <div class="p-row">${logoBox(p, 'lg')}<div class="p-text"><h2 id="md-title">${esc(p.title)}</h2>
+    <p class="m-pitch">${rich(p.pitch)}</p></div></div>
     ${p.stack?.length ? `<section><h3>Tech</h3>${chips(p.stack)}</section>` : ''}
-    ${results.length ? `<section><h3>Results</h3><ul class="results">${results.map((a) => `<li><b>${esc(a.title)}</b>${a.detail ? ` · ${esc(a.detail)}` : ''}</li>`).join('')}</ul></section>` : ''}
-    ${links ? `<div class="md-links">${links}</div>` : ''}`;
+    ${links ? `<div class="md-links">${links}</div>` : ''}
+    </div><div class="md-text">
+    ${p.description ? `<section><h3>Brief</h3><p>${rich(p.description)}</p></section>` : ''}
+    ${arch.length ? `<section><h3>Approach</h3><ol class="arch">${arch.map((a) => `<li>${rich(a)}</li>`).join('')}</ol></section>` : ''}
+    ${p.contribution ? `<section><h3>My contribution</h3><p>${rich(p.contribution)}</p></section>` : ''}
+    ${results.length ? `<section><h3>Results</h3><ul class="results">${results.map((a) => `<li><b>${esc(a.title)}</b>${a.detail ? ` · ${rich(a.detail)}` : ''}</li>`).join('')}</ul></section>` : ''}
+    </div></div>`;
 }
 
 // Official logo file per skill (public/assets/skills); anything missing gets a labelled symbol.
@@ -238,17 +295,39 @@ function wireSkillTabs() {
   });
 }
 
+const EXP_TAGS = { hewlett: ['Kubernetes', 'Falco', 'Grafana'], 'sez us': ['Web & Mobile', 'Reflect', 'BugBug.io'], 'tce it association': ['Event Coordination', 'Technical Events', 'Cultural Events'], entrepreneurship: ['Entrepreneurship'] };
+const tagsFor = (org) => Object.entries(EXP_TAGS).find(([k]) => norm(org).includes(k))?.[1] || [];
+const ORG_LOGO_FIX = { 'assets/logos/career_logos/hpe.png': 'assets/logos/transparent/hpe.png', '/assets/logos/career_logos/hpe.png': 'assets/logos/transparent/hpe.png', '/assets/logos/tce.png': 'assets/logos/transparent/tce.png' };
+
+function careerCard(e, kind) {
+  const remote = /\(remote\)/i.test(e.org || '');
+  const org = String(e.org || '').replace(/\s*\(remote\)/i, '');
+  const logo = e.logo ? (ORG_LOGO_FIX[e.logo] || e.logo.replace(/^\//, '')) : '';
+  const tags = tagsFor(e.org);
+  return `
+    <li class="career-item ${kind}">
+      ${kind === 'exp' ? '<span class="tl-dot" aria-hidden="true"></span>' : ''}
+      <article class="rc-card career-card">
+        <span class="org-logo" aria-hidden="true">${logo ? `<img src="${esc(safeUrl(logo))}" alt="" loading="lazy" decoding="async">` : `<span class="sym">${esc(org.slice(0, 3).toUpperCase())}</span>`}</span>
+        <div class="cc-body">
+          <div class="row-head"><h3>${esc(e.role)}</h3>${e.period ? `<span class="date-badge">${esc(e.period)}</span>` : ''}</div>
+          <p class="org"><span>${esc(org)}</span>${remote ? '<i class="remote-badge">Remote</i>' : ''}</p>
+          <p class="cc-sum">${rich(e.summary)}</p>
+          ${tags.length ? chips(tags, 'chips cc-tags') : ''}
+          ${e.period || remote ? `<div class="cc-meta-m" aria-hidden="true">${e.period ? `<span class="date-badge">${esc(e.period)}</span>` : ''}${remote ? '<i class="remote-badge">Remote</i>' : ''}</div>` : ''}
+        </div>
+      </article>
+    </li>`;
+}
+
 function careerLog(c) {
-  const exp = c.experience || [];
-  if (!exp.length) return '';
+  const all = c.experience || [];
+  if (!all.length) return '';
+  const exp = all.filter((e) => e.period), lead = all.filter((e) => !e.period);
   return section('experience', 'career.log', 'Experience', `
-    <ol class="career">${exp.map((e) => `
-      <li>
-        <div class="row-head"><h3>${esc(e.role)}</h3>${e.period ? `<span>${esc(e.period)}</span>` : ''}</div>
-        <p class="org">${esc(e.org)}</p>
-        <p>${esc(e.summary)}</p>
-      </li>`).join('')}
-    </ol>`);
+    <p class="eyebrow">Professional journey</p>
+    ${exp.length ? `<ol class="career timeline">${exp.map((e) => careerCard(e, 'exp')).join('')}</ol>` : ''}
+    ${lead.length ? `<h3 class="sub-title">Campus Leadership</h3><ul class="career leadership">${lead.map((e) => careerCard(e, 'lead')).join('')}</ul>` : ''}`, 'career-section');
 }
 
 const tier = (a) => (/second runner-up/i.test(a.title) ? 'third' : /runner-up/i.test(a.title) ? 'second' : /winner/i.test(a.title) ? 'gold' : 'other');
@@ -271,7 +350,7 @@ function trophies(c) {
         <div>
           <h3>${esc(a.title)}</h3>
           <p class="t-meta">${esc(a.org || '')}${a.year ? ` · ${esc(a.year)}` : ''}</p>
-          ${a.detail ? `<p class="t-detail">${esc(a.detail)}</p>` : ''}
+          ${a.detail ? `<p class="t-detail">${rich(a.detail)}</p>` : ''}
         </div>
       </li>`).join('')}
     </ul>
@@ -292,6 +371,23 @@ function terminal(c) {
     <ul class="term">${rows}${resume ? `<li><span class="k">RESUME</span><a href="${esc(resume)}" target="_blank" rel="noopener">resume.pdf ↗</a></li>` : ''}</ul>`, 'terminal');
 }
 
+// 8x8 retro pixel icons for the project list (palette: navy / teal / sun / orange / cream)
+const PX = { n: '#101F45', t: '#009fa9', y: '#FFE927', o: '#f2a93b', c: '#fff3d6', g: '#3fae5a', r: '#d9443f' };
+const PROJECT_ICONS = {
+  aratro: ['........', '..gg.gg.', '.gggggg.', '..gggg..', '...nn...', '...nn...', '.oooooo.', '........'],
+  'microservices-security': ['.nnnnnn.', 'nttttttn', 'ntttyttn', 'ntttyttn', '.nttyytn', '.nttttn.', '..nttn..', '...nn...'],
+  'tce-event-scheduler': ['nnnnnnnn', 'nttttttn', 'nccccccn', 'ncncncnn', 'nccccccn', 'ncncncyn', 'nccccccn', 'nnnnnnnn'],
+  cauverysite: ['...oo...', '..oooo..', '.oooooo.', 'oooooooo', '.cccccc.', '.ccnncc.', '.ccnncc.', '.cccccc.'],
+  'nathan-exe': ['nnnnnnnn', 'ntttttyn', 'ntcttttn', 'ntttcctn', 'nnnnnnnn', '...nn...', '..nnnn..', '........'],
+  'hospital-management': ['..rrrr..', '..rrrr..', 'rrrrrrrr', 'rrrrrrrr', 'rrrrrrrr', 'rrrrrrrr', '..rrrr..', '..rrrr..'],
+};
+const FALLBACK_ICON = ['...yy...', '...yy...', 'yyyyyyyy', '.yyyyyy.', '..yyyy..', '.yy..yy.', '.y....y.', '........'];
+function projectIcon(id) {
+  const rows = PROJECT_ICONS[id] || FALLBACK_ICON;
+  const rects = rows.flatMap((r, y) => [...r].map((ch, x) => (PX[ch] ? `<rect x="${x}" y="${y}" width="1" height="1" fill="${PX[ch]}"/>` : ''))).join('');
+  return `<span class="q-ico" aria-hidden="true"><svg viewBox="0 0 8 8" shape-rendering="crispEdges">${rects}</svg></span>`;
+}
+
 // compact project list beside the journey (opens the same details dialog)
 function missionList(sorted) {
   return `
@@ -299,6 +395,7 @@ function missionList(sorted) {
       <div class="window-bar"><span class="flag" aria-hidden="true"></span><span class="title" id="quick-h">Projects</span></div>
       <ul class="quick-list">${sorted.map((p) => `
         <li><button type="button" data-details="${esc(p.id)}">
+          ${logoBox(p)}
           <b>${esc(p.title.split(':')[0])}</b>
           <span>${esc((p.stack || []).slice(0, 3).join(' · ') || p.pitch || '')}</span>
           <i aria-hidden="true">›</i>
@@ -345,7 +442,7 @@ function render(c) {
   const noticeEl = document.getElementById('notice');
   main.innerHTML = '';
   main.append(noticeEl);
-  main.insertAdjacentHTML('beforeend', characterFile(c) + `<div class="duo">${journey(c)}${missionList(sorted)}</div>` + discipline(c) + missions(c, sorted) + skillTree(c) + careerLog(c) + terminal(c));
+  main.insertAdjacentHTML('beforeend', characterFile(c) + journey(c) + missions(c, sorted) + skillTree(c) + careerLog(c) + terminal(c));
   wireSkillTabs();
   loadShots();
   main.removeAttribute('aria-busy');
@@ -396,7 +493,7 @@ function wireMissions(c) {
     const chb = e.target.closest('[data-chapter]');
     if (chb) {
       document.getElementById('md-body').innerHTML = chb.parentElement.querySelector('.ch-body').innerHTML;
-      document.getElementById('md-file').textContent = chb.closest('.chapter')?.querySelector('h3')?.textContent || 'Journey';
+      document.getElementById('md-file').textContent = chb.closest('.jstop')?.querySelector('h3')?.textContent || 'Journey';
       showDialog(chb);
       return;
     }
@@ -481,4 +578,32 @@ loadContent().then((c) => { render(c); window.nxLoader?.page(); }).catch((err) =
   console.error(err);
   main.innerHTML = '<p class="loading">Could not load portfolio content. Please refresh.</p>';
   window.nxLoader?.fail('Could not load the archive. Check your connection and try again.');
+});
+
+// click sound for every button/link on the portfolio page (drop a file at public/assets/sfx/click.mp3)
+(() => {
+  const SRC = '/assets/sfx/click.mp3';
+  let ok = true;
+  const a = new Audio(SRC); a.preload = 'auto'; a.volume = 0.6;
+  a.addEventListener('error', () => { ok = false; });
+  document.addEventListener('click', (e) => {
+    if (!ok || !e.target.closest('button, a, summary, [role="button"], [role="tab"]')) return;
+    try { const n = a.cloneNode(); n.volume = a.volume; n.play().catch(() => {}); } catch { /* ignore */ }
+  }, true);
+})();
+
+// Journey link: land the panel directly under the navbar, then re-align once lazy images above it have settled
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('a[href="#journey"]');
+  const el = document.getElementById('journey');
+  if (!a || !el) return;
+  e.preventDefault();
+  history.replaceState(null, '', '#journey');
+  const go = () => {
+    const head = document.querySelector('.site-head')?.getBoundingClientRect().height || 58;
+    const gap = parseFloat(getComputedStyle(el).scrollMarginTop) || 16;
+    window.scrollTo({ top: Math.max(0, el.getBoundingClientRect().top + window.scrollY - head - gap), behavior: 'instant' });
+  };
+  go();
+  [120, 400, 900].forEach((ms) => setTimeout(go, ms));
 });

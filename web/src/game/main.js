@@ -8,6 +8,7 @@ import { sfx, setSound, setRain, setMusic, setTheme, setOcean, setEngine } from 
 import { createTahiti } from './tahiti.js';
 import { createXrayOcclusion } from './xray.js';
 import { createGuruRoutine } from './guru.js';
+import { createShabeerRoutine } from './shabeer.js';
 import { buildWorld, loadKitOverrides, updateWalkers, updateNpcs, groundHeight, markerMats, windowMats } from './world.js';
 import { loadTiledMap, tileAt } from './tiled.js';
 import { NavGrid } from './nav.js';
@@ -481,7 +482,7 @@ async function initInner() {
   setupMinimap();
   resize();
   camTarget.copy(player.group.position);
-  if (state.level === 'island1') guruRoutine.enter();
+  if (state.level === 'island1') { guruRoutine.enter(); shabeerRoutine.enter(); }
   if (debugOn) setupDebug();
   setLoad('ui', 1);
   await yieldFrame();
@@ -1835,7 +1836,7 @@ async function switchLevel(name) {
   const m = mapCache[name] || (mapCache[name] = await loadTiledMap(`${BASE}${LEVELS[name]}?v=${BUILD}`));
   leaveGym();
   if (state.level === 'tahiti') { tahiti.exit(); $('#tahiti-hints')?.classList.add('hidden'); hintKey = ''; }
-  if (state.level === 'island1') { guruRoutine.exit(); }
+  if (state.level === 'island1') { guruRoutine.exit(); shabeerRoutine.exit(); }
   if (state.mount) dismount(true);
   setEngine(null);
   scene.remove(world.root);
@@ -1855,7 +1856,7 @@ async function switchLevel(name) {
   state.nearby = null; state.talkingTo = null; state.path = [];
   try { renderer.compile(scene, camera); } catch { /* ignore */ }
   if (name === 'tahiti') tahiti.enter();
-  if (name === 'island1') guruRoutine.enter();
+  if (name === 'island1') { guruRoutine.enter(); shabeerRoutine.enter(); }
 }
 
 // ---------------- Characters menu: Visit ----------------
@@ -1949,9 +1950,18 @@ async function visitCharacter(canon) {
     const it = world.npcs.find((n) => ids.includes(n.npcId));
     if (!it) { toast('Could not find them right now.'); return false; }
     const a = liveActivity(it.npcId) || {};
-    if (a.riding || ['walk_to_scooty', 'mount', 'riding', 'return'].includes(a.act)) { toast('They are on the move. Try again in a moment.'); return false; }
+    const onBike = state.level === 'island1' && ((it.npcId === 'guru' && ['mount', 'riding'].includes(a.act)) || (it.npcId === 'shabeer' && shabeerRoutine.getPhase() === 'ride'));
+    if (!onBike && (a.riding || ['walk_to_scooty', 'mount', 'riding', 'return'].includes(a.act))) { toast('They are on the move. Try again in a moment.'); return false; }
     if (state.level === 'tahiti') { tahiti.holdForVisit?.(it.npcId, 30000); await frames(3); }   // roaming people stop where they are
-    const spot = standSpotFor(it);
+    let spot = null;
+    if (onBike) {   // stand ahead of the moving bike with a gap, facing it
+      const bh = it.character.heading || 0, bp = it.character.group.position;
+      for (const d of [3.6, 3.0, 4.4, 2.6]) {
+        const x = bp.x + Math.sin(bh) * d, z = bp.z + Math.cos(bh) * d;
+        if (solidFree(x, z) && nav.isWalkable(x, z, 0.32) && !isWet(x, z)) { spot = { x, z }; break; }
+      }
+    }
+    if (!spot) spot = standSpotFor(it);
     if (!spot) { toast('No safe spot to stand there right now. Try again in a moment.'); return false; }
     const gp = it.character.group.position;
     const py = heightAt(spot.x, spot.z);
@@ -1962,7 +1972,7 @@ async function visitCharacter(canon) {
     velocity.set(0, 0, 0);
     lastSafe.set(spot.x, py, spot.z);
     state.path = []; marker.visible = false; state.talkingTo = null; state.nearby = null;
-    it.character.lookAt(player.group.position);
+    if (!onBike) it.character.lookAt(player.group.position);
     camTarget.set((gp.x + spot.x) / 2, 0, (gp.z + spot.z) / 2);   // both of them centred in frame
     state.camOverride = null;
     ok = true;
@@ -2354,7 +2364,7 @@ function runFinale(it) {
           <p class="eyebrow">END OF ISLAND 01 · ORIGIN ISLE</p>
           <h2 id="finale-title">Thanks for playing my story.</h2>
           <p>${esc(chapterFor(c, 'lighthouse')?.body?.[0] || "If you'd like to build something together, I'd love to hear from you.")}</p>
-          <div class="finale-stats"><span>◆ ${main}/${MAIN_DISTRICTS.length} chapters</span><span>✦ ${s.memories.length}/${mems} memories</span><span>⏱ ${formatTime(s.seconds)}</span></div>
+          <div class="finale-stats"><span>◆ ${main}/${MAIN_DISTRICTS.length} chapters</span><span>⏱ ${formatTime(s.seconds)}</span></div>
           <div class="transmit">
             ${email ? `<a class="btn primary" href="${esc(safeUrl(email.url))}?subject=${encodeURIComponent('Hello from NATHAN.EXE')}">Say hello ✉</a>` : ''}
             ${c.profile?.resumeUrl ? `<a class="btn" href="${esc(safeUrl(c.profile.resumeUrl))}" target="_blank" rel="noopener">Resume ↗</a>` : ''}
@@ -2954,7 +2964,7 @@ function update(dt, t) {
     n.beacon.group.position.set(ch.group.position.x + dx * off, ch.group.position.y + 0.04, ch.group.position.z + dz * off);
   }
   if (state.level === 'tahiti') { tahiti.update(dt, t); tahitiHints(); }
-  if (state.level === 'island1') { guruRoutine.update(dt, t); }
+  if (state.level === 'island1') { guruRoutine.update(dt, t); shabeerRoutine.update(dt, t); }
   dustTick(dt);
 
   for (const it of world.interactables) {
@@ -4120,6 +4130,15 @@ const guruRoutine = createGuruRoutine({
   velocity
 });
 
+const shabeerRoutine = createShabeerRoutine({
+  state,
+  player,
+  heightAt,
+  dialogue,
+  isGuruMounted: () => guruRoutine.isGuruMounted(),
+  get world() { return world; }
+});
+
 // === Debug overlay (?debug or F3) ===
 let dbg = null, dbgLastMs = 0, dbgLastHud = 0;
 const dbgSamples = new Float32Array(120);
@@ -4205,3 +4224,34 @@ resize();
 const loaded = init();
 runBoot(loaded);
 loop();
+
+/* V: three second top-down look at the whole island, with a small countdown bottom right */
+let islandPeek = null;
+function endIslandPeek() {
+  if (!islandPeek) return;
+  clearInterval(islandPeek.timer); islandPeek.el.remove();
+  if (islandPeek.hidFinale) document.getElementById('finale')?.classList.remove('hidden');
+  state.camOverride = islandPeek.prevOverride; state.zoom = islandPeek.zoom; updateCameraFrustum();
+  islandPeek = null;
+}
+window.addEventListener('keydown', (e) => {
+  if (e.code !== 'KeyV' || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName || '') || e.target?.isContentEditable) return;
+  if (islandPeek || !map || dialogue?.open) return;
+  const el = document.createElement('div');
+  el.style.cssText = 'position:fixed;right:14px;bottom:14px;z-index:60;padding:4px 9px;font:600 12px/1 monospace;letter-spacing:.08em;color:#fff;background:rgba(10,14,24,.72);border:1px solid rgba(255,255,255,.35);border-radius:6px;pointer-events:none';
+  document.body.append(el);
+  const span = Math.max(map.width || 120, map.height || 120);
+  islandPeek = { el, left: 3, zoom: state.zoom, prevOverride: state.camOverride };
+  state.camOverride = { x: 0, z: 0 };
+  const aspect = window.innerWidth / Math.max(1, window.innerHeight);
+  state.zoom = (aspect >= 1 ? 21 : 19 / aspect) / (span * 0.72);
+  updateCameraFrustum();
+  el.textContent = 'MAP VIEW 3';
+  const fin = document.getElementById('finale');
+  if (fin && !fin.classList.contains('hidden')) { fin.classList.add('hidden'); islandPeek.hidFinale = true; }
+  islandPeek.timer = setInterval(() => {
+    islandPeek.left -= 1;
+    if (islandPeek.left <= 0) endIslandPeek(); else el.textContent = 'MAP VIEW ' + islandPeek.left;
+  }, 1000);
+});

@@ -3600,7 +3600,7 @@ export const KIT = {
           // Behind the villa (north or west where the villa blocks the isometric camera line of sight to player):
           // In local coordinates: villa building spans x in [-4, 4], z in [-3.5, 3.5]
           // The camera looks from south-east (+x, +z) toward north-west (-x, -z).
-          occluded = (v.x >= -hw - 1.8 && v.x <= hw + 1.2 && v.z >= -hd - 5.5 && v.z <= hd - 0.4);
+          occluded = false;   // the villa stays solid: no see-through roof ghosting; Nathan's X-ray silhouette shows him instead
         }
         const target = occluded ? 0.22 : 1;
         if (Math.abs(target - fade) > 0.0001) {
@@ -4204,83 +4204,101 @@ export const KIT = {
     return { obj: g, colliders: [{ x: 0.1, z: -0.05, w: 1.0, d: 0.6 }, { x: -0.75, z: 0.55, r: 0.25 }] };
   },
   finance_stock() {
-    // Siva's finance corner: a big upright stock-market board (bold green/red candles, amber trend line),
-    // a desk with a chunky calculator and an open ledger. Face is local +z; the NPC stands at local x +2.2.
+    // Shabeer's STOCK TRADING setup: a compact dark-navy desk with two small angled monitors (red/green candlesticks
+    // and a scrolling market ticker), a keyboard and a trading notebook, cyan accents, a low stool. No upright board.
+    // Face is local +z; the NPC stands at local x +2.2 (clear of the desk).
     const g = new THREE.Group(), k = kit(g);
-    k.box(6.6, 0.04, 3.8, 0xdcd8d0, 0.1, 0, 0.6);
-    k.box(6.68, 0.02, 3.88, 0xbab6ae, 0.1, 0, 0.6, { shadow: false });
-    for (const x of [-1.62, 1.62]) k.box(0.16, 3.1, 0.16, 0x5a3a26, x, 0, -0.06);
-    k.box(3.5, 2.3, 0.14, 0x5a3a26, 0, 0.95, -0.06);
-    k.box(3.2, 2.0, 0.06, 0x16283a, 0, 1.1, 0.03, { shadow: false });
-    k.box(3.2, 0.2, 0.08, 0xffc14d, 0, 2.9, 0.04, { shadow: false });
-    for (const y of [1.65, 2.2, 2.7]) k.box(3.0, 0.03, 0.02, 0x35557a, 0, y, 0.07, { shadow: false });
-    const up = [1, 1, 0, 1, 0, 1, 1], hs = [0.5, 0.78, 0.62, 1.05, 0.9, 1.25, 1.5], bars = [];
-    hs.forEach((h, i) => {
-      const x = -1.26 + i * 0.42, col = up[i] ? 0x3ddc6a : 0xe5484d;
-      const b = k.box(0.28, h, 0.08, col, x, 1.3, 0.1, { shadow: false });
-      b.userData.dynamic = true; bars.push({ m: b, h, y0: 1.3 });
-      k.box(0.05, h + 0.3, 0.03, 0xf4efe4, x, 1.3 - 0.07, 0.07, { shadow: false });
-    });
-    // rising amber trend line with an arrow head
-    const pts = [[-1.3, 1.9], [-0.55, 2.15], [0.1, 2.0], [0.8, 2.45], [1.35, 2.75]];
-    for (let i = 0; i < pts.length - 1; i++) {
-      const [x0, y0] = pts[i], [x1, y1] = pts[i + 1], len = Math.hypot(x1 - x0, y1 - y0);
-      k.box(len, 0.07, 0.04, 0xffc14d, (x0 + x1) / 2, (y0 + y1) / 2, 0.17, { rz: Math.atan2(y1 - y0, x1 - x0), shadow: false });
-    }
-    k.box(0.22, 0.22, 0.05, 0xffc14d, 1.38, 2.7, 0.17, { rz: Math.PI / 4, shadow: false });
-    // desk (screen-left of the board): calculator + open ledger
-    k.box(1.5, 0.7, 0.8, 0x8a5a36, -2.35, 0, 0.55); k.box(1.58, 0.05, 0.88, 0xd9a066, -2.35, 0.7, 0.55);
-    k.box(0.34, 0.07, 0.48, 0x3a4a5e, -2.85, 0.75, 0.5); k.box(0.26, 0.02, 0.12, 0x9be8a0, -2.85, 0.82, 0.37, { shadow: false });
-    for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) k.box(0.06, 0.02, 0.06, (r + c) % 3 === 0 ? 0xffc14d : 0xe9e6dc, -2.94 + c * 0.09, 0.82, 0.5 + r * 0.09, { shadow: false });
-    k.box(0.38, 0.03, 0.5, 0xfff6e6, -2.2, 0.75, 0.55, { ry: 0.12 }); k.box(0.38, 0.03, 0.5, 0xfff6e6, -1.8, 0.75, 0.55, { ry: 0.12 });
-    k.box(0.05, 0.04, 0.5, 0x7a2e2e, -2.0, 0.75, 0.55, { ry: 0.12, shadow: false });
-    for (let i = 0; i < 4; i++) { k.box(0.28, 0.01, 0.025, i % 2 ? 0x3ddc6a : 0xe5484d, -2.2, 0.785, 0.4 + i * 0.1, { ry: 0.12, shadow: false }); k.box(0.28, 0.01, 0.025, 0x3a4a5e, -1.8, 0.785, 0.4 + i * 0.1, { ry: 0.12, shadow: false }); }
+    const NAVY = 0x14213d, NAVY2 = 0x1d2b4d, INK = 0x0b1222, CY = 0x22d3ee;
+    k.box(4.4, 0.04, 2.7, 0x56688c, 0.0, 0, 0.55);
+    k.box(4.4, 0.025, 0.06, CY, 0.0, 0.04, 1.87, { shadow: false }); k.box(4.4, 0.025, 0.06, CY, 0.0, 0.04, -0.77, { shadow: false });
+    // desk: top, two side panels, cyan front trim
+    k.box(2.4, 0.07, 0.95, NAVY2, -0.4, 0.74, 0.5);
+    for (const x of [-1.52, 0.72]) k.box(0.08, 0.74, 0.85, NAVY, x, 0, 0.5);
+    k.box(2.4, 0.035, 0.03, CY, -0.4, 0.74, 0.985, { shadow: false });
+    // two small angled monitors on short necks
+    const dyn = [], ticks = [];
+    const monitor = (x, ry, kind) => {
+      const m = new THREE.Group(); m.position.set(x, 0.81, 0.18); m.rotation.y = ry; m.scale.setScalar(1.3); g.add(m);
+      k.box(0.34, 0.03, 0.2, INK, 0, 0, 0, { parent: m });
+      k.box(0.07, 0.2, 0.07, INK, 0, 0.03, 0, { parent: m });
+      k.box(0.92, 0.6, 0.06, INK, 0, 0.23, 0, { parent: m });
+      k.box(0.82, 0.5, 0.03, 0x07162e, 0, 0.28, 0.035, { shadow: false, parent: m });
+      k.box(0.82, 0.02, 0.035, CY, 0, 0.27, 0.04, { shadow: false, parent: m });
+      if (kind === 0) {
+        const up = [1, 0, 1, 1, 0, 1, 1], hs = [0.1, 0.15, 0.12, 0.2, 0.16, 0.24, 0.3];
+        hs.forEach((h, i) => {
+          const px = -0.3 + i * 0.1, c = up[i] ? 0x3ddc6a : 0xff4d5a;
+          k.box(0.015, h + 0.1, 0.015, 0xe6f6ff, px, 0.45, 0.055, { shadow: false, parent: m });
+          const b = k.box(0.065, h, 0.02, c, px, 0.5, 0.06, { shadow: false, parent: m }); b.userData.dynamic = true; dyn.push({ m: b, h, y0: 0.5 });
+        });
+      } else {
+        const pts = [[-0.34, 0.5], [-0.2, 0.62], [-0.08, 0.55], [0.06, 0.7], [0.2, 0.62], [0.34, 0.78]];
+        for (let i = 0; i < pts.length - 1; i++) { const [x0, y0] = pts[i], [x1, y1] = pts[i + 1]; k.box(Math.hypot(x1 - x0, y1 - y0), 0.025, 0.02, CY, (x0 + x1) / 2, (y0 + y1) / 2, 0.06, { rz: Math.atan2(y1 - y0, x1 - x0), shadow: false, parent: m }); }
+        [[-0.3, 0.1, 0x3ddc6a], [-0.1, 0.07, 0xff4d5a], [0.1, 0.12, 0x3ddc6a], [0.3, 0.06, 0xff4d5a]].forEach(([px, h, c]) => k.box(0.08, h, 0.02, c, px, 0.34, 0.06, { shadow: false, parent: m }));
+      }
+      // market ticker strip along the bottom of the screen
+      for (let i = 0; i < 8; i++) { const c = k.box(0.085, 0.05, 0.02, 0x3ddc6a, -0.34 + i * 0.097, 0.3, 0.06, { shadow: false, parent: m }); c.userData.dynamic = true; ticks.push({ m: c, i }); }
+    };
+    monitor(-0.95, 0.5, 0); monitor(0.12, -0.28, 1);
+    // keyboard, mouse, trading notebook + pen
+    k.box(0.74, 0.03, 0.26, INK, -0.45, 0.81, 0.72); k.box(0.66, 0.012, 0.03, CY, -0.45, 0.84, 0.64, { shadow: false });
+    for (let r = 0; r < 2; r++) k.box(0.62, 0.012, 0.05, 0x2c3d63, -0.45, 0.84, 0.72 + r * 0.07, { shadow: false });
+    k.box(0.09, 0.03, 0.14, INK, 0.1, 0.81, 0.72);
+    k.box(0.36, 0.035, 0.46, NAVY, 0.52, 0.81, 0.6, { ry: -0.25 }); k.box(0.32, 0.02, 0.42, 0xf6f1e4, 0.52, 0.845, 0.6, { ry: -0.25, shadow: false });
+    k.box(0.36, 0.036, 0.05, CY, 0.5, 0.812, 0.74, { ry: -0.25, shadow: false });
+    for (let i = 0; i < 3; i++) k.box(0.2, 0.006, 0.015, 0x6a7a9a, 0.52, 0.867, 0.46 + i * 0.07, { ry: -0.25, shadow: false });
+    // low stool in front of the desk
+    k.cyl(0.24, 0.24, 0.07, NAVY2, -0.45, 0.4, 1.45, 10); k.cyl(0.05, 0.05, 0.4, INK, -0.45, 0, 1.45, 6); k.cyl(0.2, 0.2, 0.03, CY, -0.45, 0.47, 1.45, 10, { shadow: false });
     return {
       obj: g,
-      colliders: [{ x: 0, z: -0.06, w: 3.4, d: 0.4 }, { x: -2.35, z: 0.55, w: 1.5, d: 0.8 }],
-      animate: (t) => { bars.forEach((b, i) => { const s = 0.9 + 0.1 * Math.sin(t * 1.4 + i * 1.3); b.m.scale.y = s; b.m.position.y = b.y0 + (b.h * s) / 2; }); },
+      colliders: [{ x: -0.4, z: 0.5, w: 2.4, d: 0.95 }, { x: -0.45, z: 1.45, r: 0.28 }],
+      animate: (t) => {
+        dyn.forEach((b, i) => { const s = 0.85 + 0.15 * Math.sin(t * 1.8 + i * 1.7); b.m.scale.y = s; b.m.position.y = b.y0 + (b.h * s) / 2; });
+        ticks.forEach(({ m, i }) => m.material.color.setHex(((Math.floor(t * 3) + i * 3) % 5) < 3 ? 0x3ddc6a : 0xff4d5a));
+      },
     };
   },
   finance_savings() {
-    // Shabeer's finance corner: upright savings-goal board with an oversized gold coin and progress bars,
-    // chunky coin stacks, a desk with finance books and a piggy bank. Face is local +z; the NPC stands at local x +2.2.
+    // Sivasuthan's INVESTING & WEALTH setup: a freestanding wood-and-cream board with a big gold coin and a portfolio pie
+    // chart, big coin stacks, and a low side table with a calculator and a finance book. Wood, cream and gold only.
+    // Face is local +z; the NPC stands at local x +2.2.
     const g = new THREE.Group(), k = kit(g);
-    k.box(6.6, 0.04, 3.8, 0xdcd8d0, 0.1, 0, 0.6);
-    k.box(6.68, 0.02, 3.88, 0xbab6ae, 0.1, 0, 0.6, { shadow: false });
-    for (const x of [-1.62, 1.62]) k.box(0.16, 3.1, 0.16, 0x5a3a26, x, 0, -0.06);
-    k.box(3.5, 2.3, 0.14, 0x5a3a26, 0, 0.95, -0.06);
-    k.box(3.2, 2.0, 0.06, 0x1d5a52, 0, 1.1, 0.03, { shadow: false });
-    k.box(3.2, 0.2, 0.08, 0xffc83d, 0, 2.9, 0.04, { shadow: false });
-    // oversized coin with a chunky "$"
-    k.cyl(0.72, 0.72, 0.12, 0xffc83d, -0.85, 1.55, 0.06, 20, { rx: Math.PI / 2 });
-    k.cyl(0.56, 0.56, 0.14, 0xffe08a, -0.85, 1.55, 0.07, 20, { rx: Math.PI / 2, shadow: false });
-    const dk = 0xb8861b, cx = -0.85, cy = 2.27;
-    k.box(0.08, 0.95, 0.04, dk, cx, cy - 0.47, 0.16, { shadow: false });
-    k.box(0.34, 0.08, 0.04, dk, cx, cy + 0.12, 0.16, { shadow: false });
-    k.box(0.34, 0.08, 0.04, dk, cx, cy - 0.32, 0.16, { shadow: false });
-    k.box(0.34, 0.08, 0.04, dk, cx, cy - 0.76, 0.16, { shadow: false });
-    k.box(0.08, 0.26, 0.04, dk, cx - 0.14, cy - 0.12, 0.16, { shadow: false });
-    k.box(0.08, 0.26, 0.04, dk, cx + 0.14, cy - 0.56, 0.16, { shadow: false });
-    // three progress bars: track + fill
-    const prog = [[2.6, 1.0, 0x6fd36a], [2.1, 0.74, 0xffc83d], [1.6, 0.42, 0xff8a3d]], fills = [];
-    prog.forEach(([y, f, c]) => {
-      k.box(1.4, 0.26, 0.04, 0x0e2f2b, 0.75, y - 0.2, 0.08, { shadow: false });
-      const m = k.box(1.3 * f, 0.18, 0.06, c, 0.1 + 0.65 * f, y - 0.16, 0.12, { shadow: false });
-      m.userData.dynamic = true; fills.push({ m, w: 1.3 * f, x0: 0.1 });
-    });
-    // chunky coin stacks beside the board
-    const stack = (x, z, n, r = 0.3) => { for (let i = 0; i < n; i++) { k.cyl(r, r, 0.1, i % 2 ? 0xe0a82a : 0xffc83d, x + (i % 3 - 1) * 0.02, i * 0.1, z, 12); } };
-    stack(-0.9, 1.15, 6); stack(-0.4, 1.35, 4); stack(0.15, 1.2, 8, 0.32); stack(0.7, 1.4, 3);
-    // desk with finance books and a piggy bank
-    k.box(1.5, 0.7, 0.8, 0x8a5a36, -2.35, 0, 0.55); k.box(1.58, 0.05, 0.88, 0xd9a066, -2.35, 0.7, 0.55);
-    [[0x2f6fc6, 0.5, 0.0], [0xc4302b, 0.46, 0.1], [0x3ddc6a, 0.5, -0.05], [0xffc14d, 0.42, 0.08]].forEach(([c, w, dx], i) => k.box(w, 0.09, 0.36, c, -2.75 + dx, 0.75 + i * 0.09, 0.5, { ry: dx }));
-    k.box(0.42, 0.28, 0.3, 0xff8fb1, -1.85, 0.75, 0.55); k.box(0.1, 0.1, 0.1, 0xff8fb1, -1.65, 0.97, 0.55);
-    for (const [dx, dz] of [[-0.14, -0.1], [0.14, -0.1], [-0.14, 0.1], [0.14, 0.1]]) k.box(0.07, 0.07, 0.07, 0xe8648e, -1.85 + dx, 0.75, 0.55 + dz, { shadow: false });
-    k.box(0.14, 0.03, 0.03, 0x2a2440, -1.85, 1.03, 0.55, { shadow: false });
+    const WOOD = 0x7a4a2a, WOOD2 = 0xb07a4a, CREAM = 0xf3e6c8, GOLD = 0xe3b23c, GOLD2 = 0xffd75e;
+    k.box(5.2, 0.04, 3.0, 0xe9dcc0, -0.1, 0, 0.45);
+    k.box(5.2, 0.025, 0.06, WOOD2, -0.1, 0.04, 1.89, { shadow: false }); k.box(5.2, 0.025, 0.06, WOOD2, -0.1, 0.04, -1.05, { shadow: false });
+    // freestanding board on two posts
+    for (const x of [-1.05, 1.05]) k.box(0.14, 2.7, 0.14, WOOD, x, 0, -0.35);
+    k.box(2.7, 1.85, 0.12, WOOD, 0, 0.85, -0.3);
+    k.box(2.46, 1.6, 0.05, CREAM, 0, 0.97, -0.22, { shadow: false });
+    k.box(2.46, 0.2, 0.07, GOLD, 0, 2.55, -0.21, { shadow: false });
+    // oversized gold coin (left) with a bold "$"
+    const coin = new THREE.Group(); coin.position.set(-0.6, 1.78, -0.12); g.add(coin);
+    k.cyl(0.62, 0.62, 0.1, GOLD, 0, -0.05, 0, 22, { rx: Math.PI / 2, parent: coin });
+    k.cyl(0.47, 0.47, 0.12, GOLD2, 0, -0.06, 0, 22, { rx: Math.PI / 2, shadow: false, parent: coin });
+    const dk = 0xa8741a;
+    k.box(0.08, 0.84, 0.04, dk, 0, -0.42, 0.07, { shadow: false, parent: coin });
+    k.box(0.3, 0.07, 0.04, dk, 0, 0.0, 0.07, { shadow: false, parent: coin }); k.box(0.3, 0.07, 0.04, dk, 0, -0.38, 0.07, { shadow: false, parent: coin }); k.box(0.3, 0.07, 0.04, dk, 0, -0.76, 0.07, { shadow: false, parent: coin });
+    k.box(0.07, 0.24, 0.04, dk, -0.12, -0.2, 0.07, { shadow: false, parent: coin }); k.box(0.07, 0.24, 0.04, dk, 0.12, -0.58, 0.07, { shadow: false, parent: coin });
+    // portfolio allocation pie (right): three wedges + a legend
+    const pie = [[0, 3.3, GOLD], [3.3, 1.6, 0x6b8f4a], [4.9, 1.38, WOOD2]];
+    pie.forEach(([a, l, c]) => k.mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.06, 28, 1, false, a, l), c, 0.62, 1.64, -0.17, { rx: Math.PI / 2, shadow: false }));
+    k.cyl(0.18, 0.18, 0.07, CREAM, 0.62, 1.607, -0.165, 14, { rx: Math.PI / 2, shadow: false });
+    [[GOLD, 1.0], [0x6b8f4a, 0.6], [WOOD2, 0.4]].forEach(([c, w], i) => { k.box(0.1, 0.1, 0.03, c, 0.12 + i * 0.5, 0.97, -0.17, { shadow: false }); k.box(w * 0.3, 0.05, 0.03, 0xa89a7a, 0.12 + i * 0.5 + 0.06 + w * 0.15, 0.995, -0.17, { shadow: false }); });
+    // big coin stacks on the ground in front of the board
+    const stack = (x, z, n, r = 0.3, y0 = 0) => { for (let i = 0; i < n; i++) k.cyl(r, r, 0.1, i % 2 ? 0xd9a62a : GOLD2, x + ((i % 3) - 1) * 0.02, y0 + i * 0.1, z, 14); };
+    stack(-0.5, 0.65, 9, 0.32); stack(0.05, 0.9, 5); stack(0.55, 0.62, 7, 0.3);
+    // low side table (left): finance book, calculator and more coin stacks
+    for (const [x, z] of [[-2.55, 0.5], [-1.45, 0.5], [-2.55, 1.05], [-1.45, 1.05]]) k.box(0.07, 0.42, 0.07, WOOD, x, 0, z);
+    k.box(1.3, 0.06, 0.75, WOOD2, -2.0, 0.42, 0.78);
+    k.box(0.34, 0.06, 0.46, CREAM, -2.4, 0.48, 0.72, { ry: 0.1 }); for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) k.box(0.065, 0.02, 0.06, (r + c) % 2 ? GOLD : 0x8a6a3a, -2.49 + c * 0.09, 0.54, 0.62 + r * 0.09, { ry: 0.1, shadow: false });
+    k.box(0.26, 0.02, 0.1, 0x9fb48a, -2.4, 0.54, 0.5, { ry: 0.1, shadow: false });
+    k.box(0.5, 0.07, 0.36, 0x5a3a26, -1.85, 0.48, 0.74, { ry: -0.2 }); k.box(0.46, 0.05, 0.32, CREAM, -1.85, 0.55, 0.74, { ry: -0.2, shadow: false }); k.box(0.07, 0.075, 0.36, GOLD, -2.06, 0.48, 0.74, { ry: -0.2, shadow: false });
+    k.box(0.4, 0.06, 0.3, 0x8a6a3a, -1.82, 0.6, 0.72, { ry: 0.15 }); k.box(0.38, 0.015, 0.1, GOLD, -1.82, 0.66, 0.72, { ry: 0.15, shadow: false });
+    stack(-1.35, 1.0, 7, 0.2, 0.48); stack(-1.1, 0.72, 4, 0.2, 0.48);
     return {
       obj: g,
-      colliders: [{ x: 0, z: -0.06, w: 3.4, d: 0.4 }, { x: -2.35, z: 0.55, w: 1.5, d: 0.8 }, { x: -0.5, z: 1.3, w: 1.6, d: 0.7 }],
-      animate: (t) => { fills.forEach((f, i) => { const s = 1 + 0.03 * Math.sin(t * 1.2 + i * 2); f.m.scale.x = s; f.m.position.x = f.x0 + (f.w * s) / 2; }); },
+      colliders: [{ x: 0, z: -0.3, w: 2.7, d: 0.4 }, { x: -2.0, z: 0.78, w: 1.3, d: 0.75 }, { x: 0.0, z: 0.78, w: 1.3, d: 0.6 }],
+      animate: (t) => { coin.rotation.y = 0.35 * Math.sin(t * 0.9); },
     };
   },
   news_corner() {

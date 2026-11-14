@@ -251,7 +251,7 @@ export function createGuruRoutine(ctx) {
       if (npcs) {
         for (let i = 0; i < npcs.length; i++) {
           const n = npcs[i];
-          if (n === guru || n.passenger) continue;
+          if (n === guru || n.passenger || n.npcId === 'shabeer') continue;
           const np = n.character?.group?.position;
           if (np && Math.hypot(np.x - cx, np.z - cz) < 0.95) {
             return { hit: true, dist: d, type: 'npc', name: n.npcId };
