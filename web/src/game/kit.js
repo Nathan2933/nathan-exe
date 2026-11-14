@@ -705,7 +705,10 @@ export const KIT = {
       { t: 'CH.2', s: 'WINTER', c: '#cfe3ff', draw: 'snow' },
       { t: 'CH.3', s: 'MONSOON', c: '#f2a93b', draw: 'rain' },
       { t: 'CH.4', s: 'BUILD()', c: '#7be0c9', draw: 'code' },
-      { t: 'NEXT?', s: 'LIGHTHOUSE', c: '#ff6a3d' },
+      { t: 'CH.5', s: 'TAHITI', c: '#5fd6ff', draw: 'wave' },
+      { t: 'SKILLS', s: 'LOADING...', c: '#b6f26b', draw: 'bars' },
+      { t: 'MINI GAME', s: 'JUMP!', c: '#ffd34e', draw: 'runner' },
+      { t: 'NEXT?', s: 'LIGHTHOUSE', c: '#ff6a3d', draw: 'stars' },
     ];
     let last = -1;
     const animate = (t) => {
@@ -730,6 +733,31 @@ export const KIT = {
           x === 0 ? sg.moveTo(x, y) : sg.lineTo(x, y);
         }
         sg.stroke();
+      }
+      if (s.draw === 'wave') {
+        sg.fillStyle = '#ffb347'; sg.beginPath(); sg.arc(104, 70, 9, 0, 7); sg.fill();
+        sg.fillStyle = s.c;
+        for (let r = 0; r < 3; r++) for (let x = 0; x < 128; x += 2) sg.fillRect(x, 74 + r * 6 + Math.sin(x * 0.12 + lt * 4 + r) * 2, 2, 2);
+        sg.fillStyle = s.c;
+      }
+      if (s.draw === 'bars') {
+        ['JS', '3D', 'API'].forEach((n, i) => {
+          const w = Math.min(1, lt / 2.4) * [80, 64, 72][i];
+          sg.fillStyle = '#2b3a2a'; sg.fillRect(34, 60 + i * 9, 80, 5);
+          sg.fillStyle = s.c; sg.fillRect(34, 60 + i * 9, w, 5);
+          sg.font = '6px Silkscreen, monospace'; sg.textAlign = 'left'; sg.fillText(n, 12, 65 + i * 9);
+        });
+        sg.textAlign = 'center';
+      }
+      if (s.draw === 'runner') {
+        const jy = Math.max(0, Math.sin(lt * 6)) * 14, ox = 128 - ((lt * 70) % 150);
+        sg.fillRect(0, 84, 128, 1);
+        sg.fillRect(20, 74 - jy, 8, 10);               // player
+        sg.fillStyle = '#ff6a3d'; sg.fillRect(ox, 76, 7, 8); // obstacle
+        sg.fillStyle = s.c;
+      }
+      if (s.draw === 'stars') {
+        for (let i = 0; i < 16; i++) sg.fillRect((i * 29 + lt * 12 * (1 + (i % 3))) % 128, (i * 17) % 90, 1, 1);
       }
       if (s.draw === 'code') {
         sg.font = '8px Silkscreen, monospace'; sg.textAlign = 'left';
