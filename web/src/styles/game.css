@@ -1198,3 +1198,41 @@ body.game .gh-first { font-family: var(--font-mono); font-size: 10px; padding: 1
 .boot .boot-err.hidden { display: none; }
 .boot .boot-err .btn { background: #f2a93b; color: #0a1530; min-height: 44px; padding: 0 22px; }
 @media (max-height: 460px) { .boot .boot-load { margin-top: 2px; min-height: 40px; } }
+
+/* ---------- How-to-play welcome card ---------- */
+.tour-modal.hw { width: min(460px, calc(100vw - 2 * var(--gutter))); padding: 0 0 18px; gap: 12px; border: 4px solid #1B2F2A; background: #FFF3D9; box-shadow: 6px 6px 0 #1B2F2A, 0 0 0 4px #F2B632; overflow: hidden; animation: hw-pop .35s cubic-bezier(.2, 1.4, .4, 1); }
+@keyframes hw-pop { from { transform: translate(-50%, -46%) scale(.85); opacity: 0; } }
+.hw-banner { background: repeating-linear-gradient(135deg, #E8452C 0 14px, #D63A22 14px 28px); padding: 14px 18px 16px; text-align: center; border-bottom: 4px solid #1B2F2A; }
+.hw-press { display: inline-block; font-family: var(--font-pixel); font-size: 10px; letter-spacing: .18em; color: #1B2F2A; background: #F2B632; padding: 3px 10px; border: 2px solid #1B2F2A; animation: hw-blink 1s steps(2) infinite; }
+@keyframes hw-blink { 50% { opacity: .45; } }
+.tour-modal.hw h2 { margin: 8px 0 0; font-family: 'Bangers', var(--font-pixel); font-size: clamp(28px, 8vw, 40px); letter-spacing: .05em; line-height: 1.05; color: #FFF3D9; text-shadow: 3px 3px 0 #1B2F2A; }
+.tour-modal.hw h2 i { font-style: normal; color: #F2B632; }
+.tour-modal.hw p, .tour-modal.hw ul { margin-left: 18px; margin-right: 18px; }
+.hw-lead { font-size: 14px; line-height: 1.5; color: #1B2F2A !important; text-align: center; }
+.hw-lead b { background: #F2B632; padding: 0 4px; }
+.hw-title { text-align: center; font-family: var(--font-pixel); font-size: 13px; letter-spacing: .12em; color: #E8452C !important; }
+.hw-list { list-style: none; padding: 0; display: grid; gap: 8px; }
+.hw-list li { display: grid; grid-template-columns: 28px auto 1fr; align-items: center; gap: 10px; background: #FFFFFF; border: 3px solid #1B2F2A; padding: 8px 10px; box-shadow: 3px 3px 0 #1B2F2A; font-size: 13px; color: #1B2F2A; }
+.hw-ic { font-size: 20px; text-align: center; }
+.hw-keys { display: flex; gap: 4px; }
+.hw-list kbd { font-family: var(--font-pixel); font-size: 12px; min-width: 26px; text-align: center; padding: 4px 6px; background: #3B8F6E; color: #fff; border: 2px solid #1B2F2A; border-bottom-width: 5px; border-radius: 4px; }
+.hw-lbl b { color: #E8452C; }
+.hw-tip { font-size: 12px; text-align: center; color: #514A3C !important; }
+.tour-modal.hw .tm-row { margin: 2px 18px 0; }
+.tour-btn.hw-go { width: 100%; min-height: 54px; font-family: 'Bangers', var(--font-pixel); font-size: 26px; letter-spacing: .08em; background: #E8452C; color: #fff; border: 3px solid #1B2F2A; box-shadow: 4px 4px 0 #1B2F2A; animation: hw-pulse 1.2s ease-in-out infinite; }
+.tour-btn.hw-go:hover, .tour-btn.hw-go:focus-visible { background: #F2B632; color: #1B2F2A; border-color: #1B2F2A; box-shadow: 4px 4px 0 #1B2F2A; }
+@keyframes hw-pulse { 50% { transform: scale(1.04); } }
+@media (prefers-reduced-motion: reduce) { .tour-modal.hw, .hw-press, .tour-btn.hw-go { animation: none; } }
+
+/* tour step card + choice/finish cards share the welcome design, without the button pulse */
+.tour-card { padding: 0 0 12px; gap: 10px; border: 4px solid #1B2F2A; background: #FFF3D9; box-shadow: 5px 5px 0 #1B2F2A, 0 0 0 3px #F2B632; overflow: hidden; width: min(360px, calc(100vw - 2 * var(--gutter))); }
+.tour-card .hw-banner { padding: 8px 14px 10px; }
+.tour-card .tc-step { margin: 6px 0 0; font-family: 'Bangers', var(--font-pixel); font-size: 26px; letter-spacing: .05em; color: #FFF3D9; text-shadow: 2px 2px 0 #1B2F2A; text-transform: none; }
+.tour-card .tc-text { margin: 0 14px; color: #1B2F2A; font-size: 13px; text-align: center; }
+.tour-card .tc-row { margin: 0 14px; }
+.hw-btn { flex: 1; min-height: 46px; font-family: 'Bangers', var(--font-pixel); font-size: 20px; letter-spacing: .08em; border: 3px solid #1B2F2A; box-shadow: 3px 3px 0 #1B2F2A; background: #E8452C; color: #fff; animation: none; }
+.hw-btn.alt { background: #fff; color: #1B2F2A; }
+.hw-btn:hover, .hw-btn:focus-visible, .tour-btn.primary.hw-btn:hover, .tour-btn.primary.hw-btn:focus-visible { background: #F2B632; color: #1B2F2A; border-color: #1B2F2A; box-shadow: 3px 3px 0 #1B2F2A; }
+.tour-btn.hw-btn, .tour-btn.primary.hw-btn { min-height: 46px; padding: 6px 14px; font-size: 20px; background: #E8452C; color: #fff; border: 3px solid #1B2F2A; box-shadow: 3px 3px 0 #1B2F2A; animation: none; }
+.tour-btn.hw-btn.alt { background: #fff; color: #1B2F2A; }
+.tour-btn.hw-btn:hover, .tour-btn.hw-btn:focus-visible, .tour-btn.primary.hw-btn:hover, .tour-btn.primary.hw-btn:focus-visible { background: #F2B632; color: #1B2F2A; border-color: #1B2F2A; box-shadow: 3px 3px 0 #1B2F2A; }

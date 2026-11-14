@@ -45,6 +45,12 @@ const ROUTE = [
   { x: -28.5, z: 3 },
   { x: -31.75, z: 3 }
 ].reverse().slice(1).concat([{ x: PARK.x, z: PARK.z }]);
+// Shabeer rides an inner lane so he and Guru pass side by side instead of through each other.
+const LANE = 1.3;
+for (const p of ROUTE) {
+  if (p.x < -24 && p.x > -26) p.x += LANE; else if (p.x > 25) p.x -= LANE;
+  if (p.z < -28) p.z += LANE; else if (p.z > 26.5) p.z -= LANE;
+}
 const still = { x: 0, y: 0, z: 0, set(x, y, z) { this.x = x; this.y = y; this.z = z; } };
 
 export function createShabeerRoutine(ctx) {

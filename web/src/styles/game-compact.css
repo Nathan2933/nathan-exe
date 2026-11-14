@@ -161,6 +161,7 @@ body:has(#panel:not(.hidden), #bigmap:not(.hidden), #minigame:not(.hidden), .pho
     max-height: calc(100vh - 16px); max-height: calc(100dvh - max(8px, env(safe-area-inset-top)) - max(8px, env(safe-area-inset-bottom)) - 8px);
     border-radius: 0; border: var(--border); box-shadow: var(--shadow); padding-bottom: 0; z-index: 20; animation: winopen .16s steps(4);
   }
+  body.game .chars-panel { z-index: 31; } /* above the open journey sheet (30) */
   body.game .panel .window-bar { position: sticky; top: 0; z-index: 2; flex: none; padding: 4px 6px 4px 10px; }
   body.game .panel .window-bar .title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
   body.game .panel-body { min-height: 0; flex: 1 1 auto; padding: 10px 12px calc(14px + env(safe-area-inset-bottom)); font-size: 14.5px; line-height: 1.45; overflow-x: hidden; overflow-wrap: anywhere; }

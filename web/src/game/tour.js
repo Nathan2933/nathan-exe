@@ -35,28 +35,47 @@ export function createTour(ctx) {
   function renderCard() {
     const s = TOUR_STOPS[index];
     const last = index === lastIndex;
-    card.innerHTML = `<p class="tc-step">${s.label} · ${index + 1}/${TOUR_STOPS.length}</p>
+    card.innerHTML = `<div class="hw-banner"><span class="hw-press">STOP ${index + 1}/${TOUR_STOPS.length}</span><p class="tc-step">${s.label}</p></div>
       <p class="tc-text">${s.text}</p>
-      <div class="tc-row"><button type="button" class="tour-btn primary" data-act="${last ? 'finish' : 'next'}">${last ? 'Finish tour' : 'Next'}</button>
-      <button type="button" class="tour-btn" data-act="exit">Exit tour</button></div>`;
+      <div class="tc-row"><button type="button" class="tour-btn primary hw-btn" data-act="${last ? 'finish' : 'next'}">${last ? 'Finish tour' : 'Next ▶'}</button>
+      <button type="button" class="tour-btn hw-btn alt" data-act="exit">Exit tour</button></div>`;
   }
 
   function showModal(html) {
     modal.innerHTML = html;
+    modal.classList.add('hw');
     modal.classList.remove('hidden');
     modalOpen = true;
     card.classList.add('hidden');
     setTimeout(() => modal.querySelector('.primary')?.focus({ preventScroll: true }), 30);
   }
-  function hideModal() { modal.classList.add('hidden'); modal.innerHTML = ''; modalOpen = false; }
+  function hideModal() { modal.classList.remove('hw'); modal.classList.add('hidden'); modal.innerHTML = ''; modalOpen = false; }
 
+  const touch = matchMedia('(pointer: coarse)').matches;
+
+  /** Step 1: what this is and how to play. Step 2: the tour choice. */
   function offer() {
     if (offered) return;
     offered = true;
-    showModal(`<h2>Would you like a quick tour?</h2>
-      <p>Five short stops: Nathan's journey, skills and key projects.</p>
-      <div class="tm-row"><button type="button" class="tour-btn primary" data-act="take">Take the Tour</button>
-      <button type="button" class="tour-btn" data-act="free">Explore Freely</button></div>`);
+    const keys = (k) => k.map((x) => `<kbd>${x}</kbd>`).join('');
+    const row = (ic, keysHtml, label) => `<li><span class="hw-ic" aria-hidden="true">${ic}</span><span class="hw-keys">${keysHtml}</span><span class="hw-lbl">${label}</span></li>`;
+    showModal(`<div class="hw-banner"><span class="hw-press">PRESS START</span><h2>Welcome to <b>NATHAN</b><i>.EXE</i></h2></div>
+      <p class="hw-lead">This isn't a normal website. It's a <b>playable portfolio</b>: walk Nathan around the island and discover his story, skills and projects.</p>
+      <p class="hw-title">★ HOW TO PLAY ★</p>
+      <ul class="hw-list">
+        ${touch
+          ? row('👆', '<kbd>TAP</kbd>', 'the ground to <b>walk</b>') + row('◆', '<kbd>◆</kbd>', 'near a glow to <b>interact</b>') + row('☰', '<kbd>MENU</kbd>', 'Resume, Projects, Contact')
+          : row('🏃', keys(['W', 'A', 'S', 'D']), 'or click the ground to <b>walk</b>') + row('✨', keys(['E']), 'near a glow to <b>interact</b>') + row('⭐', keys(['Space']) + keys(['M']) + keys(['H']), 'jump · map · help')}
+      </ul>
+      <p class="hw-tip">In a hurry? The top menu jumps straight to Resume, Projects and Contact.</p>
+      <div class="tm-row"><button type="button" class="tour-btn primary hw-go" data-act="howto-next">Got it! ▶</button></div>`);
+  }
+
+  function offerTour() {
+    showModal(`<div class="hw-banner"><span class="hw-press">STEP 2 OF 2</span><h2>Quick <b>tour</b>?</h2></div>
+      <p class="hw-lead">Five short stops: Nathan's journey, skills and key projects. At each stop the game walks you there, then you press ${touch ? '◆' : 'E'} to open it.</p>
+      <div class="tm-row"><button type="button" class="tour-btn primary hw-btn" data-act="take">Take the Tour</button>
+      <button type="button" class="tour-btn hw-btn alt" data-act="free">Explore Freely</button></div>`);
   }
 
   async function visit(i) {
@@ -85,12 +104,13 @@ export function createTour(ctx) {
   function finish() {
     active = false;
     card.classList.add('hidden');
-    showModal(`<h2>Tour complete</h2>
-      <p>Now explore freely. Meet the characters, visit more places and try the activities.</p>
-      <div class="tm-row"><button type="button" class="tour-btn primary" data-act="done">Explore Freely</button></div>`);
+    showModal(`<div class="hw-banner"><span class="hw-press">LEVEL CLEAR</span><h2>Tour <b>complete!</b></h2></div>
+      <p class="hw-lead">Now explore freely. Meet the characters, visit more places and try the activities.</p>
+      <div class="tm-row"><button type="button" class="tour-btn primary hw-btn" data-act="done">Explore Freely</button></div>`);
   }
 
   function act(a) {
+    if (a === 'howto-next') return offerTour();
     if (a === 'take') return start();
     if (a === 'free' || a === 'done') return hideModal();
     if (a === 'next') return void visit(index + 1);
