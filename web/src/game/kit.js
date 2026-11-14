@@ -717,7 +717,7 @@ export const KIT = {
       if (frame === last) return;
       last = frame;
       const sceneIdx = Math.floor(t / 3.2) % scenes.length, s = scenes[sceneIdx], lt = t % 3.2;
-      sg.fillStyle = '#121019'; sg.fillRect(0, 0, 128, 96);
+      sg.fillStyle = '#1d2f5c'; sg.fillRect(0, 0, 128, 96); sg.fillStyle = '#2d4a8a'; sg.fillRect(0, 0, 128, 3); sg.fillRect(0, 93, 128, 3); sg.fillRect(0, 0, 3, 96); sg.fillRect(125, 0, 3, 96);
       sg.fillStyle = s.c; sg.textAlign = 'center';
       if (s.draw === 'snow' || s.draw === 'rain') {
         for (let i = 0; i < 24; i++) {
@@ -735,39 +735,39 @@ export const KIT = {
         sg.stroke();
       }
       if (s.draw === 'wave') {
-        sg.fillStyle = '#ffb347'; sg.beginPath(); sg.arc(104, 70, 9, 0, 7); sg.fill();
+        sg.fillStyle = '#ffb347'; sg.beginPath(); sg.arc(104, 66, 12, 0, 7); sg.fill();
         sg.fillStyle = s.c;
-        for (let r = 0; r < 3; r++) for (let x = 0; x < 128; x += 2) sg.fillRect(x, 74 + r * 6 + Math.sin(x * 0.12 + lt * 4 + r) * 2, 2, 2);
+        for (let r = 0; r < 3; r++) for (let x = 0; x < 128; x += 2) sg.fillRect(x, 74 + r * 6 + Math.sin(x * 0.12 + lt * 4 + r) * 2, 2, 4);
         sg.fillStyle = s.c;
       }
       if (s.draw === 'bars') {
         ['JS', '3D', 'API'].forEach((n, i) => {
           const w = Math.min(1, lt / 2.4) * [80, 64, 72][i];
-          sg.fillStyle = '#2b3a2a'; sg.fillRect(34, 60 + i * 9, 80, 5);
-          sg.fillStyle = s.c; sg.fillRect(34, 60 + i * 9, w, 5);
-          sg.font = '6px Silkscreen, monospace'; sg.textAlign = 'left'; sg.fillText(n, 12, 65 + i * 9);
+          sg.fillStyle = '#2b3a2a'; sg.fillRect(34, 58 + i * 11, 80, 8);
+          sg.fillStyle = s.c; sg.fillRect(34, 58 + i * 11, w, 8);
+          sg.font = '9px Silkscreen, monospace'; sg.textAlign = 'left'; sg.fillText(n, 8, 66 + i * 11);
         });
         sg.textAlign = 'center';
       }
       if (s.draw === 'runner') {
         const jy = Math.max(0, Math.sin(lt * 6)) * 14, ox = 128 - ((lt * 70) % 150);
-        sg.fillRect(0, 84, 128, 1);
-        sg.fillRect(20, 74 - jy, 8, 10);               // player
-        sg.fillStyle = '#ff6a3d'; sg.fillRect(ox, 76, 7, 8); // obstacle
+        sg.fillRect(0, 84, 128, 3);
+        sg.fillRect(20, 68 - jy, 12, 16);               // player
+        sg.fillStyle = '#ff6a3d'; sg.fillRect(ox, 72, 10, 12); // obstacle
         sg.fillStyle = s.c;
       }
       if (s.draw === 'stars') {
-        for (let i = 0; i < 16; i++) sg.fillRect((i * 29 + lt * 12 * (1 + (i % 3))) % 128, (i * 17) % 90, 1, 1);
+        for (let i = 0; i < 16; i++) sg.fillRect((i * 29 + lt * 12 * (1 + (i % 3))) % 128, (i * 17) % 90, 2, 2);
       }
       if (s.draw === 'code') {
         sg.font = '8px Silkscreen, monospace'; sg.textAlign = 'left';
         ['fn ship() {', '  build();', '  test();', '}'].forEach((l, i) => sg.fillText(l.slice(0, Math.floor(lt * 10) - i * 6), 14, 62 + i * 9));
         sg.textAlign = 'center';
       }
-      sg.font = '20px Silkscreen, monospace'; sg.fillText(s.t, 64, 34);
-      sg.font = '10px Silkscreen, monospace'; sg.fillText(s.s, 64, 50);
+      sg.font = '16px Silkscreen, monospace'; sg.fillStyle = '#fff'; sg.fillText(s.t, 64, 30); sg.fillStyle = s.c;
+      sg.font = '12px Silkscreen, monospace'; sg.fillText(s.s, 64, 48);
       if (Math.floor(t * 2) % 2 && sceneIdx === 0) sg.fillRect(40, 58, 48, 2);
-      sg.fillStyle = 'rgba(0,0,0,.28)';
+      sg.fillStyle = 'rgba(0,0,0,.12)';
       for (let y = 0; y < 96; y += 3) sg.fillRect(0, y, 128, 1);
       tex.needsUpdate = true;
     };
