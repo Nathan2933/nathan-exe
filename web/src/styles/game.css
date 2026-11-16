@@ -1254,7 +1254,7 @@ body.game {
 /* top bar: square corners so the hard shadow shows (the stepped clip would cut it off) */
 body.game .recruiter-bar .btn,
 body.game .menu-toggle {
-  clip-path: none;
+  clip-path: none !important; outline: 0; background-clip: padding-box;
   background: var(--ui-cream); color: var(--ui-forest);
   border: 2px solid var(--ui-forest); box-shadow: 3px 3px 0 var(--ui-forest);
   text-shadow: none;
@@ -1276,6 +1276,7 @@ body.game .recruiter-bar .btn.dark:focus-visible {
   background: var(--ui-yellow); color: var(--ui-forest);
   border: 2px solid var(--ui-forest); box-shadow: 3px 3px 0 var(--ui-forest);
 }
+body.game .recruiter-bar .btn.dark { clip-path: none !important; }
 body.game .recruiter-bar .btn.dark:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ui-forest); }
 body.game .recruiter-bar.open { background: var(--ui-cream); border-color: var(--ui-forest); }
 
@@ -1330,3 +1331,14 @@ body.game .music-vol input { accent-color: var(--ui-forest); }
 .tour-btn.primary.hw-btn:hover, .tour-btn.primary.hw-btn:focus-visible { background: #203E35; color: #FFF1D2; border-color: #203E35; box-shadow: 4px 4px 0 #ADC29B, inset 0 0 0 2px #ADC29B; }
 .hw-btn.alt, .tour-btn.hw-btn.alt { background: #ADC29B; color: #203E35; }
 .hw-btn.alt:hover, .tour-btn.hw-btn.alt:hover, .tour-btn.hw-btn.alt:focus-visible { background: #ADC29B; color: #203E35; box-shadow: 3px 3px 0 #203E35, inset 0 0 0 2px #203E35; }
+
+/* nav: no fill between buttons */
+body.game .hud-top .recruiter-bar { background: transparent; border: 0; box-shadow: none; padding: 0; gap: 10px; }
+@media (max-width: 760px), (max-height: 520px) and (orientation: landscape) {
+  body.game .hud-top .recruiter-bar { padding: 8px; border: 2px solid var(--ui-forest); background: var(--ui-cream); box-shadow: 3px 3px 0 var(--ui-forest); }
+  body.game .hud-top .recruiter-bar:not(.open) { display: none; }
+}
+
+/* save panel: only Bright, Pixel and Day/Night stay (motion, sound and music controls are hidden) */
+body.game .look #look-motion, body.game .look #look-sound, body.game .look #look-music, body.game .look .music-vol { display: none; }
+body.game .look #look-time { grid-column: 1 / -1; }
