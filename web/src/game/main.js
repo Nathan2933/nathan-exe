@@ -854,12 +854,16 @@ function chapterCardHtml(story, project, hasMedia = false, label = 'Project') {
 const TWO_COL = matchMedia('(min-width: 900px) and (min-height: 560px)');
 function autoPaginate() {
   const body = $('#panel-body'), card = body.querySelector('.ch-card');
-  if (!card || TWO_COL.matches) return;
-  const first = card.querySelector('.ch-page');
-  const room = first.clientHeight - (body.querySelector('.ch-pager') ? 0 : 64);   // leave room for the pager
+  if (!card) return;
+  if (card.classList.contains('single')) card.classList.add('solo');
+  const two = TWO_COL.matches && !card.classList.contains('solo');
+  const first = card.querySelector(two ? '.ch-page:not(.ch-story)' : '.ch-page');
+  first.style.display = 'flex';
+  const room = first.clientHeight - 64;   // leave room for the pager
+  first.style.display = '';
   if (room < 140) return;
   let split = false;
-  for (const page of [...card.querySelectorAll('.ch-page')]) {
+  for (const page of [...card.querySelectorAll(two ? '.ch-page:not(.ch-story)' : '.ch-page')]) {
     page.style.display = 'block';
     const over = page.scrollHeight > room + 4, kids = [...page.children];
     if (!over || kids.length < 2) { page.style.display = ''; continue; }
@@ -867,7 +871,10 @@ function autoPaginate() {
     for (const k of kids) {
       const cs = getComputedStyle(k);
       const kh = k.offsetHeight + parseFloat(cs.marginTop) + parseFloat(cs.marginBottom);
-      if (h + kh > room - 32 && groups.at(-1).length) { groups.push([]); h = 0; }
+      if (h + kh > room - 32 && groups.at(-1).some((e) => !e.classList.contains('eyebrow'))) {
+        const prev = groups.at(-1), carry = prev.length > 1 && prev.at(-1).classList.contains('eyebrow') ? [prev.pop()] : [];
+        groups.push(carry); h = carry.reduce((t, e) => t + e.offsetHeight + 10, 0);   // keep a heading with what it labels
+      }
       groups.at(-1).push(k); h += kh;
     }
     page.style.display = '';
@@ -885,12 +892,13 @@ function autoPaginate() {
     });
   }
   if (!split) return;
-  card.classList.remove('single');
+  card.classList.remove('single'); card.classList.add('paged');
   if (!body.querySelector('.ch-pager')) card.insertAdjacentHTML('afterend', `<nav class="ch-pager" aria-label="Card pages"><button type="button" class="btn" data-pg="-1">← Previous</button><span class="ch-ind" aria-live="polite"></span><button type="button" class="btn primary" data-pg="1">Next →</button></nav>`);
   wireChapterPager();
 }
 function wireChapterPager() {
-  const body = $('#panel-body'), pages = [...body.querySelectorAll('.ch-page')], nav = body.querySelector('.ch-pager');
+  const body = $('#panel-body'), nav = body.querySelector('.ch-pager');
+  const pages = [...body.querySelectorAll(TWO_COL.matches && !body.querySelector('.ch-card.solo') ? '.ch-page:not(.ch-story)' : '.ch-page')];
   if (!nav) return;
   const names = pages.map((p) => p.getAttribute('aria-label') || 'Page');
   let i = 0;
@@ -1353,8 +1361,12 @@ function educationExtras(e, ch = null) {
   if (mems.length) h += `<p class="eyebrow" style="margin-top:12px">MEMORIES</p><ul class="highlights">${mems.map((m) => s.memories.includes(m.id) ? `<li><b>${esc(m.title)}</b><br>${esc(m.text)}</li>` : `<li class="muted">✦ ${esc(m.title)} · find it on campus</li>`).join('')}</ul>`;
   if (e.activities) {
     const acts = (c.experience || []).filter((x) => /tce/i.test(x.org));
-    if (acts.length) h += `<p class="eyebrow" style="margin-top:12px">COLLEGE ACTIVITIES</p><ul class="highlights">${acts.map((x) => `<li class="has-logo">${orgLogo(x)}<b>${esc(x.role)}</b> · ${esc(x.org)}<br>${esc(x.summary || '')}</li>`).join('')}</ul>`;
-    if ((c.achievements || []).length) h += `<p class="eyebrow" style="margin-top:12px">ACHIEVEMENTS</p><ul class="highlights">${c.achievements.map((a) => `<li><b>${esc(a.title)}</b>${a.detail ? ` · <span class="muted">${esc(a.detail)}</span>` : ''}</li>`).join('')}</ul>`;
+    if (acts.length) h += `<p class="eyebrow">COLLEGE ACTIVITIES</p><ul class="role-list">${acts.map((x) => `<li>${orgLogo(x)}<div><b>${esc(x.role)}</b><span>${esc(x.org)}</span>${x.summary ? `<details><summary>What I did</summary><p>${esc(x.summary)}</p></details>` : ''}</div></li>`).join('')}</ul>`;
+    if ((c.achievements || []).length) h += `<p class="eyebrow">ACHIEVEMENTS · ${c.achievements.length}</p><ul class="trophy-grid">${c.achievements.map((a) => {
+      const [name, result = ''] = String(a.title).split(/:\s*(?=[^:]*$)/);
+      const win = /winner|first/i.test(result || a.title);
+      return `<li class="${win ? 'win' : 'place'}"${a.detail ? ` title="${esc(a.detail)}"` : ''}><span class="tr-ico" aria-hidden="true">${win ? '🏆' : '🥈'}</span><b>${esc(name)}</b>${result ? `<em>${esc(result)}</em>` : ''}${a.detail ? `<small>${esc(a.detail)}</small>` : ''}</li>`;
+    }).join('')}</ul>`;
   }
   const schoolProjects = (c.projects || []).filter((p) => p.school && e.id === 'montfort');
   if (schoolProjects.length) h += `<p class="eyebrow" style="margin-top:12px">SCHOOL PROJECT</p><div class="panel-projects">${schoolProjects.map(projectCard).join('')}</div>`;
