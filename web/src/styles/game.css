@@ -1425,7 +1425,78 @@ body.game aside.journey.open-m .look #look-time { grid-column: 1 / -1; }
   body.game .tour-card .hw-banner { padding: 4px 8px 5px; }
   body.game .tour-card .tc-step { font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   body.game .tour-card .tc-text { display: none; }
-  body.game .tour-card .tc-row { margin: 0 8px; gap: 6px; }
+  body.game .tour-card .tc-row { margin: 0 8px; gap: 6px; flex-direction: row; flex-wrap: nowrap; align-items: stretch; }
+  body.game .tour-card .tc-row .tour-btn { flex: 1 1 0; width: auto; }
   body.game .tour-card .tour-btn.hw-btn { min-height: 32px; font-size: 15px; box-shadow: 2px 2px 0 #ADC29B; }
   body.game:has(#tour-card:not(.hidden)) .prompt { bottom: calc(var(--ctl-b, 16px) + var(--stick, 120px) + 108px) !important; }
+}
+
+/* save file: every line in solid dark green so it reads clearly */
+body.game .journey .player-card small { color: var(--ui-forest); opacity: 1; }
+body.game .journey li button, body.game .journey li.done button { color: #1B3A30; opacity: 1; font-weight: 600; }
+body.game .journey li.done button::before { background: var(--ui-forest); }
+
+/* phone: compact welcome card */
+@media (max-width: 760px), (max-height: 520px) and (orientation: landscape) {
+  .tour-modal.hw { width: min(340px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow-y: auto; padding: 0 0 12px; gap: 8px; border-width: 3px; }
+  .tour-modal.hw .hw-banner { padding: 8px 12px 10px; }
+  .tour-modal.hw .hw-press { font-size: 8px; padding: 2px 8px; }
+  .tour-modal.hw h2 { font-size: 24px; margin: 4px 0 0; }
+  .tour-modal.hw .hw-lead { font-size: 12px; line-height: 1.4; margin: 0 12px; }
+  .tour-modal.hw .hw-title { font-size: 11px; margin: 0; }
+  .tour-modal.hw .hw-list { gap: 6px; margin: 0 12px; }
+  .tour-modal.hw .hw-list li { padding: 5px 8px; gap: 8px; font-size: 12px; grid-template-columns: 20px auto 1fr; box-shadow: 2px 2px 0 #203E35; }
+  .tour-modal.hw .hw-ic { font-size: 16px; }
+  .tour-modal.hw .hw-list kbd { font-size: 10px; padding: 2px 5px; border-bottom-width: 3px; min-width: 22px; }
+  .tour-modal.hw .hw-tip { font-size: 11px; margin: 0 12px; }
+  .tour-modal.hw .tm-row { margin: 0 12px; }
+  .tour-modal.hw .tour-btn.hw-go { min-height: 42px; font-size: 20px; }
+  .tour-modal.hw .tour-btn.hw-btn { min-height: 40px; font-size: 17px; }
+}
+
+/* "Tour complete!" card: forest / cream / antique gold */
+.tour-modal.hw:has([data-act="done"]) { background: #FFF3D6; border-color: #193D33; box-shadow: 6px 6px 0 #193D33, inset 0 0 0 2px #91A58B; }
+.tour-modal.hw:has([data-act="done"]) .hw-banner { background: repeating-linear-gradient(135deg, #193D33 0 14px, #21473B 14px 28px); border-bottom: 3px solid #D8B45B; }
+.tour-modal.hw:has([data-act="done"]) .hw-press { background: #D8B45B; color: #193D33; border-color: #193D33; }
+.tour-modal.hw:has([data-act="done"]) h2, .tour-modal.hw:has([data-act="done"]) h2 b { color: #FFF3D6; }
+.tour-modal.hw:has([data-act="done"]) .hw-lead { color: #24473C !important; }
+.tour-modal.hw:has([data-act="done"]) .tour-btn.primary.hw-btn,
+.tour-modal.hw:has([data-act="done"]) .tour-btn.primary.hw-btn:hover,
+.tour-modal.hw:has([data-act="done"]) .tour-btn.primary.hw-btn:focus-visible { background: #244B3E; color: #FFF3D6; border-color: #193D33; box-shadow: 4px 4px 0 #91A58B, inset 0 0 0 2px #91A58B; }
+
+/* every welcome / tour card shares the "Tour complete!" palette */
+.tour-modal.hw, .tour-card { background: #FFF3D6; border-color: #193D33; box-shadow: 6px 6px 0 #193D33, inset 0 0 0 2px #91A58B; }
+.hw-banner, .tour-card .hw-banner { background: repeating-linear-gradient(135deg, #193D33 0 14px, #21473B 14px 28px); border-bottom: 3px solid #D8B45B; }
+.hw-press { background: #D8B45B; color: #193D33; border-color: #193D33; }
+.tour-modal.hw h2, .tour-modal.hw h2 b, .tour-card .tc-step { color: #FFF3D6; }
+.tour-modal.hw h2 i { color: #D8B45B; }
+.hw-lead, .tour-card .tc-text, .tour-modal.hw p { color: #24473C !important; }
+.tour-btn.hw-go, .tour-btn.hw-btn, .tour-btn.primary.hw-btn,
+.tour-btn.hw-go:hover, .tour-btn.hw-go:focus-visible, .tour-btn.hw-btn:hover, .tour-btn.hw-btn:focus-visible,
+.tour-btn.primary.hw-btn:hover, .tour-btn.primary.hw-btn:focus-visible { background: #244B3E; color: #FFF3D6; border-color: #193D33; box-shadow: 4px 4px 0 #91A58B, inset 0 0 0 2px #91A58B; }
+.tour-btn.hw-btn.alt, .tour-btn.hw-btn.alt:hover, .tour-btn.hw-btn.alt:focus-visible { background: #FFF3D6; color: #193D33; border-color: #193D33; box-shadow: 4px 4px 0 #91A58B; }
+
+/* save-file dropdown button: same cream as the panel */
+body.game .journey-toggle, body.game aside.journey.open-m .journey-toggle { background: #FFF3D6; border: 2px solid #193D33; color: #193D33; box-shadow: 2px 2px 0 #91A58B; }
+
+/* interact prompt in the card palette */
+body.game .prompt { background: #193D33; color: #FFF3D6; border-color: #FFF3D6; box-shadow: 4px 4px 0 #91A58B; }
+body.game .prompt small { color: #D8B45B; }
+body.game .prompt strong { color: #FFF3D6; }
+body.game .prompt kbd { background: #FFF3D6; color: #193D33; border-color: #D8B45B; }
+body.game .prompt::after { border-top-color: #193D33; }
+
+/* phone controls in the card palette */
+body.game .tc-stick { background: rgba(25, 61, 51, .55); border-color: #FFF3D6; }
+body.game .tc-stick.on { background: rgba(25, 61, 51, .78); }
+body.game .tc-stick .tc-knob { background: #244B3E; border-color: #FFF3D6; box-shadow: 0 3px 0 #91A58B; }
+body.game .tc-btn { border-color: #193D33; box-shadow: 0 4px 0 #193D33; }
+body.game #tc-jump { background: #FFF3D6; color: #193D33; }
+body.game .tc-btn.tc-act { background: #244B3E; color: #FFF3D6; border-color: #FFF3D6; }
+
+/* ? and map buttons in the card palette */
+body.game .help-btn, body.game .map-btn { background: #193D33; color: #FFF3D6; border-color: #FFF3D6; }
+/* phone: ? sits centred directly under the minimap */
+@media (max-width: 760px), (max-height: 520px) and (orientation: landscape), (pointer: coarse) and (max-width: 1100px) {
+  body.game .help-btn { top: calc(var(--hudY) + var(--mm) + 8px); right: calc(var(--edgeR) + (var(--mm) - 44px) / 2); }
 }

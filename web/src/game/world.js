@@ -169,6 +169,9 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
   }
 
   // ---------- kit pieces ----------
+  // ground footprints of the named buildings, for the full map's in-building labels
+  const FOOTPRINT_TYPES = new Set(['gym_building', 'guild_hall', 'faculty_building', 'college_building', 'school_building', 'airport_terminal', 'pop_arcade']);
+  const footprints = [];
   const seats = []; // benches become seats once the E-spot helpers exist
   const _bb = new THREE.Box3(), _sz = new THREE.Vector3(), _gs = new THREE.Vector3();
   const place = (type, x, z, props) => {
@@ -186,6 +189,7 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
     piece.obj.position.set(x, tile ? Math.max(0, groundHeight(tile.type)) : 0, z);
     piece.obj.rotation.y = (-rot * Math.PI) / 180;
     root.add(piece.obj);
+    if (FOOTPRINT_TYPES.has(type)) { const fb = new THREE.Box3().setFromObject(piece.obj); footprints.push({ type, x, z, minX: fb.min.x, maxX: fb.max.x, minZ: fb.min.z, maxZ: fb.max.z }); }
     if (XRAY_OCCLUDER_TYPES.has(type)) { piece.obj.userData.xrayOccluder = true; piece.obj.userData.xrayType = type;piece.obj.userData.xrayApi = piece.api || null; }
     if (piece.dynamic) piece.obj.userData.dynamic = true;
     if (piece.animate) animated.push(piece.animate);
@@ -626,7 +630,7 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
     colliderGrid.clear();
   };
 
-  return { root, colliders, interactables, animated, labels, npcs, walkers, map, floors, railway, stations, weather, apis, nightGlow, vehicles, queryColliders, floorAt, dispose };
+  return { root, colliders, interactables, animated, labels, footprints, npcs, walkers, map, floors, railway, stations, weather, apis, nightGlow, vehicles, queryColliders, floorAt, dispose };
 }
 
 let _radial = null, _pillar = null;

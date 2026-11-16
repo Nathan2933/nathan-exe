@@ -1,0 +1,172 @@
+/* =====================================================================
+   Chapter cards (forest / cream / sage / muted gold) + NATHAN.EXE crest.
+   Phones and short screens: one page at a time (Story / Project) with a
+   Previous/Next pager. Roomy screens: both pages side by side.
+   Every page can still scroll as a fallback for enlarged text.
+   ===================================================================== */
+body.game {
+  --ch-bar: #142F28;
+  --ch-bg: #193D33;
+  --ch-inner: #244B3E;
+  --ch-head: #FFF3D6;
+  --ch-text: #E8E3CE;
+  --ch-muted: #B9C9B7;
+  --ch-gold: #D8B45B;
+  --ch-line: #789580;
+}
+
+/* ---------- crest ---------- */
+.crest { display: block; flex: none; image-rendering: pixelated; }
+.crest-chip { display: inline-flex; align-items: center; gap: 6px; vertical-align: middle; }
+.crest-chip #journey-crest { display: inline-flex; }
+body.game .journey li button::before { display: none !important; }
+body.game .journey li button { display: flex; align-items: center; gap: 8px; }
+body.game .journey li button .crest { width: 16px; height: 16px; }
+.finale-stats .crest-chip .crest { width: 18px; height: 18px; }
+
+/* ---------- card shell ---------- */
+body.game .panel.chapter-card {
+  background: var(--ch-bg); color: var(--ch-text);
+  border-color: var(--ch-line); outline-color: var(--ch-line);
+  max-width: calc(100vw - env(safe-area-inset-left) - env(safe-area-inset-right));
+}
+body.game .panel.chapter-card .window-bar {
+  flex: none; background: var(--ch-bar); color: var(--ch-muted);
+  border-bottom: 2px solid var(--ch-line); position: relative; z-index: 2;
+}
+body.game .panel.chapter-card .panel-close { color: var(--ch-head); }
+body.game .panel.chapter-card .panel-close:hover,
+body.game .panel.chapter-card .panel-close:focus-visible { color: var(--ch-gold); }
+
+body.game .panel.chapter-card .panel-body {
+  display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0;
+  overflow: hidden; padding: 0; color: var(--ch-text);
+  font-size: 16px; line-height: 1.55;
+}
+body.game .panel.chapter-card .ch-card { flex: 1 1 auto; min-height: 0; display: flex; }
+body.game .panel.chapter-card .ch-page {
+  display: none; flex: 1 1 auto; min-height: 0; min-width: 0;
+  overflow-y: auto; overscroll-behavior: contain;
+  padding: 16px max(16px, env(safe-area-inset-left)) 18px max(16px, env(safe-area-inset-right));
+  scrollbar-color: var(--ch-line) var(--ch-bg); scrollbar-width: thin;
+}
+body.game .panel.chapter-card .ch-page.is-active { display: block; }
+body.game .panel.chapter-card .ch-page:focus { outline: none; }
+body.game .panel.chapter-card .ch-project { background: var(--ch-inner); }
+
+/* type */
+body.game .panel.chapter-card .panel-body p,
+body.game .panel.chapter-card .panel-body li { font-size: 16px; line-height: 1.55; color: var(--ch-text); }
+body.game .panel.chapter-card .panel-body p { margin: 0 0 12px; }
+body.game .panel.chapter-card .panel-body h2 { color: var(--ch-head); font-size: 22px; line-height: 1.2; margin: 0 0 4px; }
+body.game .panel.chapter-card .panel-body h3 { color: var(--ch-head); }
+body.game .panel.chapter-card .panel-body .eyebrow { color: var(--ch-gold); font-size: 11px; line-height: 1.4; letter-spacing: .08em; margin: 0 0 6px; }
+body.game .panel.chapter-card .panel-body .subtitle { color: var(--ch-muted) !important; font-size: 15px; font-weight: 600; margin: 0 0 8px; }
+body.game .panel.chapter-card .panel-body .muted { color: var(--ch-muted); }
+body.game .panel.chapter-card .panel-body b, body.game .panel.chapter-card .panel-body strong { color: var(--ch-head); }
+body.game .panel.chapter-card .chapter-head { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 10px; }
+body.game .panel.chapter-card .mini-portrait { width: 48px; height: 48px; border-color: var(--ch-line); background: var(--ch-head); }
+body.game .panel.chapter-card .highlights { gap: 8px; margin: 12px 0; }
+body.game .panel.chapter-card .highlights li { padding-left: 18px; }
+body.game .panel.chapter-card .highlights li::before { color: var(--ch-gold); }
+body.game .panel.chapter-card .mem-hint {
+  font-size: 14px; color: var(--ch-muted); background: var(--ch-inner);
+  border: 1px solid var(--ch-line); padding: 8px 10px; margin: 12px 0 0;
+}
+body.game .panel.chapter-card .edu-extra { border: 0; padding: 0; margin: 0; background: none; }
+body.game .panel.chapter-card .ch-project > :first-child { margin-top: 0; }
+
+/* images: proportional, leave room for the text */
+body.game .panel.chapter-card .proj-media { margin: 0 0 12px; }
+body.game .panel.chapter-card .photo-viewer { margin-top: 0; }
+body.game .panel.chapter-card .pv-stage img,
+body.game .panel.chapter-card .pv-stage video { max-height: min(34dvh, 280px); width: auto; max-width: 100%; border-color: var(--ch-line); }
+body.game .panel.chapter-card .pv-cap { color: var(--ch-muted); font-size: 13px; }
+body.game .panel.chapter-card .pv-nav:hover, body.game .panel.chapter-card .pv-nav:focus-visible { background: var(--ch-gold); border-color: var(--ch-gold); color: var(--ch-bar); }
+body.game .panel.chapter-card .panel-projects { margin: 12px 0; }
+
+/* ---------- pager ---------- */
+body.game .panel.chapter-card .ch-pager {
+  flex: none; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 8px max(12px, env(safe-area-inset-left)) calc(8px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-right));
+  background: var(--ch-bar); border-top: 2px solid var(--ch-line);
+}
+body.game .panel.chapter-card .ch-pager .btn { min-height: 44px; padding: 0 14px; font-size: 12px; background: var(--ch-inner); color: var(--ch-head); border: 2px solid var(--ch-line); box-shadow: none; }
+body.game .panel.chapter-card .ch-pager .btn.primary { background: var(--ch-gold); color: var(--ch-bar); border-color: var(--ch-gold); }
+body.game .panel.chapter-card .ch-pager .btn:disabled { opacity: .4; cursor: default; }
+body.game .panel.chapter-card .ch-ind { font-size: 13px; color: var(--ch-muted); white-space: nowrap; text-align: center; }
+body.game .panel.chapter-card .ch-ind b { color: var(--ch-head); }
+
+/* landscape phones: tighter header, smaller media */
+@media (max-height: 500px) {
+  body.game .panel.chapter-card .ch-page { padding-top: 10px; padding-bottom: 10px; }
+  body.game .panel.chapter-card .mini-portrait { width: 36px; height: 36px; }
+  body.game .panel.chapter-card .panel-body h2 { font-size: 19px; }
+  body.game .panel.chapter-card .pv-stage img,
+  body.game .panel.chapter-card .pv-stage video { max-height: 46dvh; }
+  body.game .panel.chapter-card .ch-pager { padding-top: 4px; padding-bottom: calc(4px + env(safe-area-inset-bottom)); }
+  body.game .panel.chapter-card .ch-pager .btn { min-height: 40px; }
+}
+
+/* ---------- desktop: two columns, no pager ---------- */
+@media (min-width: 900px) and (min-height: 560px) {
+  body.game .panel.chapter-card {
+    top: 72px; bottom: auto; left: 50%; right: auto; translate: -50% 0;
+    width: min(980px, calc(100vw - 48px)); height: auto;
+    max-height: calc(100dvh - 96px);
+    border-radius: 0;
+  }
+  body.game .panel.chapter-card:has(.ch-card.single) { width: min(620px, calc(100vw - 48px)); }
+  body.game .panel.chapter-card .ch-card { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  body.game .panel.chapter-card .ch-card.single { grid-template-columns: minmax(0, 1fr); }
+  body.game .panel.chapter-card .ch-page { display: block; padding: 22px 26px; }
+  body.game .panel.chapter-card .ch-project { border-left: 2px solid var(--ch-line); }
+  body.game .panel.chapter-card .ch-pager { display: none; }
+  body.game .panel.chapter-card .panel-body h2 { font-size: 26px; }
+  body.game .panel.chapter-card .mini-portrait { width: 56px; height: 56px; }
+  body.game .panel.chapter-card .pv-stage img,
+  body.game .panel.chapter-card .pv-stage video { max-height: min(42dvh, 360px); }
+}
+
+/* in-card buttons and links share the palette */
+body.game .panel.chapter-card .ch-page .btn { background: var(--ch-inner); color: var(--ch-head); border: 2px solid var(--ch-line); box-shadow: none; text-shadow: none; }
+body.game .panel.chapter-card .ch-page .btn.primary { background: var(--ch-gold); color: var(--ch-bar); border-color: var(--ch-gold); }
+body.game .panel.chapter-card .ch-page .btn:hover, body.game .panel.chapter-card .ch-page .btn:focus-visible { border-color: var(--ch-gold); }
+body.game .panel.chapter-card .ch-page a:not(.btn) { color: var(--ch-head); text-decoration-color: var(--ch-gold); }
+
+/* project cards, chips and inner boxes inside any card */
+body.game .panel.chapter-card .project-card,
+body.game .panel.chapter-card :is(.tb-exp li, .edu-list li, .passport, .stamp, .gym-menu > *, .album button) {
+  background: var(--ch-inner); color: var(--ch-text); border: 2px solid var(--ch-line); box-shadow: none;
+}
+body.game .panel.chapter-card .ch-project .project-card { background: var(--ch-bg); }
+body.game .panel.chapter-card .project-card img { max-height: min(24dvh, 190px); width: 100%; object-fit: cover; border: 1px solid var(--ch-line); }
+body.game .panel.chapter-card .project-card h3 { color: var(--ch-head); }
+body.game .panel.chapter-card .project-year { color: var(--ch-muted); }
+body.game .panel.chapter-card .project-pitch, body.game .panel.chapter-card .project-desc { font-size: 16px; color: var(--ch-text); }
+body.game .panel.chapter-card .chips li, body.game .panel.chapter-card [class*="chip"] { background: transparent; color: var(--ch-head); border: 1px solid var(--ch-line); box-shadow: none; }
+body.game .panel.chapter-card .project-links a, body.game .panel.chapter-card .link-list a { color: var(--ch-head); border-bottom-color: var(--ch-gold); }
+body.game .panel.chapter-card .project-card:has(.project-desc) .project-pitch { display: none; } /* the longer description already covers the pitch */
+
+/* content sits vertically centred in each page; tall pages start at the top and scroll */
+body.game .panel.chapter-card .ch-page.is-active,
+body.game .panel.chapter-card .ch-card:not(.single) .ch-page.is-active { display: flex; flex-direction: column; justify-content: safe center; }
+body.game .panel.chapter-card .ch-page > * { flex: none; }
+@media (min-width: 900px) and (min-height: 560px) {
+  body.game .panel.chapter-card .ch-page { display: flex; flex-direction: column; justify-content: safe center; }
+}
+
+/* highlight the important bits */
+body.game .panel.chapter-card .highlights {
+  background: var(--ch-inner); border-left: 3px solid var(--ch-gold); padding: 10px 12px;
+}
+body.game .panel.chapter-card .ch-project .highlights { background: var(--ch-bg); }
+body.game .panel.chapter-card .highlights li { color: var(--ch-head); font-weight: 600; }
+body.game .panel.chapter-card .highlights li .muted { font-weight: 400; }
+body.game .panel.chapter-card .chapter-head + p { color: var(--ch-head); }
+body.game .panel.chapter-card .chapter-head h2 { text-shadow: 2px 2px 0 var(--ch-bar); }
+body.game .panel.chapter-card .chapter-head .eyebrow { display: inline-block; background: var(--ch-gold); color: var(--ch-bar); padding: 2px 6px; }
+body.game .panel.chapter-card .project-card h3 { border-bottom: 2px solid var(--ch-gold); padding-bottom: 4px; }
+body.game .panel.chapter-card .mem-hint b { color: var(--ch-gold); }
+body.game .panel.chapter-card .sk-row { margin: 0 0 10px; } body.game .panel.chapter-card .sk-row .chips { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; padding: 0; margin: 0; } body.game .panel.chapter-card .sk-row .chips li { font-size: 14px; padding: 3px 8px; }
+body.game .panel.chapter-card .eyebrow:empty { display: none; }

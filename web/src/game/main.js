@@ -1,5 +1,6 @@
 import { initTouchControls, touchInput } from './touch.js';
 import { fetchRetry } from './net.js';
+import { crestSVG } from './crest.js';
 import * as THREE from 'three';
 import { RetroRenderer } from './retro.js';
 import { applyPalette, SKY } from './palette.js';
@@ -536,7 +537,7 @@ function setupUI() {
   $('#map-btn').addEventListener('click', (e) => { e.stopPropagation(); toggleBigMap(true); });
   $('#bigmap-close').addEventListener('click', () => toggleBigMap(false));
   $('#bigmap').addEventListener('click', (e) => { if (e.target.id === 'bigmap') toggleBigMap(false); });
-  $('#bigmap-canvas').addEventListener('click', onBigMapClick);
+  initBigMapInput();
 
   $('#prompt').addEventListener('click', () => state.nearby && interact(state.nearby));
   $('#panel-close').addEventListener('click', closePanel);
@@ -782,7 +783,7 @@ function renderJourney() {
   list.innerHTML = DISTRICTS.map((d) => {
     const ch = chapterFor(state.content, d.id);
     const done = s.chapters.includes(d.id);
-    return `<li class="${done ? 'done' : ''}${d.optional ? ' optional' : ''}${d.id === nextId ? ' next' : ''}"><button type="button" data-goto="${d.id}">${esc(ch?.title || d.name)}</button></li>`;
+    return `<li class="${done ? 'done' : ''}${d.optional ? ' optional' : ''}${d.id === nextId ? ' next' : ''}"><button type="button" data-goto="${d.id}">${crestSVG(done, 16)}<span>${esc(ch?.title || d.name)}</span><span class="sr-only">${done ? ' (chapter complete)' : ' (not yet opened)'}</span></button></li>`;
   }).join('');
   list.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
     const it = world.interactables.find((i) => i.kind === 'chapter' && i.district === b.dataset.goto)
@@ -792,6 +793,12 @@ function renderJourney() {
   const main = MAIN_DISTRICTS.filter((d) => s.chapters.includes(d.id)).length;
   const totalMem = (state.content.memories || []).length;
   $('#journey-count').textContent = `${main}/${MAIN_DISTRICTS.length}`;
+  const allDone = main === MAIN_DISTRICTS.length;
+  const crest = $('#journey-crest');
+  if (crest) {
+    crest.innerHTML = crestSVG(allDone, 20);
+    crest.parentElement.setAttribute('aria-label', `Chapter progress: ${main} of ${MAIN_DISTRICTS.length} complete${allDone ? ', all chapters done' : ''}`);
+  }
   const memCount = $('#mem-count');
   if (memCount) memCount.textContent = `${s.memories.length}/${totalMem}`;
 }
@@ -834,6 +841,72 @@ function chapterHeader(ch) {
     ${ch.subtitle ? `<p class="subtitle">${esc(ch.subtitle)}</p>` : ''}</div></div>`;
 }
 
+// Chapter card: a Story page and a Project page. Two columns on roomy screens,
+// Previous/Next pages on phones (CSS decides; the pager hides in two-column mode).
+function chapterCardHtml(story, project, hasMedia = false, label = 'Project') {
+  if (!hasMedia && !String(project).replace(/<[^>]*>|\s/g, '')) {
+    return `<div class="ch-card single"><section class="ch-page ch-story is-active">${story}</section></div>`;
+  }
+  return `<div class="ch-card"><section class="ch-page ch-story is-active" aria-label="Story">${story}</section><section class="ch-page ch-project" aria-label="${esc(label)}">${project}</section></div>
+    <nav class="ch-pager" aria-label="Chapter pages"><button type="button" class="btn" data-pg="-1">← Previous</button><span class="ch-ind" aria-live="polite"></span><button type="button" class="btn primary" data-pg="1">Next →</button></nav>`;
+}
+// Phones / short screens: split a long single-page card into pages that each fit.
+const TWO_COL = matchMedia('(min-width: 900px) and (min-height: 560px)');
+function autoPaginate() {
+  const body = $('#panel-body'), card = body.querySelector('.ch-card');
+  if (!card || TWO_COL.matches) return;
+  const first = card.querySelector('.ch-page');
+  const room = first.clientHeight - (body.querySelector('.ch-pager') ? 0 : 64);   // leave room for the pager
+  if (room < 140) return;
+  let split = false;
+  for (const page of [...card.querySelectorAll('.ch-page')]) {
+    page.style.display = 'block';
+    const over = page.scrollHeight > room + 4, kids = [...page.children];
+    if (!over || kids.length < 2) { page.style.display = ''; continue; }
+    const groups = [[]]; let h = 0;
+    for (const k of kids) {
+      const cs = getComputedStyle(k);
+      const kh = k.offsetHeight + parseFloat(cs.marginTop) + parseFloat(cs.marginBottom);
+      if (h + kh > room - 32 && groups.at(-1).length) { groups.push([]); h = 0; }
+      groups.at(-1).push(k); h += kh;
+    }
+    page.style.display = '';
+    if (groups.length < 2) continue;
+    split = true;
+    const label = (page.getAttribute('aria-label') || 'Intro').replace(/ \d+$/, '');
+    if (!page.hasAttribute('aria-label')) page.setAttribute('aria-label', label);
+    let after = page;
+    groups.slice(1).forEach((g, i) => {
+      const s = document.createElement('section');
+      s.className = page.className.replace('is-active', '').trim();
+      s.setAttribute('aria-label', `${label} ${i + 2}`);
+      g.forEach((k) => s.append(k));
+      after.after(s); after = s;
+    });
+  }
+  if (!split) return;
+  card.classList.remove('single');
+  if (!body.querySelector('.ch-pager')) card.insertAdjacentHTML('afterend', `<nav class="ch-pager" aria-label="Card pages"><button type="button" class="btn" data-pg="-1">← Previous</button><span class="ch-ind" aria-live="polite"></span><button type="button" class="btn primary" data-pg="1">Next →</button></nav>`);
+  wireChapterPager();
+}
+function wireChapterPager() {
+  const body = $('#panel-body'), pages = [...body.querySelectorAll('.ch-page')], nav = body.querySelector('.ch-pager');
+  if (!nav) return;
+  const names = pages.map((p) => p.getAttribute('aria-label') || 'Page');
+  let i = 0;
+  const show = (n) => {
+    i = Math.max(0, Math.min(pages.length - 1, n));
+    pages.forEach((p, k) => p.classList.toggle('is-active', k === i));
+    nav.querySelector('[data-pg="-1"]').disabled = i === 0;
+    nav.querySelector('[data-pg="1"]').disabled = i === pages.length - 1;
+    nav.querySelector('.ch-ind').innerHTML = `<b>${esc(names[i])}</b> · ${i + 1}/${pages.length}`;
+    pages[i].scrollTop = 0; body.scrollTop = 0;
+  };
+  pages.forEach((p) => p.setAttribute('tabindex', '-1'));
+  nav.querySelectorAll('[data-pg]').forEach((b) => { b.onclick = () => { show(i + +b.dataset.pg); pages[i].focus({ preventScroll: true }); }; });
+  show(0);
+}
+
 function openInteractable(it) {
   const c = state.content;
   let bar = '', html = '';
@@ -856,17 +929,18 @@ function openInteractable(it) {
     bar = `${it.district}/chapter.txt`;
     const mems = (c.memories || []).filter((m) => m.district === it.district);
     const found = mems.filter((m) => state.save.memories.includes(m.id)).length;
-    html = `${chapterHeader(ch)}
+    const story = `${chapterHeader(ch)}
       ${(ch.body || []).map((p) => `<p>${esc(p)}</p>`).join('')}
       ${ch.highlights?.length ? `<ul class="highlights">${ch.highlights.map((h) => `<li>${esc(h)}</li>`).join('')}</ul>` : ''}
       ${mems.length ? `<p class="mem-hint">Memories here: <b>${found}/${mems.length}</b>${found < mems.length ? ' · look for the glowing ✦ nearby.' : ' · all found.'}</p>` : ''}`;
     const edu = (c.education || []).find((e) => e.district === it.district);
-    if (edu) html += educationExtras(edu);
+    html = '';
+    if (edu) html += educationExtras(edu, ch);
     if (it.district === 'garage') {
       html += `<div class="panel-projects">${c.projects.map(projectCard).join('')}</div><a class="btn" href="./#projects">All projects →</a>`;
     }
     if (it.district === 'signal-tower') {
-      html += (c.skills || []).map((g, gi) => `<div class="tb-head" style="--bc:var(--sk${gi % 5})"><span>${esc(g.group)}</span></div><ul class="tb-grid" style="--bc:var(--sk${gi % 5})">${(g.items || []).map((s) => `<li><span class="sk-icon">${skillIcon(s)}</span><b>${esc(s)}</b></li>`).join('')}</ul>`).join('');
+      html += (c.skills || []).map((g) => `<div class="sk-row"><p class="eyebrow">${esc(g.group)}</p><ul class="chips">${(g.items || []).map((s) => `<li>${esc(s)}</li>`).join('')}</ul></div>`).join('');
       if ((c.experience || []).length) html += `<div class="tb-head" style="--bc:var(--sk4)"><span>Experience</span></div><ul class="tb-exp">${c.experience.map((e) => `<li>${orgLogo(e)}<div><b>${esc(e.role)}</b><span class="tb-org">${esc(e.org)}</span><span class="tb-per">${esc(e.period)}</span><p>${esc(e.summary)}</p></div></li>`).join('')}</ul>`;
       if ((c.achievements || []).length) html += `<p class="eyebrow" style="margin-top:18px">Achievements</p><ul class="highlights">${c.achievements.map((a) => `<li><b>${esc(a.title)}</b>${a.org ? ` · ${esc(a.org)}` : ''} <span class="muted">${esc(a.year)}</span>${a.detail ? `<br>${esc(a.detail)}` : ''}</li>`).join('')}</ul>`;
     }
@@ -879,9 +953,10 @@ function openInteractable(it) {
         </div>
         <ul class="link-list">${(c.links || []).map((l) => `<li><a href="${esc(safeUrl(l.url))}" target="_blank" rel="noopener">${esc(l.label)} ↗</a></li>`).join('')}</ul>`;
     }
+    html = chapterCardHtml(story, html, !!ch.media?.length, it.district === 'garage' ? 'Projects' : it.district === 'lighthouse' ? 'Contact' : it.district === 'signal-tower' ? 'Skills' : 'Project');
   }
-  showPanel(bar, html, it);
-  if (it.kind === 'chapter') mountChapterMedia(chapterFor(c, it.district));
+  showPanel(bar, html, it, it.kind === 'chapter' ? 'chapter-card' : '');
+  if (it.kind === 'chapter') { mountChapterMedia(chapterFor(c, it.district)); autoPaginate(); wireChapterPager(); }
   $('#panel-body').querySelectorAll('.tb-grid .sk-icon img, .tb-head .gh-ico img').forEach(pixelateIcon);
   if (it.kind === 'project') {
     $('#panel-body').querySelectorAll('[data-tour-project]').forEach((b) => b.addEventListener('click', () => {
@@ -936,12 +1011,18 @@ function stopPanelMedia(root = document) {
 
 function showPanel(bar, html, it = null, cls = '') {
   stopPanelMedia();
+  // every content card shares the forest/cream card skin; the skill tree keeps its own look
+  if (!/\bsk-panel\b/.test(cls)) {
+    if (!html.includes('class="ch-card')) html = `<div class="ch-card single"><section class="ch-page ch-story is-active">${html}</section></div>`;
+    if (!/\bchapter-card\b/.test(cls)) cls = `${cls} chapter-card`.trim();
+  }
   $('#panel-bar').textContent = bar;
   $('#panel-body').innerHTML = html;
   $('#panel-body').scrollTop = 0;
   $('#panel').className = `panel window ${cls}`;
   // every open / card change starts at the title: reset every scroller now and after layout
-  const resetScroll = () => { $('#panel').scrollTop = 0; $('#panel-body').scrollTop = 0; $('#panel-body').querySelectorAll('.sk-scroll, .panel-body-inner').forEach((e) => { e.scrollTop = 0; }); };
+  const resetScroll = () => { $('#panel').scrollTop = 0; $('#panel-body').scrollTop = 0; $('#panel-body').querySelectorAll('.sk-scroll, .panel-body-inner, .ch-page').forEach((e) => { e.scrollTop = 0; }); };
+  autoPaginate();
   resetScroll(); requestAnimationFrame(() => { resetScroll(); setTimeout(resetScroll, 120); });
   sfx.open();
   state.panelOpen = it || { x: player.group.position.x, z: player.group.position.z, radius: 99 };
@@ -1258,12 +1339,17 @@ function passportHTML() {
     <div class="stamps">${(c.education || []).map((e) => `<span class="stamp ${got.includes(e.id) ? 'on' : ''}" title="${got.includes(e.id) ? 'Stamped' : 'Visit the campus to stamp'}"><b>${esc(e.label)}</b><i>${got.includes(e.id) ? 'STAMPED' : '· · ·'}</i></span>`).join('')}</div>
     <p class="muted passport-note">Optional. Stamps come from visiting each campus; everything here is open either way.</p></div>`;
 }
-function educationExtras(e) {
+function educationExtras(e, ch = null) {
   const c = state.content, s = state.save;
   const mems = (c.memories || []).filter((m) => m.district === e.district);
-  const npc = (c.npcs || []).find((n) => n.id === e.npc);
-  let h = `<div class="edu-extra"><p class="eyebrow">EDUCATION · ${esc(e.num)} · ${esc(e.label)}: ${esc(e.tagline)}</p>
-    <p><b>${esc(e.institution)}</b>${e.place ? `, ${esc(e.place)}` : ''}${e.detail ? `<br><span class="muted">${esc(e.detail)}</span>` : ''}</p>`;
+  // skip whatever the chapter header already says (school name, tagline, place)
+  const seen = `${ch?.title || ''} ${ch?.subtitle || ''} ${ch?.period || ''} ${(ch?.highlights || []).join(' ')}`.toLowerCase();
+  const has = (t) => !!t && seen.includes(String(t).toLowerCase());
+  const tag = has(e.tagline) ? '' : `: ${esc(e.tagline)}`;
+  const bits = [has(e.institution) ? '' : `<b>${esc(e.institution)}</b>`, e.place && !has(e.place) ? esc(e.place) : ''].filter(Boolean).join(', ');
+  const detail = e.detail && !has(e.detail) ? `<span class="muted">${esc(e.detail)}</span>` : '';
+  const inst = bits || detail ? `<p>${bits}${bits && detail ? '<br>' : ''}${detail}</p>` : '';
+  let h = `<p class="eyebrow">EDUCATION · ${esc(e.num)} · ${esc(e.label)}${tag}</p>${inst}`;
   if (mems.length) h += `<p class="eyebrow" style="margin-top:12px">MEMORIES</p><ul class="highlights">${mems.map((m) => s.memories.includes(m.id) ? `<li><b>${esc(m.title)}</b><br>${esc(m.text)}</li>` : `<li class="muted">✦ ${esc(m.title)} · find it on campus</li>`).join('')}</ul>`;
   if (e.activities) {
     const acts = (c.experience || []).filter((x) => /tce/i.test(x.org));
@@ -1272,18 +1358,19 @@ function educationExtras(e) {
   }
   const schoolProjects = (c.projects || []).filter((p) => p.school && e.id === 'montfort');
   if (schoolProjects.length) h += `<p class="eyebrow" style="margin-top:12px">SCHOOL PROJECT</p><div class="panel-projects">${schoolProjects.map(projectCard).join('')}</div>`;
-  if (npc) h += `<p class="muted" style="margin-top:10px">${esc(npc.name)} is around here. Say hi.</p>`;
-  return h + '</div>';
+  return h;
 }
 function openEducation(readId = null) {
   const c = state.content, list = c.education || [];
   if (readId) {
     const e = list.find((x) => x.id === readId);
     const ch = chapterFor(c, e.district) || { title: e.label, body: [] };
-    showPanel(`education/${e.id}.txt`, `${chapterHeader({ ...ch, period: `${e.num} · ${e.label}: ${e.tagline}` })}
+    const head = { ...ch, period: `${e.num} · ${e.label}: ${e.tagline}` };
+    showPanel(`education/${e.id}.txt`, chapterCardHtml(`${chapterHeader(head)}
       ${(ch.body || []).map((p) => `<p>${esc(p)}</p>`).join('')}
-      ${educationExtras(e)}
-      <div class="transmit"><button type="button" class="btn primary" data-travel="${esc(e.id)}">Travel to campus →</button><button type="button" class="btn" data-edu-back>← All chapters</button></div>`, null, 'education');
+      <div class="transmit"><button type="button" class="btn primary" data-travel="${esc(e.id)}">Travel to campus →</button><button type="button" class="btn" data-edu-back>← All chapters</button></div>`,
+      educationExtras(e, head), false, 'School'), null, 'education chapter-card');
+    wireChapterPager();
   } else {
     showPanel('education/journey.txt', `<p class="eyebrow">EDUCATION</p><h2 id="panel-title">The education journey</h2>
       <p class="subtitle">Three chapters, three campuses.</p>
@@ -1537,7 +1624,9 @@ function mountChapterMedia(ch) {
   if (!ch?.media?.length) return;
   const box = document.createElement('div'); box.className = 'proj-media';
   mountPhotoViewer(box, ch.media.map((src) => ({ src, caption: ch.title })));
-  if (box.childElementCount) $('#panel-body').querySelector('.chapter-head')?.after(box);
+  if (!box.childElementCount) return;
+  const page = $('#panel-body').querySelector('.ch-project');
+  if (page) page.prepend(box); else $('#panel-body').querySelector('.chapter-head')?.after(box);
 }
 function openDiscipline(it, view = 'menu') {
   if (view === 'menu') { face(it); player.play('interact'); }
@@ -2364,7 +2453,7 @@ function runFinale(it) {
           <p class="eyebrow">END OF ISLAND 01 · ORIGIN ISLE</p>
           <h2 id="finale-title">Thanks for playing my story.</h2>
           <p>${esc(chapterFor(c, 'lighthouse')?.body?.[0] || "If you'd like to build something together, I'd love to hear from you.")}</p>
-          <div class="finale-stats"><span>◆ ${main}/${MAIN_DISTRICTS.length} chapters</span><span>⏱ ${formatTime(s.seconds)}</span></div>
+          <div class="finale-stats"><span class="crest-chip" role="img" aria-label="${main} of ${MAIN_DISTRICTS.length} chapters complete">${crestSVG(main === MAIN_DISTRICTS.length, 18)} ${main}/${MAIN_DISTRICTS.length} chapters</span><span>⏱ ${formatTime(s.seconds)}</span></div>
           <div class="transmit">
             ${email ? `<a class="btn primary" href="${esc(safeUrl(email.url))}?subject=${encodeURIComponent('Hello from NATHAN.EXE')}">Say hello ✉</a>` : ''}
             ${c.profile?.resumeUrl ? `<a class="btn" href="${esc(safeUrl(c.profile.resumeUrl))}" target="_blank" rel="noopener">Resume ↗</a>` : ''}
@@ -2547,6 +2636,8 @@ function setupMinimap() {
   }
   MM.toPx = (x, z) => [(x + map.half) * MM.scale, (z + map.half) * MM.scale];
   cv.onclick = ((e) => {
+    // phones: the minimap is too small to aim at, so a tap opens the full map
+    if (document.body.classList.contains('touch-ui-on') || matchMedia('(pointer: coarse)').matches) { e.stopPropagation(); return toggleBigMap(true); }
     const r = cv.getBoundingClientRect();
     const u = ((e.clientX - r.left) / r.width - 0.5) * map.width;
     const v = ((e.clientY - r.top) / r.height - 0.5) * map.width;
@@ -3172,81 +3263,296 @@ function toggleControls(force) {
 }
 
 // ---------------- Full map (M) ----------------
-const BM = { size: 0, scale: 0 };
+// Zoomable / pannable island map. Building names sit inside their own footprints; small buildings show an
+// abbreviation and open a details row (with an explicit Travel button) instead of teleporting on first tap.
+const BM = { size: 0, dpr: 1, zoom: 1, panX: 0, panY: 0, base: null, hits: [], sel: null, ptrs: new Map(), drag: null, pinch: null };
 const rot45 = (u, v) => [u * Math.SQRT1_2 - v * Math.SQRT1_2, u * Math.SQRT1_2 + v * Math.SQRT1_2];
+const MAP_DEST = {
+  'MONTFORT': { lines: ['MONTFORT'], short: ['MF'], full: 'St. Montfort School', target: 'lake-park' },
+  'TOMSK STATE UNIVERSITY': { lines: ['TOMSK', 'UNIVERSITY'], short: ['TOMSK'], full: 'Tomsk State University, Russia', target: 'winter-campus' },
+  'IRON YARD': { lines: ['IRON', 'YARD'], short: ['IY'], full: 'Iron Yard', target: 'iron-yard' },
+  'GUILD HALL': { lines: ['GUILD', 'HALL'], short: ['GH'], full: 'Guild Hall', target: 'signal-tower' },
+  'POP CULTURE PARK': { lines: ['POP CULTURE', 'PARK'], short: ['POP'], full: 'Pop Culture Park', area: /^(pop_|moon_court|paddock)/ },
+  'AIRPORT': { lines: ['AIRPORT'], short: ['AIR'], full: 'Airport', target: 'lighthouse' },
+  'THIAGARAJAR COLLEGE OF ENGINEERING': { lines: ['TCE', 'MADURAI'], short: ['TCE'], full: 'Thiagarajar College of Engineering, Madurai', target: 'monsoon-campus' },
+};
+const MAP_EXTRA = [{ area: /^(workshop_shed|exhibit_|server_rack|tool_wall|skills_board)/, lines: ['GARAGE'], short: ['GAR'], full: 'Garage · Projects' }];
+const MAP_SKIP = new Set(['NATHAN.EXE']); // the plaza banner is replaced by the player marker
+const bmScale = () => (BM.size / map.width) * 0.98 * BM.zoom;
+function bigMapPx(x, z) {
+  const s = bmScale();
+  const [u, v] = rot45(x * s, z * s);
+  return [BM.size / 2 + BM.panX + u, BM.size / 2 + BM.panY + v];
+}
+function bigMapWorld(px, py) {
+  const s = bmScale();
+  const u = (px - BM.size / 2 - BM.panX) / s, v = (py - BM.size / 2 - BM.panY) / s;
+  return [u * Math.SQRT1_2 + v * Math.SQRT1_2, -u * Math.SQRT1_2 + v * Math.SQRT1_2]; // undo the 45° turn
+}
 function toggleBigMap(force) {
   const el = $('#bigmap');
   const open = force ?? el.classList.contains('hidden');
   el.classList.toggle('hidden', !open);
-  if (open) { closePanel(); dialogue.close(); drawBigMap(); }
+  BM.ptrs.clear(); BM.drag = BM.pinch = null;
+  if (open) {
+    closePanel(); dialogue.close();
+    BM.zoom = 1; BM.panX = BM.panY = 0; BM.base = null; selectBigMapDest(null);
+    layoutBigMap();
+  } else selectBigMapDest(null);
 }
-function bigMapPx(x, z) {
-  const [u, v] = rot45(x * BM.scale, z * BM.scale);
-  return [BM.size / 2 + u, BM.size / 2 + v];
+/** Destinations for the current level: label text → footprint (world box) + compact text + travel target. */
+function bigMapDests() {
+  const out = [];
+  for (const l of world.labels) {
+    if (MAP_SKIP.has(l.text)) continue;
+    const cfg = MAP_DEST[l.text.toUpperCase()] || null;
+    const x = l.pos.x, z = l.pos.z;
+    let box = null;
+    if (cfg?.area) {
+      for (const o of map.objects) if (cfg.area.test(o.type)) {
+        box = box || { minX: o.x, maxX: o.x, minZ: o.z, maxZ: o.z };
+        box.minX = Math.min(box.minX, o.x - 1.5); box.maxX = Math.max(box.maxX, o.x + 1.5);
+        box.minZ = Math.min(box.minZ, o.z - 1.5); box.maxZ = Math.max(box.maxZ, o.z + 1.5);
+      }
+    }
+    if (!box) {
+      const f = (world.footprints || []).filter((q) => Math.hypot(q.x - x, q.z - z) < 4).sort((a, b) => Math.hypot(a.x - x, a.z - z) - Math.hypot(b.x - x, b.z - z))[0];
+      if (f) box = f;
+    }
+    const park = !!cfg?.area || !box;
+    if (!box) box = { minX: x - 4, maxX: x + 4, minZ: z - 4, maxZ: z + 4 }; // outdoor spot: a small area around its label
+    const words = l.text.split(/\s+/);
+    const half = Math.ceil(words.length / 2);
+    const lines = cfg?.lines || (words.length > 2 ? [words.slice(0, half).join(' '), words.slice(half).join(' ')] : words);
+    const short = cfg?.short || [words.map((w) => w[0]).join('').slice(0, 3)];
+    const target = cfg?.target ? world.interactables.find((i) => i.id === cfg.target && (i.kind === 'chapter' || i.kind === 'about')) : null;
+    out.push({ x: (box.minX + box.maxX) / 2, z: (box.minZ + box.maxZ) / 2, box, park, lines, short, full: cfg?.full || l.text, target, lx: x, lz: z });
+  }
+  // places with no Tiled label of their own (the projects garage) still get a name inside their area
+  for (const ex of MAP_EXTRA) {
+    if (out.some((d) => d.full === ex.full)) continue;
+    let box = null;
+    for (const o of map.objects) if (ex.area.test(o.type)) {
+      box = box || { minX: o.x, maxX: o.x, minZ: o.z, maxZ: o.z };
+      box.minX = Math.min(box.minX, o.x - 1.5); box.maxX = Math.max(box.maxX, o.x + 1.5);
+      box.minZ = Math.min(box.minZ, o.z - 1.5); box.maxZ = Math.max(box.maxZ, o.z + 1.5);
+    }
+    if (!box) continue;
+    const x = (box.minX + box.maxX) / 2, z = (box.minZ + box.maxZ) / 2;
+    out.push({ x, z, box, park: true, lines: ex.lines, short: ex.short, full: ex.full, target: null, lx: x, lz: z });
+  }
+  return out;
 }
-function drawBigMap() {
+/** Size the canvas to the space the modal actually has (12px margins, title + legend always visible). */
+function layoutBigMap() {
   const cv = $('#bigmap-canvas');
-  const css = Math.min(innerWidth - 48, innerHeight - 140, 720);
-  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const vv = window.visualViewport;
+  const vw = vv ? vv.width : innerWidth, vh = vv ? vv.height : innerHeight;
+  const bar = $('#bigmap .window-bar')?.offsetHeight || 44, legEl = $('#bigmap .bigmap-legend');
+  // landscape phones put the legend beside the map, everywhere else it sits underneath
+  const side = matchMedia('(max-height: 520px) and (orientation: landscape)').matches;
+  const legW = side ? (legEl?.offsetWidth || 110) : 0, legH = side ? 0 : (legEl?.offsetHeight || 34);
+  const css = Math.max(200, Math.floor(Math.min(vw - 24 - 8 - legW, vh - 24 - bar - legH - 10, 720)));
+  BM.dpr = Math.min(2, window.devicePixelRatio || 1);
   cv.style.width = cv.style.height = css + 'px';
-  cv.width = cv.height = Math.round(css * dpr);
-  BM.size = cv.width;
-  BM.scale = (BM.size / map.width) * 0.98;
-  const g = cv.getContext('2d');
-  g.fillStyle = '#2fb3c9'; g.fillRect(0, 0, BM.size, BM.size);
-  // tiles, rotated to match the camera
-  g.save(); g.translate(BM.size / 2, BM.size / 2); g.rotate(Math.PI / 4);
-  const s = BM.scale;
+  cv.width = cv.height = Math.round(css * BM.dpr);
+  if (BM.size && BM.size !== css) { const k = css / BM.size; BM.panX *= k; BM.panY *= k; }
+  BM.size = css;
+  drawBigMap();
+}
+function bigMapBase() {
+  // terrain, hedges and rail are drawn once into a square texture; pan / zoom just re-blit it
+  if (BM.base) return BM.base;
+  const N = 1440, c = document.createElement('canvas'); c.width = c.height = N;
+  const g = c.getContext('2d'), s = (N / map.width) * 0.98;
+  g.fillStyle = '#2fb3c9'; g.fillRect(0, 0, N, N);
+  g.translate(N / 2, N / 2); g.rotate(Math.PI / 4);
   for (let j = 0; j < map.height; j++) for (let i = 0; i < map.width; i++) {
     const gid = map.ground[j * map.width + i];
     if (!gid) continue;
     g.fillStyle = map.tiles.get(gid).color;
     g.fillRect((i - map.half) * s, (j - map.half) * s, Math.ceil(s) + 0.5, Math.ceil(s) + 0.5);
   }
-  for (const o of map.objects) {
-    if (o.type === 'hedge') { g.fillStyle = '#5f9a4a'; g.fillRect((o.x - o.w / 2) * s, (o.z - o.d / 2) * s, o.w * s, o.d * s); }
-  }
+  for (const o of map.objects) if (o.type === 'hedge') { g.fillStyle = '#5f9a4a'; g.fillRect((o.x - o.w / 2) * s, (o.z - o.d / 2) * s, o.w * s, o.d * s); }
   if (map.rail) {
     g.strokeStyle = '#8a5a36'; g.lineWidth = s * 1.1; g.setLineDash([s * 0.5, s * 0.4]); g.beginPath();
     map.rail.points.forEach((p, i) => (i ? g.lineTo(p.x * s, p.z * s) : g.moveTo(p.x * s, p.z * s)));
     g.closePath(); g.stroke(); g.setLineDash([]);
   }
-  g.restore();
-  // markers (unrotated so they stay upright)
-  const dot = (x, z, fill, r, shape = 'diamond') => {
-    const [px, py] = bigMapPx(x, z);
-    g.fillStyle = fill; g.strokeStyle = '#2a2440'; g.lineWidth = 2 * dpr;
-    g.beginPath();
-    if (shape === 'diamond') g.arc(px, py, r * 0.85, 0, Math.PI * 2);
-    else g.rect(px - r, py - r, r * 2, r * 2);
-    g.fill(); g.stroke();
-  };
-  for (const st of world.stations) dot(st.x, st.z, '#ffd257', 6 * dpr, 'square');
-  for (const it of world.interactables) if (it.kind === 'chapter' || it.kind === 'finale') dot(it.x, it.z, it.visited ? '#9b94ad' : '#ff6a3d', 8 * dpr);
-  // labels
-  g.font = `${Math.round(11 * dpr)}px Silkscreen, monospace`; g.textAlign = 'center'; g.textBaseline = 'bottom';
-  for (const l of world.labels) {
-    const [px, py] = bigMapPx(l.pos.x, l.pos.z);
-    const w = g.measureText(l.text).width + 10 * dpr;
-    g.fillStyle = 'rgba(255,248,234,.92)'; g.fillRect(px - w / 2, py - 26 * dpr, w, 16 * dpr);
-    g.fillStyle = '#2a2440'; g.fillText(l.text, px, py - 12 * dpr);
+  BM.base = c;
+  return c;
+}
+const inPoly = (pts, x, y) => { let ins = false; for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const [xi, yi] = pts[i], [xj, yj] = pts[j]; if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) ins = !ins; } return ins; };
+function drawBigMap() {
+  const cv = $('#bigmap-canvas');
+  if (!cv || !BM.size) return;
+  const g = cv.getContext('2d'), S = BM.size;
+  g.setTransform(BM.dpr, 0, 0, BM.dpr, 0, 0);
+  g.fillStyle = '#2fb3c9'; g.fillRect(0, 0, S, S);
+  g.imageSmoothingEnabled = BM.zoom < 1.5;
+  const W = S * BM.zoom;
+  g.drawImage(bigMapBase(), S / 2 + BM.panX - W / 2, S / 2 + BM.panY - W / 2, W, W);
+
+  // building / park footprints with their names inside
+  BM.hits = [];
+  const FONT = (px) => `${px}px Silkscreen, monospace`;
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  for (const d of bigMapDests()) {
+    const b = d.box, poly = [[b.minX, b.minZ], [b.maxX, b.minZ], [b.maxX, b.maxZ], [b.minX, b.maxZ]].map(([x, z]) => bigMapPx(x, z));
+    const sel = BM.sel && BM.sel.full === d.full;
+    g.beginPath(); poly.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.closePath();
+    g.fillStyle = sel ? '#91A58B' : 'rgba(255, 243, 214, .92)';
+    g.fill();
+    g.lineWidth = sel ? 3 : 2; g.strokeStyle = '#193D33';
+    if (d.park) g.setLineDash([4, 3]);
+    g.stroke(); g.setLineDash([]);
+    // centre the text on the part of the footprint that is on screen, so zoomed-in names never run off the edge
+    const xs = poly.map((q) => q[0]), ys = poly.map((q) => q[1]);
+    const cx = (Math.max(0, Math.min(...xs)) + Math.min(S, Math.max(...xs))) / 2, cy = (Math.max(0, Math.min(...ys)) + Math.min(S, Math.max(...ys))) / 2;
+    if (Math.max(...xs) < 0 || Math.min(...xs) > S || Math.max(...ys) < 0 || Math.min(...ys) > S) continue;
+    const vis = (x, y) => x >= 1 && x <= S - 1 && y >= 1 && y <= S - 1;
+    // largest text block that fits fully inside the footprint: the name first, then its abbreviation
+    let pick = null;
+    for (const [lines, abbr] of [[d.lines, false], [d.short, true]]) {
+      for (let fs = 11; fs >= 7; fs--) {
+        g.font = FONT(fs);
+        const lh = Math.round(fs * 1.15), w = Math.max(...lines.map((t) => g.measureText(t).width)) + 4, h = lh * lines.length + 2;
+        const fits = [[-w / 2, -h / 2], [w / 2, -h / 2], [w / 2, h / 2], [-w / 2, h / 2]].every(([ox, oy]) => inPoly(poly, cx + ox, cy + oy) && vis(cx + ox, cy + oy));
+        if (fits) { pick = { lines, fs, lh, w, h, abbr }; break; }
+      }
+      if (pick) break;
+    }
+    // too small for anything: the abbreviation at the minimum size on a small backing chip
+    if (!pick) { g.font = FONT(7); const w = Math.max(...d.short.map((t) => g.measureText(t).width)) + 6; pick = { lines: d.short, fs: 7, lh: 8, w, h: 8 * d.short.length + 4, abbr: true, chip: true }; }
+    g.font = FONT(pick.fs);
+    if (pick.chip) { g.fillStyle = '#FFF3D6'; g.fillRect(cx - pick.w / 2, cy - pick.h / 2, pick.w, pick.h); g.strokeStyle = '#193D33'; g.lineWidth = 1; g.strokeRect(cx - pick.w / 2 + 0.5, cy - pick.h / 2 + 0.5, pick.w - 1, pick.h - 1); }
+    const dark = false;
+    g.fillStyle = '#193D33';
+    pick.lines.forEach((t, i) => {
+      const y = cy + (i - (pick.lines.length - 1) / 2) * pick.lh + 0.5;
+      if (dark) g.strokeText(t, cx, y);
+      g.fillText(t, cx, y);
+    });
+    BM.hits.push({ d, poly, rect: [cx - pick.w / 2, cy - pick.h / 2, cx + pick.w / 2, cy + pick.h / 2], abbr: pick.abbr });
   }
-  // you
+  // markers (upright); a marker that would sit on a name is nudged just below it
+  const rects = BM.hits.map((h) => h.rect);
+  const r0 = Math.max(4, Math.min(7, 3.5 + BM.zoom));
+  const place = (x, z) => {
+    let [px, py] = bigMapPx(x, z);
+    for (const [x0, y0, x1, y1] of rects) if (px > x0 - r0 && px < x1 + r0 && py > y0 - r0 && py < y1 + r0) py = y1 + r0 + 2;
+    return [px, py];
+  };
+  g.lineWidth = 1.5;
+  for (const st of world.stations) {
+    const [px, py] = place(st.x, st.z), h = r0 * 0.8;
+    g.fillStyle = '#FFF3D6'; g.strokeStyle = '#193D33';
+    g.fillRect(px - h, py - h, h * 2, h * 2); g.strokeRect(px - h, py - h, h * 2, h * 2);
+  }
+  for (const it of world.interactables) if (it.kind === 'chapter' || it.kind === 'finale') {
+    const [px, py] = place(it.x, it.z);
+    g.beginPath(); g.moveTo(px, py - r0); g.lineTo(px + r0, py); g.lineTo(px, py + r0); g.lineTo(px - r0, py); g.closePath();
+    g.fillStyle = it.visited ? '#91A58B' : '#D8B45B'; g.strokeStyle = '#193D33'; g.fill(); g.stroke();
+  }
+  // you: a compact ringed dot with a heading pointer
   const p = player.group.position;
   const [px, py] = bigMapPx(p.x, p.z);
-  g.fillStyle = '#2a2440'; g.beginPath(); g.arc(px, py, 8 * dpr, 0, Math.PI * 2); g.fill();
-  g.fillStyle = '#ff6a3d'; g.beginPath(); g.arc(px, py, 4.5 * dpr, 0, Math.PI * 2); g.fill();
+  const a = player.group.rotation.y;
+  const [ex, ey] = bigMapPx(p.x + Math.sin(a), p.z + Math.cos(a));
+  const ang = Math.atan2(ey - py, ex - px);
+  g.fillStyle = '#FFF3D6'; g.strokeStyle = '#193D33'; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(px + Math.cos(ang) * 12, py + Math.sin(ang) * 12); g.lineTo(px + Math.cos(ang + 2.3) * 7, py + Math.sin(ang + 2.3) * 7); g.lineTo(px + Math.cos(ang - 2.3) * 7, py + Math.sin(ang - 2.3) * 7); g.closePath(); g.fill(); g.stroke();
+  g.beginPath(); g.arc(px, py, 6, 0, Math.PI * 2); g.fillStyle = '#193D33'; g.fill(); g.strokeStyle = '#FFF3D6'; g.stroke();
+  g.beginPath(); g.arc(px, py, 3, 0, Math.PI * 2); g.fillStyle = '#D8B45B'; g.fill();
+  const zl = $('#bigmap-zoom-level'); if (zl) zl.textContent = `${Math.round(BM.zoom * 100)}%`;
 }
-function onBigMapClick(e) {
-  const r = e.currentTarget.getBoundingClientRect();
-  const k = BM.size / r.width;
-  const u = ((e.clientX - r.left) * k - BM.size / 2) / BM.scale, v = ((e.clientY - r.top) * k - BM.size / 2) / BM.scale;
-  const ix = u * Math.SQRT1_2 + v * Math.SQRT1_2, iz = -u * Math.SQRT1_2 + v * Math.SQRT1_2; // undo the 45° turn
-  // snap to a chapter marker if the click is close to one
-  const hit = world.interactables.filter((i) => i.kind === 'chapter' || i.kind === 'station' || i.kind === 'finale')
-    .find((i) => Math.hypot(i.x - ix, i.z - iz) < 3);
+function clampBigMapPan() {
+  const lim = (BM.size * BM.zoom - BM.size) / 2;
+  BM.panX = Math.max(-lim, Math.min(lim, BM.panX)); BM.panY = Math.max(-lim, Math.min(lim, BM.panY));
+}
+function zoomBigMap(f, ax = BM.size / 2, ay = BM.size / 2) {
+  const z = Math.max(1, Math.min(5, BM.zoom * f)), k = z / BM.zoom;
+  // keep the point under the finger / cursor fixed
+  BM.panX = (ax - BM.size / 2) - (ax - BM.size / 2 - BM.panX) * k;
+  BM.panY = (ay - BM.size / 2) - (ay - BM.size / 2 - BM.panY) * k;
+  BM.zoom = z; clampBigMapPan(); drawBigMap();
+}
+function selectBigMapDest(d) {
+  BM.sel = d;
+  const box = $('#bigmap-info');
+  if (!box) return;
+  box.classList.toggle('hidden', !d);
+  if (d) $('#bigmap-info-name').textContent = d.full;
+  if (BM.size && !$('#bigmap').classList.contains('hidden')) drawBigMap();
+}
+function travelBigMapDest(d) {
   toggleBigMap(false);
-  if (hit) walkToInteractable(hit); else { state.pendingOpen = null; walkTo(ix, iz); }
+  if (d.target) walkToInteractable(d.target); else { state.pendingOpen = null; walkTo(d.lx, d.lz); }
+}
+function onBigMapTap(cx, cy) {
+  const hit = BM.hits.find((h) => { const [x0, y0, x1, y1] = h.rect; return cx >= x0 && cx <= x1 && cy >= y0 && cy <= y1; })
+    || BM.hits.find((h) => inPoly(h.poly, cx, cy));
+  if (hit) {
+    // a fully named building travels on tap; an abbreviated one is inspected first and Travel confirms
+    if (!hit.abbr) return travelBigMapDest(hit.d);
+    return selectBigMapDest(hit.d);
+  }
+  const [ix, iz] = bigMapWorld(cx, cy);
+  const near = world.interactables.filter((i) => i.kind === 'chapter' || i.kind === 'station' || i.kind === 'finale')
+    .find((i) => Math.hypot(i.x - ix, i.z - iz) < 3 / Math.sqrt(BM.zoom));
+  toggleBigMap(false);
+  if (near) walkToInteractable(near); else { state.pendingOpen = null; walkTo(ix, iz); }
+}
+function initBigMapInput() {
+  const cv = $('#bigmap-canvas');
+  cv.style.touchAction = 'none';
+  const local = (e) => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * (BM.size / r.width), (e.clientY - r.top) * (BM.size / r.height)]; };
+  cv.addEventListener('pointerdown', (e) => {
+    e.preventDefault(); e.stopPropagation();
+    try { cv.setPointerCapture(e.pointerId); } catch {}
+    BM.ptrs.set(e.pointerId, local(e));
+    if (BM.ptrs.size === 1) BM.drag = { start: local(e), moved: false, pan: [BM.panX, BM.panY] };
+    else {
+      if (BM.drag) BM.drag.moved = true;
+      const [a, b] = [...BM.ptrs.values()];
+      BM.pinch = { d: Math.max(1, Math.hypot(a[0] - b[0], a[1] - b[1])), z: BM.zoom };
+    }
+  });
+  cv.addEventListener('pointermove', (e) => {
+    if (!BM.ptrs.has(e.pointerId)) return;
+    e.preventDefault();
+    BM.ptrs.set(e.pointerId, local(e));
+    if (BM.ptrs.size >= 2 && BM.pinch) {
+      const [a, b] = [...BM.ptrs.values()];
+      const d = Math.hypot(a[0] - b[0], a[1] - b[1]);
+      zoomBigMap((BM.pinch.z * d / BM.pinch.d) / BM.zoom, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2);
+    } else if (BM.drag) {
+      const [x, y] = local(e), dx = x - BM.drag.start[0], dy = y - BM.drag.start[1];
+      if (!BM.drag.moved && Math.hypot(dx, dy) > 6) BM.drag.moved = true;
+      if (BM.drag.moved && BM.zoom > 1) { BM.panX = BM.drag.pan[0] + dx; BM.panY = BM.drag.pan[1] + dy; clampBigMapPan(); drawBigMap(); }
+    }
+  });
+  const end = (e) => {
+    if (!BM.ptrs.has(e.pointerId)) return;
+    const pt = BM.ptrs.get(e.pointerId);
+    BM.ptrs.delete(e.pointerId);
+    if (BM.ptrs.size < 2) BM.pinch = null;
+    if (BM.ptrs.size === 0) {
+      const tap = BM.drag && !BM.drag.moved && e.type === 'pointerup';
+      BM.drag = null;
+      if (tap) onBigMapTap(pt[0], pt[1]);
+    } else if (BM.drag) BM.drag = { start: [...BM.ptrs.values()][0], moved: true, pan: [BM.panX, BM.panY] };
+  };
+  cv.addEventListener('pointerup', end);
+  cv.addEventListener('pointercancel', end);
+  cv.addEventListener('wheel', (e) => { e.preventDefault(); const [x, y] = local(e); zoomBigMap(e.deltaY < 0 ? 1.2 : 1 / 1.2, x, y); }, { passive: false });
+  $('#bigmap-zoom-in').addEventListener('click', () => zoomBigMap(1.4));
+  $('#bigmap-zoom-out').addEventListener('click', () => zoomBigMap(1 / 1.4));
+  $('#bigmap-info-close').addEventListener('click', () => selectBigMapDest(null));
+  $('#bigmap-info-go').addEventListener('click', () => { if (BM.sel) travelBigMapDest(BM.sel); });
+  const relayout = () => { if (!$('#bigmap').classList.contains('hidden')) layoutBigMap(); };
+  window.addEventListener('resize', relayout);
+  window.visualViewport?.addEventListener('resize', relayout);
 }
 
 // ---------------- Collisions with characters + hazards ----------------

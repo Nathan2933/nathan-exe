@@ -62,7 +62,7 @@
   body.game .minimap-wrap { position: fixed; top: var(--hudY); right: var(--edgeR); left: auto; bottom: auto; width: var(--mm); height: var(--mm); overflow: visible; border: 0; box-shadow: none; background: transparent; border-radius: 0; z-index: 5; }
   body.game #minimap { border-radius: 50%; border: 3px solid #f3e3c3; box-shadow: 0 0 0 2px #261e3a; background: #2fb3c9; }
   body.game .map-btn { left: auto; right: 0; top: calc(100% + 8px); bottom: auto; transform: none; width: 44px; height: 44px; min-width: 44px; display: grid; place-items: center; padding: 0; border: 2px solid #f3e3c3; border-radius: 50%; background: #261e3a; color: #fff6e6; font: 400 12px var(--font-pixel); }
-  body.game .help-btn { position: fixed; top: calc(var(--hudY) + var(--mm) + 8px); right: calc(var(--edgeR) + 52px); bottom: auto; left: auto; width: 44px; height: 44px; z-index: 5; }
+  body.game .help-btn { position: fixed; top: calc(var(--hudY) + var(--mm) + 8px); right: calc(var(--edgeR) + (var(--mm) - 44px) / 2); bottom: auto; left: auto; width: 44px; height: 44px; z-index: 5; }
   body.game .controls { top: calc(var(--hudY) + var(--mm) + 60px); left: var(--edge); right: var(--edgeR); width: auto; bottom: auto; z-index: 14; }
   body.game .hint { display: none; }
   body.game .toast { top: calc(var(--hudY) + var(--mm) + 64px); left: 50%; transform: translateX(-50%); max-width: calc(100vw - 24px); text-align: center; z-index: 6; }
@@ -119,13 +119,22 @@ body:has(#panel:not(.hidden), #bigmap:not(.hidden), #minigame:not(.hidden), #tou
   body.game .journey.open-m { inset: 0 auto 0 0; width: min(420px, 62vw); max-height: none; border-radius: 0; box-shadow: 4px 0 0 rgba(10, 6, 20, .6); padding-top: env(safe-area-inset-top); }
   body.game .journey.open-m .look { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   body.game .panel { inset: var(--topY) var(--edgeR) max(8px, env(safe-area-inset-bottom)) auto; width: min(460px, 56vw); max-height: none; border-radius: 0; border-bottom: var(--border); box-shadow: var(--shadow); }
-  body.game .help-btn { top: var(--hudY); right: calc(var(--edgeR) + var(--mm) + 60px); }
   body.game .map-btn { top: 0; bottom: auto; right: calc(100% + 8px); }
   body.game .toast { top: calc(var(--topY) + 4px); }
   body.game .dialogue, body.game.touch-ui-on .dialogue { width: min(520px, calc(100vw - 24px)); max-height: 62dvh; }
   body.game .chars-panel { left: 0; right: auto; width: min(420px, 62vw); top: 0; bottom: 0; max-height: none; }
   body.game.touch-ui-on .prompt { bottom: calc(var(--ctl-b) + 4px); }
   body.game.touch-ui-on .tahiti-hints { bottom: calc(var(--ctl-b) + 56px); }
+}
+
+/* phones: tapping the minimap opens the full map, so the separate M button goes;
+   during the tour the top HUD steps aside and the tour card has the screen */
+@media (max-width: 760px), (max-height: 520px) and (orientation: landscape), (pointer: coarse) and (max-width: 1100px) {
+  body.game .map-btn { display: none !important; }
+  body:has(#tour-card:not(.hidden)) :is(.hud-top, .minimap-wrap, .help-btn, .journey, #hud-nav) { visibility: hidden !important; }
+  /* the tour card sits at the top of the screen where the hidden HUD was */
+  body.game .tour-card { top: calc(max(8px, env(safe-area-inset-top)) + 56px) !important; bottom: auto !important; left: 50% !important; right: auto !important; transform: translateX(-50%) !important; }
+  body.game:has(#tour-card:not(.hidden)) .prompt { bottom: calc(var(--ctl-b, 16px) + var(--stick, 120px) + 12px) !important; }
 }
 
 /* a sheet / modal owns the screen: the floating HUD pieces step aside instead of drawing over it */
@@ -140,7 +149,7 @@ body:has(#panel:not(.hidden), #bigmap:not(.hidden), #minigame:not(.hidden), .pho
   /* drawer: game.css forces right:auto !important, so win it explicitly */
   body.game .journey.open-m { left: 0 !important; right: 0 !important; width: 100vw; max-width: 100vw !important; box-sizing: border-box; }
   /* save chip: just avatar + count */
-  body.game .journey:not(.open-m) { padding: 3px 8px 3px 3px; max-width: none; width: auto; }
+  body.game .journey:not(.open-m) { padding: 3px 14px 3px 3px; outline: 0; box-shadow: 0 0 0 2px var(--ui-forest); max-width: none; width: auto; }
   body.game .journey:not(.open-m) #portrait { width: 30px; height: 30px; }
   body.game .journey:not(.open-m) .journey-toggle { border: 0; min-width: 20px; min-height: 30px; padding: 0; font-size: 11px; }
   body.game .journey:not(.open-m) .save-stats { font-size: 11px; }
@@ -148,9 +157,9 @@ body:has(#panel:not(.hidden), #bigmap:not(.hidden), #minigame:not(.hidden), .pho
   /* place labels: smaller, wrap instead of running across the screen */
   body.game .world-label { font-size: 8px; max-width: 44vw; white-space: normal; text-align: center; line-height: 1.25; padding: 4px 6px 3px 10px; overflow-wrap: anywhere; }
   /* Jump / Use: one tidy thumb arc in the bottom-right */
-  body.game .tc-btns { display: block; width: 150px; height: 136px; gap: 0; }
+  body.game .tc-btns { display: block; width: 156px; height: 120px; gap: 0; }
   body.game .tc-act { position: absolute; right: 0; bottom: 0; min-width: 78px; width: 78px; height: 78px; }
-  body.game #tc-jump { position: absolute; right: 66px; bottom: 52px; margin: 0; min-width: 64px; width: 64px; height: 64px; border-radius: 50%; padding: 0; }
+  body.game #tc-jump { position: absolute; right: 90px; bottom: 36px; margin: 0; min-width: 64px; width: 64px; height: 64px; border-radius: 50%; padding: 0; }
 }
 
 /* ---- interaction cards (E): anchored to the top, fit the visible screen, compact type ---- */

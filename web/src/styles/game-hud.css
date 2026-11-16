@@ -1,0 +1,227 @@
+/* =====================================================================
+   PHONE HUD v2 — compact controls, slim profile card, tidy top-right
+   stack, and the zoomable island map. Loaded last so it wins over the
+   earlier layers (game.css / game-mobile.css / game-compact.css).
+   Palette: cream #FFF3D6 · deep forest #193D33 · button green #244B3E · sage #91A58B
+   ===================================================================== */
+:root { --hud-cream: #FFF3D6; --hud-forest: #193D33; --hud-green: #244B3E; --hud-sage: #91A58B; }
+
+@media (max-width: 760px), (max-height: 520px) and (orientation: landscape), (pointer: coarse) and (max-width: 1100px) {
+  body.game {
+    --sa-t: env(safe-area-inset-top, 0px); --sa-r: env(safe-area-inset-right, 0px);
+    --sa-b: env(safe-area-inset-bottom, 0px); --sa-l: env(safe-area-inset-left, 0px);
+    --hud-t: max(12px, calc(var(--sa-t) + 8px));        /* top of the MENU button */
+    --edge: calc(12px + var(--sa-l));
+    --edgeR: calc(16px + var(--sa-r));
+    --hudY: calc(var(--hud-t) + 52px);                    /* row under MENU: profile card + minimap */
+    --mm: clamp(84px, 24vw, 100px);
+    --ctl-b: calc(24px + var(--sa-b));
+    --stick: 108px;
+  }
+
+  /* ---- MENU: 68 × 40, 16px from the right safe edge ---- */
+  body.game .menu-toggle {
+    position: fixed; top: var(--hud-t); right: var(--edgeR); z-index: 12; pointer-events: auto;
+    width: 68px; min-width: 68px; height: 40px; min-height: 40px; padding: 0; box-sizing: border-box;
+    background: var(--hud-green); color: var(--hud-cream); border: 2px solid var(--hud-forest);
+    box-shadow: 2px 2px 0 var(--hud-forest); clip-path: none; font-size: 11px;
+  }
+  body.game .logo { min-height: 40px; min-width: 40px; }
+  body.game img.logo-mark, body.game .logo-mark { width: 32px; height: 32px; }
+  body.game .recruiter-bar { top: calc(var(--hud-t) + 48px); right: var(--edgeR); }
+
+  /* ---- minimap: ~90px, 12px under MENU ---- */
+  body.game .minimap-wrap { top: var(--hudY); right: var(--edgeR); width: var(--mm); height: var(--mm); }
+  body.game #minimap { box-sizing: border-box; border: 2px solid var(--hud-cream); box-shadow: 0 0 0 2px var(--hud-forest), 2px 3px 0 2px rgba(25, 61, 51, .35); }
+
+  /* ---- help: 36px disc inside a 44px touch target, centred under the minimap ---- */
+  body.game .help-btn {
+    position: fixed; top: calc(var(--hudY) + var(--mm) + 4px); right: calc(var(--edgeR) + (var(--mm) - 44px) / 2); bottom: auto; left: auto;
+    width: 44px; height: 44px; padding: 0; z-index: 5; background: transparent; border: 0; box-shadow: none;
+    color: var(--hud-cream); font: 400 14px var(--font-pixel); display: grid; place-items: center; isolation: isolate;
+  }
+  body.game .help-btn::before {
+    content: ''; position: absolute; inset: 4px; z-index: -1; border-radius: 50%;
+    background: var(--hud-forest); border: 2px solid var(--hud-cream); box-shadow: 0 0 0 1.5px var(--hud-forest);
+  }
+  body.game .controls { top: calc(var(--hudY) + var(--mm) + 56px); }
+  body.game .toast { top: calc(var(--hudY) + var(--mm) + 56px); }
+
+  /* ---- profile card: one row, ~132 × 44, single forest border + 2px offset shadow ---- */
+  body.game .journey:not(.open-m) {
+    top: var(--hudY); left: var(--edge); right: auto !important;
+    min-width: 132px; width: auto; max-width: calc(100vw - var(--edge) - var(--mm) - var(--edgeR) - 12px); height: 44px;
+    padding: 0 4px 0 6px !important; box-sizing: border-box; display: flex; align-items: center;
+    background: var(--hud-cream); border: 2px solid var(--hud-forest); outline: 0 !important;
+    box-shadow: 2px 2px 0 var(--hud-forest) !important; clip-path: none !important; border-radius: 0; overflow: visible;
+  }
+  body.game .journey:not(.open-m) .player-card {
+    display: flex; align-items: center; gap: 8px; width: 100%; height: 100%;
+    margin: 0; padding: 0; border: 0; box-shadow: none !important; background: transparent;
+  }
+  body.game .journey:not(.open-m) #portrait { width: 32px; height: 32px; box-sizing: border-box; border: 2px solid var(--hud-forest); flex: none; }
+  body.game .journey:not(.open-m) .save-meta { display: flex; align-items: center; min-width: 0; flex: 1 1 auto; }
+  body.game .journey:not(.open-m) .save-stats { margin: 0; font: 400 12px/1 var(--font-pixel); color: var(--hud-forest); white-space: nowrap; display: flex; align-items: center; }
+  body.game .journey:not(.open-m) .save-stats b { font-weight: 400; }
+  body.game .journey:not(.open-m) .journey-toggle {
+    position: static; flex: none; width: 28px; min-width: 28px; height: 32px; min-height: 32px; padding: 0; margin: 0;
+    display: grid; place-items: center; font-size: 12px; line-height: 1; transform: none;
+    background: transparent; border: 0; box-shadow: none; color: var(--hud-forest);
+  }
+  /* the whole card is the tap target for the dropdown */
+  body.game .journey:not(.open-m) .journey-toggle::after { content: ''; position: absolute; inset: -2px; }
+
+  /* ---- thumb controls ---- */
+  body.game .tc-stick {
+    left: calc(20px + var(--sa-l)); right: auto; bottom: var(--ctl-b);
+    width: var(--stick); height: var(--stick); box-sizing: border-box;
+    background: rgba(25, 61, 51, .42); border: 2px solid var(--hud-cream);
+    box-shadow: 0 2px 0 rgba(25, 61, 51, .45), inset 0 0 0 5px rgba(25, 61, 51, .22);
+    overscroll-behavior: contain;
+  }
+  body.game .tc-stick.on { background: rgba(25, 61, 51, .6); }
+  body.game .tc-knob, body.game .tc-stick .tc-knob {
+    width: 46px; height: 46px; margin: -23px 0 0 -23px; box-sizing: border-box;
+    background: var(--hud-green); border: 2px solid var(--hud-cream); box-shadow: 0 2px 0 var(--hud-forest);
+  }
+  body.game .tc-btns {
+    display: block; position: fixed; left: auto; right: calc(20px + var(--sa-r)); bottom: var(--ctl-b);
+    width: 130px; height: 101px; gap: 0; pointer-events: none;
+  }
+  body.game .tc-btn { pointer-events: auto; box-sizing: border-box; padding: 0; border-radius: 50%; display: grid; place-items: center; box-shadow: 0 3px 0 var(--hud-forest); }
+  /* USE 68px, bottom-right; JUMP 56px above-left, ~16px edge to edge */
+  body.game .tc-btn.tc-act {
+    position: absolute; right: 0; bottom: 0; width: 68px; min-width: 68px; height: 68px;
+    font-size: 13px; background: var(--hud-green); color: var(--hud-cream); border: 2px solid var(--hud-cream);
+    box-shadow: 0 0 0 2px var(--hud-forest), 0 3px 0 2px var(--hud-forest);
+  }
+  body.game #tc-jump {
+    position: absolute; right: 74px; bottom: 45px; margin: 0; width: 56px; min-width: 56px; height: 56px;
+    font-size: 10px; background: var(--hud-cream); color: var(--hud-forest); border: 2px solid var(--hud-forest);
+  }
+  body.game .tc-btn.down { transform: translateY(2px); box-shadow: 0 1px 0 var(--hud-forest); filter: none; }
+  body.game .tc-btn.tc-act.down { box-shadow: 0 0 0 2px var(--hud-forest), 0 1px 0 2px var(--hud-forest); }
+
+  /* very narrow phones: a touch tighter so the two clusters keep a clear gap */
+  @media (max-width: 340px) {
+    body.game { --stick: 100px; }
+    body.game .tc-stick { left: calc(14px + var(--sa-l)); }
+    body.game .tc-btns { right: calc(14px + var(--sa-r)); }
+    body.game .tc-knob, body.game .tc-stick .tc-knob { width: 42px; height: 42px; margin: -21px 0 0 -21px; }
+  }
+}
+
+/* landscape phones: shorter screen, so keep the clusters low and the top stack short */
+@media (max-height: 520px) and (orientation: landscape) {
+  body.game { --ctl-b: calc(16px + var(--sa-b)); --mm: 80px; --hud-t: max(8px, calc(var(--sa-t) + 6px)); --hudY: calc(var(--hud-t) + 48px); }
+  body.game .tc-stick { left: calc(24px + var(--sa-l)); }
+  body.game .tc-btns { right: calc(24px + var(--sa-r)); }
+  /* the help disc moves beside the minimap so it doesn't drop into the button cluster */
+  body.game .help-btn { top: calc(var(--hudY) + (var(--mm) - 44px) / 2); right: calc(var(--edgeR) + var(--mm) + 6px); }
+}
+
+/* ---------- Full map modal ---------- */
+.bigmap-stage { position: relative; line-height: 0; }
+#bigmap-canvas { touch-action: none; cursor: pointer; max-width: none; }
+.bigmap-legend .lg-ch { background: #D8B45B; transform: rotate(45deg) scale(.85) !important; border-radius: 0 !important; }
+.bigmap-legend .lg-done { background: var(--hud-sage); transform: rotate(45deg) scale(.85) !important; border-radius: 0 !important; }
+.bigmap-legend .lg-st { background: var(--hud-cream); border-radius: 0; }
+.bigmap-legend .lg-you { background: #D8B45B; border-radius: 50%; box-shadow: 0 0 0 2px var(--hud-cream), 0 0 0 3.5px var(--hud-forest); border-color: var(--hud-forest); }
+.bigmap-zoom {
+  position: absolute; top: 8px; right: 8px; display: flex; flex-direction: column; align-items: center; gap: 4px; line-height: 1;
+}
+.bigmap-zoom button {
+  width: 40px; height: 40px; display: grid; place-items: center; padding: 0; cursor: pointer;
+  font: 400 18px var(--font-pixel); background: var(--hud-cream); color: var(--hud-forest);
+  border: 2px solid var(--hud-forest); box-shadow: 2px 2px 0 var(--hud-forest);
+}
+.bigmap-zoom span { font: 400 8px var(--font-pixel); color: var(--hud-cream); background: var(--hud-forest); padding: 2px 3px; border: 1px solid var(--hud-forest); }
+.bigmap-info {
+  position: absolute; left: 8px; right: 8px; bottom: 8px; display: flex; align-items: center; gap: 8px; line-height: 1.2;
+  padding: 6px 6px 6px 10px; background: var(--hud-cream); color: var(--hud-forest);
+  border: 2px solid var(--hud-forest); box-shadow: 2px 2px 0 var(--hud-forest);
+}
+.bigmap-info.hidden { display: none; }
+.bigmap-info strong { flex: 1 1 auto; min-width: 0; font: 400 11px/1.3 var(--font-pixel); overflow-wrap: anywhere; }
+.bigmap-info button { min-height: 44px; cursor: pointer; font: 400 11px var(--font-pixel); border: 2px solid var(--hud-forest); }
+.bigmap-info .bmi-go { padding: 0 14px; background: var(--hud-green); color: var(--hud-cream); box-shadow: 2px 2px 0 var(--hud-sage); }
+.bigmap-info .bmi-x { width: 44px; padding: 0; background: transparent; color: var(--hud-forest); border-color: transparent; }
+body.game .bigmap-card { background: var(--hud-cream); border: 2px solid var(--hud-forest); box-shadow: 4px 4px 0 var(--hud-forest); clip-path: none; }
+body.game .bigmap-card .window-bar { background: var(--hud-forest); color: var(--hud-cream); }
+body.game .bigmap-legend { color: var(--hud-forest); border-top-color: var(--hud-forest); background: var(--hud-cream); }
+body.game .bigmap-legend i { border-color: var(--hud-forest); }
+#bigmap-close { min-width: 44px; min-height: 44px; }
+
+@media (max-width: 760px), (max-height: 520px) and (orientation: landscape), (pointer: coarse) and (max-width: 1100px) {
+  body.game .bigmap {
+    padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+    overflow: hidden; overscroll-behavior: contain; touch-action: none;
+  }
+  body.game .bigmap-card { max-width: calc(100vw - 24px); max-height: none; overflow: visible; display: block; }
+  body.game #bigmap-canvas { max-height: none; height: auto; }
+  body.game .bigmap-card .window-bar { min-height: 44px; padding: 0 0 0 10px; display: flex; align-items: center; }
+  body.game .bigmap-card .window-bar .title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+  body.game #bigmap-close { width: 44px; height: 44px; margin: 0; }
+  body.game .bigmap-legend { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 12px; padding: 6px 10px; font-size: 11px; }
+}
+@media (max-height: 520px) and (orientation: landscape) {
+  /* landscape: legend runs down the side so the map keeps its height */
+  body.game .bigmap-card { display: grid; grid-template-columns: auto auto; grid-template-rows: auto auto; }
+  body.game .bigmap-card .window-bar { grid-column: 1 / -1; }
+  body.game .bigmap-legend { grid-template-columns: 1fr; border-top: 0; border-left: 2px solid var(--hud-forest); align-content: start; }
+}
+
+/* phones: no logo tile; the profile card takes the top-left corner, level with MENU */
+@media (max-width: 760px), (max-height: 520px) and (orientation: landscape), (pointer: coarse) and (max-width: 1100px) {
+  body.game .hud-top .logo { display: none !important; }
+  body.game .journey:not(.open-m) {
+    top: var(--hud-t); height: 40px; min-width: 120px; padding: 0 0 0 4px !important; gap: 0;
+    background: var(--hud-cream); border: 2px solid var(--hud-forest); box-shadow: 2px 2px 0 var(--hud-forest) !important;
+  }
+  body.game .journey:not(.open-m) .player-card { gap: 8px; }
+  body.game .journey:not(.open-m) #portrait { width: 30px; height: 30px; border-width: 1.5px; }
+  body.game .journey:not(.open-m) .save-stats { font-size: 12px; letter-spacing: .04em; }
+  body.game .journey:not(.open-m) .journey-toggle {
+    width: 30px; min-width: 30px; height: 100%; min-height: 0; margin-left: 4px;
+    background: var(--hud-green); color: var(--hud-cream); border-left: 2px solid var(--hud-forest); font-size: 11px;
+  }
+}
+
+/* one palette everywhere: cream surfaces, forest ink and borders, sage for secondary, gold as the only accent */
+body.game .bigmap { background: rgba(25, 61, 51, .55); }
+.bigmap-zoom button { background: var(--hud-green); color: var(--hud-cream); }
+body.game #minimap { border-color: var(--hud-cream); }
+body.game .menu-toggle, body.game .help-btn::before, body.game .journey:not(.open-m) .journey-toggle { background: var(--hud-green); }
+
+/* phone profile card: avatar, count and arrow all share one vertical centre line */
+@media (max-width: 760px), (max-height: 520px) and (orientation: landscape), (pointer: coarse) and (max-width: 1100px) {
+  body.game .journey:not(.open-m), body.game .journey:not(.open-m) .player-card, body.game .journey:not(.open-m) .save-meta { align-items: center; }
+  body.game .journey:not(.open-m) #portrait { display: block; margin: 0 !important; align-self: center; position: static; transform: none; }
+  body.game .journey:not(.open-m) .save-stats, body.game .journey:not(.open-m) .save-stats span { display: flex; align-items: center; line-height: 1; margin: 0; padding: 0; }
+  body.game .journey:not(.open-m) .journey-toggle { align-self: stretch; }
+}
+
+/* phones: MENU shares a vertical centre line with the minimap and help button below it */
+@media (max-width: 760px), (max-height: 520px) and (orientation: landscape), (pointer: coarse) and (max-width: 1100px) {
+  body.game .menu-toggle { right: calc(var(--edgeR) + (var(--mm) - 68px) / 2); }
+}
+/* landscape: help sits beside the minimap, so MENU keeps the plain edge inset */
+@media (max-height: 520px) and (orientation: landscape) {
+  body.game .menu-toggle { right: calc(var(--edgeR) + (var(--mm) - 68px) / 2); }
+}
+
+/* phone profile card: the dropdown arrow sits on the card's own cream, no green block */
+@media (max-width: 760px), (max-height: 520px) and (orientation: landscape), (pointer: coarse) and (max-width: 1100px) {
+  body.game .journey:not(.open-m) .journey-toggle,
+  body.game aside.journey:not(.open-m) .journey-toggle {
+    background: var(--hud-cream) !important; color: var(--hud-forest) !important;
+    border: 0 !important; box-shadow: none !important; clip-path: none;
+  }
+}
+
+/* desktop too: the dropdown arrow is plain forest on the card's cream (the phone sheet's close button keeps its own look) */
+body.game .journey:not(.open-m) .journey-toggle,
+body.game aside.journey:not(.open-m) .journey-toggle {
+  background: var(--hud-cream) !important; color: var(--hud-forest) !important;
+  border: 0 !important; box-shadow: none !important;
+}

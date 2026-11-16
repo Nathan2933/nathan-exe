@@ -25,6 +25,8 @@
     <link rel="stylesheet" href="/src/styles/game.css" />
     <link rel="stylesheet" href="/src/styles/game-mobile.css" />
     <link rel="stylesheet" href="/src/styles/game-compact.css" />
+    <link rel="stylesheet" href="/src/styles/game-hud.css" />
+    <link rel="stylesheet" href="/src/styles/game-chapter.css" />
     <noscript><meta http-equiv="refresh" content="0; url=./" /></noscript>
   </head>
   <body class="game">
@@ -53,7 +55,7 @@
         <div class="save-meta">
           <small>Save file · <span id="play-time">00:00:00</span></small>
           <strong id="player-name">NATHAN</strong>
-          <div class="save-stats"><span title="Chapters">◆ <b id="journey-count">0/6</b></span></div>
+          <div class="save-stats"><span class="crest-chip" role="img" aria-label="Chapter progress"><span id="journey-crest" aria-hidden="true"></span><b id="journey-count" aria-hidden="true">0/6</b></span></div>
         </div>
         <button type="button" class="journey-toggle" id="journey-toggle" aria-label="Show or hide chapters">▾</button>
       </div>
@@ -99,8 +101,20 @@
     </section>
     <section class="bigmap hidden" id="bigmap" role="dialog" aria-label="Island map">
       <div class="bigmap-card window">
-        <div class="window-bar"><span class="title">island.map · click to travel</span><button class="panel-close" id="bigmap-close" aria-label="Close map">✕</button></div>
-        <canvas id="bigmap-canvas"></canvas>
+        <div class="window-bar"><span class="title">island.map · tap to travel</span><button class="panel-close" id="bigmap-close" aria-label="Close map">✕</button></div>
+        <div class="bigmap-stage">
+          <canvas id="bigmap-canvas" aria-label="Island map. Tap a building to travel; pinch or use the buttons to zoom."></canvas>
+          <div class="bigmap-zoom" role="group" aria-label="Map zoom">
+            <button type="button" id="bigmap-zoom-in" aria-label="Zoom in">+</button>
+            <span id="bigmap-zoom-level" aria-live="polite">100%</span>
+            <button type="button" id="bigmap-zoom-out" aria-label="Zoom out">−</button>
+          </div>
+          <div class="bigmap-info hidden" id="bigmap-info" role="status">
+            <strong id="bigmap-info-name"></strong>
+            <button type="button" class="bmi-go" id="bigmap-info-go">Travel</button>
+            <button type="button" class="bmi-x" id="bigmap-info-close" aria-label="Clear selection">✕</button>
+          </div>
+        </div>
         <div class="bigmap-legend"><span><i class="lg-ch"></i>Chapter</span><span><i class="lg-done"></i>Visited</span><span><i class="lg-st"></i>Station</span><span><i class="lg-you"></i>You</span></div>
       </div>
     </section>
@@ -141,7 +155,6 @@
       </div>
       <div class="boot-err hidden" id="boot-err" role="alert"><span id="boot-err-msg"></span><button type="button" class="btn" id="boot-retry" onclick="location.reload()">Retry</button></div>
       <button type="button" class="boot-start hidden" id="boot-start" aria-label="Press start"><i aria-hidden="true">▶</i> PRESS START <i aria-hidden="true">◀</i></button>
-      <a class="boot-skip" href="./">Skip to portfolio</a>
     </div>
 
     <script type="module" src="/src/game/main.js"></script>

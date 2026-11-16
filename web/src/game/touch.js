@@ -7,8 +7,11 @@
 export const touchInput = { x: 0, y: 0, mag: 0, run: false, active: false };
 
 export function initTouchControls(keys) {
-  const wantTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window || /[?&]touch=1/.test(location.search);
-  if (!wantTouch) return null;
+  // Re-evaluated live: the primary pointer can change at runtime (DevTools device mode, tablet/laptop
+  // convertibles), so the controls follow it instead of sticking with whatever was true at page load.
+  // `'ontouchstart' in window` is deliberately not used — touchscreen laptops with a mouse report it too.
+  const forced = /[?&]touch=1/.test(location.search);
+  const coarse = matchMedia('(pointer: coarse)');
 
   const root = document.createElement('div');
   root.className = 'touch-ui';
@@ -19,7 +22,13 @@ export function initTouchControls(keys) {
       <button type="button" class="tc-btn tc-act" id="tc-act" aria-label="Interact">USE</button>
     </div>`;
   document.body.append(root);
-  document.body.classList.add('touch-ui-on');
+  const sync = () => {
+    const on = forced || coarse.matches;
+    document.body.classList.toggle('touch-ui-on', on);
+    if (!on) { touchInput.x = touchInput.y = touchInput.mag = 0; touchInput.run = touchInput.active = false; }
+  };
+  sync();
+  coarse.addEventListener('change', sync);
 
   const press = (k) => { document.body.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true })); };
   const release = (k) => { document.body.dispatchEvent(new KeyboardEvent('keyup', { key: k, bubbles: true })); };
@@ -62,6 +71,8 @@ export function initTouchControls(keys) {
   stick.addEventListener('pointercancel', end);
   stick.addEventListener('lostpointercapture', end);
   stick.addEventListener('contextmenu', (e) => e.preventDefault());
+  // belt and braces for browsers that ignore touch-action: the page never scrolls or zooms under the stick
+  stick.addEventListener('touchmove', (e) => { if (e.cancelable) e.preventDefault(); }, { passive: false });
   // never leave the character walking: a cancelled touch, a lost window, or the controls being hidden
   window.addEventListener('blur', reset);
   window.addEventListener('pagehide', reset);
