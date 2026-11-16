@@ -1418,3 +1418,14 @@ body.game aside.journey.open-m .chars-toggle { min-height: 48px; font-size: 12px
 body.game aside.journey.open-m .look { grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 2px dashed var(--ui-sage); }
 body.game aside.journey.open-m .look button { min-height: 48px; font-size: 12px; }
 body.game aside.journey.open-m .look #look-time { grid-column: 1 / -1; }
+
+/* phone tour: a slim strip that sits above the joystick and action button so the controls stay usable */
+@media (max-width: 760px), (max-height: 520px) and (orientation: landscape) {
+  body.game .tour-card { top: auto; bottom: calc(var(--ctl-b, 16px) + var(--stick, 120px) + 12px); width: min(360px, calc(100vw - 24px)); padding: 0 0 6px; gap: 6px; }
+  body.game .tour-card .hw-banner { padding: 4px 8px 5px; }
+  body.game .tour-card .tc-step { font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  body.game .tour-card .tc-text { display: none; }
+  body.game .tour-card .tc-row { margin: 0 8px; gap: 6px; }
+  body.game .tour-card .tour-btn.hw-btn { min-height: 32px; font-size: 15px; box-shadow: 2px 2px 0 #ADC29B; }
+  body.game:has(#tour-card:not(.hidden)) .prompt { bottom: calc(var(--ctl-b, 16px) + var(--stick, 120px) + 108px) !important; }
+}
