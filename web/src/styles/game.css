@@ -1392,3 +1392,29 @@ body.game .recruiter-bar .btn { white-space: nowrap; flex: 0 1 auto; min-width: 
   body.game .logo-text { display: none; }
   body.game .logo { padding-right: 4px; }
 }
+
+/* phone: the "Open chapter" prompt rides above the tour card instead of under it */
+@media (max-width: 760px), (max-height: 520px) and (orientation: landscape) {
+  body.game:has(#tour-card:not(.hidden)) .prompt { bottom: calc(max(10px, env(safe-area-inset-bottom)) + 190px) !important; left: 50% !important; right: auto !important; transform: translateX(-50%) !important; max-width: calc(100vw - 24px) !important; z-index: 36; }
+}
+
+/* phone: the save-file sheet in cream / forest / sage */
+body.game aside.journey.open-m { background: var(--ui-cream); color: var(--ui-forest); outline: 0; border-top: 4px solid var(--ui-forest); box-shadow: 0 -4px 0 var(--ui-sage); }
+body.game aside.journey.open-m .player-card { background: var(--ui-forest); border-bottom: 4px solid var(--ui-sage); box-shadow: none; }
+body.game aside.journey.open-m .player-card small { color: var(--ui-sage); opacity: 1; }
+body.game aside.journey.open-m .player-card strong, body.game aside.journey.open-m .player-card .save-stats { color: var(--ui-cream); }
+body.game aside.journey.open-m #portrait { border-color: var(--ui-cream); }
+body.game aside.journey.open-m .journey-toggle { background: var(--ui-sage); border: 2px solid var(--ui-cream); color: var(--ui-forest); box-shadow: 2px 2px 0 #0f1f1a; }
+body.game aside.journey.open-m .journey-toggle::before { color: var(--ui-forest); }
+body.game aside.journey.open-m li button { background: #fff8e6; color: var(--ui-forest); border: 2px solid var(--ui-forest); box-shadow: 3px 3px 0 var(--ui-sage); font-weight: 600; }
+body.game aside.journey.open-m li button::before { background: var(--ui-cream); border-color: var(--ui-forest); }
+body.game aside.journey.open-m li.done button { color: var(--ui-forest); opacity: 1; background: var(--ui-sage); }
+body.game aside.journey.open-m li.done button::before { background: var(--ui-forest); }
+body.game aside.journey.open-m li.done button::after { color: var(--ui-forest); }
+body.game aside.journey.open-m li.next button { background: var(--ui-forest); color: var(--ui-cream); box-shadow: 3px 3px 0 var(--ui-sage); }
+body.game aside.journey.open-m li.next button::before { background: var(--ui-yellow); border-color: var(--ui-cream); }
+body.game aside.journey.open-m li.next button::after { color: var(--ui-yellow); }
+body.game aside.journey.open-m .chars-toggle { min-height: 48px; font-size: 12px; }
+body.game aside.journey.open-m .look { grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 2px dashed var(--ui-sage); }
+body.game aside.journey.open-m .look button { min-height: 48px; font-size: 12px; }
+body.game aside.journey.open-m .look #look-time { grid-column: 1 / -1; }
