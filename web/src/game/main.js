@@ -597,7 +597,7 @@ function setupUI() {
         }
         return;
       }
-      if (state.passengerOf === 'guru') return;
+      if (state.passengerOf) return;
       if (player.jump()) sfx.rep();
       return;
     }
@@ -633,6 +633,11 @@ function setupUI() {
       conversationSystem.recordEvent(state.save, 'harris', home ? 'flight_home' : 'flight_tahiti');
       persist();
       return void startFlight(home ? 'island1' : 'tahiti');
+    }
+    if (name === 'shabeer-ride') {
+      dialogue.close();
+      if (state.level === 'island1') shabeerRoutine.boardNathanAsPassenger();
+      return;
     }
     if (name === 'scooter-ride' || name === 'join-guru-ride') {
       dialogue.close();
@@ -807,7 +812,7 @@ function renderJourney() {
 function interact(it) {
   if (state.visiting) return;   // tour or visit transition: no accidental interactions
   if (state.mount) return dismount();
-  if (state.passengerOf === 'guru') return guruRoutine.dismountNathanPassenger();
+  if (state.passengerOf) return passengerRoutine().dismountNathanPassenger();
   if (state.seated) return standUp();
   if (it.kind === 'group') return runGroupScene(it);
   if (it.kind === 'activity') { tahiti.leaveJoin(); return void tahiti.interact(it); }
@@ -815,6 +820,7 @@ function interact(it) {
     if (it.vtype === 'scooty' && state.level === 'island1' && guruRoutine.isGuruMounted()) {
       return guruRoutine.boardNathanAsPassenger();
     }
+    if (it.id === 'vehicle:moto-shabeer' && state.level === 'island1') return void shabeerRoutine.boardNathanAsPassenger();
     return mount(it);
   }
   if (it.kind === 'seat') return sitDown(it);
@@ -2941,12 +2947,12 @@ function update(dt, t) {
 
   if (state.seated && (kx || kz || state.path.length)) standUp();
   if (state.joined && (kx || kz || state.path.length)) tahiti.leaveJoin();
-  if (state.passengerOf === 'guru' && (kx || kz || state.path.length)) guruRoutine.dismountNathanPassenger();
+  if (state.passengerOf && (kx || kz || state.path.length)) passengerRoutine().dismountNathanPassenger();
   const keyboardMove = !state.mount && !state.passengerOf && state.started && !frozen && !state.ko && (joy ? touchInput.mag > 0 : !!(kx || kz));
   if (state.mount) {
     rideUpdate(dt, t, kx, kz, running);
-  } else if (state.passengerOf === 'guru') {
-    /* Nathan is riding as passenger on Guru's scooty */
+  } else if (state.passengerOf) {
+    /* Nathan is riding as passenger on Guru's or Shabeer's bike */
   } else {
   if (keyboardMove) {
     state.path = []; state.pendingOpen = null; marker.visible = false;
@@ -3006,8 +3012,8 @@ function update(dt, t) {
     if (d < it.radius && score < bestD) { best = it; bestD = score; }
   }
   if (state.mount) best = state.mount.it;
-  if (state.passengerOf === 'guru') {
-    best = { kind: 'passenger', id: 'passenger:guru', x: pos.x, z: pos.z, radius: 2.0 };
+  if (state.passengerOf) {
+    best = { kind: 'passenger', id: `passenger:${state.passengerOf}`, who: state.passengerOf, x: pos.x, z: pos.z, radius: 2.0 };
   }
   if (state.gym) best = null;
   burstTick(dt);
@@ -3994,8 +4000,8 @@ function trainCollisionDeath(car) {
   closePanel();
   dialogue.close();
 
-  if (state.passengerOf === 'guru') {
-    guruRoutine?.dismountNathanPassenger?.(true);
+  if (state.passengerOf) {
+    passengerRoutine()?.dismountNathanPassenger?.(true);
     player.group.position.copy(hitPos);
   }
   const p = player.group.position;
@@ -4262,8 +4268,8 @@ function updatePrompt() {
   const best = state.nearby, pr = $('#prompt');
   if (!best || state.ko || state.panelOpen || dialogue.open || state.minigame || state.groupScene || (state.level === 'tahiti' && tahiti.inMatch())) { pr.classList.add('hidden'); return; }
   if (best.kind === 'passenger') {
-    $('#prompt-kind').textContent = "Guru's Scooty";
-    $('#prompt-title').textContent = 'Dismount';
+    $('#prompt-kind').textContent = best.who === 'shabeer' ? "Shabeer's Bike" : "Guru's Scooty";
+    $('#prompt-title').textContent = best.who === 'shabeer' ? 'Get off' : 'Dismount';
     pr.querySelector('kbd').textContent = isTouch ? '◆' : 'E';
     pr.classList.remove('hidden');
     return;
@@ -4283,7 +4289,7 @@ function updatePrompt() {
     group: ['Group', best.title || 'Join in'],
     activity: ['Tahiti', best.title],
     seat: ['Bench', state.seated ? 'Stand up' : 'Sit down'],
-    vehicle: [{ horse: 'Horse', moto: 'Motorcycle', scooty: best.label || "Guru's Scooty" }[best.vtype] || 'Bicycle', state.mount ? 'Dismount' : isGuruScootyRide ? 'Ride along with Guru' : { horse: 'Ride horse', moto: 'Ride motorcycle', scooty: 'RIDE SCOOTY' }[best.vtype] || 'Ride bicycle'],
+    vehicle: [{ horse: 'Horse', moto: best.id === 'vehicle:moto-shabeer' ? "Shabeer's Bike" : 'Motorcycle', scooty: best.label || "Guru's Scooty" }[best.vtype] || 'Bicycle', state.mount ? 'Dismount' : best.id === 'vehicle:moto-shabeer' ? 'Ride with Shabeer' : isGuruScootyRide ? 'Ride along with Guru' : { horse: 'Ride horse', moto: 'Ride motorcycle', scooty: 'RIDE SCOOTY' }[best.vtype] || 'Ride bicycle'],
     finale: ['Departures', state.save.finale ? 'See the whole island again' : 'End of Origin Isle'],
     chapter: ['Open chapter', chapterFor(c, best.district)?.title],
     gym: [best.station === 'discipline' ? 'Story' : 'Workout', (best.title || '').toUpperCase()],
@@ -4448,11 +4454,17 @@ const guruRoutine = createGuruRoutine({
   velocity
 });
 
+const passengerRoutine = () => (state.passengerOf === 'shabeer' ? shabeerRoutine : guruRoutine);
 const shabeerRoutine = createShabeerRoutine({
   state,
   player,
   heightAt,
+  toast,
+  solidFree,
+  velocity,
+  isTouch,
   dialogue,
+  get nav() { return nav; },
   isGuruMounted: () => guruRoutine.isGuruMounted(),
   get world() { return world; }
 });

@@ -139,6 +139,7 @@ export const BANK = {
     ],
     activity: [{ id: 'saving', when: (x) => /finance|budget|saving/.test(x.act || ''), lines: [n('Counting the coins again?'), c('Checking the plan. Coins are just the proof.')] }],
     topics: [
+      { id: 'ride', q: 'Ride with Shabeer', action: 'shabeer-ride', lines: [c('Hop on behind me and hold the rail. We take the ring road, slowly.')] },
       { id: 'budget', q: 'How do you budget?', lines: [c('Needs first, then savings, then fun. I write all three down before the month starts.')] },
       { id: 'saving', q: 'Tips for saving?', lines: [c('Move the money the day you get it. What you never see, you never spend.')] },
       { id: 'learning', q: 'What are you reading?', lines: [c('A book on money habits. It says small choices beat big plans. I like that.')] },

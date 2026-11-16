@@ -51,11 +51,14 @@ for (const p of ROUTE) {
   if (p.x < -24 && p.x > -26) p.x += LANE; else if (p.x > 25) p.x -= LANE;
   if (p.z < -28) p.z += LANE; else if (p.z > 26.5) p.z -= LANE;
 }
+// Seats along the bike's own axis (+z is the direction of travel): the driver sits forward, the passenger directly behind
+const DRIVER_Z = -0.05, PASSENGER_Z = -0.52, SEAT_Y = 0.3;
 const still = { x: 0, y: 0, z: 0, set(x, y, z) { this.x = x; this.y = y; this.z = z; } };
 
 export function createShabeerRoutine(ctx) {
   let phase = 'idle';          // idle | walk | ride
   let wp = 0, speed = 0, stuck = 0, guruFree = 0;
+  let passenger = false, dismounting = false, hold = 0;
   const pos = { x: PARK.x, z: PARK.z };
   let heading = PARK.heading, npc = null, bike = null;
   const vel = { x: 0, y: 0, z: 0, set(x, y, z) { this.x = x; this.y = y; this.z = z; } };
@@ -89,7 +92,7 @@ export function createShabeerRoutine(ctx) {
     const pp = ctx.player?.group?.position;
     for (let d = 0.4; d <= dist; d += 0.4) {
       const x = pos.x + sx * d, z = pos.z + cz * d;
-      if (pp && Math.hypot(pp.x - x, pp.z - z) < 1.1) return d;
+      if (pp && !passenger && Math.hypot(pp.x - x, pp.z - z) < 1.1) return d;
       for (const n of ctx.world?.npcs || []) {
         if (n === npc || n.npcId === 'guru') continue;   // riders pass each other
         const p = n.character?.group?.position;
@@ -107,6 +110,7 @@ export function createShabeerRoutine(ctx) {
   }
   function finishRide(n) {
     const ch = n.character;
+    if (passenger) placeNathanBeside(true);
     parkBike();
     ch.pose = null; ch.steer = 0;
     setNpc(STAND.x, ctx.heightAt(STAND.x, STAND.z), STAND.z);
@@ -114,8 +118,55 @@ export function createShabeerRoutine(ctx) {
     phase = 'idle'; guruFree = 0;
   }
 
-  function enter() { phase = 'idle'; wp = 0; guruFree = 0; npc = null; bike = null; parkBike(); }
+  /* Nathan steps off onto walkable ground beside the bike (right, left, then behind, then wider rings) */
+  function placeNathanBeside(silent) {
+    if (!passenger) return;
+    passenger = false; dismounting = false;
+    const st = ctx.state, pl = ctx.player;
+    st.passengerOf = null;
+    pl.pose = null; pl.riding = false;
+    const px = Math.cos(heading), pz = -Math.sin(heading), fx = Math.sin(heading), fz = Math.cos(heading);
+    const cands = [];
+    for (const r of [1.3, 1.8, 2.4]) cands.push([px * r, pz * r], [-px * r, -pz * r], [-fx * r, -fz * r], [px * r - fx * r, pz * r - fz * r], [-px * r - fx * r, -pz * r - fz * r], [fx * r, fz * r]);
+    let spot = null;
+    for (const [ox, oz] of cands) {
+      const x = pos.x + ox, z = pos.z + oz;
+      if (ctx.solidFree?.(x, z) !== false && (!ctx.nav || ctx.nav.isWalkable(x, z, 0.32)) && (ctx.world?.floorAt?.(x, z) ?? null) === null) { spot = { x, z }; break; }
+    }
+    if (!spot) spot = { x: pos.x + px * 1.3, z: pos.z + pz * 1.3 };
+    pl.group.position.set(spot.x, ctx.heightAt(spot.x, spot.z), spot.z);
+    pl.group.rotation.set(0, 0, 0);
+    pl.heading = Math.atan2(pos.x - spot.x, pos.z - spot.z);
+    ctx.velocity?.set(0, 0, 0);
+    st.path = []; st.nearby = null;
+    hold = 1.6; stuck = 0;
+    if (!silent) ctx.toast('Got off the bike.');
+  }
+
+  /* Nathan climbs on behind Shabeer. Works whether the bike is parked, being walked to, or already out on the road */
+  function boardNathanAsPassenger() {
+    const n = getNpc(), b = getBike();
+    const st = ctx.state;
+    if (!n || !b || passenger || st.passengerOf || st.mount || st.seated || ctx.dialogue?.open) return false;
+    if (phase !== 'ride') {
+      phase = 'ride'; wp = 0; speed = 0; stuck = 0; n.brain = true; n.character.pose = 'scooty';
+    }
+    if (b.beacon?.group) b.beacon.group.visible = false;
+    passenger = true; dismounting = false; hold = 0.5;
+    st.passengerOf = 'shabeer'; st.path = []; st.nearby = null;
+    ctx.player.pose = 'ride'; ctx.player.riding = true;
+    ctx.toast(`Riding with Shabeer! ${ctx.isTouch ? 'Tap Get off' : 'Press E'} to get off.`);
+    return true;
+  }
+  /* Ask Shabeer to pull up; Nathan steps off once the bike has stopped (immediately when force is set) */
+  function dismountNathanPassenger(force = false) {
+    if (!passenger) return;
+    if (force || speed < 0.3) placeNathanBeside(force); else dismounting = true;
+  }
+
+  function enter() { phase = 'idle'; wp = 0; guruFree = 0; npc = null; bike = null; passenger = false; dismounting = false; hold = 0; parkBike(); }
   function exit() {
+    if (passenger) placeNathanBeside(true);
     const n = getNpc(); if (n) { n.brain = false; n.character.pose = null; }
     npc = null; bike = null; phase = 'idle';
   }
@@ -151,6 +202,7 @@ export function createShabeerRoutine(ctx) {
     }
 
     // ride
+    if (hold > 0) hold -= dt;
     const tw = ROUTE[wp], dx = tw.x - pos.x, dz = tw.z - pos.z;
     if (Math.hypot(dx, dz) < 1.2) {
       if (wp < ROUTE.length - 1) wp++; else { finishRide(n); return; }
@@ -162,9 +214,10 @@ export function createShabeerRoutine(ctx) {
     ch.steer = steer;
     const hit = blocked(Math.max(1.8, speed * 0.75));
     let target = Math.abs(diff) > 0.5 ? 3.2 : CRUISE;
-    if (hit) { target = hit < 1.25 ? 0 : 1.5; speed = Math.max(0, speed - BRAKE * dt); }
+    if (dismounting || (hold > 0 && !passenger)) { target = 0; speed = Math.max(0, speed - BRAKE * dt); }
+    else if (hit) { target = hit < 1.25 ? 0 : 1.5; speed = Math.max(0, speed - BRAKE * dt); }
     else speed = speed < target ? Math.min(target, speed + ACCEL * dt) : Math.max(target, speed - BRAKE * 0.5 * dt);
-    stuck = speed < 0.15 ? stuck + dt : 0;
+    stuck = speed < 0.15 && !dismounting && hold <= 0 ? stuck + dt : 0;
     if (stuck > 3) { finishRide(n); return; }   // boxed in: give up and park
     const step = speed * dt;
     pos.x += Math.sin(heading) * step; pos.z += Math.cos(heading) * step;
@@ -175,12 +228,24 @@ export function createShabeerRoutine(ctx) {
     for (const w of b.model.wheels || []) w.rotation.x += step / 0.36;
     b.x = pos.x; b.z = pos.z; b.heading = heading;
     if (b.hit) b.hit.position.set(pos.x, 1.3, pos.z);
-    ch.group.position.set(pos.x - Math.sin(heading) * 0.1, y + 0.3, pos.z - Math.cos(heading) * 0.1);
+    const fx = Math.sin(heading), fz = Math.cos(heading);
+    ch.group.position.set(pos.x + fx * DRIVER_Z, y + SEAT_Y, pos.z + fz * DRIVER_Z);
     ch.heading = heading; ch.pose = 'scooty';
     ch.update(dt, still, t);
+    if (passenger) {
+      const pl = ctx.player;
+      pl.group.position.set(pos.x + fx * PASSENGER_Z, y + SEAT_Y, pos.z + fz * PASSENGER_Z);
+      pl.group.rotation.set(0, 0, 0);
+      pl.heading = heading; pl.pose = 'ride'; pl.riding = true;
+      ctx.velocity?.set(fx * speed, 0, fz * speed);
+      if (dismounting && speed < 0.25) placeNathanBeside(false);
+    }
     n.x = pos.x; n.z = pos.z;
     if (n.beacon?.group) n.beacon.group.position.set(pos.x, y + 0.04, pos.z);
     if (n.hit) n.hit.position.set(pos.x, 1.3, pos.z);
   }
-  return { enter, exit, update, getPhase: () => phase };
+  return {
+    enter, exit, update, boardNathanAsPassenger, dismountNathanPassenger,
+    getPhase: () => phase, isPassengerActive: () => passenger
+  };
 }

@@ -465,10 +465,10 @@ function buildShine(color = 0x2f6fc6) {
   k.box(0.3, 0.22, 0.46, color, 0, 0.64, 0.26);                                     // slim tank
   for (const x of [-0.17, 0.17]) { k.box(0.04, 0.2, 0.36, color, x, 0.5, 0.36, { shadow: false }); k.box(0.045, 0.03, 0.34, chrome, x, 0.64, 0.3, { shadow: false }); }   // shrouds + chrome stripe
   k.box(0.24, 0.2, 0.3, color, 0, 0.5, -0.24);                                      // side panel
-  k.box(0.3, 0.08, 0.72, black, 0, 0.73, -0.24);                                    // flat single seat
-  k.box(0.34, 0.04, 0.18, chrome, 0, 0.74, -0.66);                                  // grab rail
-  k.box(0.32, 0.05, 0.36, black, 0, 0.62, -0.66);                                   // rear fender
-  k.box(0.18, 0.08, 0.04, 0xe0202a, 0, 0.62, -0.86, { shadow: false });            // tail lamp
+  k.box(0.32, 0.08, 1.0, black, 0, 0.73, -0.3);                                     // long two-up seat (driver in front, passenger behind)
+  k.box(0.34, 0.04, 0.12, chrome, 0, 0.75, -0.86);                                  // grab rail
+  k.box(0.32, 0.05, 0.36, black, 0, 0.62, -0.74);                                   // rear fender
+  k.box(0.18, 0.08, 0.04, 0xe0202a, 0, 0.62, -0.93, { shadow: false });            // tail lamp
   k.box(0.06, 0.5, 0.06, chrome, 0, 0.44, 0.66, { rx: 0.3 });                       // fork
   k.box(0.36, 0.04, 0.3, black, 0, 0.66, 0.7);                                      // front mudguard
   k.box(0.64, 0.05, 0.05, black, 0, 1.0, 0.52);                                     // handlebar
