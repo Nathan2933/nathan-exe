@@ -1342,3 +1342,24 @@ body.game .hud-top .recruiter-bar { background: transparent; border: 0; box-shad
 /* save panel: only Bright, Pixel and Day/Night stay (motion, sound and music controls are hidden) */
 body.game .look #look-motion, body.game .look #look-sound, body.game .look #look-music, body.game .look .music-vol { display: none; }
 body.game .look #look-time { grid-column: 1 / -1; }
+
+/* yellow accents on the welcome and tour cards (labels, highlights, trim; never button fills) */
+.tour-modal.hw, .tour-card { box-shadow: 6px 6px 0 #203E35, 0 0 0 4px #FFDF32; }
+.hw-banner { border-bottom: 4px solid #FFDF32; }
+.hw-press { background: #FFDF32; color: #203E35; }
+.tour-modal.hw h2 i, .tour-modal.hw h2 b { color: #FFDF32; }
+.hw-lead b { background: #FFDF32; color: #203E35; }
+.hw-title { color: #203E35 !important; text-shadow: 2px 2px 0 #FFDF32; }
+.hw-list li { border-left: 8px solid #FFDF32; }
+.tour-card .tc-step { color: #FFDF32; }
+
+/* phone: slim tour card pinned to the bottom so the character stays visible */
+@media (max-width: 760px), (max-height: 520px) and (orientation: landscape) {
+  .tour-card { bottom: calc(max(10px, env(safe-area-inset-bottom)) + 8px); width: min(340px, calc(100vw - 24px)); padding: 0 0 8px; gap: 6px; border-width: 3px; }
+  .tour-card .hw-banner { padding: 5px 10px 6px; display: flex; align-items: center; gap: 8px; justify-content: center; border-bottom-width: 3px; }
+  .tour-card .tc-step { margin: 0; font-size: 18px; }
+  .tour-card .hw-press { font-size: 8px; padding: 2px 6px; }
+  .tour-card .tc-text { margin: 0 10px; font-size: 11px; line-height: 1.35; }
+  .tour-card .tc-row { flex-wrap: nowrap; gap: 8px; margin: 0 10px; }
+  .tour-card .tour-btn.hw-btn { min-height: 34px; font-size: 16px; padding: 2px 8px; }
+}

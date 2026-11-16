@@ -4,9 +4,9 @@
 const $ = (s) => document.querySelector(s);
 
 export const TOUR_STOPS = [
-  { id: 'montfort', label: 'Montfort', text: 'Press E here to see where it began.', district: 'lake-park' },
-  { id: 'tomsk', label: 'Tomsk', text: 'Press E here to explore the Tomsk chapter.', district: 'winter-campus' },
-  { id: 'tce', label: 'TCE', text: 'Press E here to see the college journey.', district: 'monsoon-campus' },
+  { id: 'montfort', label: 'St. Montfort School', text: 'Press E here to see where it began.', district: 'lake-park' },
+  { id: 'tomsk', label: 'Tomsk State University, Russia', text: 'Press E here to explore the Tomsk chapter.', district: 'winter-campus' },
+  { id: 'tce', label: 'TCE, Madurai', text: 'Press E here to see the college journey.', district: 'monsoon-campus' },
   { id: 'guild', label: 'Guild Hall', text: 'Press E here for skills and achievements.', district: 'signal-tower' },
   { id: 'garage', label: 'Garage', text: 'Press E at the glowing project stations. Start with the featured ones.', district: 'garage' },
 ];
