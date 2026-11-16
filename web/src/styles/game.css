@@ -1374,3 +1374,21 @@ body.game .look #look-time { grid-column: 1 / -1; }
 .hw-list li { border-left: 3px solid #203E35; }
 .tour-card .tc-step { color: #FFF1D2; }
 @media (max-width: 760px), (max-height: 520px) and (orientation: landscape) { .hw-banner { border-bottom-width: 3px; } }
+
+/* mid-width screens: keep the logo whole and every nav button on one line */
+body.game .logo { flex: none; white-space: nowrap; }
+body.game .logo-text { white-space: nowrap; }
+body.game .recruiter-bar { flex-wrap: nowrap; min-width: 0; }
+body.game .recruiter-bar .btn { white-space: nowrap; flex: 0 1 auto; min-width: 0; }
+@media (min-width: 761px) and (max-width: 1400px) {
+  body.game .hud-top { gap: 8px; }
+  body.game .hud-top .recruiter-bar { gap: 8px; }
+  body.game .recruiter-bar .btn { padding: 0 10px; font-size: 10px; letter-spacing: .02em; min-height: 36px; }
+  body.game .logo-text { font-size: 13px; }
+}
+@media (min-width: 761px) and (max-width: 1060px) {
+  body.game .hud-top .recruiter-bar { gap: 6px; }
+  body.game .recruiter-bar .btn { padding: 0 6px; font-size: 9px; }
+  body.game .logo-text { display: none; }
+  body.game .logo { padding-right: 4px; }
+}
