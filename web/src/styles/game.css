@@ -1236,3 +1236,97 @@ body.game .gh-first { font-family: var(--font-mono); font-size: 10px; padding: 1
 .tour-btn.hw-btn, .tour-btn.primary.hw-btn { min-height: 46px; padding: 6px 14px; font-size: 20px; background: #E8452C; color: #fff; border: 3px solid #1B2F2A; box-shadow: 3px 3px 0 #1B2F2A; animation: none; }
 .tour-btn.hw-btn.alt { background: #fff; color: #1B2F2A; }
 .tour-btn.hw-btn:hover, .tour-btn.hw-btn:focus-visible, .tour-btn.primary.hw-btn:hover, .tour-btn.primary.hw-btn:focus-visible { background: #F2B632; color: #1B2F2A; border-color: #1B2F2A; box-shadow: 3px 3px 0 #1B2F2A; }
+
+/* =====================================================================
+   Cream / forest / sage interface skin (top bar, save panel, welcome and
+   tour cards). Cream #FFF1D2 surfaces, forest #203E35 text + borders +
+   hard shadows, sage #ADC29B keycaps and secondary controls. Arcade
+   yellow #FFDF32 is reserved for the "← Portfolio" button alone.
+   World interaction rings and the 3D scene are untouched.
+   ===================================================================== */
+body.game {
+  --ui-cream: #FFF1D2;
+  --ui-forest: #203E35;
+  --ui-sage: #ADC29B;
+  --ui-yellow: #FFDF32;
+}
+
+/* top bar: square corners so the hard shadow shows (the stepped clip would cut it off) */
+body.game .recruiter-bar .btn,
+body.game .menu-toggle {
+  clip-path: none;
+  background: var(--ui-cream); color: var(--ui-forest);
+  border: 2px solid var(--ui-forest); box-shadow: 3px 3px 0 var(--ui-forest);
+  text-shadow: none;
+}
+body.game .recruiter-bar .btn:hover,
+body.game .recruiter-bar .btn:focus-visible,
+body.game .menu-toggle:hover { background: var(--ui-sage); color: var(--ui-forest); box-shadow: 3px 3px 0 var(--ui-forest); transform: none; }
+body.game .recruiter-bar .btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ui-forest); }
+body.game .recruiter-bar .btn.active,
+body.game .recruiter-bar .btn.on,
+body.game .recruiter-bar .btn[aria-current],
+body.game .recruiter-bar .btn[aria-pressed="true"],
+body.game .recruiter-bar .btn#nav-tour.active { background: var(--ui-forest); color: var(--ui-cream); }
+
+/* the one yellow button */
+body.game .recruiter-bar .btn.dark,
+body.game .recruiter-bar .btn.dark:hover,
+body.game .recruiter-bar .btn.dark:focus-visible {
+  background: var(--ui-yellow); color: var(--ui-forest);
+  border: 2px solid var(--ui-forest); box-shadow: 3px 3px 0 var(--ui-forest);
+}
+body.game .recruiter-bar .btn.dark:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ui-forest); }
+body.game .recruiter-bar.open { background: var(--ui-cream); border-color: var(--ui-forest); }
+
+/* logo */
+body.game .logo { background: var(--ui-forest); border: 2px solid var(--ui-forest); }
+body.game .logo-text { color: var(--ui-cream); }
+body.game .logo-text b { color: var(--ui-sage); }
+
+/* bottom-left save / mission panel */
+body.game .journey { background: var(--ui-cream); color: var(--ui-forest); outline: 2px solid var(--ui-forest); outline-offset: -4px; }
+body.game .journey .player-card { box-shadow: 0 1px 0 var(--ui-sage); }
+body.game .journey .player-card small { color: var(--ui-forest); opacity: .75; }
+body.game .journey .player-card strong, body.game .journey .save-stats { color: var(--ui-forest); }
+body.game #portrait { border-color: var(--ui-forest); background: var(--ui-sage); }
+body.game .journey-toggle { border-color: var(--ui-forest); color: var(--ui-forest); background: var(--ui-sage); border-radius: 0; }
+body.game .journey li button { color: var(--ui-forest); border-radius: 0; }
+body.game .journey li button::before { border-color: var(--ui-forest); background: var(--ui-forest); }
+body.game .journey li.done button { color: var(--ui-forest); opacity: .6; }
+body.game .journey li.done button::before { background: var(--ui-sage); }
+body.game .journey li button:hover, body.game .journey li button:focus-visible { background: var(--ui-sage); }
+body.game .journey li.next button { background: var(--ui-forest); color: var(--ui-cream); opacity: 1; }
+body.game .journey li.next button::before { background: var(--ui-cream); border-color: var(--ui-cream); }
+body.game .journey li.optional button { color: var(--ui-forest); }
+body.game .journey .chars-toggle,
+body.game .journey .look button {
+  background: var(--ui-sage); color: var(--ui-forest);
+  border: 2px solid var(--ui-forest); border-radius: 0; box-shadow: 2px 2px 0 var(--ui-forest);
+}
+body.game .journey .look button { clip-path: none; }
+body.game .journey .chars-toggle:hover, body.game .journey .chars-toggle:focus-visible, body.game .journey .chars-toggle[aria-expanded="true"],
+body.game .journey .look button:hover { background: var(--ui-forest); color: var(--ui-cream); }
+body.game .journey .look { border-top-color: var(--ui-sage); color: var(--ui-forest); }
+body.game .music-vol input { accent-color: var(--ui-forest); }
+
+/* welcome + tour cards */
+.tour-modal.hw, .tour-card { background: var(--ui-cream, #FFF1D2); border-color: #203E35; box-shadow: 6px 6px 0 #203E35, 0 0 0 4px #ADC29B; }
+.hw-banner { background: repeating-linear-gradient(135deg, #203E35 0 14px, #1a332b 14px 28px); border-bottom-color: #203E35; }
+.hw-press { background: #ADC29B; color: #203E35; border-color: #203E35; }
+.tour-modal.hw h2, .tour-card .tc-step { color: #FFF1D2; text-shadow: 3px 3px 0 #0f1f1a; }
+.tour-modal.hw h2 i { color: #ADC29B; }
+.hw-lead, .tour-card .tc-text, .tour-modal.hw p { color: #203E35 !important; }
+.hw-lead b { background: #ADC29B; color: #203E35; }
+.hw-title, .hw-lbl b { color: #203E35 !important; }
+.hw-list li { background: #FFF1D2; border-color: #203E35; box-shadow: 3px 3px 0 #203E35; color: #203E35; }
+.hw-list kbd { background: #ADC29B; color: #203E35; border-color: #203E35; }
+.hw-ic { color: #203E35; filter: grayscale(1) sepia(.4) hue-rotate(60deg) brightness(.5); }
+.tour-btn.hw-go, .tour-btn.hw-btn, .tour-btn.primary.hw-btn {
+  background: #203E35; color: #FFF1D2; border: 3px solid #203E35; box-shadow: 4px 4px 0 #ADC29B;
+}
+.tour-btn.hw-go:hover, .tour-btn.hw-go:focus-visible,
+.hw-btn:hover, .hw-btn:focus-visible, .tour-btn.hw-btn:hover, .tour-btn.hw-btn:focus-visible,
+.tour-btn.primary.hw-btn:hover, .tour-btn.primary.hw-btn:focus-visible { background: #203E35; color: #FFF1D2; border-color: #203E35; box-shadow: 4px 4px 0 #ADC29B, inset 0 0 0 2px #ADC29B; }
+.hw-btn.alt, .tour-btn.hw-btn.alt { background: #ADC29B; color: #203E35; }
+.hw-btn.alt:hover, .tour-btn.hw-btn.alt:hover, .tour-btn.hw-btn.alt:focus-visible { background: #ADC29B; color: #203E35; box-shadow: 3px 3px 0 #203E35, inset 0 0 0 2px #203E35; }
