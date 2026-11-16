@@ -1,1194 +1,1405 @@
 {
-    "meta":  {
-                 "siteTitle":  "NATHAN.EXE",
-                 "tagline":  "A portfolio you can play.",
-                 "version":  "1.0"
-             },
-    "profile":  {
-                    "name":  "Nathan Jerald",
-                    "role":  "IT Undergraduate | Learning, building & figuring things out",
-                    "location":  "Tiruchirappalli, Tamil Nadu, India",
-                    "availability":  "",
-                    "summary":  "I\u0027m Nathan, an IT undergraduate at Thiagarajar College of Engineering. I like figuring out how things work, building things with what I learn, and occasionally fixing something I broke five minutes earlier. Outside tech, I\u0027m usually watching a film or finding someone to discuss it with. NATHAN.EXE brings together the things I build, the people I know, and a few stories along the way.",
-                    "about":  [
-                                  "I like building things that people can use, not just prototypes that look impressive in screenshots. At TCE, I\u0027ve explored full-stack web development, cloud and security tooling, and team-based hackathons. From an agricultural supply-chain platform to Kubernetes security monitoring, I enjoy moving between the user experience and the systems behind it.",
-                                  "Outside code, fitness has been a long-running part of my life: my journey moved from roughly 100 kg to 60 kg, and later to around 75 kg. I\u0027ve also experienced studying abroad and beginning a new chapter at TCE in Madurai. This portfolio tells those stories as a small playable town, while keeping the actual work, resume and contact details one click away."
-                              ],
-                    "photo":  "",
-                    "resumeUrl":  "/resume.pdf"
-                },
-    "links":  [
-                  {
-                      "label":  "Email",
-                      "url":  "mailto:nathanjerald293@gmail.com"
-                  },
-                  {
-                      "label":  "GitHub",
-                      "url":  "https://github.com/Nathan2933"
-                  },
-                  {
-                      "label":  "LinkedIn",
-                      "url":  "https://www.linkedin.com/in/nathan-jerald/"
-                  }
-              ],
-    "chapters":  [
-                     {
-                         "id":  "fitness",
-                         "district":  "iron-yard",
-                         "title":  "The Discipline",
-                         "subtitle":  "Built one rep at a time",
-                         "period":  "",
-                         "body":  [
-                                      "My fitness story doesn\u0027t fit into a before-and-after photo. I started around 100 kg, reached about 60 kg, and later moved toward a different kind of balance at roughly 75 kg. What stayed with me was the habit of showing up and making small improvements over time.",
-                                      "That same idea follows me into software: learn what you need, test what you\u0027ve built, and keep improving it. The Iron Yard is where this save file reminds me that progress is rarely a straight line."
-                                  ],
-                         "highlights":  [
-                                            "Starting line: ~100 kg",
-                                            "Checkpoint: ~60 kg",
-                                            "Today: ~75 kg"
-                                        ],
-                         "media":  [
-                                       "/uploads/transformation-mw7qwdag.mp4"
-                                   ]
-                     },
-                     {
-                         "id":  "russia",
-                         "district":  "winter-campus",
-                         "title":  "The First Chapter",
-                         "subtitle":  "Tomsk State University",
-                         "period":  "",
-                         "body":  [
-                                      "My university journey began at Tomsk State University in Russia. I spent two semesters studying there, getting to know a different academic environment and a different place.",
-                                      "Winter Campus is a snapshot of that part of my life. Not every chapter has to explain what came next; some deserve a space of their own."
-                                  ],
-                         "highlights":  [
-                                            "Tomsk State University, Russia",
-                                            "Two semesters"
-                                        ],
-                         "media":  [
-
-                                   ]
-                     },
-                     {
-                         "id":  "india",
-                         "district":  "monsoon-campus",
-                         "title":  "The Next Chapter",
-                         "subtitle":  "Thiagarajar College of Engineering, Madurai",
-                         "period":  "2023 – 2027",
-                         "body":  [
-                                      "At Thiagarajar College of Engineering in Madurai, I continued my B.Tech in Information Technology. TCE became the place where coursework met real projects: hackathon builds, technical events, team collaboration, and the first versions of ideas that became much bigger.",
-                                      "The wins were exciting, but so were the ordinary parts of learning: debugging, presenting, and figuring out how to ship something with a team."
-                                  ],
-                         "highlights":  [
-                                            "B.Tech, Information Technology",
-                                            "Hack Odyssey 2K25 winner with Aratro",
-                                            "IT Association office bearer · E-Cell"
-                                        ],
-                         "media":  [
-
-                                   ]
-                     },
-                     {
-                         "id":  "projects",
-                         "district":  "garage",
-                         "title":  "The Builder",
-                         "subtitle":  "Ideas in, projects out",
-                         "period":  "",
-                         "body":  [
-                                      "The Garage is where prototypes become something you can click, test and question. There are projects here about agriculture, cloud security, web systems and new ways to tell a story, each with the problem, the build and what it taught me."
-                                  ],
-                         "highlights":  [
-
-                                        ],
-                         "media":  [
-
-                                   ]
-                     },
-                     {
-                         "id":  "skills",
-                         "district":  "signal-tower",
-                         "title":  "The Toolbox",
-                         "subtitle":  "What I\u0027ve learned",
-                         "period":  "",
-                         "body":  [
-                                      "No one builds alone, and no one knows every tool. Signal Tower is a map of the languages, systems and teams I\u0027ve worked with, from web development and cloud security to project competitions and testing."
-                                  ],
-                         "highlights":  [
-
-                                        ],
-                         "media":  [
-
-                                   ]
-                     },
-                     {
-                         "id":  "career",
-                         "district":  "lighthouse",
-                         "title":  "The Next Mission",
-                         "subtitle":  "Where this save file goes next",
-                         "period":  "",
-                         "body":  [
-                                      "This save file isn\u0027t finished. I want to keep building dependable software, learning from good teams, and making ideas that are useful as well as memorable.",
-                                      "If one of these projects sparks a conversation, I\u0027d love to hear from you. The game ends here, but the next collaboration could start with a message."
-                                  ],
-                         "highlights":  [
-
-                                        ],
-                         "media":  [
-
-                                   ]
-                     },
-                     {
-                         "id":  "reflection",
-                         "district":  "lake-park",
-                         "title":  "The Beginning",
-                         "subtitle":  "St. Montfort Higher Secondary School, Trichy",
-                         "period":  "",
-                         "body":  [
-                                      "Before the projects, the competitions, and the unexpected journeys, there was Montfort. Classrooms, familiar faces, and the ordinary days that quietly became the beginning of everything."
-                                  ],
-                         "highlights":  [
-                                            "Class XII, 2021"
-                                        ],
-                         "media":  [
-
-                                   ]
-                     }
-                 ],
-    "projects":  [
-                     {
-                         "id":  "aratro",
-                         "title":  "Aratro: Agricultural Supply Chain Platform",
-                         "year":  "2025",
-                         "featured":  true,
-                         "pitch":  "Tracing agricultural supply chains from farmers to distribution, with blockchain-backed workflows. Built warehouse and inventory workflows with Solidity smart contracts on an Ethereum/Ganache setup.",
-                         "description":  "Agricultural supply flows need clear visibility across farmers, warehouses and ration shops. In a team, I developed warehouse and inventory workflows and integrated Python-backed processes with Solidity smart contracts on an Ethereum/Ganache setup, covering MSP information, quality checks and inventory tracking. Won 1st place at Hack Odyssey 2K25, a 24-hour hackathon.",
-                         "architecture":  [
-                                              "Farmer → Warehouse → Ration shop supply flow",
-                                              "Python-backed workflows: warehouse, inventory, quality checks, MSP information",
-                                              "Solidity smart contracts on a local Ethereum chain (Ganache) record each step"
-                                          ],
-                         "contribution":  "Developed the warehouse and inventory workflows and integrated the Python-backed processes with the Solidity smart contracts (MSP information, quality checks and inventory tracking).",
-                         "stack":  [
-                                       "Python",
-                                       "Solidity",
-                                       "Ethereum",
-                                       "Ganache"
-                                   ],
-                         "tags":  [
-                                      "blockchain",
-                                      "hackathon"
-                                  ],
-                         "github":  "https://github.com/Nathan2933/aratro",
-                         "demo":  "",
-                         "image":  "/uploads/hack_odyssey-mw7lnuhf.jpg",
-                         "media":  [
-                                       "/uploads/hack_odyssey-mw7lnrsg.jpg",
-                                       "/uploads/research2-mw7lo0jo.jpg",
-                                       "/uploads/research1-mw7lodpp.jpg"
-                                   ]
-                     },
-                     {
-                         "id":  "microservices-security",
-                         "title":  "Microservices Security Logging Framework",
-                         "year":  "2026",
-                         "featured":  true,
-                         "pitch":  "Making Kubernetes activity easier to observe through runtime security alerts and dashboards. Combines Falco runtime detection, Grafana dashboards and audit-event visibility.",
-                         "description":  "Security events from containers and clusters are hard to review when they live in disconnected logs. During the HPE Career Preview Program, I contributed to a Kubernetes-based monitoring pipeline using Falco detection and Grafana dashboards, combining runtime activity with cluster and audit-event visibility.",
-                         "architecture":  [
-
-                                          ],
-                         "contribution":  "Contributed to the Kubernetes-based monitoring pipeline: Falco runtime detection feeding Grafana dashboards, with cluster and audit-event visibility.",
-                         "stack":  [
-                                       "Kubernetes",
-                                       "Docker",
-                                       "Falco",
-                                       "Grafana",
-                                       "Python"
-                                   ],
-                         "tags":  [
-                                      "cloud",
-                                      "security",
-                                      "HPE"
-                                  ],
-                         "github":  "",
-                         "demo":  "",
-                         "image":  "/uploads/hpe-mw7kealy.jpg",
-                         "media":  [
-
-                                   ]
-                     },
-                     {
-                         "id":  "tce-event-scheduler",
-                         "title":  "TCE Event Scheduler",
-                         "year":  "2025",
-                         "featured":  false,
-                         "pitch":  "Scheduling department events with practical admin and database workflows. Built in a six-hour hackathon with Flask, SQL and an HTML/CSS frontend.",
-                         "description":  "Built during a six-hour hackathon: a Flask and SQL event scheduler with an HTML/CSS frontend, focused on user navigation and database connectivity. Runner-up at HackFest 2025.",
-                         "architecture":  [
-
-                                          ],
-                         "contribution":  "",
-                         "stack":  [
-                                       "Python",
-                                       "Flask",
-                                       "SQL",
-                                       "HTML",
-                                       "CSS"
-                                   ],
-                         "tags":  [
-                                      "hackathon",
-                                      "web"
-                                  ],
-                         "github":  "https://github.com/Nathan2933/TCE-scheduler",
-                         "demo":  "",
-                         "image":  "/uploads/tce_event_scheduler-mw7mskzt.jpg",
-                         "media":  [
-
-                                   ]
-                     },
-                     {
-                         "id":  "cauverysite",
-                         "title":  "CauverySite: Real Estate Management Platform",
-                         "year":  "",
-                         "featured":  false,
-                         "pitch":  "A role-aware property management platform for sales teams and administrators, with role-specific dashboards, an employee hierarchy and sales overview modules.",
-                         "description":  "Property sales teams need a structured way to manage staff and see business operations. I built an application with Next.js, TypeScript and Tailwind CSS featuring role-specific dashboards, an employee hierarchy, profiles and sales overview modules.",
-                         "architecture":  [
-
-                                          ],
-                         "contribution":  "Built the application: role-specific dashboards, the employee hierarchy, profiles and the sales overview modules.",
-                         "stack":  [
-                                       "Next.js",
-                                       "TypeScript",
-                                       "Tailwind CSS"
-                                   ],
-                         "tags":  [
-                                      "full-stack"
-                                  ],
-                         "github":  "",
-                         "demo":  "",
-                         "image":  "/uploads/plotcr-mw7n21h0.jpg",
-                         "media":  [
-
-                                   ]
-                     },
-                     {
-                         "id":  "nathan-exe",
-                         "title":  "NATHAN.EXE: Play My Save File",
-                         "year":  "2026",
-                         "featured":  false,
-                         "pitch":  "An interactive game portfolio built around the chapters of my life: a 2.5D retro town with a playable character, fast travel and collectible stories.",
-                         "description":  "A compact 2.5D retro town with a playable character, fast travel on the Memory Line, collectible stories, interactive project exhibits and a recruiter-friendly quick view. In progress.",
-                         "architecture":  [
-
-                                          ],
-                         "contribution":  "",
-                         "stack":  [
-                                       "Three.js",
-                                       "JavaScript",
-                                       "Blender",
-                                       "Tiled",
-                                       "glTF"
-                                   ],
-                         "tags":  [
-                                      "game",
-                                      "portfolio"
-                                  ],
-                         "github":  "",
-                         "demo":  "",
-                         "image":  "/uploads/nathanexe-mw7mud6g.png",
-                         "media":  [
-
-                                   ]
-                     },
-                     {
-                         "id":  "hospital-management",
-                         "title":  "Hospital Management System",
-                         "year":  "2021",
-                         "featured":  false,
-                         "school":  true,
-                         "pitch":  "My first UI project: a desktop app for managing hospital patient records, built in school. Staff can log in, add and search patient records, saved between sessions in binary files.",
-                         "description":  "Built in Class XII at St. Montfort as my first project with a real user interface. A Python desktop app made with Tkinter that lets hospital staff log in, add and search patient records, and keep the data saved between sessions in binary files. It was where I first learned to think about screens, buttons and how someone actually uses software.",
-                         "architecture":  [
-                                              "Tkinter windows: login, patient records, search",
-                                              "Python logic for adding, finding and updating records",
-                                              "Records stored on disk in binary files so data persists between runs",
-                                              "Custom icons and background images for the interface"
-                                          ],
-                         "contribution":  "Designed and built the whole app on my own, from the login screen and icons to the record storage.",
-                         "stack":  [
-                                       "Python",
-                                       "Tkinter"
-                                   ],
-                         "tags":  [
-                                      "Desktop app",
-                                      "School project",
-                                      "First UI"
-                                  ],
-                         "github":  "https://github.com/Nathan2933/Hospital-Management",
-                         "demo":  "",
-                         "image":  "/uploads/hc-mw7lm19h.png",
-                         "media":  [
-
-                                   ]
-                     }
-                 ],
-    "skills":  [
-                   {
-                       "group":  "Languages",
-                       "items":  [
-                                     "Python",
-                                     "Java",
-                                     "JavaScript",
-                                     "TypeScript",
-                                     "SQL",
-                                     "Solidity"
-                                 ]
-                   },
-                   {
-                       "group":  "Web \u0026 data",
-                       "items":  [
-                                     "HTML",
-                                     "CSS",
-                                     "React",
-                                     "Next.js",
-                                     "Flask",
-                                     "Node.js",
-                                     "Tailwind CSS",
-                                     "MySQL",
-                                     "MongoDB",
-                                     "SQLite"
-                                 ]
-                   },
-                   {
-                       "group":  "Cloud \u0026 security",
-                       "items":  [
-                                     "Docker",
-                                     "Kubernetes",
-                                     "Falco",
-                                     "Grafana",
-                                     "Audit-event monitoring",
-                                     "Ethereum / Ganache"
-                                 ]
-                   },
-                   {
-                       "group":  "AI",
-                       "items":  [
-                                     "AI-assisted prototyping",
-                                     "Prompt engineering"
-                                 ]
-                   },
-                   {
-                       "group":  "Tools",
-                       "items":  [
-                                     "Git",
-                                     "GitHub",
-                                     "Reflect",
-                                     "BugBug.io",
-                                     "Blender (learning)",
-                                     "Three.js"
-                                 ]
-                   }
-               ],
-    "experience":  [
-                       {
-                           "role":  "Career Preview Program Intern",
-                           "org":  "Hewlett Packard Enterprise (remote)",
-                           "period":  "Feb – Jun 2026",
-                           "summary":  "Contributed to a team-built Kubernetes security logging and monitoring project, integrating Falco event detection and Grafana dashboards for better cluster visibility.",
-                           "logo":  "/assets/logos/career_logos/hpe.png"
-                       },
-                       {
-                           "role":  "Testing Intern",
-                           "org":  "SEZ US (remote)",
-                           "period":  "Jun – Oct 2025",
-                           "summary":  "Tested web and mobile functionality, documented defects, verified fixes and gave usability feedback, using tools including Reflect and BugBug.io.",
-                           "logo":  "/assets/logos/career_logos/sez-us.jpg"
-                       },
-                       {
-                           "role":  "Office Bearer",
-                           "org":  "TCE IT Association",
-                           "period":  "",
-                           "summary":  "Helped run the department association's technical and cultural events, coordinating volunteers, handling on-ground logistics and keeping teams on schedule.",
-                           "logo":  "/assets/logos/tce.png"
-                       },
-                       {
-                           "role":  "Office Bearer",
-                           "org":  "Entrepreneurship Cell, TCE",
-                           "period":  "",
-                           "summary":  "Helped organise events and activities, including flagship events with 800+ participants, and hosted \"The Good, The Bad \u0026 The Ugly\", a survival-themed entrepreneurship event.",
-                           "logo":  "/assets/logos/career_logos/ecell_tce_logo.jpg"
-                       }
-                   ],
-    "achievements":  [
-                         {
-                             "title":  "Hack Odyssey 2K25: Winner",
-                             "org":  "External · with Aratro",
-                             "year":  "2025",
-                             "detail":  "24-hour hackathon, ₹15,000 prize money.",
-                             "images":  [
-                                            "/uploads/hack_odyssey-mw7jqglv.jpg"
-                                        ]
-                         },
-                         {
-                             "title":  "Product Pulse 2025: Winner",
-                             "org":  "E-Cell",
-                             "year":  "2025",
-                             "detail":  "",
-                             "images":  [
-                                            "/uploads/ecell-mw7jqnn4.jpg"
-                                        ]
-                         },
-                         {
-                             "title":  "Stake\u002725: Winner",
-                             "org":  "E-Cell",
-                             "year":  "2025",
-                             "detail":  "",
-                             "images":  [
-                                            "/uploads/s-mw7k7gq2.jpg"
-                                        ]
-                         },
-                         {
-                             "title":  "E-Cell Week Overall: Winner",
-                             "org":  "E-Cell",
-                             "year":  "2025",
-                             "detail":  "",
-                             "images":  [
-                                            "/uploads/ecell-overall-mw7k5mh7.jpg"
-                                        ]
-                         },
-                         {
-                             "title":  "Pitch Perfect: Runner-up",
-                             "org":  "Inceptra VI",
-                             "year":  "2025",
-                             "detail":  "",
-                             "images":  [
-
-                                        ]
-                         },
-                         {
-                             "title":  "HackFest 2025: Runner-up",
-                             "org":  "IT Events · TCE Event Scheduler",
-                             "year":  "2025",
-                             "detail":  "Six-hour hackathon.",
-                             "images":  [
-                                            "/uploads/tce_event_scheduler-mw7jr3gu.jpg"
-                                        ]
-                         },
-                         {
-                             "title":  "Content Creation 2025: Winner",
-                             "org":  "IT Events",
-                             "year":  "2025",
-                             "detail":  "",
-                             "images":  [
-                                            "/uploads/content_creation-mw7jr735.jpg"
-                                        ]
-                         },
-                         {
-                             "title":  "Web Design Contest 2024: Second Runner-up",
-                             "org":  "IT Events",
-                             "year":  "2024",
-                             "detail":  "",
-                             "images":  [
-                                            "/uploads/web_athon-mw7jrbzj.jpg"
-                                        ]
-                         },
-                         {
-                             "title":  "Blind Coding 2023: Runner-up",
-                             "org":  "IT Events",
-                             "year":  "2023",
-                             "detail":  "",
-                             "images":  [
-                                            "/uploads/1747070354127-mw7js9jg.jpg"
-                                        ]
-                         },
-                         {
-                             "title":  "CaseLabs 2023: Second Runner-up",
-                             "org":  "E-Cell",
-                             "year":  "2023",
-                             "detail":  "",
-                             "images":  [
-
-                                        ]
-                         }
-                     ],
-    "memories":  [
-
-                 ],
-    "npcs":  [
-                 {
-                     "id":  "thianesh",
-                     "name":  "Thianesh",
-                     "role":  "Gymmate",
-                     "district":  "iron-yard",
-                     "color":  "#c8553d",
-                     "skin":  "fair",
-                     "build":  1.3,
-                     "height":  1.1,
-                     "hair":  "buzz",
-                     "hairColor":  "#1b1716",
-                     "top":  "tank",
-                     "topColor":  "#2a2440",
-                     "pants":  "shorts",
-                     "pantsColor":  "#3d4250",
-                     "shoes":  "#f6f3ec",
-                     "glasses":  false,
-                     "beard":  "none",
-                     "species":  "human",
-                     "lines":  [
-                                   "Back for another session? The Iron Yard keeps score in clean reps, not words."
-                               ],
-                     "topics":  [
-                                    "How would you describe Nathan\u0027s fitness journey? :: Roughly 100 kg down to 60, then built back up to a solid 75 kg. One habit: showing up.",
-                                    "What is the secret to recovery? :: Quality sleep, adequate protein, and never underestimating post-workout nutrition."
-                                ]
-                 },
-                 {
-                     "id":  "guru",
-                     "name":  "Guru",
-                     "role":  "Best friend · Winter Campus",
-                     "district":  "winter-campus",
-                     "color":  "#2f5f9a",
-                     "skin":  "fair",
-                     "build":  1,
-                     "height":  1,
-                     "hair":  "short",
-                     "hairColor":  "#1b1716",
-                     "hatColor":  "#2f5f9a",
-                     "top":  "hoodie",
-                     "topColor":  "#7a5236",
-                     "pants":  "trousers",
-                     "pantsColor":  "#2a2730",
-                     "shoes":  "#3a2a22",
-                     "glasses":  false,
-                     "beard":  "none",
-                     "species":  "human",
-                     "accessory":  null,
-                     "scarfColor":  "#ffd257",
-                     "lines":  [
-                                   "Minus twenty outside, but Tomsk State University keeps the code hot!"
-                               ],
-                     "topics":  [
-                                    "Let\u0027s take the scooty for a spin! :: Keys are in the ignition! Watch the tight corners and enjoy the ride. [action:scooter-ride]",
-                                    "Remember our Tomsk semester? :: Walking to class with frozen eyelashes! Russian history lectures were legendary.",
-                                    "How is that compiler bug coming along? :: Found it at three in the morning! Classic missing semicolon in the async handler."
-                                ]
-                 },
-                 {
-                     "id":  "shabeer",
-                     "name":  "Shabeer",
-                     "role":  "Childhood friend · Montfort",
-                     "district":  "lake-park",
-                     "color":  "#3f9a72",
-                     "skin":  "fair",
-                     "build":  1,
-                     "height":  1,
-                     "hair":  "short",
-                     "hairColor":  "#3a2418",
-                     "hatColor":  "#3f9a72",
-                     "top":  "hoodie",
-                     "topColor":  "#3f9a72",
-                     "pants":  "trousers",
-                     "pantsColor":  "#2a2730",
-                     "shoes":  "#3a2a22",
-                     "glasses":  false,
-                     "beard":  "full",
-                     "species":  "human",
-                     "accessory":  null,
-                     "scarfColor":  "#e2574a",
-                     "lines":  [
-                                   "Some of us have been around since the very first chapter, Nathan."
-                               ],
-                     "topics":  [
-                                    "Can we look through the memory album? :: Opening the archive now. Every chapter has an unforgettable memory. [action:open-album]",
-                                    "Remember our classroom days at Montfort? :: Trading lunch boxes, last minute exam prep, and laughing until our stomachs hurt. Golden times.",
-                                    "Read any inspiring books recently? :: Finished a great piece on discipline and daily habits. Small consistent actions compound massively."
-                                ],
-                     "beardColor":  "#6b3f2a"
-                 },
-                 {
-                     "id":  "anu",
-                     "name":  "Anu",
-                     "role":  "Friend · TCE",
-                     "district":  "monsoon-campus",
-                     "color":  "#3f9a72",
-                     "skin":  "fair",
-                     "build":  1,
-                     "height":  1,
-                     "hair":  "medium",
-                     "hairColor":  "#2a1d17",
-                     "top":  "tee",
-                     "topColor":  "#6fa8dc",
-                     "pants":  "jeans",
-                     "shoes":  "#f6f3ec",
-                     "glasses":  false,
-                     "beard":  "none",
-                     "species":  "human",
-                     "accessory":  "bag",
-                     "lines":  [
-                                   "You found TCE! There is always an event or a hackathon happening here."
-                               ],
-                     "topics":  [
-                                    "Remember that hackathon crunch night at TCE? :: Coding all night, cheering when the demo finally ran, and walking out to sunrise breakfast! Unforgettable.",
-                                    "What makes the TCE chapter special? :: Long walks across campus, project marathons, and friends who always have your back.",
-                                    "You always kept the team calm under pressure. :: Someone had to! You were ready to rewrite the entire database at 4 AM."
-                                ]
-                 },
-                 {
-                     "id":  "akshai",
-                     "name":  "Akshai",
-                     "role":  "Garage crew",
-                     "district":  "garage",
-                     "color":  "#2bb3a3",
-                     "skin":  "brown",
-                     "build":  1.05,
-                     "height":  1.12,
-                     "hair":  "short",
-                     "hairColor":  "#14100e",
-                     "top":  "tee",
-                     "topColor":  "#2a2440",
-                     "pants":  "jeans",
-                     "shoes":  "#f6f3ec",
-                     "glasses":  true,
-                     "beard":  "full",
-                     "beardColor":  "#14100e",
-                     "species":  "human",
-                     "lines":  [
-                                   "Welcome to the Garage! Ideas come in, clean builds ship out."
-                               ],
-                     "topics":  [
-                                    "How does the Aratro build test out? :: Passed all stress tests! Hack Odyssey first place was well earned. [action:project-aratro]",
-                                    "What hardware upgrade makes the biggest difference? :: Fast NVMe storage and dual-channel memory. Never let compilation wait on disk I/O.",
-                                    "The garage crew motto still stands? :: \u0027Ship it now, optimize it later!\u0027 Classic engineering reality."
-                                ]
-                 },
-                 {
-                     "id":  "naveen",
-                     "name":  "Naveen",
-                     "role":  "Garage crew",
-                     "district":  "garage",
-                     "color":  "#a0673f",
-                     "skin":  "fair",
-                     "build":  1.05,
-                     "height":  1,
-                     "hair":  "short",
-                     "hairColor":  "#3a2418",
-                     "top":  "hoodie",
-                     "topColor":  "#3f9a72",
-                     "pants":  "trousers",
-                     "pantsColor":  "#2a2730",
-                     "shoes":  "#2a2440",
-                     "glasses":  false,
-                     "beard":  "full",
-                     "beardColor":  "#6b3f2a",
-                     "species":  "human",
-                     "lines":  [
-                                   "Mind the cables, Nathan! Something is always compiling, but chai comes first."
-                               ],
-                     "topics":  [
-                                    "Who is winning on the carrom board today? :: My center striker has been deadly! White coins are mine, and loser buys snacks.",
-                                    "What is your favorite part of this whole crew? :: How everyone lifts each other up. Whether launching apps or playing games, nobody walks alone.",
-                                    "Chai break first, code second. :: Words of true wisdom. A five-minute chai break has solved more bugs than staring at a screen."
-                                ]
-                 },
-                 {
-                     "id":  "shabesh",
-                     "name":  "Shabesh",
-                     "role":  "Filming the college · TCE",
-                     "district":  "monsoon-campus",
-                     "color":  "#ffb347",
-                     "skin":  "fair",
-                     "build":  1,
-                     "height":  1,
-                     "hair":  "short",
-                     "hairColor":  "#2a1d17",
-                     "top":  "tee",
-                     "topColor":  "#e2574a",
-                     "pants":  "jeans",
-                     "shoes":  "#f6f3ec",
-                     "glasses":  false,
-                     "beard":  "stubble",
-                     "beardColor":  "#2a1d17",
-                     "species":  "human",
-                     "lines":  [
-                                   "Filming the college campus today. Capturing the moments while they are happening."
-                               ],
-                     "topics":  [
-                                    "If Nathan\u0027s journey were a film, what genre? :: A coming-of-age comeback story. Big challenges, loyalty, and a soundtrack that hits just right.",
-                                    "What makes a shot truly memorable? :: Not the camera body. It is the genuine emotion captured in an unscripted moment.",
-                                    "Hey, this whole town is one of your biggest productions. :: Still expanding, district by district. Every building represents a real milestone."
-                                ],
-                     "extras":  "camera"
-                 },
-                 {
-                     "id":  "harris",
-                     "name":  "Harris",
-                     "role":  "Pilot · Airport",
-                     "district":  "lighthouse",
-                     "color":  "#7a4a2a",
-                     "skin":  "brown",
-                     "build":  1,
-                     "height":  1.02,
-                     "hair":  "short",
-                     "hairColor":  "#1e1612",
-                     "hatColor":  "#1e1612",
-                     "top":  "coat",
-                     "topColor":  "#7a4a2a",
-                     "pants":  "trousers",
-                     "pantsColor":  "#23222e",
-                     "shoes":  "#1a1418",
-                     "glasses":  false,
-                     "beard":  "none",
-                     "beardColor":  "#1e1612",
-                     "species":  "human",
-                     "accessory":  null,
-                     "scarfColor":  "#e8dcc0",
-                     "lines":  [
-                                   "Pre-flight checks complete, captain! Ready for Tahiti?"
-                               ],
-                     "topics":  [
-                                    "Wheels up, Harris! Fly to Tahiti. :: Strap in, Nathan. Clearing runway one-niner for takeoff to Tahiti! [action:fly-tahiti]",
-                                    "Let\u0027s roll film at the outdoor cinema! :: Projector light is rolling! Marvel movie marathon is on screen. [action:pop_cinema]",
-                                    "Who is your all-time favorite Avenger? :: Iron Man, without question. Genius, builder, and he pilots his own high-speed thrusters!"
-                                ]
-                 },
-                 {
-                     "species":  "human",
-                     "build":  1,
-                     "height":  1,
-                     "accessory":  null,
-                     "scripted":  true,
-                     "district":  "city-park",
-                     "id":  "soap",
-                     "name":  "Tyler Durden",
-                     "role":  "Fight Club · Basement",
-                     "theme":  "fight",
-                     "color":  "#8a2a22",
-                     "skin":  "tan",
-                     "hair":  "short",
-                     "hairColor":  "#3a2418",
-                     "top":  "jacket",
-                     "topColor":  "#8a2a22",
-                     "pants":  "trousers",
-                     "pantsColor":  "#2a2730",
-                     "shoes":  "#1a1418",
-                     "glasses":  false,
-                     "beard":  "stubble",
-                     "beardColor":  "#3a2418",
-                     "extras":  "shades,wraps",
-                     "extraColor":  "#2a2440",
-                     "lines":  [
-                                   "Ever wondered how much of you is actually yours?"
-                               ],
-                     "topics":  [
-                                    "What defines a person? :: Not the stuff on the shelf, that\u0027s for sure. // Take away the furniture and the job title and see what\u0027s still standing. That\u0027s the part worth working on.",
-                                    "Is change always a good thing? :: No. Change is just pressure. // What matters is whether you chose it, or whether it happened while you weren\u0027t looking.",
-                                    "What would you tell Nathan? :: Build things you actually believe in. // Not for the trophy shelf. For the version of you that\u0027s still there after the applause.",
-                                    "Can I hit the bag? :: Go on. One clean hit. Then let it go. [action:pop_boxing]"
-                                ]
-                 },
-                 {
-                     "species":  "human",
-                     "build":  1.08,
-                     "height":  1,
-                     "accessory":  null,
-                     "scripted":  true,
-                     "district":  "city-park",
-                     "id":  "cal",
-                     "name":  "Arthur Morgan",
-                     "role":  "Outlaw · Western camp",
-                     "theme":  "western",
-                     "color":  "#6b4a32",
-                     "skin":  "tan",
-                     "hair":  "medium",
-                     "hairColor":  "#4a2e1c",
-                     "top":  "coat",
-                     "topColor":  "#6b4a32",
-                     "pants":  "trousers",
-                     "pantsColor":  "#3a3040",
-                     "shoes":  "#2a1a12",
-                     "glasses":  false,
-                     "beard":  "full",
-                     "beardColor":  "#4a2e1c",
-                     "extras":  "cowboy,bandana",
-                     "extraColor":  "#5a3a26",
-                     "lines":  [
-                                   "Long road, partner. What brings you out here?"
-                               ],
-                     "topics":  [
-                                    "What makes a good life? :: Folks you\u0027d ride back for. // A fire at night, honest work, and somebody who\u0027d notice if you didn\u0027t come home.",
-                                    "Do our choices define us? :: Every one of \u0027em leaves a track. // You can\u0027t always pick the trail you\u0027re on. You can pick how you walk it.",
-                                    "What do you think about Nathan\u0027s journey? :: Took a few turns most wouldn\u0027t. // Way I see it, the detours taught him more than the straight roads ever could."
-                                ],
-                     "companion":  "horse",
-                     "horseColor":  "white"
-                 },
-                 {
-                     "species":  "human",
-                     "build":  1,
-                     "height":  1,
-                     "accessory":  null,
-                     "scripted":  true,
-                     "district":  "city-park",
-                     "id":  "vesper",
-                     "name":  "Moon Knight",
-                     "role":  "Knight of the moon · Moonlit court",
-                     "theme":  "moon",
-                     "color":  "#9fb4d8",
-                     "skin":  "tan",
-                     "hair":  "short",
-                     "hairColor":  "#1e1612",
-                     "top":  "coat",
-                     "topColor":  "#e8e6e0",
-                     "pants":  "trousers",
-                     "pantsColor":  "#d8dde6",
-                     "shoes":  "#e8e6e0",
-                     "glasses":  false,
-                     "beard":  "none",
-                     "extras":  "hood,cape,armor,crescent",
-                     "extraColor":  "#f2f0ea",
-                     "lines":  [
-                                   "Funny how different the world looks under another light."
-                               ],
-                     "topics":  [
-                                    "Can someone have different sides? :: Everyone does. Most people just never introduce them to each other. // The trick is getting them to work together instead of taking turns.",
-                                    "What makes us who we are? :: The stories we keep telling ourselves. // And the nerve to rewrite one when it stops being true.",
-                                    "What do you see in Nathan? :: Someone who has already been a few different people. // Athlete, student abroad, builder. Same person underneath, still finding out what comes next.",
-                                    "Is there anything hidden here? :: Look closely at the pool. Some things only show themselves when you pay attention. [action:pop_moon]"
-                                ]
-                 },
-                 {
-                     "species":  "human",
-                     "build":  1,
-                     "height":  0.97,
-                     "accessory":  null,
-                     "scripted":  true,
-                     "district":  "city-park",
-                     "id":  "skip",
-                     "name":  "Spider-Man",
-                     "role":  "Friendly neighbourhood · Rooftop",
-                     "theme":  "spider",
-                     "color":  "#c4302b",
-                     "skin":  "fair",
-                     "hair":  "none",
-                     "hairColor":  "#2a1a12",
-                     "top":  "hoodie",
-                     "topColor":  "#c4302b",
-                     "pants":  "trousers",
-                     "pantsColor":  "#2f4f9a",
-                     "shoes":  "#c4302b",
-                     "glasses":  false,
-                     "beard":  "none",
-                     "extras":  "mask,web",
-                     "extraColor":  "#2f5fb0",
-                     "lines":  [
-                                   "Hey! Nice place you\u0027ve built here. Mind the rooftops."
-                               ],
-                     "topics":  [
-                                    "How do you handle responsibility? :: Badly, at first! // Then you learn you can\u0027t carry everything at once. You pick what matters, and you show up for it every day.",
-                                    "What happens when things go wrong? :: They go wrong. A lot. // You dust off, laugh about it later, and swing back in. Nobody gets it right on the first try.",
-                                    "Got any advice for Nathan? :: Don\u0027t forget the people who helped you up. // And maybe sleep between hackathons. Just a thought.",
-                                    "Want to try the rooftop run? :: Three red rings, fifteen seconds. Run through all of them. Go! [action:pop_web]"
-                                ]
-                 },
-                 {
-                     "species":  "human",
-                     "build":  1,
-                     "height":  1,
-                     "accessory":  null,
-                     "scripted":  true,
-                     "district":  "city-park",
-                     "id":  "hale",
-                     "name":  "Daredevil",
-                     "role":  "Hell\u0027s Kitchen · Red alley",
-                     "theme":  "dd",
-                     "color":  "#5a1a22",
-                     "skin":  "fair",
-                     "hair":  "short",
-                     "hairColor":  "#7a3a22",
-                     "top":  "coat",
-                     "topColor":  "#5a1a22",
-                     "pants":  "trousers",
-                     "pantsColor":  "#2a2030",
-                     "shoes":  "#1a1418",
-                     "glasses":  false,
-                     "beard":  "stubble",
-                     "beardColor":  "#7a3a22",
-                     "extras":  "redshades,cane",
-                     "extraColor":  "#5a1a22",
-                     "lines":  [
-                                   "You can learn a lot when you pay attention."
-                               ],
-                     "topics":  [
-                                    "What does strength really mean? :: Getting up quietly, every time, with nobody watching. // Most real strength never makes a sound.",
-                                    "How do you keep going? :: One more round. Then one more. // You don\u0027t need to see the whole road. You just need to hear the next step.",
-                                    "What would you tell Nathan? :: Listen more than you speak, and you\u0027ll hear what the problem really is. // Works for code, too.",
-                                    "Can you show me how you listen? :: Close your eyes. Hear that? [action:pop_rooftop_red] // Every sound comes back a little different. That\u0027s the city talking."
-                                ]
-                 },
-                 {
-                     "species":  "human",
-                     "build":  0.95,
-                     "height":  1,
-                     "accessory":  null,
-                     "scripted":  true,
-                     "district":  "city-park",
-                     "id":  "ollie",
-                     "name":  "Richard Hendricks",
-                     "role":  "Founder, Pied Piper · Startup desk",
-                     "theme":  "sv",
-                     "color":  "#4a5a7a",
-                     "skin":  "fair",
-                     "hair":  "medium",
-                     "hairColor":  "#6b4a32",
-                     "top":  "hoodie",
-                     "topColor":  "#6b7280",
-                     "pants":  "jeans",
-                     "pantsColor":  "#2a2730",
-                     "shoes":  "#f6f3ec",
-                     "glasses":  true,
-                     "beard":  "stubble",
-                     "beardColor":  "#6b4a32",
-                     "extras":  "lanyard,coffee",
-                     "extraColor":  "#2f5fb0",
-                     "lines":  [
-                                   "So... technically it works. Just don\u0027t refresh it."
-                               ],
-                     "topics":  [
-                                    "What\u0027s the hardest part of coding? :: Naming things. Then explaining to everyone why you named them that. // Also the bug that only shows up during the demo.",
-                                    "Is building a startup worth it? :: Statistically? Probably not. // Personally? You learn more in six months than in six comfortable years. Also there are snacks.",
-                                    "What do you think about Nathan\u0027s projects? :: Supply chains on a blockchain, security dashboards, a scheduler built in six hours... // He ships things. Do you know how rare that is? My pitch deck is older than most of his repos.",
-                                    "Help me debug this build? :: Okay, watch the screen. Compiling... [action:pop_startup] // Red. Classic. One missing bracket later... // Green! Don\u0027t touch anything."
-                                ]
-                 },
-                 {
-                     "species":  "human",
-                     "build":  1,
-                     "height":  1,
-                     "accessory":  null,
-                     "beard":  "none",
-                     "glasses":  false,
-                     "id":  "logeshwaran",
-                     "name":  "Logeshwaran",
-                     "role":  "Builder · The Garage",
-                     "district":  "garage",
-                     "color":  "#c9d8e6",
-                     "skin":  "brown",
-                     "hair":  "short",
-                     "hairColor":  "#1b1716",
-                     "top":  "tee",
-                     "topColor":  "#dfe8f0",
-                     "pants":  "jeans",
-                     "shoes":  "#f6f3ec",
-                     "lines":  [
-                                   "Soldering some sensor pins. Hardware never lies, Nathan."
-                               ],
-                     "topics":  [
-                                    "Show me the security logging pipeline. :: Immutable logging stream across all microservices. Every audit event accounted for. [action:project-microservices]",
-                                    "What electronics project are you tinkering with? :: A decentralized sensor node network. Ultra low power consumption on solar.",
-                                    "Hardware or software? :: Hardware gives software physical hands. The real magic happens when they talk."
-                                ]
-                 },
-                 {
-                     "species":  "human",
-                     "build":  1,
-                     "height":  1,
-                     "accessory":  null,
-                     "beard":  "none",
-                     "glasses":  false,
-                     "id":  "piranav",
-                     "name":  "Piranav",
-                     "role":  "Working on his laptop · TCE",
-                     "district":  "monsoon-campus",
-                     "color":  "#2a3a6a",
-                     "skin":  "fair",
-                     "hair":  "short",
-                     "hairColor":  "#2a1a12",
-                     "top":  "tee",
-                     "topColor":  "#f4f4f0",
-                     "pants":  "trousers",
-                     "pantsColor":  "#2a2730",
-                     "shoes":  "#1a1418",
-                     "extras":  "tie",
-                     "lines":  [
-                                   "Just finishing up this schedule module. Deadlines keep the mind sharp!"
-                               ],
-                     "topics":  [
-                                    "How did the TCE Event Scheduler turn out? :: Runner-up at HackFest 2025! Clean calendar algorithms and zero registration collisions. [action:project-scheduler]",
-                                    "How do you stay on top of heavy project workloads? :: Time blocking, automated testing, and clear milestones. Never let ambiguity slow you down.",
-                                    "Taking breaks is part of the system. :: Absolutely. Step away, reset your focus, then execute."
-                                ]
-                 },
-                 {
-                     "id":  "prince",
-                     "name":  "Prince",
-                     "role":  "School friend · Developer \u0026 Gamer",
-                     "district":  "winter-campus",
-                     "color":  "#4a5a7a",
-                     "skin":  "tan",
-                     "build":  1,
-                     "height":  1,
-                     "hair":  "curly",
-                     "hairColor":  "#1b1716",
-                     "top":  "hoodie",
-                     "topColor":  "#4a5a7a",
-                     "pants":  "jeans",
-                     "pantsColor":  "#2a2730",
-                     "shoes":  "#1a1418",
-                     "glasses":  false,
-                     "beard":  "none",
-                     "species":  "human",
-                     "accessory":  null,
-                     "lines":  [
-                                   "Freezing out here in Tomsk, but cold weather builds mental stamina!"
-                               ],
-                     "topics":  [
-                                    "Crack any interesting security flags lately? :: Pwned a binary exploitation box yesterday. Buffer overflow straight into root shell. Pure dopamine.",
-                                    "Defense in depth, right? :: Always. Bound your memory, sanitize inputs, and never trust unauthenticated packets.",
-                                    "What are you playing on your phone? :: High-reflex mobile games until my fingers freeze!"
-                                ]
-                 },
-                 {
-                     "id":  "vijay",
-                     "name":  "Vijay Krishnan",
-                     "role":  "School friend · Montfort",
-                     "district":  "lake-park",
-                     "color":  "#8a3a4e",
-                     "skin":  "tan",
-                     "build":  1,
-                     "height":  1,
-                     "hair":  "short",
-                     "hairColor":  "#1b1716",
-                     "top":  "jacket",
-                     "topColor":  "#8a3a4e",
-                     "pants":  "jeans",
-                     "pantsColor":  "#c9b78a",
-                     "shoes":  "#f6f3ec",
-                     "glasses":  true,
-                     "beard":  "none",
-                     "species":  "human",
-                     "accessory":  null,
-                     "lines":  [
-                                   "Good to see you back here. How have you been?"
-                               ],
-                     "topics":  [
-                                    "Still remember that argument with the lecturer? :: One by zero is infinity. I still stand by it.",
-                                    "Still following politics? :: Yes, but today's discussion comes with snacks."
-                                ]
-                 }
-             ],
-    "interests":  [
-                      {
-                          "id":  "moon-knight",
-                          "title":  "Moon Knight",
-                          "zone":  "Noir corner",
-                          "card":  "Some stories are about the different sides of who we are.",
-                          "action":  "The crescent brightens and a small hidden glyph rises from the pool."
-                      },
-                      {
-                          "id":  "daredevil",
-                          "title":  "Daredevil",
-                          "zone":  "Noir corner",
-                          "card":  "Not every kind of strength needs to be seen.",
-                          "action":  "Listen: an echo ripples out across the rooftop."
-                      },
-                      {
-                          "id":  "batman",
-                          "title":  "Batman",
-                          "zone":  "Noir corner",
-                          "card":  "Preparation, persistence, and finding a way forward.",
-                          "action":  "The searchlight swings up and throws a winged signal onto the sky."
-                      },
-                      {
-                          "id":  "spider-man",
-                          "title":  "Spider-Man",
-                          "zone":  "Adventure corner",
-                          "card":  "Sometimes responsibility is the hardest part of growing up.",
-                          "action":  "Agility challenge: touch the three red rings around the web within 15 seconds."
-                      },
-                      {
-                          "id":  "rdr2",
-                          "title":  "Red Dead Redemption 2",
-                          "zone":  "Adventure corner",
-                          "card":  "Some of the best stories are about people, choices, and the roads between them.",
-                          "action":  "The campfire flares and the horse looks up."
-                      },
-                      {
-                          "id":  "fight-club",
-                          "title":  "Fight Club",
-                          "zone":  "Cinema and startup corner",
-                          "card":  "A story that makes you question identity and the things we attach ourselves to.",
-                          "action":  "One punch. The bag swings and the bulb flickers."
-                      },
-                      {
-                          "id":  "silicon-valley",
-                          "title":  "Silicon Valley",
-                          "zone":  "Cinema and startup corner",
-                          "card":  "Building something is one thing. Getting it to work is another.",
-                          "action":  "Watch the build: compiling, failing, then finally working."
-                      }
-                  ],
-    "education":  [
-                      {
-                          "id":  "montfort",
-                          "num":  "01",
-                          "label":  "MONTFORT",
-                          "tagline":  "THE BEGINNING",
-                          "institution":  "St. Montfort Higher Secondary School",
-                          "place":  "Trichy",
-                          "detail":  "Class XII, 2021",
-                          "district":  "lake-park",
-                          "station":  "lake",
-                          "npc":  "shabeer",
-                          "journeyCard":  {
-                              "chapter": "Chapter 01",
-                              "title": "The Beginning",
-                              "institutionLines": [
-                                  "St. Montfort,",
-                                  "Higher Secondary School"
-                              ],
-                              "meta": "Trichy / Class XII / 2021",
-                              "description": "Where curiosity took root.",
-                              "tag": "Foundation",
-                              "icon": "book"
-                          }
-                      },
-                      {
-                          "id":  "tomsk",
-                          "num":  "02",
-                          "label":  "TOMSK",
-                          "tagline":  "THE DETOUR",
-                          "institution":  "Tomsk State University",
-                          "place":  "Russia",
-                          "detail":  "Two semesters",
-                          "district":  "winter-campus",
-                          "station":  "winter",
-                          "npc":  "guru"
-                      },
-                      {
-                          "id":  "tce",
-                          "num":  "03",
-                          "label":  "TCE",
-                          "tagline":  "THE RESTART",
-                          "institution":  "Thiagarajar College of Engineering",
-                          "place":  "Madurai",
-                          "detail":  "B.Tech Information Technology · 2023 – 2027",
-                          "district":  "monsoon-campus",
-                          "station":  "monsoon",
-                          "npc":  "anu",
-                          "journeyCard":  {
-                              "chapter": "Chapter 02",
-                              "title": "The Restart",
-                              "institutionLines": [
-                                  "Thiagarajar College",
-                                  "of Engineering"
-                              ],
-                              "meta": "Madurai / B.Tech IT / 2023–2027",
-                              "description": "Learning, building and finding my people.",
-                              "tag": "Build & Explore",
-                              "icon": "code"
-                          },
-                          "activities":  true
-                      }
-                  ]
+ "meta": {
+  "siteTitle": "NATHAN.EXE",
+  "tagline": "A portfolio you can play.",
+  "version": "1.0"
+ },
+ "profile": {
+  "name": "Nathan Jerald",
+  "role": "IT Undergraduate | Learning, building & figuring things out",
+  "location": "Tiruchirappalli, Tamil Nadu, India",
+  "availability": "",
+  "summary": "I'm Nathan, an IT undergraduate at Thiagarajar College of Engineering. I like figuring out how things work, building things with what I learn, and occasionally fixing something I broke five minutes earlier. Outside tech, I'm usually watching a film or finding someone to discuss it with. NATHAN.EXE brings together the things I build, the people I know, and a few stories along the way.",
+  "about": [
+   "I like building things that people can use, not just prototypes that look impressive in screenshots. At TCE, I've explored full-stack web development, cloud and security tooling, and team-based hackathons. From an agricultural supply-chain platform to Kubernetes security monitoring, I enjoy moving between the user experience and the systems behind it.",
+   "Outside code, fitness has been a long-running part of my life: my journey moved from roughly 100 kg to 60 kg, and later to around 75 kg. I've also experienced studying abroad and beginning a new chapter at TCE in Madurai. This portfolio tells those stories as a small playable town, while keeping the actual work, resume and contact details one click away."
+  ],
+  "photo": "",
+  "resumeUrl": "/resume.pdf",
+  "card": {
+   "role": "IT undergraduate",
+   "tagline": "Learning, building and figuring things out",
+   "intro": "I'm **Nathan**, an IT undergraduate at **Thiagarajar College of Engineering**. I like working out how things work, building with what I learn, and fixing whatever I broke five minutes ago.",
+   "note": "NATHAN.EXE is my portfolio as a small playable town. The work, resume and contact details stay one click away.",
+   "highlights": [
+    {
+     "icon": "folder",
+     "label": "Building",
+     "text": "From an **agricultural supply-chain platform** to **Kubernetes security monitoring**. I like the user experience and the systems behind it."
+    },
+    {
+     "icon": "code",
+     "label": "Tech interests",
+     "text": "**Full-stack web**, **cloud and security tooling**, and team hackathons at TCE."
+    },
+    {
+     "icon": "film",
+     "label": "Outside code",
+     "text": "**Films**, and finding someone to discuss them with. Fitness too: about **100 kg** to **60 kg**, now near **75 kg**."
+    },
+    {
+     "icon": "globe",
+     "label": "Abroad",
+     "text": "Two semesters at **Tomsk State University** before restarting at TCE in Madurai."
+    }
+   ]
+  }
+ },
+ "links": [
+  {
+   "label": "Email",
+   "url": "mailto:nathanjerald293@gmail.com"
+  },
+  {
+   "label": "GitHub",
+   "url": "https://github.com/Nathan2933"
+  },
+  {
+   "label": "LinkedIn",
+   "url": "https://www.linkedin.com/in/nathan-jerald/"
+  }
+ ],
+ "chapters": [
+  {
+   "id": "fitness",
+   "district": "iron-yard",
+   "title": "The Discipline",
+   "subtitle": "Built one rep at a time",
+   "period": "",
+   "body": [
+    "My fitness story doesn't fit into a before-and-after photo. I started around 100 kg, reached about 60 kg, and later moved toward a different kind of balance at roughly 75 kg. What stayed with me was the habit of showing up and making small improvements over time.",
+    "That same idea follows me into software: learn what you need, test what you've built, and keep improving it. The Iron Yard is where this save file reminds me that progress is rarely a straight line."
+   ],
+   "highlights": [
+    "Starting line: ~100 kg",
+    "Checkpoint: ~60 kg",
+    "Today: ~75 kg"
+   ],
+   "media": [
+    "/uploads/transformation-mw7qwdag.mp4"
+   ],
+   "card": {
+    "icon": "dumbbell",
+    "eyebrow": "Iron Yard · Fitness",
+    "intro": [
+     "I started near **100 kg**, got down to about **60 kg**, then settled near **75 kg**. The number mattered less than the habit of showing up.",
+     "Same idea as software: learn, test, improve. Progress is rarely a straight line."
+    ],
+    "points": [
+     {
+      "icon": "dumbbell",
+      "text": "Starting line: **~100 kg**"
+     },
+     {
+      "icon": "flag",
+      "text": "Checkpoint: **~60 kg**"
+     },
+     {
+      "icon": "star",
+      "text": "Today: **~75 kg**"
+     }
+    ]
+   }
+  },
+  {
+   "id": "russia",
+   "district": "winter-campus",
+   "title": "The First Chapter",
+   "subtitle": "Tomsk State University",
+   "period": "",
+   "body": [
+    "My university journey began at Tomsk State University in Russia. I spent two semesters studying there, getting to know a different academic environment and a different place.",
+    "Winter Campus is a snapshot of that part of my life. Not every chapter has to explain what came next; some deserve a space of their own."
+   ],
+   "highlights": [
+    "Tomsk State University, Russia",
+    "Two semesters"
+   ],
+   "media": [],
+   "card": {
+    "icon": "globe",
+    "eyebrow": "Education 02 · Tomsk",
+    "intro": [
+     "My university journey began at **Tomsk State University** in Russia: **two semesters** in a different academic world and a different place.",
+     "Not every chapter has to explain what came next."
+    ],
+    "points": [
+     {
+      "icon": "school",
+      "text": "**Tomsk State University**, Russia"
+     },
+     {
+      "icon": "book",
+      "text": "**Two semesters**"
+     }
+    ]
+   }
+  },
+  {
+   "id": "india",
+   "district": "monsoon-campus",
+   "title": "The Next Chapter",
+   "subtitle": "Thiagarajar College of Engineering, Madurai",
+   "period": "2023 – 2027",
+   "body": [
+    "At Thiagarajar College of Engineering in Madurai, I continued my B.Tech in Information Technology. TCE became the place where coursework met real projects: hackathon builds, technical events, team collaboration, and the first versions of ideas that became much bigger.",
+    "The wins were exciting, but so were the ordinary parts of learning: debugging, presenting, and figuring out how to ship something with a team."
+   ],
+   "highlights": [
+    "B.Tech, Information Technology",
+    "Hack Odyssey 2K25 winner with Aratro",
+    "IT Association office bearer · E-Cell"
+   ],
+   "media": [],
+   "card": {
+    "icon": "school",
+    "eyebrow": "Education 03 · TCE",
+    "intro": [
+     "At **Thiagarajar College of Engineering** in Madurai I study **B.Tech Information Technology**. It is where coursework met real projects: hackathons, events and building with a team."
+    ],
+    "points": [
+     {
+      "icon": "school",
+      "text": "**B.Tech IT**, 2023 to 2027"
+     },
+     {
+      "icon": "trophy",
+      "text": "**Hack Odyssey 2K25** winner with Aratro"
+     },
+     {
+      "icon": "briefcase",
+      "text": "Office bearer: **IT Association** and **E-Cell**"
+     }
+    ]
+   }
+  },
+  {
+   "id": "projects",
+   "district": "garage",
+   "title": "The Builder",
+   "subtitle": "Ideas in, projects out",
+   "period": "",
+   "body": [
+    "The Garage is where prototypes become something you can click, test and question. There are projects here about agriculture, cloud security, web systems and new ways to tell a story, each with the problem, the build and what it taught me."
+   ],
+   "highlights": [],
+   "media": [],
+   "card": {
+    "icon": "folder",
+    "eyebrow": "The Garage · Projects",
+    "intro": [
+     "Prototypes become things you can click, test and question here. Agriculture, cloud security, web systems and a few new ways to tell a story."
+    ],
+    "points": []
+   }
+  },
+  {
+   "id": "skills",
+   "district": "signal-tower",
+   "title": "The Toolbox",
+   "subtitle": "What I've learned",
+   "period": "",
+   "body": [
+    "No one builds alone, and no one knows every tool. Signal Tower is a map of the languages, systems and teams I've worked with, from web development and cloud security to project competitions and testing."
+   ],
+   "highlights": [],
+   "media": [],
+   "card": {
+    "icon": "chip",
+    "eyebrow": "Guild Hall · Toolbox",
+    "intro": [
+     "No one builds alone and no one knows every tool. This is the map of languages, systems and teams I have worked with."
+    ],
+    "points": []
+   }
+  },
+  {
+   "id": "career",
+   "district": "lighthouse",
+   "title": "The Next Mission",
+   "subtitle": "Where this save file goes next",
+   "period": "",
+   "body": [
+    "This save file isn't finished. I want to keep building dependable software, learning from good teams, and making ideas that are useful as well as memorable.",
+    "If one of these projects sparks a conversation, I'd love to hear from you. The game ends here, but the next collaboration could start with a message."
+   ],
+   "highlights": [],
+   "media": [],
+   "card": {
+    "icon": "flag",
+    "eyebrow": "Airport · Next mission",
+    "intro": [
+     "This save file is not finished. I want to keep building **dependable software**, learn from good teams, and make things that are useful as well as memorable.",
+     "If a project here sparks a conversation, send me a message. The next collaboration could start there."
+    ],
+    "points": []
+   }
+  },
+  {
+   "id": "reflection",
+   "district": "lake-park",
+   "title": "The Beginning",
+   "subtitle": "St. Montfort Higher Secondary School, Trichy",
+   "period": "",
+   "body": [
+    "Before the projects, the competitions, and the unexpected journeys, there was Montfort. Classrooms, familiar faces, and the ordinary days that quietly became the beginning of everything."
+   ],
+   "highlights": [
+    "Class XII, 2021"
+   ],
+   "media": [],
+   "card": {
+    "icon": "school",
+    "eyebrow": "Education 01 · Montfort",
+    "intro": [
+     "Before the projects and the competitions, there was **Montfort**: classrooms, familiar faces and ordinary days that quietly started everything."
+    ],
+    "points": [
+     {
+      "icon": "school",
+      "text": "**St. Montfort Higher Secondary School**, Trichy"
+     },
+     {
+      "icon": "book",
+      "text": "**Class XII**, 2021"
+     }
+    ]
+   }
+  }
+ ],
+ "projects": [
+  {
+   "id": "aratro",
+   "title": "Aratro: Agricultural Supply Chain Platform",
+   "year": "2025",
+   "featured": true,
+   "pitch": "Tracing agricultural supply chains from farmers to distribution, with blockchain-backed workflows. Built warehouse and inventory workflows with Solidity smart contracts on an Ethereum/Ganache setup.",
+   "description": "Agricultural supply flows need clear visibility across farmers, warehouses and ration shops. In a team, I developed warehouse and inventory workflows and integrated Python-backed processes with Solidity smart contracts on an Ethereum/Ganache setup, covering MSP information, quality checks and inventory tracking. Won 1st place at Hack Odyssey 2K25, a 24-hour hackathon.",
+   "architecture": [
+    "Farmer → Warehouse → Ration shop supply flow",
+    "Python-backed workflows: warehouse, inventory, quality checks, MSP information",
+    "Solidity smart contracts on a local Ethereum chain (Ganache) record each step"
+   ],
+   "contribution": "Developed the warehouse and inventory workflows and integrated the Python-backed processes with the Solidity smart contracts (MSP information, quality checks and inventory tracking).",
+   "stack": [
+    "Python",
+    "Solidity",
+    "Ethereum",
+    "Ganache"
+   ],
+   "tags": [
+    "blockchain",
+    "hackathon"
+   ],
+   "github": "https://github.com/Nathan2933/aratro",
+   "demo": "",
+   "image": "/uploads/hack_odyssey-mw7lnuhf.jpg",
+   "media": [
+    "/uploads/hack_odyssey-mw7lnrsg.jpg",
+    "/uploads/research2-mw7lo0jo.jpg",
+    "/uploads/research1-mw7lodpp.jpg"
+   ],
+   "card": {
+    "icon": "wheat",
+    "short": "Farm-to-ration-shop supply chain",
+    "summary": "A blockchain-backed platform that traces farm produce from the farmer to the ration shop.",
+    "sections": [
+     {
+      "k": "problem",
+      "text": "Agricultural supply flows need **clear visibility** across farmers, warehouses and ration shops."
+     },
+     {
+      "k": "part",
+      "text": "In a team, I built the **warehouse and inventory workflows** and connected the **Python** processes to the **Solidity** smart contracts: MSP information, quality checks and inventory tracking."
+     },
+     {
+      "k": "result",
+      "text": "**1st place** at **Hack Odyssey 2K25**, a 24-hour hackathon with a ₹15,000 prize."
+     }
+    ],
+    "flow": [
+     "Farmer",
+     "Warehouse",
+     "Ration shop"
+    ],
+    "flowNote": "Smart contracts record each step on a local Ethereum chain (Ganache).",
+    "nav": "Aratro"
+   }
+  },
+  {
+   "id": "microservices-security",
+   "title": "Microservices Security Logging Framework",
+   "year": "2026",
+   "featured": true,
+   "pitch": "Making Kubernetes activity easier to observe through runtime security alerts and dashboards. Combines Falco runtime detection, Grafana dashboards and audit-event visibility.",
+   "description": "Security events from containers and clusters are hard to review when they live in disconnected logs. During the HPE Career Preview Program, I contributed to a Kubernetes-based monitoring pipeline using Falco detection and Grafana dashboards, combining runtime activity with cluster and audit-event visibility.",
+   "architecture": [],
+   "contribution": "Contributed to the Kubernetes-based monitoring pipeline: Falco runtime detection feeding Grafana dashboards, with cluster and audit-event visibility.",
+   "stack": [
+    "Kubernetes",
+    "Docker",
+    "Falco",
+    "Grafana",
+    "Python"
+   ],
+   "tags": [
+    "cloud",
+    "security",
+    "HPE"
+   ],
+   "github": "",
+   "demo": "",
+   "image": "/uploads/hpe-mw7kealy.jpg",
+   "media": [],
+   "card": {
+    "icon": "shield",
+    "short": "Kubernetes security dashboards",
+    "summary": "A Kubernetes monitoring pipeline that turns runtime security alerts into readable dashboards.",
+    "sections": [
+     {
+      "k": "problem",
+      "text": "Security events from containers and clusters are hard to review when they sit in **disconnected logs**."
+     },
+     {
+      "k": "part",
+      "text": "During the **HPE Career Preview Program**, I contributed to the team-built pipeline: **Falco** runtime detection feeding **Grafana** dashboards, with cluster and audit-event visibility."
+     }
+    ],
+    "nav": "Security Logging"
+   }
+  },
+  {
+   "id": "tce-event-scheduler",
+   "title": "TCE Event Scheduler",
+   "year": "2025",
+   "featured": false,
+   "pitch": "Scheduling department events with practical admin and database workflows. Built in a six-hour hackathon with Flask, SQL and an HTML/CSS frontend.",
+   "description": "Built during a six-hour hackathon: a Flask and SQL event scheduler with an HTML/CSS frontend, focused on user navigation and database connectivity. Runner-up at HackFest 2025.",
+   "architecture": [],
+   "contribution": "",
+   "stack": [
+    "Python",
+    "Flask",
+    "SQL",
+    "HTML",
+    "CSS"
+   ],
+   "tags": [
+    "hackathon",
+    "web"
+   ],
+   "github": "https://github.com/Nathan2933/TCE-scheduler",
+   "demo": "",
+   "image": "/uploads/tce_event_scheduler-mw7mskzt.jpg",
+   "media": [],
+   "card": {
+    "icon": "calendar",
+    "short": "Hackathon event scheduler",
+    "summary": "A Flask and SQL scheduler for department events, built in a six-hour hackathon.",
+    "sections": [
+     {
+      "k": "problem",
+      "text": "Scheduling department events with **practical admin and database workflows**."
+     },
+     {
+      "k": "part",
+      "text": "Built with **Flask**, **SQL** and an **HTML/CSS** frontend, focused on user navigation and database connectivity."
+     },
+     {
+      "k": "result",
+      "text": "**Runner-up** at **HackFest 2025**."
+     }
+    ],
+    "nav": "Event Scheduler"
+   }
+  },
+  {
+   "id": "cauverysite",
+   "title": "CauverySite: Real Estate Management Platform",
+   "year": "",
+   "featured": false,
+   "pitch": "A role-aware property management platform for sales teams and administrators, with role-specific dashboards, an employee hierarchy and sales overview modules.",
+   "description": "Property sales teams need a structured way to manage staff and see business operations. I built an application with Next.js, TypeScript and Tailwind CSS featuring role-specific dashboards, an employee hierarchy, profiles and sales overview modules.",
+   "architecture": [],
+   "contribution": "Built the application: role-specific dashboards, the employee hierarchy, profiles and the sales overview modules.",
+   "stack": [
+    "Next.js",
+    "TypeScript",
+    "Tailwind CSS"
+   ],
+   "tags": [
+    "full-stack"
+   ],
+   "github": "",
+   "demo": "",
+   "image": "/uploads/plotcr-mw7n21h0.jpg",
+   "media": [],
+   "card": {
+    "icon": "building",
+    "short": "Real estate team platform",
+    "summary": "A role-aware property management platform for sales teams and administrators.",
+    "sections": [
+     {
+      "k": "problem",
+      "text": "Property sales teams need a structured way to **manage staff** and see how the business is running."
+     },
+     {
+      "k": "part",
+      "text": "Built the app with **Next.js**, **TypeScript** and **Tailwind CSS**: role-specific dashboards, an employee hierarchy, profiles and sales overview modules."
+     }
+    ],
+    "nav": "CauverySite"
+   }
+  },
+  {
+   "id": "nathan-exe",
+   "title": "NATHAN.EXE: Play My Save File",
+   "year": "2026",
+   "featured": false,
+   "pitch": "An interactive game portfolio built around the chapters of my life: a 2.5D retro town with a playable character, fast travel and collectible stories.",
+   "description": "A compact 2.5D retro town with a playable character, fast travel on the Memory Line, collectible stories, interactive project exhibits and a recruiter-friendly quick view. In progress.",
+   "architecture": [],
+   "contribution": "",
+   "stack": [
+    "Three.js",
+    "JavaScript",
+    "Blender",
+    "Tiled",
+    "glTF"
+   ],
+   "tags": [
+    "game",
+    "portfolio"
+   ],
+   "github": "",
+   "demo": "",
+   "image": "/uploads/nathanexe-mw7mud6g.png",
+   "media": [],
+   "card": {
+    "icon": "gamepad",
+    "short": "This playable portfolio",
+    "summary": "This portfolio: a 2.5D retro town where each chapter of my story is a place you can walk to.",
+    "sections": [
+     {
+      "k": "what",
+      "text": "A playable character, fast travel on the **Memory Line**, collectible stories, interactive project exhibits and a recruiter-friendly quick view."
+     },
+     {
+      "k": "status",
+      "text": "**In progress.**"
+     }
+    ],
+    "nav": "NATHAN.EXE"
+   }
+  },
+  {
+   "id": "hospital-management",
+   "title": "Hospital Management System",
+   "year": "2021",
+   "featured": false,
+   "school": true,
+   "pitch": "My first UI project: a desktop app for managing hospital patient records, built in school. Staff can log in, add and search patient records, saved between sessions in binary files.",
+   "description": "Built in Class XII at St. Montfort as my first project with a real user interface. A Python desktop app made with Tkinter that lets hospital staff log in, add and search patient records, and keep the data saved between sessions in binary files. It was where I first learned to think about screens, buttons and how someone actually uses software.",
+   "architecture": [
+    "Tkinter windows: login, patient records, search",
+    "Python logic for adding, finding and updating records",
+    "Records stored on disk in binary files so data persists between runs",
+    "Custom icons and background images for the interface"
+   ],
+   "contribution": "Designed and built the whole app on my own, from the login screen and icons to the record storage.",
+   "stack": [
+    "Python",
+    "Tkinter"
+   ],
+   "tags": [
+    "Desktop app",
+    "School project",
+    "First UI"
+   ],
+   "github": "https://github.com/Nathan2933/Hospital-Management",
+   "demo": "",
+   "image": "/uploads/hc-mw7lm19h.png",
+   "media": [],
+   "card": {
+    "icon": "cross",
+    "short": "My first UI project",
+    "summary": "My first UI project: a desktop app for managing hospital patient records.",
+    "sections": [
+     {
+      "k": "problem",
+      "text": "Hospital staff need to **log in**, **add** and **search** patient records that survive between sessions."
+     },
+     {
+      "k": "part",
+      "text": "Designed and built the whole app on my own in **Class XII**: **Tkinter** windows, icons, and record storage in **binary files**."
+     },
+     {
+      "k": "learned",
+      "text": "It is where I first learned to think about screens, buttons and how someone actually uses software."
+     }
+    ],
+    "nav": "Hospital System"
+   }
+  }
+ ],
+ "skills": [
+  {
+   "group": "Languages",
+   "items": [
+    "Python",
+    "Java",
+    "JavaScript",
+    "TypeScript",
+    "SQL",
+    "Solidity"
+   ]
+  },
+  {
+   "group": "Web & data",
+   "items": [
+    "HTML",
+    "CSS",
+    "React",
+    "Next.js",
+    "Flask",
+    "Node.js",
+    "Tailwind CSS",
+    "MySQL",
+    "MongoDB",
+    "SQLite"
+   ]
+  },
+  {
+   "group": "Cloud & security",
+   "items": [
+    "Docker",
+    "Kubernetes",
+    "Falco",
+    "Grafana",
+    "Audit-event monitoring",
+    "Ethereum / Ganache"
+   ]
+  },
+  {
+   "group": "AI",
+   "items": [
+    "AI-assisted prototyping",
+    "Prompt engineering"
+   ]
+  },
+  {
+   "group": "Tools",
+   "items": [
+    "Git",
+    "GitHub",
+    "Reflect",
+    "BugBug.io",
+    "Blender (learning)",
+    "Three.js"
+   ]
+  }
+ ],
+ "experience": [
+  {
+   "role": "Career Preview Program Intern",
+   "org": "Hewlett Packard Enterprise (remote)",
+   "period": "Feb – Jun 2026",
+   "summary": "Contributed to a team-built Kubernetes security logging and monitoring project, integrating Falco event detection and Grafana dashboards for better cluster visibility.",
+   "logo": "/assets/logos/career_logos/hpe.png",
+   "short": "Part of a team building a **Kubernetes** security logging and monitoring project, integrating **Falco** detection and **Grafana** dashboards.",
+   "quest": "main"
+  },
+  {
+   "role": "Testing Intern",
+   "org": "SEZ US (remote)",
+   "period": "Jun – Oct 2025",
+   "summary": "Tested web and mobile functionality, documented defects, verified fixes and gave usability feedback, using tools including Reflect and BugBug.io.",
+   "logo": "/assets/logos/career_logos/sez-us.jpg",
+   "short": "Tested web and mobile features, documented defects, verified fixes and gave usability feedback with **Reflect** and **BugBug.io**.",
+   "quest": "main"
+  },
+  {
+   "role": "Office Bearer",
+   "org": "TCE IT Association",
+   "period": "",
+   "summary": "Helped run the department association's technical and cultural events, coordinating volunteers, handling on-ground logistics and keeping teams on schedule.",
+   "logo": "/assets/logos/tce.png",
+   "short": "Helped run technical and cultural events: volunteers, on-ground logistics and keeping teams on schedule.",
+   "quest": "side"
+  },
+  {
+   "role": "Office Bearer",
+   "org": "Entrepreneurship Cell, TCE",
+   "period": "",
+   "summary": "Helped organise events and activities, including flagship events with 800+ participants, and hosted \"The Good, The Bad & The Ugly\", a survival-themed entrepreneurship event.",
+   "logo": "/assets/logos/career_logos/ecell_tce_logo.jpg",
+   "short": "Helped organise events, including flagships with **800+ participants**, and hosted a survival-themed entrepreneurship event.",
+   "quest": "side"
+  }
+ ],
+ "achievements": [
+  {
+   "title": "Hack Odyssey 2K25: Winner",
+   "org": "External · with Aratro",
+   "year": "2025",
+   "detail": "24-hour hackathon, ₹15,000 prize money.",
+   "images": [
+    "/uploads/hack_odyssey-mw7jqglv.jpg"
+   ]
+  },
+  {
+   "title": "Product Pulse 2025: Winner",
+   "org": "E-Cell",
+   "year": "2025",
+   "detail": "",
+   "images": [
+    "/uploads/ecell-mw7jqnn4.jpg"
+   ]
+  },
+  {
+   "title": "Stake'25: Winner",
+   "org": "E-Cell",
+   "year": "2025",
+   "detail": "",
+   "images": [
+    "/uploads/s-mw7k7gq2.jpg"
+   ]
+  },
+  {
+   "title": "E-Cell Week Overall: Winner",
+   "org": "E-Cell",
+   "year": "2025",
+   "detail": "",
+   "images": [
+    "/uploads/ecell-overall-mw7k5mh7.jpg"
+   ]
+  },
+  {
+   "title": "Pitch Perfect: Runner-up",
+   "org": "Inceptra VI",
+   "year": "2025",
+   "detail": "",
+   "images": []
+  },
+  {
+   "title": "HackFest 2025: Runner-up",
+   "org": "IT Events · TCE Event Scheduler",
+   "year": "2025",
+   "detail": "Six-hour hackathon.",
+   "images": [
+    "/uploads/tce_event_scheduler-mw7jr3gu.jpg"
+   ]
+  },
+  {
+   "title": "Content Creation 2025: Winner",
+   "org": "IT Events",
+   "year": "2025",
+   "detail": "",
+   "images": [
+    "/uploads/content_creation-mw7jr735.jpg"
+   ]
+  },
+  {
+   "title": "Web Design Contest 2024: Second Runner-up",
+   "org": "IT Events",
+   "year": "2024",
+   "detail": "",
+   "images": [
+    "/uploads/web_athon-mw7jrbzj.jpg"
+   ]
+  },
+  {
+   "title": "Blind Coding 2023: Runner-up",
+   "org": "IT Events",
+   "year": "2023",
+   "detail": "",
+   "images": [
+    "/uploads/1747070354127-mw7js9jg.jpg"
+   ]
+  },
+  {
+   "title": "CaseLabs 2023: Second Runner-up",
+   "org": "E-Cell",
+   "year": "2023",
+   "detail": "",
+   "images": []
+  }
+ ],
+ "memories": [],
+ "npcs": [
+  {
+   "id": "thianesh",
+   "name": "Thianesh",
+   "role": "Gymmate",
+   "district": "iron-yard",
+   "color": "#c8553d",
+   "skin": "fair",
+   "build": 1.3,
+   "height": 1.1,
+   "hair": "buzz",
+   "hairColor": "#1b1716",
+   "top": "tank",
+   "topColor": "#2a2440",
+   "pants": "shorts",
+   "pantsColor": "#3d4250",
+   "shoes": "#f6f3ec",
+   "glasses": false,
+   "beard": "none",
+   "species": "human",
+   "lines": [
+    "Back for another session? The Iron Yard keeps score in clean reps, not words."
+   ],
+   "topics": [
+    "How would you describe Nathan's fitness journey? :: Roughly 100 kg down to 60, then built back up to a solid 75 kg. One habit: showing up.",
+    "What is the secret to recovery? :: Quality sleep, adequate protein, and never underestimating post-workout nutrition."
+   ]
+  },
+  {
+   "id": "guru",
+   "name": "Guru",
+   "role": "Best friend · Winter Campus",
+   "district": "winter-campus",
+   "color": "#2f5f9a",
+   "skin": "fair",
+   "build": 1,
+   "height": 1,
+   "hair": "short",
+   "hairColor": "#1b1716",
+   "hatColor": "#2f5f9a",
+   "top": "hoodie",
+   "topColor": "#7a5236",
+   "pants": "trousers",
+   "pantsColor": "#2a2730",
+   "shoes": "#3a2a22",
+   "glasses": false,
+   "beard": "none",
+   "species": "human",
+   "accessory": null,
+   "scarfColor": "#ffd257",
+   "lines": [
+    "Minus twenty outside, but Tomsk State University keeps the code hot!"
+   ],
+   "topics": [
+    "Let's take the scooty for a spin! :: Keys are in the ignition! Watch the tight corners and enjoy the ride. [action:scooter-ride]",
+    "Remember our Tomsk semester? :: Walking to class with frozen eyelashes! Russian history lectures were legendary.",
+    "How is that compiler bug coming along? :: Found it at three in the morning! Classic missing semicolon in the async handler."
+   ]
+  },
+  {
+   "id": "shabeer",
+   "name": "Shabeer",
+   "role": "Childhood friend · Montfort",
+   "district": "lake-park",
+   "color": "#3f9a72",
+   "skin": "fair",
+   "build": 1,
+   "height": 1,
+   "hair": "short",
+   "hairColor": "#3a2418",
+   "hatColor": "#3f9a72",
+   "top": "hoodie",
+   "topColor": "#3f9a72",
+   "pants": "trousers",
+   "pantsColor": "#2a2730",
+   "shoes": "#3a2a22",
+   "glasses": false,
+   "beard": "full",
+   "species": "human",
+   "accessory": null,
+   "scarfColor": "#e2574a",
+   "lines": [
+    "Some of us have been around since the very first chapter, Nathan."
+   ],
+   "topics": [
+    "Can we look through the memory album? :: Opening the archive now. Every chapter has an unforgettable memory. [action:open-album]",
+    "Remember our classroom days at Montfort? :: Trading lunch boxes, last minute exam prep, and laughing until our stomachs hurt. Golden times.",
+    "Read any inspiring books recently? :: Finished a great piece on discipline and daily habits. Small consistent actions compound massively."
+   ],
+   "beardColor": "#6b3f2a"
+  },
+  {
+   "id": "anu",
+   "name": "Anu",
+   "role": "Friend · TCE",
+   "district": "monsoon-campus",
+   "color": "#3f9a72",
+   "skin": "fair",
+   "build": 1,
+   "height": 1,
+   "hair": "medium",
+   "hairColor": "#2a1d17",
+   "top": "tee",
+   "topColor": "#6fa8dc",
+   "pants": "jeans",
+   "shoes": "#f6f3ec",
+   "glasses": false,
+   "beard": "none",
+   "species": "human",
+   "accessory": "bag",
+   "lines": [
+    "You found TCE! There is always an event or a hackathon happening here."
+   ],
+   "topics": [
+    "Remember that hackathon crunch night at TCE? :: Coding all night, cheering when the demo finally ran, and walking out to sunrise breakfast! Unforgettable.",
+    "What makes the TCE chapter special? :: Long walks across campus, project marathons, and friends who always have your back.",
+    "You always kept the team calm under pressure. :: Someone had to! You were ready to rewrite the entire database at 4 AM."
+   ]
+  },
+  {
+   "id": "akshai",
+   "name": "Akshai",
+   "role": "Garage crew",
+   "district": "garage",
+   "color": "#2bb3a3",
+   "skin": "brown",
+   "build": 1.05,
+   "height": 1.12,
+   "hair": "short",
+   "hairColor": "#14100e",
+   "top": "tee",
+   "topColor": "#2a2440",
+   "pants": "jeans",
+   "shoes": "#f6f3ec",
+   "glasses": true,
+   "beard": "full",
+   "beardColor": "#14100e",
+   "species": "human",
+   "lines": [
+    "Welcome to the Garage! Ideas come in, clean builds ship out."
+   ],
+   "topics": [
+    "How does the Aratro build test out? :: Passed all stress tests! Hack Odyssey first place was well earned. [action:project-aratro]",
+    "What hardware upgrade makes the biggest difference? :: Fast NVMe storage and dual-channel memory. Never let compilation wait on disk I/O.",
+    "The garage crew motto still stands? :: 'Ship it now, optimize it later!' Classic engineering reality."
+   ]
+  },
+  {
+   "id": "naveen",
+   "name": "Naveen",
+   "role": "Garage crew",
+   "district": "garage",
+   "color": "#a0673f",
+   "skin": "fair",
+   "build": 1.05,
+   "height": 1,
+   "hair": "short",
+   "hairColor": "#3a2418",
+   "top": "hoodie",
+   "topColor": "#3f9a72",
+   "pants": "trousers",
+   "pantsColor": "#2a2730",
+   "shoes": "#2a2440",
+   "glasses": false,
+   "beard": "full",
+   "beardColor": "#6b3f2a",
+   "species": "human",
+   "lines": [
+    "Mind the cables, Nathan! Something is always compiling, but chai comes first."
+   ],
+   "topics": [
+    "Who is winning on the carrom board today? :: My center striker has been deadly! White coins are mine, and loser buys snacks.",
+    "What is your favorite part of this whole crew? :: How everyone lifts each other up. Whether launching apps or playing games, nobody walks alone.",
+    "Chai break first, code second. :: Words of true wisdom. A five-minute chai break has solved more bugs than staring at a screen."
+   ]
+  },
+  {
+   "id": "shabesh",
+   "name": "Shabesh",
+   "role": "Filming the college · TCE",
+   "district": "monsoon-campus",
+   "color": "#ffb347",
+   "skin": "fair",
+   "build": 1,
+   "height": 1,
+   "hair": "short",
+   "hairColor": "#2a1d17",
+   "top": "tee",
+   "topColor": "#e2574a",
+   "pants": "jeans",
+   "shoes": "#f6f3ec",
+   "glasses": false,
+   "beard": "stubble",
+   "beardColor": "#2a1d17",
+   "species": "human",
+   "lines": [
+    "Filming the college campus today. Capturing the moments while they are happening."
+   ],
+   "topics": [
+    "If Nathan's journey were a film, what genre? :: A coming-of-age comeback story. Big challenges, loyalty, and a soundtrack that hits just right.",
+    "What makes a shot truly memorable? :: Not the camera body. It is the genuine emotion captured in an unscripted moment.",
+    "Hey, this whole town is one of your biggest productions. :: Still expanding, district by district. Every building represents a real milestone."
+   ],
+   "extras": "camera"
+  },
+  {
+   "id": "harris",
+   "name": "Harris",
+   "role": "Pilot · Airport",
+   "district": "lighthouse",
+   "color": "#7a4a2a",
+   "skin": "brown",
+   "build": 1,
+   "height": 1.02,
+   "hair": "short",
+   "hairColor": "#1e1612",
+   "hatColor": "#1e1612",
+   "top": "coat",
+   "topColor": "#7a4a2a",
+   "pants": "trousers",
+   "pantsColor": "#23222e",
+   "shoes": "#1a1418",
+   "glasses": false,
+   "beard": "none",
+   "beardColor": "#1e1612",
+   "species": "human",
+   "accessory": null,
+   "scarfColor": "#e8dcc0",
+   "lines": [
+    "Pre-flight checks complete, captain! Ready for Tahiti?"
+   ],
+   "topics": [
+    "Wheels up, Harris! Fly to Tahiti. :: Strap in, Nathan. Clearing runway one-niner for takeoff to Tahiti! [action:fly-tahiti]",
+    "Let's roll film at the outdoor cinema! :: Projector light is rolling! Marvel movie marathon is on screen. [action:pop_cinema]",
+    "Who is your all-time favorite Avenger? :: Iron Man, without question. Genius, builder, and he pilots his own high-speed thrusters!"
+   ]
+  },
+  {
+   "species": "human",
+   "build": 1,
+   "height": 1,
+   "accessory": null,
+   "scripted": true,
+   "district": "city-park",
+   "id": "soap",
+   "name": "Tyler Durden",
+   "role": "Fight Club · Basement",
+   "theme": "fight",
+   "color": "#8a2a22",
+   "skin": "tan",
+   "hair": "short",
+   "hairColor": "#3a2418",
+   "top": "jacket",
+   "topColor": "#8a2a22",
+   "pants": "trousers",
+   "pantsColor": "#2a2730",
+   "shoes": "#1a1418",
+   "glasses": false,
+   "beard": "stubble",
+   "beardColor": "#3a2418",
+   "extras": "shades,wraps",
+   "extraColor": "#2a2440",
+   "lines": [
+    "Ever wondered how much of you is actually yours?"
+   ],
+   "topics": [
+    "What defines a person? :: Not the stuff on the shelf, that's for sure. // Take away the furniture and the job title and see what's still standing. That's the part worth working on.",
+    "Is change always a good thing? :: No. Change is just pressure. // What matters is whether you chose it, or whether it happened while you weren't looking.",
+    "What would you tell Nathan? :: Build things you actually believe in. // Not for the trophy shelf. For the version of you that's still there after the applause.",
+    "Can I hit the bag? :: Go on. One clean hit. Then let it go. [action:pop_boxing]"
+   ]
+  },
+  {
+   "species": "human",
+   "build": 1.08,
+   "height": 1,
+   "accessory": null,
+   "scripted": true,
+   "district": "city-park",
+   "id": "cal",
+   "name": "Arthur Morgan",
+   "role": "Outlaw · Western camp",
+   "theme": "western",
+   "color": "#6b4a32",
+   "skin": "tan",
+   "hair": "medium",
+   "hairColor": "#4a2e1c",
+   "top": "coat",
+   "topColor": "#6b4a32",
+   "pants": "trousers",
+   "pantsColor": "#3a3040",
+   "shoes": "#2a1a12",
+   "glasses": false,
+   "beard": "full",
+   "beardColor": "#4a2e1c",
+   "extras": "cowboy,bandana",
+   "extraColor": "#5a3a26",
+   "lines": [
+    "Long road, partner. What brings you out here?"
+   ],
+   "topics": [
+    "What makes a good life? :: Folks you'd ride back for. // A fire at night, honest work, and somebody who'd notice if you didn't come home.",
+    "Do our choices define us? :: Every one of 'em leaves a track. // You can't always pick the trail you're on. You can pick how you walk it.",
+    "What do you think about Nathan's journey? :: Took a few turns most wouldn't. // Way I see it, the detours taught him more than the straight roads ever could."
+   ],
+   "companion": "horse",
+   "horseColor": "white"
+  },
+  {
+   "species": "human",
+   "build": 1,
+   "height": 1,
+   "accessory": null,
+   "scripted": true,
+   "district": "city-park",
+   "id": "vesper",
+   "name": "Moon Knight",
+   "role": "Knight of the moon · Moonlit court",
+   "theme": "moon",
+   "color": "#9fb4d8",
+   "skin": "tan",
+   "hair": "short",
+   "hairColor": "#1e1612",
+   "top": "coat",
+   "topColor": "#e8e6e0",
+   "pants": "trousers",
+   "pantsColor": "#d8dde6",
+   "shoes": "#e8e6e0",
+   "glasses": false,
+   "beard": "none",
+   "extras": "hood,cape,armor,crescent",
+   "extraColor": "#f2f0ea",
+   "lines": [
+    "Funny how different the world looks under another light."
+   ],
+   "topics": [
+    "Can someone have different sides? :: Everyone does. Most people just never introduce them to each other. // The trick is getting them to work together instead of taking turns.",
+    "What makes us who we are? :: The stories we keep telling ourselves. // And the nerve to rewrite one when it stops being true.",
+    "What do you see in Nathan? :: Someone who has already been a few different people. // Athlete, student abroad, builder. Same person underneath, still finding out what comes next.",
+    "Is there anything hidden here? :: Look closely at the pool. Some things only show themselves when you pay attention. [action:pop_moon]"
+   ]
+  },
+  {
+   "species": "human",
+   "build": 1,
+   "height": 0.97,
+   "accessory": null,
+   "scripted": true,
+   "district": "city-park",
+   "id": "skip",
+   "name": "Spider-Man",
+   "role": "Friendly neighbourhood · Rooftop",
+   "theme": "spider",
+   "color": "#c4302b",
+   "skin": "fair",
+   "hair": "none",
+   "hairColor": "#2a1a12",
+   "top": "hoodie",
+   "topColor": "#c4302b",
+   "pants": "trousers",
+   "pantsColor": "#2f4f9a",
+   "shoes": "#c4302b",
+   "glasses": false,
+   "beard": "none",
+   "extras": "mask,web",
+   "extraColor": "#2f5fb0",
+   "lines": [
+    "Hey! Nice place you've built here. Mind the rooftops."
+   ],
+   "topics": [
+    "How do you handle responsibility? :: Badly, at first! // Then you learn you can't carry everything at once. You pick what matters, and you show up for it every day.",
+    "What happens when things go wrong? :: They go wrong. A lot. // You dust off, laugh about it later, and swing back in. Nobody gets it right on the first try.",
+    "Got any advice for Nathan? :: Don't forget the people who helped you up. // And maybe sleep between hackathons. Just a thought.",
+    "Want to try the rooftop run? :: Three red rings, fifteen seconds. Run through all of them. Go! [action:pop_web]"
+   ]
+  },
+  {
+   "species": "human",
+   "build": 1,
+   "height": 1,
+   "accessory": null,
+   "scripted": true,
+   "district": "city-park",
+   "id": "hale",
+   "name": "Daredevil",
+   "role": "Hell's Kitchen · Red alley",
+   "theme": "dd",
+   "color": "#5a1a22",
+   "skin": "fair",
+   "hair": "short",
+   "hairColor": "#7a3a22",
+   "top": "coat",
+   "topColor": "#5a1a22",
+   "pants": "trousers",
+   "pantsColor": "#2a2030",
+   "shoes": "#1a1418",
+   "glasses": false,
+   "beard": "stubble",
+   "beardColor": "#7a3a22",
+   "extras": "redshades,cane",
+   "extraColor": "#5a1a22",
+   "lines": [
+    "You can learn a lot when you pay attention."
+   ],
+   "topics": [
+    "What does strength really mean? :: Getting up quietly, every time, with nobody watching. // Most real strength never makes a sound.",
+    "How do you keep going? :: One more round. Then one more. // You don't need to see the whole road. You just need to hear the next step.",
+    "What would you tell Nathan? :: Listen more than you speak, and you'll hear what the problem really is. // Works for code, too.",
+    "Can you show me how you listen? :: Close your eyes. Hear that? [action:pop_rooftop_red] // Every sound comes back a little different. That's the city talking."
+   ]
+  },
+  {
+   "species": "human",
+   "build": 0.95,
+   "height": 1,
+   "accessory": null,
+   "scripted": true,
+   "district": "city-park",
+   "id": "ollie",
+   "name": "Richard Hendricks",
+   "role": "Founder, Pied Piper · Startup desk",
+   "theme": "sv",
+   "color": "#4a5a7a",
+   "skin": "fair",
+   "hair": "medium",
+   "hairColor": "#6b4a32",
+   "top": "hoodie",
+   "topColor": "#6b7280",
+   "pants": "jeans",
+   "pantsColor": "#2a2730",
+   "shoes": "#f6f3ec",
+   "glasses": true,
+   "beard": "stubble",
+   "beardColor": "#6b4a32",
+   "extras": "lanyard,coffee",
+   "extraColor": "#2f5fb0",
+   "lines": [
+    "So... technically it works. Just don't refresh it."
+   ],
+   "topics": [
+    "What's the hardest part of coding? :: Naming things. Then explaining to everyone why you named them that. // Also the bug that only shows up during the demo.",
+    "Is building a startup worth it? :: Statistically? Probably not. // Personally? You learn more in six months than in six comfortable years. Also there are snacks.",
+    "What do you think about Nathan's projects? :: Supply chains on a blockchain, security dashboards, a scheduler built in six hours... // He ships things. Do you know how rare that is? My pitch deck is older than most of his repos.",
+    "Help me debug this build? :: Okay, watch the screen. Compiling... [action:pop_startup] // Red. Classic. One missing bracket later... // Green! Don't touch anything."
+   ]
+  },
+  {
+   "species": "human",
+   "build": 1,
+   "height": 1,
+   "accessory": null,
+   "beard": "none",
+   "glasses": false,
+   "id": "logeshwaran",
+   "name": "Logeshwaran",
+   "role": "Builder · The Garage",
+   "district": "garage",
+   "color": "#c9d8e6",
+   "skin": "brown",
+   "hair": "short",
+   "hairColor": "#1b1716",
+   "top": "tee",
+   "topColor": "#dfe8f0",
+   "pants": "jeans",
+   "shoes": "#f6f3ec",
+   "lines": [
+    "Soldering some sensor pins. Hardware never lies, Nathan."
+   ],
+   "topics": [
+    "Show me the security logging pipeline. :: Immutable logging stream across all microservices. Every audit event accounted for. [action:project-microservices]",
+    "What electronics project are you tinkering with? :: A decentralized sensor node network. Ultra low power consumption on solar.",
+    "Hardware or software? :: Hardware gives software physical hands. The real magic happens when they talk."
+   ]
+  },
+  {
+   "species": "human",
+   "build": 1,
+   "height": 1,
+   "accessory": null,
+   "beard": "none",
+   "glasses": false,
+   "id": "piranav",
+   "name": "Piranav",
+   "role": "Working on his laptop · TCE",
+   "district": "monsoon-campus",
+   "color": "#2a3a6a",
+   "skin": "fair",
+   "hair": "short",
+   "hairColor": "#2a1a12",
+   "top": "tee",
+   "topColor": "#f4f4f0",
+   "pants": "trousers",
+   "pantsColor": "#2a2730",
+   "shoes": "#1a1418",
+   "extras": "tie",
+   "lines": [
+    "Just finishing up this schedule module. Deadlines keep the mind sharp!"
+   ],
+   "topics": [
+    "How did the TCE Event Scheduler turn out? :: Runner-up at HackFest 2025! Clean calendar algorithms and zero registration collisions. [action:project-scheduler]",
+    "How do you stay on top of heavy project workloads? :: Time blocking, automated testing, and clear milestones. Never let ambiguity slow you down.",
+    "Taking breaks is part of the system. :: Absolutely. Step away, reset your focus, then execute."
+   ]
+  },
+  {
+   "id": "prince",
+   "name": "Prince",
+   "role": "School friend · Developer & Gamer",
+   "district": "winter-campus",
+   "color": "#4a5a7a",
+   "skin": "tan",
+   "build": 1,
+   "height": 1,
+   "hair": "curly",
+   "hairColor": "#1b1716",
+   "top": "hoodie",
+   "topColor": "#4a5a7a",
+   "pants": "jeans",
+   "pantsColor": "#2a2730",
+   "shoes": "#1a1418",
+   "glasses": false,
+   "beard": "none",
+   "species": "human",
+   "accessory": null,
+   "lines": [
+    "Freezing out here in Tomsk, but cold weather builds mental stamina!"
+   ],
+   "topics": [
+    "Crack any interesting security flags lately? :: Pwned a binary exploitation box yesterday. Buffer overflow straight into root shell. Pure dopamine.",
+    "Defense in depth, right? :: Always. Bound your memory, sanitize inputs, and never trust unauthenticated packets.",
+    "What are you playing on your phone? :: High-reflex mobile games until my fingers freeze!"
+   ]
+  },
+  {
+   "id": "vijay",
+   "name": "Vijay Krishnan",
+   "role": "School friend · Montfort",
+   "district": "lake-park",
+   "color": "#8a3a4e",
+   "skin": "tan",
+   "build": 1,
+   "height": 1,
+   "hair": "short",
+   "hairColor": "#1b1716",
+   "top": "jacket",
+   "topColor": "#8a3a4e",
+   "pants": "jeans",
+   "pantsColor": "#c9b78a",
+   "shoes": "#f6f3ec",
+   "glasses": true,
+   "beard": "none",
+   "species": "human",
+   "accessory": null,
+   "lines": [
+    "Good to see you back here. How have you been?"
+   ],
+   "topics": [
+    "Still remember that argument with the lecturer? :: One by zero is infinity. I still stand by it.",
+    "Still following politics? :: Yes, but today's discussion comes with snacks."
+   ]
+  }
+ ],
+ "interests": [
+  {
+   "id": "moon-knight",
+   "title": "Moon Knight",
+   "zone": "Noir corner",
+   "card": "Some stories are about the different sides of who we are.",
+   "action": "The crescent brightens and a small hidden glyph rises from the pool."
+  },
+  {
+   "id": "daredevil",
+   "title": "Daredevil",
+   "zone": "Noir corner",
+   "card": "Not every kind of strength needs to be seen.",
+   "action": "Listen: an echo ripples out across the rooftop."
+  },
+  {
+   "id": "batman",
+   "title": "Batman",
+   "zone": "Noir corner",
+   "card": "Preparation, persistence, and finding a way forward.",
+   "action": "The searchlight swings up and throws a winged signal onto the sky."
+  },
+  {
+   "id": "spider-man",
+   "title": "Spider-Man",
+   "zone": "Adventure corner",
+   "card": "Sometimes responsibility is the hardest part of growing up.",
+   "action": "Agility challenge: touch the three red rings around the web within 15 seconds."
+  },
+  {
+   "id": "rdr2",
+   "title": "Red Dead Redemption 2",
+   "zone": "Adventure corner",
+   "card": "Some of the best stories are about people, choices, and the roads between them.",
+   "action": "The campfire flares and the horse looks up."
+  },
+  {
+   "id": "fight-club",
+   "title": "Fight Club",
+   "zone": "Cinema and startup corner",
+   "card": "A story that makes you question identity and the things we attach ourselves to.",
+   "action": "One punch. The bag swings and the bulb flickers."
+  },
+  {
+   "id": "silicon-valley",
+   "title": "Silicon Valley",
+   "zone": "Cinema and startup corner",
+   "card": "Building something is one thing. Getting it to work is another.",
+   "action": "Watch the build: compiling, failing, then finally working."
+  }
+ ],
+ "education": [
+  {
+   "id": "montfort",
+   "num": "01",
+   "label": "MONTFORT",
+   "tagline": "THE BEGINNING",
+   "institution": "St. Montfort Higher Secondary School",
+   "place": "Trichy",
+   "detail": "Class XII, 2021",
+   "district": "lake-park",
+   "station": "lake",
+   "npc": "shabeer",
+   "journeyCard": {
+    "chapter": "Chapter 01",
+    "title": "The Beginning",
+    "institutionLines": [
+     "St. Montfort,",
+     "Higher Secondary School"
+    ],
+    "meta": "Trichy / Class XII / 2021",
+    "description": "Where curiosity took root.",
+    "tag": "Foundation",
+    "icon": "book"
+   }
+  },
+  {
+   "id": "tomsk",
+   "num": "02",
+   "label": "TOMSK",
+   "tagline": "THE DETOUR",
+   "institution": "Tomsk State University",
+   "place": "Russia",
+   "detail": "Two semesters",
+   "district": "winter-campus",
+   "station": "winter",
+   "npc": "guru"
+  },
+  {
+   "id": "tce",
+   "num": "03",
+   "label": "TCE",
+   "tagline": "THE RESTART",
+   "institution": "Thiagarajar College of Engineering",
+   "place": "Madurai",
+   "detail": "B.Tech Information Technology · 2023 – 2027",
+   "district": "monsoon-campus",
+   "station": "monsoon",
+   "npc": "anu",
+   "journeyCard": {
+    "chapter": "Chapter 02",
+    "title": "The Restart",
+    "institutionLines": [
+     "Thiagarajar College",
+     "of Engineering"
+    ],
+    "meta": "Madurai / B.Tech IT / 2023–2027",
+    "description": "Learning, building and finding my people.",
+    "tag": "Build & Explore",
+    "icon": "code"
+   },
+   "activities": true
+  }
+ ]
 }

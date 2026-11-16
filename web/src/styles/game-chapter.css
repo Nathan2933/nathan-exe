@@ -1,18 +1,23 @@
 /* =====================================================================
-   Chapter cards (forest / cream / sage / muted gold) + NATHAN.EXE crest.
-   Phones and short screens: one page at a time (Story / Project) with a
-   Previous/Next pager. Roomy screens: both pages side by side.
-   Every page can still scroll as a fallback for enlarged text.
+   Shared information-card system (About, chapters, projects, trophies, quests, skill tree...)
+   One palette, one structure: window bar / header / body grid / footer.
+   Desktop: centred modal that fits its content. Phones: bottom sheet that scrolls.
    ===================================================================== */
 body.game {
-  --ch-bar: #142F28;
-  --ch-bg: #193D33;
-  --ch-inner: #244B3E;
-  --ch-head: #FFF3D6;
-  --ch-text: #E8E3CE;
-  --ch-muted: #B9C9B7;
-  --ch-gold: #D8B45B;
-  --ch-line: #789580;
+  --cd-bg: #193D33;          /* modal */
+  --cd-bar: #132F28;         /* header, footer */
+  --cd-inner: #234B3E;       /* inner cards, secondary buttons */
+  --cd-hover: #2E5B49;       /* hover, selected */
+  --cd-line: #789581;        /* borders */
+  --cd-text: #F5EACB;        /* body text */
+  --cd-muted: #BCCCB9;       /* supporting text */
+  --cd-gold: #E4C66B;        /* keywords, winners */
+  --cd-sage: #8FC8AE;        /* section icons, subtle accents */
+  --cd-btn: #D8B657;         /* primary button */
+  --cd-btn-ink: #132F28;     /* primary button text */
+  --cd-silver: #C7D2D6;      /* runner-up */
+  --cd-bronze: #C79B72;      /* second runner-up */
+  --cd-logo: #FFF9E8;        /* square behind a skill / org logo */
 }
 
 /* ---------- crest ---------- */
@@ -24,187 +29,444 @@ body.game .journey li button { display: flex; align-items: center; gap: 8px; }
 body.game .journey li button .crest { width: 16px; height: 16px; }
 .finale-stats .crest-chip .crest { width: 18px; height: 18px; }
 
-/* ---------- card shell ---------- */
+/* ---------- modal shell ---------- */
+.panel-scrim { position: fixed; inset: 0; z-index: 19; background: rgba(8, 22, 18, .6); }
+.panel-scrim.hidden { display: none; }
 body.game .panel.chapter-card {
-  background: var(--ch-bg); color: var(--ch-text);
-  border-color: var(--ch-line); outline-color: var(--ch-line);
-  max-width: calc(100vw - env(safe-area-inset-left) - env(safe-area-inset-right));
+  z-index: 21; background: var(--cd-bg); color: var(--cd-text);
+  border: 2px solid var(--cd-line); outline: 0; box-shadow: 0 0 0 2px var(--cd-bar), 6px 6px 0 rgba(0, 0, 0, .45);
+  max-width: 100vw; overflow: hidden;
 }
-body.game .panel.chapter-card .window-bar {
-  flex: none; background: var(--ch-bar); color: var(--ch-muted);
-  border-bottom: 2px solid var(--ch-line); position: relative; z-index: 2;
-}
-body.game .panel.chapter-card .panel-close { color: var(--ch-head); }
+body.game .panel.chapter-card:focus { outline: 0; }
+body.game .panel.chapter-card .window-bar { flex: none; background: var(--cd-bar); color: var(--cd-muted); border-bottom: 2px solid var(--cd-line); position: relative; z-index: 2; }
+body.game .panel.chapter-card .panel-close { color: var(--cd-text); }
 body.game .panel.chapter-card .panel-close:hover,
-body.game .panel.chapter-card .panel-close:focus-visible { color: var(--ch-gold); }
-
+body.game .panel.chapter-card .panel-close:focus-visible { color: var(--cd-gold); }
 body.game .panel.chapter-card .panel-body {
-  display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0;
-  overflow: hidden; padding: 0; color: var(--ch-text);
-  font-size: 16px; line-height: 1.55;
+  display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; padding: 0; overflow-y: auto; overscroll-behavior: contain;
+  color: var(--cd-text); font-size: 15px; line-height: 1.5; scrollbar-color: var(--cd-line) var(--cd-bg); scrollbar-width: thin;
 }
-body.game .panel.chapter-card .ch-card { flex: 1 1 auto; min-height: 0; display: flex; }
-body.game .panel.chapter-card .ch-page {
-  display: none; flex: 1 1 auto; min-height: 0; min-width: 0;
-  overflow-y: auto; overscroll-behavior: contain;
-  padding: 16px max(16px, env(safe-area-inset-left)) 18px max(16px, env(safe-area-inset-right));
-  scrollbar-color: var(--ch-line) var(--ch-bg); scrollbar-width: thin;
-}
-body.game .panel.chapter-card .ch-page.is-active { display: block; }
-body.game .panel.chapter-card .ch-page:focus { outline: none; }
-body.game .panel.chapter-card .ch-project { background: var(--ch-inner); }
+body.game .panel.chapter-card :focus-visible { outline: 2px solid var(--cd-gold); outline-offset: 2px; }
 
-/* type */
-body.game .panel.chapter-card .panel-body p,
-body.game .panel.chapter-card .panel-body li { font-size: 16px; line-height: 1.55; color: var(--ch-text); }
-body.game .panel.chapter-card .panel-body p { margin: 0 0 12px; }
-body.game .panel.chapter-card .panel-body h2 { color: var(--ch-head); font-size: 22px; line-height: 1.2; margin: 0 0 4px; }
-body.game .panel.chapter-card .panel-body h3 { color: var(--ch-head); }
-body.game .panel.chapter-card .panel-body .eyebrow { color: var(--ch-gold); font-size: 11px; line-height: 1.4; letter-spacing: .08em; margin: 0 0 6px; }
-body.game .panel.chapter-card .panel-body .subtitle { color: var(--ch-muted) !important; font-size: 15px; font-weight: 600; margin: 0 0 8px; }
-body.game .panel.chapter-card .panel-body .muted { color: var(--ch-muted); }
-body.game .panel.chapter-card .panel-body b, body.game .panel.chapter-card .panel-body strong { color: var(--ch-head); }
-body.game .panel.chapter-card .chapter-head { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 10px; }
-body.game .panel.chapter-card .mini-portrait { width: 48px; height: 48px; border-color: var(--ch-line); background: var(--ch-head); }
-body.game .panel.chapter-card .highlights { gap: 8px; margin: 12px 0; }
-body.game .panel.chapter-card .highlights li { padding-left: 18px; }
-body.game .panel.chapter-card .highlights li::before { color: var(--ch-gold); }
-body.game .panel.chapter-card .mem-hint {
-  font-size: 14px; color: var(--ch-muted); background: var(--ch-inner);
-  border: 1px solid var(--ch-line); padding: 8px 10px; margin: 12px 0 0;
-}
-body.game .panel.chapter-card .edu-extra { border: 0; padding: 0; margin: 0; background: none; }
-body.game .panel.chapter-card .ch-project > :first-child { margin-top: 0; }
-
-/* images: proportional, leave room for the text */
-body.game .panel.chapter-card .proj-media { margin: 0 0 12px; }
-body.game .panel.chapter-card .photo-viewer { margin-top: 0; }
-body.game .panel.chapter-card .pv-stage img,
-body.game .panel.chapter-card .pv-stage video { max-height: min(34dvh, 280px); width: auto; max-width: 100%; border-color: var(--ch-line); }
-body.game .panel.chapter-card .pv-cap { color: var(--ch-muted); font-size: 13px; }
-body.game .panel.chapter-card .pv-nav:hover, body.game .panel.chapter-card .pv-nav:focus-visible { background: var(--ch-gold); border-color: var(--ch-gold); color: var(--ch-bar); }
-body.game .panel.chapter-card .panel-projects { margin: 12px 0; }
-
-/* ---------- pager ---------- */
-body.game .panel.chapter-card .ch-pager {
-  flex: none; display: flex; align-items: center; justify-content: space-between; gap: 8px;
-  padding: 8px max(12px, env(safe-area-inset-left)) calc(8px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-right));
-  background: var(--ch-bar); border-top: 2px solid var(--ch-line);
-}
-body.game .panel.chapter-card .ch-pager .btn { min-height: 44px; padding: 0 14px; font-size: 12px; background: var(--ch-inner); color: var(--ch-head); border: 2px solid var(--ch-line); box-shadow: none; }
-body.game .panel.chapter-card .ch-pager .btn.primary { background: var(--ch-gold); color: var(--ch-bar); border-color: var(--ch-gold); }
-body.game .panel.chapter-card .ch-pager .btn:disabled { opacity: .4; cursor: default; }
-body.game .panel.chapter-card .ch-ind { font-size: 13px; color: var(--ch-muted); white-space: nowrap; text-align: center; }
-body.game .panel.chapter-card .ch-ind b { color: var(--ch-head); }
-
-/* landscape phones: tighter header, smaller media */
-@media (max-height: 500px) {
-  body.game .panel.chapter-card .ch-page { padding-top: 10px; padding-bottom: 10px; }
-  body.game .panel.chapter-card .mini-portrait { width: 36px; height: 36px; }
-  body.game .panel.chapter-card .panel-body h2 { font-size: 19px; }
-  body.game .panel.chapter-card .pv-stage img,
-  body.game .panel.chapter-card .pv-stage video { max-height: 46dvh; }
-  body.game .panel.chapter-card .ch-pager { padding-top: 4px; padding-bottom: calc(4px + env(safe-area-inset-bottom)); }
-  body.game .panel.chapter-card .ch-pager .btn { min-height: 40px; }
-}
-
-/* ---------- desktop: two columns, no pager ---------- */
-@media (min-width: 900px) and (min-height: 560px) {
+@media (min-width: 761px) and (min-height: 521px) {
   body.game .panel.chapter-card {
-    top: 72px; bottom: auto; left: 50%; right: auto; translate: -50% 0;
-    width: min(980px, calc(100vw - 48px)); height: auto;
-    max-height: calc(100dvh - 96px);
-    border-radius: 0;
+    position: fixed; inset: auto; top: 50%; left: 50%; right: auto; bottom: auto; translate: -50% -50%;
+    width: min(1000px, calc(100vw - 48px)); height: auto; max-height: calc(100dvh - 32px); border-radius: 0; padding: 0;
   }
-  body.game .panel.chapter-card:has(.ch-card.single) { width: min(620px, calc(100vw - 48px)); }
-  body.game .panel.chapter-card .ch-card { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-  body.game .panel.chapter-card .ch-card.single { grid-template-columns: minmax(0, 1fr); }
-  body.game .panel.chapter-card .ch-page { display: block; padding: 22px 26px; }
-  body.game .panel.chapter-card .ch-project { border-left: 2px solid var(--ch-line); }
-  body.game .panel.chapter-card .ch-pager { display: none; }
-  body.game .panel.chapter-card .panel-body h2 { font-size: 26px; }
-  body.game .panel.chapter-card .mini-portrait { width: 56px; height: 56px; }
-  body.game .panel.chapter-card .pv-stage img,
-  body.game .panel.chapter-card .pv-stage video { max-height: min(42dvh, 360px); }
+  body.game .panel.chapter-card:has(.cd-narrow) { width: min(660px, calc(100vw - 48px)); }
+  body.game .panel.chapter-card:has(.cd-project) { width: min(960px, calc(100vw - 48px)); }
 }
 
-/* in-card buttons and links share the palette */
-body.game .panel.chapter-card .ch-page .btn { background: var(--ch-inner); color: var(--ch-head); border: 2px solid var(--ch-line); box-shadow: none; text-shadow: none; }
-body.game .panel.chapter-card .ch-page .btn.primary { background: var(--ch-gold); color: var(--ch-bar); border-color: var(--ch-gold); }
-body.game .panel.chapter-card .ch-page .btn:hover, body.game .panel.chapter-card .ch-page .btn:focus-visible { border-color: var(--ch-gold); }
-body.game .panel.chapter-card .ch-page a:not(.btn) { color: var(--ch-head); text-decoration-color: var(--ch-gold); }
+/* ---------- card structure ---------- */
+.cd { display: flex; flex-direction: column; flex: 1 0 auto; }
+.cd-head { flex: none; display: flex; align-items: center; gap: 14px; padding: 16px 24px 14px; border-bottom: 2px solid var(--cd-line); background: var(--cd-bar); }
+.cd-tile, .cd-avatar { flex: none; width: 56px; height: 56px; display: grid; place-items: center; background: var(--cd-inner); border: 2px solid var(--cd-line); color: var(--cd-sage); }
+.cd-avatar { object-fit: cover; image-rendering: pixelated; background: var(--cd-logo); }
+.cd-titles { flex: 1 1 auto; min-width: 0; }
+body.game .panel.chapter-card .cd-titles .eyebrow { font-family: var(--font-pixel); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--cd-sage); margin: 0 0 4px; }
+body.game .panel.chapter-card .cd-titles h2 { font-family: var(--font-pixel); font-weight: 400; font-size: 24px; line-height: 1.15; margin: 0; color: var(--cd-text); text-shadow: 2px 2px 0 #0b1f19; }
+body.game .panel.chapter-card .cd-titles .subtitle { margin: 4px 0 0; font-size: 14px; font-weight: 500; color: var(--cd-muted) !important; }
+.cd-titles .sep { color: var(--cd-line); padding: 0 2px; }
+.cd-meta { flex: none; display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; max-width: 46%; }
+.cd-loc, .cd-year { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--cd-muted); white-space: nowrap; }
+.cd-loc .px, .cd-year .px { color: var(--cd-sage); }
+.cd-year b { color: var(--cd-gold); }
 
-/* project cards, chips and inner boxes inside any card */
-body.game .panel.chapter-card .project-card,
-body.game .panel.chapter-card :is(.tb-exp li, .edu-list li, .passport, .stamp, .gym-menu > *, .album button) {
-  background: var(--ch-inner); color: var(--ch-text); border: 2px solid var(--ch-line); box-shadow: none;
+.cd-body { flex: 1 0 auto; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 28px; row-gap: 14px; align-content: start; padding: 18px 24px 20px; }
+.cd-project .cd-body { grid-template-columns: minmax(0, 1fr) 330px; }
+.cd-trophies .cd-body { grid-template-columns: minmax(0, 1fr) 390px; }
+.cd-narrow .cd-body, .cd-generic .cd-body { grid-template-columns: minmax(0, 1fr); }
+.cd-span { grid-column: 1 / -1; min-width: 0; }
+.cd-col { min-width: 0; display: flex; flex-direction: column; gap: 14px; }
+.cd-foot { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 12px 24px; background: var(--cd-bar); border-top: 2px solid var(--cd-line); }
+.cd-foot-l, .cd-foot-r { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.cd-foot-r { margin-left: auto; justify-content: flex-end; }
+.cd-count { font-size: 12px; color: var(--cd-muted); padding-right: 4px; white-space: nowrap; }
+
+/* ---------- type ---------- */
+body.game .panel.chapter-card .cd p { margin: 0 0 10px; font-size: 15px; line-height: 1.5; color: var(--cd-text); }
+body.game .panel.chapter-card .cd p:last-child { margin-bottom: 0; }
+body.game .panel.chapter-card .cd .cd-lead { font-size: 16px; line-height: 1.55; }
+body.game .panel.chapter-card .cd .cd-note, body.game .panel.chapter-card .cd .cd-small { font-size: 13px; color: var(--cd-muted); }
+body.game .panel.chapter-card .cd b, body.game .panel.chapter-card .cd strong { color: var(--cd-gold); font-weight: 600; }
+body.game .panel.chapter-card .cd .cd-sub { display: block; font-size: 13px; color: var(--cd-muted); }
+.cd-h { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; font-family: var(--font-pixel); font-weight: 400; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--cd-text); }
+.cd-h .px { color: var(--cd-sage); flex: none; }
+.cd-h em { margin-left: auto; font-style: normal; color: var(--cd-muted); }
+.cd-sec { min-width: 0; }
+.cd-sec.is-result { background: var(--cd-inner); border-left: 3px solid var(--cd-gold); padding: 8px 12px 10px; }
+.cd-sec.is-result .cd-h { margin-bottom: 4px; }
+.cd-sec.is-result .cd-h .px { color: var(--cd-gold); }
+
+/* ---------- buttons ---------- */
+body.game .panel.chapter-card .cd .btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 38px; padding: 0 14px;
+  font-family: var(--font-pixel); font-size: 11px; letter-spacing: .04em; line-height: 1; text-decoration: none;
+  background: var(--cd-inner); color: var(--cd-text); border: 2px solid var(--cd-line); box-shadow: none; text-shadow: none; cursor: pointer;
 }
-body.game .panel.chapter-card .ch-project .project-card { background: var(--ch-bg); }
-body.game .panel.chapter-card .project-card img { max-height: min(24dvh, 190px); width: 100%; object-fit: cover; border: 1px solid var(--ch-line); }
-body.game .panel.chapter-card .project-card h3 { color: var(--ch-head); }
-body.game .panel.chapter-card .project-year { color: var(--ch-muted); }
-body.game .panel.chapter-card .project-pitch, body.game .panel.chapter-card .project-desc { font-size: 16px; color: var(--ch-text); }
-body.game .panel.chapter-card .chips li, body.game .panel.chapter-card [class*="chip"] { background: transparent; color: var(--ch-head); border: 1px solid var(--ch-line); box-shadow: none; }
-body.game .panel.chapter-card .project-links a, body.game .panel.chapter-card .link-list a { color: var(--ch-head); border-bottom-color: var(--ch-gold); }
-body.game .panel.chapter-card .project-card:has(.project-desc) .project-pitch { display: none; } /* the longer description already covers the pitch */
+body.game .panel.chapter-card .cd .btn .px { color: var(--cd-sage); flex: none; }
+body.game .panel.chapter-card .cd .btn:hover, body.game .panel.chapter-card .cd .btn:focus-visible { background: var(--cd-hover); border-color: var(--cd-gold); transform: none; }
+body.game .panel.chapter-card .cd .btn.primary { background: var(--cd-btn); color: var(--cd-btn-ink); border-color: var(--cd-btn); }
+body.game .panel.chapter-card .cd .btn.primary .px { color: var(--cd-btn-ink); }
+body.game .panel.chapter-card .cd .btn.primary:hover, body.game .panel.chapter-card .cd .btn.primary:focus-visible { background: var(--cd-gold); border-color: var(--cd-gold); }
+body.game .panel.chapter-card .cd a:not(.btn) { color: var(--cd-text); text-decoration-color: var(--cd-gold); }
 
-/* content sits vertically centred in each page; tall pages start at the top and scroll */
-body.game .panel.chapter-card .ch-page.is-active,
-body.game .panel.chapter-card .ch-card:not(.single) .ch-page.is-active { display: flex; flex-direction: column; justify-content: safe center; }
-body.game .panel.chapter-card .ch-page > * { flex: none; }
-@media (min-width: 900px) and (min-height: 560px) {
-  body.game .panel.chapter-card .ch-page { display: flex; flex-direction: column; justify-content: safe center; }
+/* ---------- tags, points, facts ---------- */
+.cd-tags { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.cd-tags li { min-width: 58px; text-align: center; padding: 4px 10px; font-size: 13px; line-height: 1.2; color: var(--cd-text); background: var(--cd-inner); border: 1px solid var(--cd-line); }
+.cd-points, .cd-facts, .cd-rows, .cd-prog, .cd-links, .cd-quests, .cd-ach { list-style: none; margin: 0; padding: 0; }
+.cd-points { display: grid; gap: 8px; margin-top: 6px !important; padding: 10px 12px !important; background: var(--cd-inner); border-left: 3px solid var(--cd-gold); }
+.cd-points li { display: flex; gap: 10px; align-items: flex-start; font-size: 15px; }
+.cd-points .px, .cd-facts .px, .cd-links .px, .cd-mem .px { color: var(--cd-sage); flex: none; margin-top: 3px; }
+.cd-facts { display: grid; gap: 10px; }
+.cd-facts li { display: flex; gap: 12px; align-items: flex-start; padding: 10px 12px; background: var(--cd-inner); border: 1px solid var(--cd-line); }
+.cd-facts h4 { margin: 0 0 2px; font-family: var(--font-pixel); font-weight: 400; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--cd-sage); }
+body.game .panel.chapter-card .cd-facts p { margin: 0; font-size: 14.5px; }
+.cd-mem { display: flex; align-items: center; gap: 8px; font-size: 13px !important; color: var(--cd-muted) !important; background: var(--cd-inner); border: 1px solid var(--cd-line); padding: 6px 10px; }
+.cd-mini { background: var(--cd-inner); border: 1px solid var(--cd-line); padding: 10px 12px; display: grid; gap: 8px; }
+.cd-mini p { margin: 0 !important; }
+
+/* ---------- rows: roles, experience ---------- */
+.cd-rows { display: grid; gap: 8px; }
+.cd-rows li, .cd-quests li { display: flex; gap: 12px; align-items: flex-start; padding: 8px 12px; background: var(--cd-inner); border: 1px solid var(--cd-line); }
+body.game .panel.chapter-card .cd .cd-t { display: block; color: var(--cd-text); font-weight: 600; font-size: 15px; }
+.cd-rows p { margin: 2px 0 0 !important; font-size: 14px !important; }
+.cd-logo { flex: none; width: 40px; height: 40px; display: grid; place-items: center; background: var(--cd-logo); color: #2a2440; border: 1px solid var(--cd-line); font-family: var(--font-pixel); font-size: 16px; overflow: hidden; }
+.cd-logo img { width: 100%; height: 100%; object-fit: contain; padding: 3px; display: block; }
+.cd-logo .px { color: var(--cd-bar); }
+
+/* ---------- achievements ---------- */
+.tier-gold { --tier: var(--cd-gold); } .tier-silver { --tier: var(--cd-silver); } .tier-bronze { --tier: var(--cd-bronze); }
+.cd-ach { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 14px; }
+.cd-ach:not(.pick) > li, .cd-ach.pick button {
+  display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; align-items: center; column-gap: 8px; row-gap: 0;
+  padding: 6px 10px; background: var(--cd-inner); border: 1px solid var(--cd-line); color: var(--cd-text); text-align: left; font: inherit; width: 100%; box-sizing: border-box;
+}
+.cd-ach .px { color: var(--tier); grid-row: 1 / span 2; }
+.cd-ach .n { font-size: 14.5px; font-weight: 600; line-height: 1.25; }
+.cd-ach .r { font-size: 12px; font-family: var(--font-pixel); letter-spacing: .04em; text-transform: uppercase; color: var(--tier); white-space: nowrap; }
+.cd-ach .m { grid-column: 2 / -1; font-size: 12.5px; color: var(--cd-muted); line-height: 1.3; }
+.cd-ach.pick { grid-template-columns: minmax(0, 1fr); gap: 5px; }
+.cd-ach.pick button { cursor: pointer; padding: 7px 10px; }
+.cd-ach.pick .px { grid-row: auto; }
+.cd-ach.pick button:hover { background: var(--cd-hover); }
+.cd-ach.pick button[aria-selected="true"] { background: var(--cd-hover); border-color: var(--tier); box-shadow: inset 3px 0 0 var(--tier); }
+.cd-counts { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+.cd-counts span { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--cd-muted); }
+.cd-counts .px { color: var(--tier); }
+.cd-counts b { color: var(--tier) !important; }
+.cd-counts .tier-gold .px, .cd-counts .tier-silver .px, .cd-counts .tier-bronze .px { color: var(--tier); }
+.cd-trophies .cd-head .cd-meta { max-width: 60%; }
+
+/* plaque: fixed frame so picking a trophy never changes the card height */
+.cd-plaque { display: grid; grid-template-rows: 220px 1fr; gap: 12px; height: 100%; min-height: 360px; }
+.cd-plaque-photo { background: var(--cd-bar); border: 2px solid var(--cd-line); display: grid; place-items: center; overflow: hidden; min-height: 0; }
+.cd-plaque-photo .cd-shot-btn { width: 100%; height: 100%; }
+.cd-plaque-text { min-height: 0; padding: 10px 12px; background: var(--cd-inner); border: 1px solid var(--cd-line); border-left: 3px solid var(--tier); }
+.cd-plaque-text h3 { margin: 2px 0 4px; font-size: 18px; line-height: 1.25; color: var(--cd-text); font-weight: 700; }
+.cd-plaque-res { display: flex; align-items: center; gap: 8px; margin: 0 !important; font-family: var(--font-pixel); font-size: 11px !important; letter-spacing: .06em; text-transform: uppercase; color: var(--tier) !important; }
+.cd-plaque-res .px { color: var(--tier); }
+.cd-plaque-detail { margin-top: 6px !important; min-height: 22px; }
+.cd-nophoto { display: grid; justify-items: center; gap: 8px; color: var(--cd-muted); font-size: 13px; }
+.cd-nophoto .px { color: var(--tier); }
+
+/* ---------- photos ---------- */
+.cd-shot { margin: 0; }
+.cd-shot-btn { all: unset; box-sizing: border-box; position: relative; display: block; width: 100%; cursor: zoom-in; background: var(--cd-bar); border: 2px solid var(--cd-line); }
+.cd-shot-btn:focus-visible { outline: 2px solid var(--cd-gold); outline-offset: 2px; }
+.cd-shot-btn img { display: block; width: 100%; height: 190px; object-fit: contain; }
+.cd-plaque-photo .cd-shot-btn { border: 0; height: 100%; }
+.cd-plaque-photo .cd-shot-btn img { height: 100%; }
+.cd-shot-zoom { position: absolute; right: 6px; bottom: 6px; display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px; font-size: 12px; color: var(--cd-text); background: rgba(19, 47, 40, .92); border: 1px solid var(--cd-line); }
+.cd-shot-zoom .px { color: var(--cd-sage); }
+.cd-shot-btn:hover .cd-shot-zoom { border-color: var(--cd-gold); color: var(--cd-gold); }
+.cd-memimg { display: block; width: 100%; max-height: 240px; object-fit: contain; background: var(--cd-bar); border: 2px solid var(--cd-line); }
+.cd-media { background: var(--cd-bar); border: 2px solid var(--cd-line); }
+.cd-media .photo-viewer { margin: 0; }
+.cd-media .pv-stage img, .cd-media .pv-stage video { display: block; width: 100%; max-height: 200px; object-fit: contain; border: 0; }
+.cd-media .pv-cap { margin: 0; padding: 4px 8px; font-size: 12px; color: var(--cd-muted); display: flex; justify-content: space-between; }
+
+/* flow (Aratro) */
+.cd-flow { list-style: none; margin: 0 0 6px; padding: 0; display: flex; align-items: stretch; gap: 0; }
+.cd-flow li { flex: 1 1 0; position: relative; text-align: center; padding: 6px 4px; font-size: 13px; font-weight: 600; background: var(--cd-inner); border: 1px solid var(--cd-line); color: var(--cd-text); }
+.cd-flow li + li { margin-left: 18px; }
+.cd-flow li + li::before { content: ''; position: absolute; left: -15px; top: 50%; width: 12px; height: 8px; margin-top: -4px; background: var(--cd-gold); clip-path: polygon(0 30%, 55% 30%, 55% 0, 100% 50%, 55% 100%, 55% 70%, 0 70%); }
+
+/* garage project tiles */
+.cd-tiles { display: grid; gap: 6px; }
+.cd-proj { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 7px 12px; background: var(--cd-inner); border: 1px solid var(--cd-line); color: var(--cd-text); cursor: pointer; }
+.cd-proj .px { color: var(--cd-sage); }
+
+.cd-proj small { display: block; font-size: 13px; color: var(--cd-muted); }
+.cd-proj em { font-style: normal; font-size: 12px; color: var(--cd-muted); }
+.cd-proj:hover, .cd-proj:focus-visible { background: var(--cd-hover); border-color: var(--cd-gold); }
+.cd-proj:focus-visible { outline: 2px solid var(--cd-gold); outline-offset: 2px; }
+
+/* gym progress, links */
+.cd-prog { display: grid; gap: 6px; }
+.cd-prog li { display: flex; gap: 10px; padding: 6px 12px; background: var(--cd-inner); border: 1px solid var(--cd-line); color: var(--cd-muted); }
+.cd-prog li.done { color: var(--cd-text); border-color: var(--cd-gold); } .cd-prog li span { color: var(--cd-gold); width: 14px; }
+.cd-links { display: grid; gap: 8px; }
+.cd-links li { display: flex; gap: 12px; align-items: center; padding: 10px 12px; background: var(--cd-inner); border: 1px solid var(--cd-line); }
+
+/* ---------- quests ---------- */
+.cd-quests { display: grid; gap: 12px; }
+.quest .cd-logo { width: 44px; height: 44px; }
+body.game .panel.chapter-card .cd .quest .cd-t { font-size: 15.5px; }
+.quest.main { border-left: 3px solid var(--cd-gold); } .quest.side { border-left: 3px solid var(--cd-sage); }
+.cd-badge { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 2px; font-family: var(--font-pixel); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; color: var(--cd-sage); }
+.quest.main .cd-badge, .quest.main .cd-badge .px { color: var(--cd-gold); }
+.quest p { margin: 4px 0 0 !important; font-size: 14.5px !important; }
+.quest .cd-sub i { font-style: normal; color: var(--cd-text); }
+
+/* ---------- skills ---------- */
+.cd-skills { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 20px; }
+.cd-sk-group { min-width: 0; padding: 10px 12px 12px; background: var(--cd-inner); border: 1px solid var(--cd-line); }
+.cd-sk-group ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.cd-sk-group li { display: inline-flex; align-items: center; gap: 7px; padding: 3px 9px 3px 3px; font-size: 13.5px; line-height: 1.2; background: var(--cd-bg); border: 1px solid var(--cd-line); color: var(--cd-text); }
+.cd-sk-logo { flex: none; width: 24px; height: 24px; display: grid; place-items: center; background: var(--cd-logo); }
+.cd-sk-logo img { width: 18px; height: 18px; object-fit: contain; display: block; }
+.cd-sk-logo img.px { image-rendering: pixelated; image-rendering: crisp-edges; }
+.cd-sk-logo .sk-fallback { font-family: var(--font-pixel); font-size: 12px; color: #132F28; line-height: 1; }
+.cd-learn { font-style: normal; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--cd-sage); border-left: 1px solid var(--cd-line); padding-left: 6px; }
+.cd-skills.dense { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.cd-skills.dense .cd-sk-group { padding: 6px 8px 8px; }
+.cd-skills.dense .cd-h { margin-bottom: 5px; }
+.cd-skills.dense .cd-sk-group li { font-size: 12.5px; padding: 2px 8px 2px 2px; }
+.cd-skills.dense .cd-sk-logo { width: 20px; height: 20px; } .cd-skills.dense .cd-sk-logo img { width: 15px; height: 15px; }
+.cd-skills.dense ul { gap: 4px; }
+
+/* ---------- education list ---------- */
+.cd-edu { list-style: none; margin: 0 0 10px; padding: 0; display: grid; gap: 10px; }
+.cd-edu li { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto auto; align-items: center; gap: 16px; padding: 12px 14px; background: var(--cd-inner); border: 1px solid var(--cd-line); }
+.cd-num { font-family: var(--font-pixel); font-size: 22px; color: var(--cd-gold); text-align: center; }
+body.game .panel.chapter-card .cd .cd-edu-t .cd-t { font-size: 16px; }
+.cd-stamp { font-family: var(--font-pixel); font-size: 10px; letter-spacing: .08em; color: var(--cd-muted); border: 1px dashed var(--cd-line); padding: 4px 8px; }
+.cd-stamp.on { color: var(--cd-gold); border: 1px solid var(--cd-gold); }
+.cd-edu-a { display: flex; gap: 8px; }
+
+/* generic / legacy content */
+.cd-prose { padding: 0; }
+.cd-prose .eyebrow { color: var(--cd-sage); }
+.cd-prose h2 { color: var(--cd-text); font-family: var(--font-pixel); font-weight: 400; font-size: 22px; margin: 0 0 6px; }
+.cd-prose .highlights { background: var(--cd-inner); border-left: 3px solid var(--cd-gold); padding: 10px 12px; }
+.cd-prose .highlights li::before { color: var(--cd-gold); }
+.cd-prose .muted { color: var(--cd-muted); }
+.cd-prose .subtitle { color: var(--cd-muted) !important; }
+.cd-prose .transmit { margin: 14px 0 0; }
+
+/* ---------- photo viewer (lightbox) ---------- */
+.lb { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 16px; background: rgba(8, 22, 18, .85); }
+.lb:focus { outline: 0; }
+.lb-box { background: var(--cd-bg); border: 2px solid var(--cd-line); box-shadow: 6px 6px 0 rgba(0, 0, 0, .45); max-width: 100%; display: flex; flex-direction: column; }
+.lb-bar { display: flex; align-items: center; gap: 12px; padding: 6px 8px 6px 14px; background: var(--cd-bar); border-bottom: 2px solid var(--cd-line); color: var(--cd-muted); font-size: 13px; }
+.lb-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--cd-text); }
+.lb-x, .lb-nav { all: unset; box-sizing: border-box; cursor: pointer; display: grid; place-items: center; color: var(--cd-text); }
+.lb-x { width: 36px; height: 30px; } .lb-x:hover, .lb-x:focus-visible, .lb-nav:hover, .lb-nav:focus-visible { color: var(--cd-gold); }
+.lb-x:focus-visible, .lb-nav:focus-visible { outline: 2px solid var(--cd-gold); }
+.lb-stage { position: relative; display: grid; place-items: center; min-width: 280px; min-height: 160px; }
+.lb-stage img, .lb-stage video { display: block; max-width: min(92vw, 1060px); max-height: calc(100dvh - 120px); object-fit: contain; }
+.lb-stage img[hidden], .lb-stage video[hidden] { display: none; }
+.lb-nav { position: absolute; top: 50%; width: 40px; height: 52px; margin-top: -26px; background: rgba(19, 47, 40, .9); border: 2px solid var(--cd-line); }
+.lb-nav.prev { left: 8px; } .lb-nav.next { right: 8px; } .lb-nav[hidden] { display: none; }
+
+/* ---------- phones, short screens: a sheet that scrolls ---------- */
+@media (max-width: 760px), (max-height: 520px) {
+  body.game .panel.chapter-card { z-index: 21; }
+  .cd-head { padding: 12px 14px; gap: 10px; }
+  .cd-tile, .cd-avatar { width: 44px; height: 44px; }
+  .cd-tile .px { width: 22px; height: auto; }
+  body.game .panel.chapter-card .cd-titles h2 { font-size: 19px; }
+  .cd-meta { display: none; }
+  .cd-body, .cd-project .cd-body, .cd-trophies .cd-body { grid-template-columns: minmax(0, 1fr); padding: 14px; row-gap: 14px; }
+  .cd-foot { position: sticky; bottom: 0; padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); }
+  body.game .panel.chapter-card .cd .btn { min-height: 44px; }
+  .cd-ach { grid-template-columns: minmax(0, 1fr); }
+  .cd-skills { grid-template-columns: minmax(0, 1fr); }
+  .cd-edu li { grid-template-columns: 40px minmax(0, 1fr); }
+  .cd-stamp { display: none; } .cd-edu-a { grid-column: 1 / -1; flex-wrap: wrap; }
+  .cd-plaque { grid-template-rows: 180px auto; min-height: 0; }
+  .lb-stage img, .lb-stage video { max-height: calc(100dvh - 100px); }
+}
+@media (max-width: 760px) { body.game .panel.chapter-card .cd-foot-r { margin-left: 0; } }
+
+/* compact skills (Toolbox): group label beside its chips */
+.cd-skills.dense .cd-sk-group { display: grid; grid-template-columns: 82px minmax(0, 1fr); gap: 8px; align-items: start; }
+.cd-skills.dense .cd-h { margin: 6px 0 0; font-size: 9px; line-height: 1.3; align-items: flex-start; flex-wrap: wrap; }
+.cd-skills.dense .cd-h span { flex: 1 1 50px; min-width: 0; }
+.cd-skills.dense .cd-h em { display: none; }
+
+/* tighter rhythm so dense cards fit one desktop view */
+@media (min-width: 761px) and (min-height: 521px) {
+  .cd-body { padding-top: 14px; padding-bottom: 14px; row-gap: 12px; }
+  .cd-ach:not(.pick) > li { padding-top: 4px; padding-bottom: 4px; }
+  .cd-head { padding-top: 12px; padding-bottom: 12px; }
+  .cd-foot { padding-top: 10px; padding-bottom: 10px; }
+}
+.cd-skills.dense .cd-h .px { display: none; }
+.cd-skills.dense .cd-h { display: block; }
+
+.cd-toolbox .cd-body { grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr); }
+.cd-rows.tight { gap: 6px; }
+.cd-rows.tight li { padding: 6px 10px; gap: 10px; }
+.cd-rows.tight .cd-logo { width: 34px; height: 34px; }
+body.game .panel.chapter-card .cd .cd-rows.tight p { font-size: 13.5px !important; line-height: 1.4 !important; }
+body.game .panel.chapter-card .cd .cd-rows.tight .cd-t { font-size: 14.5px; }
+.cd-skills.dense .cd-sk-group { padding: 5px 8px 6px; }
+.cd-skills.dense { gap: 6px; }
+.cd-skills.dense .cd-sk-group li { font-size: 12.5px; line-height: 1.1; }
+
+/* one-line achievement rows: icon, name, year/org, result */
+.cd-ach:not(.pick) > li { grid-template-columns: 22px minmax(0, 1fr) auto auto; column-gap: 10px; }
+.cd-ach:not(.pick) .px { grid-row: 1; }
+.cd-ach:not(.pick) .n { grid-column: 2; grid-row: 1; }
+.cd-ach:not(.pick) .m { grid-column: 3; grid-row: 1; white-space: nowrap; }
+.cd-ach:not(.pick) .r { grid-column: 4; grid-row: 1; min-width: 92px; text-align: right; }
+@media (max-width: 760px) { .cd-ach:not(.pick) .m { grid-column: 2 / -1; grid-row: 2; white-space: normal; } .cd-ach:not(.pick) .r { grid-column: 3; } .cd-ach:not(.pick) > li { grid-template-columns: 22px minmax(0, 1fr) auto; } }
+@media (min-width: 761px) and (min-height: 521px) {
+  .cd-toolbox .cd-body { padding-top: 10px; padding-bottom: 10px; }
+  .cd-toolbox .cd-col { gap: 8px; }
+  .cd-toolbox .cd-sk-group li { padding-top: 1px; padding-bottom: 1px; }
+}
+@media (min-width: 761px) and (min-height: 521px) {
+  .cd-head { padding-top: 10px; padding-bottom: 10px; }
+  .cd-foot { padding-top: 8px; padding-bottom: 8px; }
 }
 
-/* highlight the important bits */
-body.game .panel.chapter-card .highlights {
-  background: var(--ch-inner); border-left: 3px solid var(--ch-gold); padding: 10px 12px;
+/* narrow windows (phones, split screens, small laptops): every card stacks into one column and scrolls */
+@media (max-width: 900px), (max-height: 520px) {
+  body.game .panel.chapter-card .cd-body,
+  body.game .panel.chapter-card .cd-project .cd-body,
+  body.game .panel.chapter-card .cd-trophies .cd-body,
+  body.game .panel.chapter-card .cd-toolbox .cd-body { grid-template-columns: minmax(0, 1fr); padding: 14px; row-gap: 14px; }
+  .cd-skills, .cd-skills.dense { grid-template-columns: minmax(0, 1fr); }
+  .cd-skills.dense .cd-sk-group { display: block; }
+  .cd-skills.dense .cd-h { margin: 0 0 6px; }
+  .cd-skills.dense .cd-h .px { display: inline-block; }
+  .cd-ach { grid-template-columns: minmax(0, 1fr); }
+  .cd-meta { max-width: none; }
+  .cd-head { flex-wrap: wrap; }
+  .cd-edu li { grid-template-columns: 40px minmax(0, 1fr); }
+  .cd-edu-a { grid-column: 1 / -1; flex-wrap: wrap; }
+  .cd-stamp { display: none; }
+  .cd-plaque { grid-template-rows: 200px auto; min-height: 0; }
+  .cd-foot { position: sticky; bottom: 0; }
+  body.game .panel.chapter-card .cd .btn { min-height: 44px; }
 }
-body.game .panel.chapter-card .ch-project .highlights { background: var(--ch-bg); }
-body.game .panel.chapter-card .highlights li { color: var(--ch-head); font-weight: 600; }
-body.game .panel.chapter-card .highlights li .muted { font-weight: 400; }
-body.game .panel.chapter-card .chapter-head + p { color: var(--ch-head); }
-body.game .panel.chapter-card .chapter-head h2 { text-shadow: 2px 2px 0 var(--ch-bar); }
-body.game .panel.chapter-card .chapter-head .eyebrow { display: inline-block; background: var(--ch-gold); color: var(--ch-bar); padding: 2px 6px; }
-body.game .panel.chapter-card .project-card h3 { border-bottom: 2px solid var(--ch-gold); padding-bottom: 4px; }
-body.game .panel.chapter-card .mem-hint b { color: var(--ch-gold); }
-body.game .panel.chapter-card .sk-row { margin: 0 0 10px; } body.game .panel.chapter-card .sk-row .chips { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; padding: 0; margin: 0; } body.game .panel.chapter-card .sk-row .chips li { font-size: 14px; padding: 3px 8px; }
-body.game .panel.chapter-card .eyebrow:empty { display: none; }
-
-/* desktop: story stays left; right column pages through when it is long */
-@media (min-width: 900px) and (min-height: 560px) {
-  body.game .panel.chapter-card .ch-page:not(.ch-story):not(.is-active) { display: none; }
-  body.game .panel.chapter-card .ch-page:not(.ch-story) { grid-column: 2; grid-row: 1; }
-  body.game .panel.chapter-card .ch-card.paged + .ch-pager { display: flex; }
+@media (min-width: 761px) and (max-width: 900px) and (min-height: 521px) {
+  body.game .panel.chapter-card { width: calc(100vw - 32px); }
+  body.game .panel.chapter-card:has(.cd-narrow) { width: min(660px, calc(100vw - 32px)); }
 }
 
-/* college roles: logo, role, org, details on demand */
-body.game .panel.chapter-card .role-list { list-style: none; padding: 0; margin: 0 0 14px; display: grid; gap: 8px; }
-body.game .panel.chapter-card .role-list li { display: flex; gap: 10px; align-items: flex-start; background: var(--ch-bg); border: 2px solid var(--ch-line); padding: 8px 10px; }
-body.game .panel.chapter-card .ch-story .role-list li { background: var(--ch-inner); }
-body.game .panel.chapter-card .role-list img { width: 36px; height: 36px; flex: none; background: var(--ch-head); border: 2px solid var(--ch-line); }
-body.game .panel.chapter-card .role-list b { display: block; color: var(--ch-head); }
-body.game .panel.chapter-card .role-list span { display: block; color: var(--ch-muted); font-size: 14px; }
-body.game .panel.chapter-card .role-list details summary { cursor: pointer; color: var(--ch-gold); font-size: 13px; margin-top: 2px; }
-body.game .panel.chapter-card .role-list details p { font-size: 15px; margin: 4px 0 0; }
-
-/* achievements: trophy tiles */
-body.game .panel.chapter-card .trophy-grid { list-style: none; padding: 0; margin: 0 0 8px; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
-body.game .panel.chapter-card .trophy-grid li { position: relative; padding: 8px 10px 8px 38px; background: var(--ch-bg); border: 2px solid var(--ch-line); min-height: 52px; }
-body.game .panel.chapter-card .trophy-grid li.win { border-color: var(--ch-gold); box-shadow: inset 0 -3px 0 var(--ch-gold); }
-body.game .panel.chapter-card .trophy-grid .tr-ico { position: absolute; left: 9px; top: 9px; font-size: 20px; line-height: 1; }
-body.game .panel.chapter-card .trophy-grid b { display: block; font-size: 14px; line-height: 1.25; color: var(--ch-head); }
-body.game .panel.chapter-card .trophy-grid em { display: block; font-style: normal; font-size: 12px; color: var(--ch-gold); letter-spacing: .04em; text-transform: uppercase; }
-body.game .panel.chapter-card .trophy-grid li.place em { color: var(--ch-muted); }
-body.game .panel.chapter-card .trophy-grid small { display: block; font-size: 12px; color: var(--ch-muted); margin-top: 2px; }
-body.game .panel.chapter-card .panel-body .eyebrow { margin-top: 4px; }
-@media (min-width: 900px) and (min-height: 560px) {
-  body.game .panel.chapter-card:has(.ch-card.solo) { width: min(640px, calc(100vw - 48px)); }
-  body.game .panel.chapter-card .ch-card.solo { grid-template-columns: minmax(0, 1fr); }
-  body.game .panel.chapter-card .ch-card.solo .ch-page { grid-column: 1; grid-row: 1; }
-  body.game .panel.chapter-card .ch-card.solo .ch-page:not(.is-active) { display: none; }
+/* ---------- signature callout: pixel-notched corners, sage inset edge, dashed gold strip on top ---------- */
+.cd-sec.is-result, .cd-points, .cd-prose .highlights {
+  --notch: polygon(6px 0, calc(100% - 6px) 0, calc(100% - 6px) 3px, calc(100% - 3px) 3px, calc(100% - 3px) 6px, 100% 6px, 100% calc(100% - 6px), calc(100% - 3px) calc(100% - 6px), calc(100% - 3px) calc(100% - 3px), calc(100% - 6px) calc(100% - 3px), calc(100% - 6px) 100%, 6px 100%, 6px calc(100% - 3px), 3px calc(100% - 3px), 3px calc(100% - 6px), 0 calc(100% - 6px), 0 6px, 3px 6px, 3px 3px, 6px 3px);
+  position: relative; background: var(--cd-inner); border: 0; border-left: 0; padding: 14px 16px 12px; clip-path: var(--notch);
+  box-shadow: inset 0 0 0 2px var(--cd-line);
 }
-body.game .panel.chapter-card .trophy-grid { grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); gap: 6px; }
-body.game .panel.chapter-card .trophy-grid li { padding: 6px 8px 6px 32px; min-height: 0; }
-body.game .panel.chapter-card .trophy-grid .tr-ico { left: 7px; top: 7px; font-size: 17px; }
-body.game .panel.chapter-card .trophy-grid b { font-size: 13.5px; }
+.cd-sec.is-result::before, .cd-points::before, .cd-prose .highlights::before {
+  content: ''; position: absolute; left: 8px; right: 8px; top: 3px; height: 3px;
+  background: repeating-linear-gradient(90deg, var(--cd-gold) 0 6px, transparent 6px 10px);
+}
+.cd-sec.is-result:hover, .cd-points:hover { background: var(--cd-hover); }
+.cd-points { margin-top: 6px !important; padding: 14px 16px 12px !important; }
+.cd-prose .highlights li::before { position: absolute; }
+
+/* the same notched callout for trophy plaques and quest cards; the strip takes the tier / quest colour */
+.cd-plaque-text, .quest { --notch: polygon(6px 0, calc(100% - 6px) 0, calc(100% - 6px) 3px, calc(100% - 3px) 3px, calc(100% - 3px) 6px, 100% 6px, 100% calc(100% - 6px), calc(100% - 3px) calc(100% - 6px), calc(100% - 3px) calc(100% - 3px), calc(100% - 6px) calc(100% - 3px), calc(100% - 6px) 100%, 6px 100%, 6px calc(100% - 3px), 3px calc(100% - 3px), 3px calc(100% - 6px), 0 calc(100% - 6px), 0 6px, 3px 6px, 3px 3px, 6px 3px);
+  position: relative; border: 0 !important; clip-path: var(--notch); box-shadow: inset 0 0 0 2px var(--cd-line); padding-top: 14px; }
+.cd-plaque-text::before, .quest::before { content: ''; position: absolute; left: 8px; right: 8px; top: 3px; height: 3px; background: repeating-linear-gradient(90deg, var(--strip) 0 6px, transparent 6px 10px); }
+.cd-plaque-text { --strip: var(--tier); padding-left: 16px; padding-right: 16px; }
+.quest.main { --strip: var(--cd-gold); } .quest.side { --strip: var(--cd-sage); }
+.cd-ach.pick button[aria-selected="true"] { box-shadow: inset 0 -3px 0 var(--tier); }
+
+/* =====================================================================
+   Signature callout v2: "pixel dialog". Solid card, 2px sage border, hard pixel shadow,
+   and a label tab sitting on the top edge (colour = result tier / quest type).
+   ===================================================================== */
+.cd-sec.is-result, .cd-points, .cd-prose .highlights, .cd-plaque-text, .quest {
+  clip-path: none !important; position: relative; border: 2px solid var(--cd-line) !important;
+  background: var(--cd-inner); box-shadow: 4px 4px 0 var(--cd-bar) !important; margin-top: 8px;
+  transition: background .12s steps(2), transform .12s steps(2), box-shadow .12s steps(2);
+}
+.cd-sec.is-result::before, .cd-points::before, .cd-prose .highlights::before, .cd-plaque-text::before, .quest::before { content: none; }
+.cd-sec.is-result:hover, .cd-points:hover, .cd-plaque-text:hover, .quest:hover { background: var(--cd-hover); transform: translate(-1px, -1px); box-shadow: 5px 5px 0 var(--cd-bar) !important; }
+.cd-sec.is-result { --strip: var(--cd-gold); padding: 20px 14px 12px; border-color: var(--cd-gold) !important; }
+.cd-sec.is-result .cd-h, .cd-plaque-res, .quest .cd-badge {
+  position: absolute; left: 10px; top: -11px; margin: 0; display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 9px 3px 7px; background: var(--cd-bar); border: 2px solid var(--strip, var(--cd-gold)); color: var(--strip, var(--cd-gold));
+  font-family: var(--font-pixel); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; line-height: 1;
+}
+.cd-sec.is-result .cd-h .px, .cd-plaque-res .px, .quest .cd-badge .px { color: var(--strip, var(--cd-gold)); }
+.cd-points { padding: 14px 16px !important; margin-top: 6px !important; border-color: var(--cd-line) !important; }
+.cd-points::after, .cd-prose .highlights::after { content: ''; position: absolute; left: -2px; top: -2px; width: 8px; height: 8px; background: var(--cd-gold); }
+/* highlights callout: label tab on the top edge, gold border, each point its own ruled row with an icon chip */
+.cd-points { margin-top: 18px !important; padding: 18px 14px 8px !important; gap: 0; border-color: var(--cd-gold) !important; }
+.cd-points::after { content: none; }
+.cd-points::before {
+  content: 'Highlights'; position: absolute; left: 10px; top: -11px; right: auto; height: auto; display: inline-flex; align-items: center;
+  padding: 3px 9px; background: var(--cd-bar); border: 2px solid var(--cd-gold); color: var(--cd-gold);
+  font-family: var(--font-pixel); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; line-height: 1;
+}
+.cd-points li { align-items: center; gap: 12px; padding: 9px 2px; }
+.cd-points li + li { border-top: 2px dotted rgba(120, 149, 129, .55); }
+.cd-points li .px { margin-top: 0; box-sizing: content-box; padding: 6px; background: var(--cd-bar); border: 1px solid var(--cd-line); color: var(--cd-gold); }
+.cd-plaque-text { --strip: var(--tier); border-color: var(--tier) !important; padding: 22px 16px 12px !important; }
+.cd-plaque-res { background: var(--cd-bar) !important; }
+.quest { padding: 20px 12px 10px !important; }
+.quest.main { --strip: var(--cd-gold); border-color: var(--cd-gold) !important; } .quest.side { --strip: var(--cd-sage); border-color: var(--cd-sage) !important; }
+.cd-quests { gap: 16px; }
+
+/* selected trophy: the whole row lights up in its tier colour (border, fill, pixel shadow) */
+.cd-ach.pick button[aria-selected="true"] {
+  background: var(--cd-hover); border: 2px solid var(--tier); padding: 6px 9px;
+  box-shadow: 3px 3px 0 var(--cd-bar);
+}
+.cd-ach.pick button[aria-selected="true"] .n { color: var(--cd-text); }
+
+/* narrow footer: all actions share one grid row; the bar's ✕ already closes, so the footer Close hides when other actions exist */
+@media (max-width: 900px), (max-height: 520px) {
+  body.game .panel.chapter-card .cd-foot { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px; align-items: stretch; padding: 8px 12px calc(8px + env(safe-area-inset-bottom)); }
+  .cd-foot-l, .cd-foot-r { display: contents; }
+  .cd-foot:has(.cd-foot-r > *) [data-card-close] { display: none !important; }
+  body.game .panel.chapter-card .cd-foot .btn { padding: 0 8px; font-size: 10px; min-width: 0; white-space: normal; text-align: center; line-height: 1.2; }
+  .cd-foot .cd-count { grid-column: 1 / -1; text-align: center; padding: 0; }
+}
+@media (max-width: 900px), (max-height: 520px) {
+  body.game .panel.chapter-card .cd-foot { grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); }
+  .cd-foot .btn .px { display: none; }
+}
+
+/* ---------- Memory Line stops ---------- */
+.cd-stops li { grid-template-columns: 52px minmax(0, 1fr) auto; }
+.cd-stops li.current { border-color: var(--cd-gold); background: var(--cd-hover); }
+.cd-stops .cd-stamp { display: inline-flex; align-items: center; gap: 6px; }
+.cd-stamp .px { color: var(--cd-gold); }
+@media (max-width: 900px), (max-height: 520px) { .cd-stops li { grid-template-columns: 40px minmax(0, 1fr); } .cd-stops li > .btn, .cd-stops li > .cd-stamp { grid-column: 1 / -1; display: inline-flex; } .cd-stops .cd-stamp { display: inline-flex; } }
+
+/* ---------- Finale ("Thanks for playing") in the same palette ---------- */
+body.game .finale { background: rgba(8, 22, 18, .6); }
+body.game .finale-card { background: var(--cd-bg); color: var(--cd-text); border: 2px solid var(--cd-line); box-shadow: 0 0 0 2px var(--cd-bar), 6px 6px 0 rgba(0, 0, 0, .45); border-radius: 0; scrollbar-color: var(--cd-line) var(--cd-bg); }
+body.game .finale-card .window-bar { background: var(--cd-bar); color: var(--cd-muted); border-bottom: 2px solid var(--cd-line); }
+body.game .finale-body { color: var(--cd-text); gap: 8px; padding: 22px 26px 24px; }
+body.game .finale-body .mini-portrait { width: 80px; height: 80px; background: var(--cd-logo); border: 2px solid var(--cd-line); box-shadow: 4px 4px 0 var(--cd-bar); }
+body.game .finale-body .eyebrow { font-family: var(--font-pixel); font-size: 10px; letter-spacing: .1em; color: var(--cd-sage); margin-top: 6px; }
+body.game .finale-body h2 { color: var(--cd-text); text-shadow: 2px 2px 0 #0b1f19; line-height: 1.25; }
+body.game .finale-body p { color: var(--cd-text); font-size: 15.5px; line-height: 1.55; }
+body.game .finale-stats { color: var(--cd-muted); font-family: var(--font-sans); font-size: 13px; padding: 6px 14px; background: var(--cd-inner); border: 2px solid var(--cd-line); box-shadow: 3px 3px 0 var(--cd-bar); }
+body.game .finale-stats span { display: inline-flex; align-items: center; gap: 6px; }
+body.game .finale-stats .px { color: var(--cd-sage); }
+body.game .finale-credits { color: var(--cd-muted) !important; font-family: var(--font-sans) !important; font-size: 13px !important; }
+body.game .finale-card .btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 0 14px;
+  font-family: var(--font-pixel); font-size: 11px; letter-spacing: .04em; background: var(--cd-inner); color: var(--cd-text);
+  border: 2px solid var(--cd-line); box-shadow: none; text-shadow: none; text-decoration: none; transform: none;
+}
+body.game .finale-card .btn .px { color: var(--cd-sage); }
+body.game .finale-card .btn:hover, body.game .finale-card .btn:focus-visible { background: var(--cd-hover); border-color: var(--cd-gold); }
+body.game .finale-card .btn.primary { background: var(--cd-btn); color: var(--cd-btn-ink); border-color: var(--cd-btn); }
+body.game .finale-card .btn.primary .px { color: var(--cd-btn-ink); }
+body.game .finale-card .btn.primary:hover { background: var(--cd-gold); border-color: var(--cd-gold); }
+body.game .finale-card :focus-visible { outline: 2px solid var(--cd-gold); outline-offset: 2px; }
+body.game .finale-card { width: min(640px, 100%); }
+body.game .finale-body .transmit { gap: 8px; flex-wrap: wrap; }

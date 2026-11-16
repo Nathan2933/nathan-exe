@@ -1174,12 +1174,6 @@ body.game .gh-first { font-family: var(--font-mono); font-size: 10px; padding: 1
 .tour-btn.primary:hover, .tour-btn.primary:focus-visible { background: var(--tour-pri); color: var(--tour-pri-ink); border-color: var(--tour-hover); box-shadow: 2px 2px 0 var(--tour-hover); }
 .tour-btn:focus-visible { outline: 2px solid var(--tour-head); outline-offset: 2px; }
 .tour-modal .tm-row .tour-btn:not(.primary) { opacity: .92; }
-.tour-overview { margin-top: 14px; padding: 10px; background: var(--cream); border: 2px solid var(--ink-3); display: grid; gap: 6px; }
-.tour-overview .eyebrow { margin: 0; }
-.tour-overview button { all: unset; box-sizing: border-box; cursor: pointer; display: grid; gap: 2px; padding: 6px 8px; border: 2px solid var(--ink-3); background: var(--paper); }
-.tour-overview button b { font-size: 13px; color: var(--ink); }
-.tour-overview button small { font-size: 12px; color: var(--ink-2); }
-.tour-overview button:hover, .tour-overview button:focus-visible, .tour-overview button.on { border-color: #00a3ad; }
 @media (max-width: 760px), (max-height: 520px) and (orientation: landscape) {
   .tour-card { top: auto; bottom: calc(max(12px, env(safe-area-inset-bottom)) + 150px); }
   .tour-btn { min-height: 40px; }

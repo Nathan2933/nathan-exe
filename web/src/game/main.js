@@ -21,7 +21,8 @@ import { createCharacters } from './characters.js';
 import { runLift, runTempo } from './minigame.js';
 import { loadSave, writeSave, resetSave, addUnique, formatTime } from './save.js';
 import { createTour, findStopInteractable } from './tour.js';
-import { loadContent, esc, safeUrl, chapterFor, projectCard, projectDetails, DISTRICTS, MAIN_DISTRICTS } from '../shared/content.js';
+import { loadContent, esc, safeUrl, chapterFor, DISTRICTS, MAIN_DISTRICTS } from '../shared/content.js';
+import { aboutHtml, projectHtml, projectSlides, chapterHtml, memoryHtml, trophiesHtml, plaqueHtml, questsHtml, skilltreeHtml, profileHtml, educationListHtml, timetableHtml, ico, genericHtml, splitTitle, openLightbox, installPanelModal } from './cards.js';
 
 const $ = (s) => document.querySelector(s);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -541,6 +542,7 @@ function setupUI() {
 
   $('#prompt').addEventListener('click', () => state.nearby && interact(state.nearby));
   $('#panel-close').addEventListener('click', closePanel);
+  panelModal = installPanelModal({ panel: $('#panel'), scrim: $('#panel-scrim'), close: closePanel });
   $('#album-btn')?.addEventListener('click', openAlbum);
   $('#look-palette').addEventListener('click', () => { look.palette = look.palette === 'pastel' ? 'bright' : 'pastel'; applyLook(); });
   $('#look-pixels').addEventListener('click', () => { look.pixels = look.pixels === 'retro' ? 'smooth' : 'retro'; applyLook(); resize(); });
@@ -831,7 +833,6 @@ function interact(it) {
   if (it.kind === 'panel') return openInfoPanel(it);
   if (it.kind === 'finale') return runFinale(it);
   if (it.kind === 'gym') return interactGym(it);
-  if (it.kind === 'chapter' && it.district === 'iron-yard') return openDiscipline(it);
   openInteractable(it);
 }
 
@@ -841,84 +842,48 @@ function face(target) {
   player.heading = Math.atan2(target.x - p.x, target.z - p.z);
 }
 
-function chapterHeader(ch) {
-  return `<div class="chapter-head"><img class="mini-portrait" src="${portraitURL()}" alt=""><div>
-    <p class="eyebrow">${esc(ch.period || '')}</p><h2 id="panel-title">${esc(ch.title)}</h2>
-    ${ch.subtitle ? `<p class="subtitle">${esc(ch.subtitle)}</p>` : ''}</div></div>`;
+// ---------------- Cards ----------------
+// Every card is built by game/cards.js (one structure, one palette). This file only wires behaviour.
+let panelModal = null;
+const DISTRICT_PATH = { 'lake-park': 'montfort', 'signal-tower': 'guild-hall', lighthouse: 'airport' };
+const pathOf = (d) => DISTRICT_PATH[d] || d;
+function projectNavFor(c, id) {
+  const list = c.projects || [], i = list.findIndex((x) => x.id === id);
+  const mk = (p) => (p ? { id: p.id, name: p.card?.nav || splitTitle(p.title)[0] } : null);
+  return { index: Math.max(0, i), total: list.length, prev: mk(list[i - 1]), next: mk(list[i + 1]) };
 }
-
-// Chapter card: a Story page and a Project page. Two columns on roomy screens,
-// Previous/Next pages on phones (CSS decides; the pager hides in two-column mode).
-function chapterCardHtml(story, project, hasMedia = false, label = 'Project') {
-  if (!hasMedia && !String(project).replace(/<[^>]*>|\s/g, '')) {
-    return `<div class="ch-card single"><section class="ch-page ch-story is-active">${story}</section></div>`;
-  }
-  return `<div class="ch-card"><section class="ch-page ch-story is-active" aria-label="Story">${story}</section><section class="ch-page ch-project" aria-label="${esc(label)}">${project}</section></div>
-    <nav class="ch-pager" aria-label="Chapter pages"><button type="button" class="btn" data-pg="-1">← Previous</button><span class="ch-ind" aria-live="polite"></span><button type="button" class="btn primary" data-pg="1">Next →</button></nav>`;
+function openProjectById(id) {
+  const next = world.interactables.find((i) => i.kind === 'project' && i.projectId === id);
+  if (!next) return;
+  openInteractable(next);
+  const q = player.group.position;
+  state.panelOpen = { x: q.x, z: q.z, radius: 99 };   // switching exhibits from inside a card must not close it
 }
-// Phones / short screens: split a long single-page card into pages that each fit.
-const TWO_COL = matchMedia('(min-width: 900px) and (min-height: 560px)');
-function autoPaginate() {
-  const body = $('#panel-body'), card = body.querySelector('.ch-card');
-  if (!card) return;
-  if (card.classList.contains('single')) card.classList.add('solo');
-  const two = TWO_COL.matches && !card.classList.contains('solo');
-  const first = card.querySelector(two ? '.ch-page:not(.ch-story)' : '.ch-page');
-  first.style.display = 'flex';
-  const room = first.clientHeight - 64;   // leave room for the pager
-  first.style.display = '';
-  if (room < 140) return;
-  let split = false;
-  for (const page of [...card.querySelectorAll(two ? '.ch-page:not(.ch-story)' : '.ch-page')]) {
-    page.style.display = 'block';
-    const over = page.scrollHeight > room + 4, kids = [...page.children];
-    if (!over || kids.length < 2) { page.style.display = ''; continue; }
-    const groups = [[]]; let h = 0;
-    for (const k of kids) {
-      const cs = getComputedStyle(k);
-      const kh = k.offsetHeight + parseFloat(cs.marginTop) + parseFloat(cs.marginBottom);
-      if (h + kh > room - 32 && groups.at(-1).some((e) => !e.classList.contains('eyebrow'))) {
-        const prev = groups.at(-1), carry = prev.length > 1 && prev.at(-1).classList.contains('eyebrow') ? [prev.pop()] : [];
-        groups.push(carry); h = carry.reduce((t, e) => t + e.offsetHeight + 10, 0);   // keep a heading with what it labels
-      }
-      groups.at(-1).push(k); h += kh;
-    }
-    page.style.display = '';
-    if (groups.length < 2) continue;
-    split = true;
-    const label = (page.getAttribute('aria-label') || 'Intro').replace(/ \d+$/, '');
-    if (!page.hasAttribute('aria-label')) page.setAttribute('aria-label', label);
-    let after = page;
-    groups.slice(1).forEach((g, i) => {
-      const s = document.createElement('section');
-      s.className = page.className.replace('is-active', '').trim();
-      s.setAttribute('aria-label', `${label} ${i + 2}`);
-      g.forEach((k) => s.append(k));
-      after.after(s); after = s;
-    });
-  }
-  if (!split) return;
-  card.classList.remove('single'); card.classList.add('paged');
-  if (!body.querySelector('.ch-pager')) card.insertAdjacentHTML('afterend', `<nav class="ch-pager" aria-label="Card pages"><button type="button" class="btn" data-pg="-1">← Previous</button><span class="ch-ind" aria-live="polite"></span><button type="button" class="btn primary" data-pg="1">Next →</button></nav>`);
-  wireChapterPager();
+/** Behaviour shared by every card: project links, photo enlarge, gym start, skill logos. */
+function wireCard(root = $('#panel-body')) {
+  const c = state.content;
+  root.querySelectorAll('.cd-sk-logo img').forEach(pixelateIcon);
+  root.querySelectorAll('[data-open-project], [data-proj]').forEach((b) => b.addEventListener('click', () => openProjectById(b.dataset.openProject || b.dataset.proj)));
+  root.querySelectorAll('[data-enlarge]').forEach((b) => b.addEventListener('click', () => {
+    const p = (c.projects || []).find((x) => x.id === b.dataset.enlarge);
+    if (p) openLightbox(projectSlides(p), 0);
+  }));
+  root.querySelectorAll('[data-open-panel]').forEach((b) => b.addEventListener('click', () => {
+    const it = world.interactables.find((i) => i.kind === 'panel' && i.panel === b.dataset.openPanel);
+    if (it) openInfoPanel(it);
+  }));
+  root.querySelectorAll('[data-dz="start"]').forEach((b) => b.addEventListener('click', () => {
+    closePanel();
+    const done = state.save.gym || [];
+    const next = GYM_IDS.find((id) => !done.includes(id)) || 'bench';
+    const target = world.interactables.find((i) => i.kind === 'gym' && i.station === next);
+    if (target) walkToInteractable(target);
+  }));
 }
-function wireChapterPager() {
-  const body = $('#panel-body'), nav = body.querySelector('.ch-pager');
-  const pages = [...body.querySelectorAll(TWO_COL.matches && !body.querySelector('.ch-card.solo') ? '.ch-page:not(.ch-story)' : '.ch-page')];
-  if (!nav) return;
-  const names = pages.map((p) => p.getAttribute('aria-label') || 'Page');
-  let i = 0;
-  const show = (n) => {
-    i = Math.max(0, Math.min(pages.length - 1, n));
-    pages.forEach((p, k) => p.classList.toggle('is-active', k === i));
-    nav.querySelector('[data-pg="-1"]').disabled = i === 0;
-    nav.querySelector('[data-pg="1"]').disabled = i === pages.length - 1;
-    nav.querySelector('.ch-ind').innerHTML = `<b>${esc(names[i])}</b> · ${i + 1}/${pages.length}`;
-    pages[i].scrollTop = 0; body.scrollTop = 0;
-  };
-  pages.forEach((p) => p.setAttribute('tabindex', '-1'));
-  nav.querySelectorAll('[data-pg]').forEach((b) => { b.onclick = () => { show(i + +b.dataset.pg); pages[i].focus({ preventScroll: true }); }; });
-  show(0);
+function mountChapterMedia(ch) {
+  const slot = $('#panel-body').querySelector('[data-media]');
+  if (!slot || !ch?.media?.length) return;
+  mountPhotoViewer(slot, ch.media.map((src) => ({ src, caption: ch.title })));
 }
 
 function openInteractable(it) {
@@ -929,67 +894,20 @@ function openInteractable(it) {
     const p = c.projects.find((x) => x.id === it.projectId);
     if (!p) return;
     bar = `projects/${p.id}.exe`;
-    html = `${tourOverviewHtml(c, p.id)}<h2 id="panel-title" class="sr-only">${esc(p.title)}</h2>${projectDetails(p)}`;
+    html = projectHtml(c, p, projectNavFor(c, p.id));
   } else if (it.kind === 'about') {
-    const p = c.profile || {};
     bar = 'about/readme.txt';
-    html = `
-      ${chapterHeader({ period: p.availability, title: p.name, subtitle: `${p.role || ''}${p.location ? ` · ${p.location}` : ''}` })}
-      <p>${esc(p.summary)}</p>
-      ${(p.about || []).map((t) => `<p>${esc(t)}</p>`).join('')}
-      <div class="transmit"><a class="btn" href="./#about">Full profile →</a>${c.profile?.resumeUrl ? `<a class="btn" href="${esc(safeUrl(c.profile.resumeUrl))}" target="_blank" rel="noopener">Resume ↗</a>` : ''}</div>`;
+    html = aboutHtml(c, portraitURL());
   } else {
     const ch = chapterFor(c, it.district) || { title: it.district, body: [] };
-    bar = `${it.district}/chapter.txt`;
+    bar = `${pathOf(it.district)}/chapter.txt`;
     const mems = (c.memories || []).filter((m) => m.district === it.district);
     const found = mems.filter((m) => state.save.memories.includes(m.id)).length;
-    const story = `${chapterHeader(ch)}
-      ${(ch.body || []).map((p) => `<p>${esc(p)}</p>`).join('')}
-      ${ch.highlights?.length ? `<ul class="highlights">${ch.highlights.map((h) => `<li>${esc(h)}</li>`).join('')}</ul>` : ''}
-      ${mems.length ? `<p class="mem-hint">Memories here: <b>${found}/${mems.length}</b>${found < mems.length ? ' · look for the glowing ✦ nearby.' : ' · all found.'}</p>` : ''}`;
-    const edu = (c.education || []).find((e) => e.district === it.district);
-    html = '';
-    if (edu) html += educationExtras(edu, ch);
-    if (it.district === 'garage') {
-      html += `<div class="panel-projects">${c.projects.map(projectCard).join('')}</div><a class="btn" href="./#projects">All projects →</a>`;
-    }
-    if (it.district === 'signal-tower') {
-      html += (c.skills || []).map((g) => `<div class="sk-row"><p class="eyebrow">${esc(g.group)}</p><ul class="chips">${(g.items || []).map((s) => `<li>${esc(s)}</li>`).join('')}</ul></div>`).join('');
-      if ((c.experience || []).length) html += `<div class="tb-head" style="--bc:var(--sk4)"><span>Experience</span></div><ul class="tb-exp">${c.experience.map((e) => `<li>${orgLogo(e)}<div><b>${esc(e.role)}</b><span class="tb-org">${esc(e.org)}</span><span class="tb-per">${esc(e.period)}</span><p>${esc(e.summary)}</p></div></li>`).join('')}</ul>`;
-      if ((c.achievements || []).length) html += `<p class="eyebrow" style="margin-top:18px">Achievements</p><ul class="highlights">${c.achievements.map((a) => `<li><b>${esc(a.title)}</b>${a.org ? ` · ${esc(a.org)}` : ''} <span class="muted">${esc(a.year)}</span>${a.detail ? `<br>${esc(a.detail)}` : ''}</li>`).join('')}</ul>`;
-    }
-    if (it.district === 'lighthouse') {
-      const email = (c.links || []).find((l) => l.url.startsWith('mailto:'));
-      html += `
-        <div class="transmit">
-          ${email ? `<a class="btn primary" href="${esc(safeUrl(email.url))}?subject=${encodeURIComponent('Hello from NATHAN.EXE')}">Send a message ✉</a>` : ''}
-          ${c.profile?.resumeUrl ? `<a class="btn" href="${esc(safeUrl(c.profile.resumeUrl))}" target="_blank" rel="noopener">Resume ↗</a>` : ''}
-        </div>
-        <ul class="link-list">${(c.links || []).map((l) => `<li><a href="${esc(safeUrl(l.url))}" target="_blank" rel="noopener">${esc(l.label)} ↗</a></li>`).join('')}</ul>`;
-    }
-    html = chapterCardHtml(story, html, !!ch.media?.length, it.district === 'garage' ? 'Projects' : it.district === 'lighthouse' ? 'Contact' : it.district === 'signal-tower' ? 'Skills' : 'Project');
+    const gymDone = state.save.gym || [];
+    html = chapterHtml(c, ch, { district: it.district, mems, found, iconFn: skillIcon, gym: GYM_IDS.map((id) => ({ name: GYM[id].name, done: gymDone.includes(id) })) });
   }
-  showPanel(bar, html, it, it.kind === 'chapter' ? 'chapter-card' : '');
-  if (it.kind === 'chapter') { mountChapterMedia(chapterFor(c, it.district)); autoPaginate(); wireChapterPager(); }
-  $('#panel-body').querySelectorAll('.tb-grid .sk-icon img, .tb-head .gh-ico img').forEach(pixelateIcon);
-  if (it.kind === 'project') {
-    $('#panel-body').querySelectorAll('[data-tour-project]').forEach((b) => b.addEventListener('click', () => {
-      const next = world.interactables.find((i) => i.kind === 'project' && i.projectId === b.dataset.tourProject);
-      if (!next) return;
-      openInteractable(next);
-      const q = player.group.position;
-      state.panelOpen = { x: q.x, z: q.z, radius: 99 };   // switching stations from here must not close the panel
-    }));
-    const p = c.projects.find((x) => x.id === it.projectId);
-    const box = document.createElement('div'); box.className = 'proj-media';
-    const media = [...new Set([...(p?.media || []), ...(p?.media?.length && p.image ? [p.image] : [])])];
-    mountPhotoViewer(box, media.map((src) => ({ src, caption: p.title })));
-    if (box.childElementCount) {
-      $('#panel-body').querySelector('.pd-shot')?.remove(); // the screenshot is already in the viewer
-      $('#panel-body').querySelector('h2')?.after(box);
-    }
-  }
-  $('#panel-body').querySelectorAll('[data-gym]').forEach((b) => b.addEventListener('click', () => startMinigame({ ...it, game: b.dataset.gym })));
+  showPanel(bar, html, it);
+  if (it.kind === 'chapter') mountChapterMedia(chapterFor(c, it.district));
   const eduHere = it.kind === 'chapter' && (c.education || []).find((e) => e.district === it.district);
   if (eduHere && addUnique(state.save.stamps, eduHere.id)) {
     persist(); sfx.memory();
@@ -1025,22 +943,21 @@ function stopPanelMedia(root = document) {
 
 function showPanel(bar, html, it = null, cls = '') {
   stopPanelMedia();
-  // every content card shares the forest/cream card skin; the skill tree keeps its own look
-  if (!/\bsk-panel\b/.test(cls)) {
-    if (!html.includes('class="ch-card')) html = `<div class="ch-card single"><section class="ch-page ch-story is-active">${html}</section></div>`;
-    if (!/\bchapter-card\b/.test(cls)) cls = `${cls} chapter-card`.trim();
-  }
+  // every content card shares one structure; anything built the old way is wrapped in the same shell
+  if (!html.includes('class="cd ')) html = genericHtml(html);
   $('#panel-bar').textContent = bar;
   $('#panel-body').innerHTML = html;
   $('#panel-body').scrollTop = 0;
-  $('#panel').className = `panel window ${cls}`;
+  $('#panel').className = `panel window chapter-card ${cls}`.trim();
+  keys.clear();   // nothing keeps walking behind an open card
+  wireCard();
   // every open / card change starts at the title: reset every scroller now and after layout
-  const resetScroll = () => { $('#panel').scrollTop = 0; $('#panel-body').scrollTop = 0; $('#panel-body').querySelectorAll('.sk-scroll, .panel-body-inner, .ch-page').forEach((e) => { e.scrollTop = 0; }); };
-  autoPaginate();
+  const resetScroll = () => { $('#panel').scrollTop = 0; $('#panel-body').scrollTop = 0; };
   resetScroll(); requestAnimationFrame(() => { resetScroll(); setTimeout(resetScroll, 120); });
   sfx.open();
   state.panelOpen = it || { x: player.group.position.x, z: player.group.position.z, radius: 99 };
   $('#prompt').classList.add('hidden');
+  panelModal?.focus();
 }
 
 function closePanel() {
@@ -1146,13 +1063,7 @@ function unlockMemory(id, it = world.interactables.find((i) => i.kind === 'memor
   if (it) { markVisited(it); it.beacon.group.visible = false; }
   const total = (state.content.memories || []).length;
   dialogue.close();
-  showPanel(`memories/${id}.mem`, `
-    <p class="eyebrow">${isNew ? 'MEMORY FOUND' : 'MEMORY'} · ${state.save.memories.length}/${total}</p>
-    <h2 id="panel-title">${esc(m.title)}</h2>
-    ${m.year ? `<p class="subtitle">${esc(m.year)}</p>` : ''}
-    ${m.image ? `<img class="memory-img" src="${esc(safeUrl(m.image))}" alt="">` : ''}
-    <p>${esc(m.text)}</p>
-    <div class="transmit"><button class="btn" id="mem-album">Open memory album</button></div>`, it, 'memory-card');
+  showPanel(`memories/${id}.mem`, memoryHtml(m, `${isNew ? 'Memory found' : 'Memory'} · ${state.save.memories.length}/${total}`), it, 'memory-card');
   $('#mem-album').addEventListener('click', openAlbum);
   if (isNew) { toast(`✦ Memory found: ${m.title}`); sfx.memory(); }
 }
@@ -1246,54 +1157,38 @@ function mountPhotoViewer(box, slides) {
 const allAchievementSlides = (list) => list.flatMap((a) => (a.images || []).map((src) => ({ src, caption: a.title })));
 
 // ---------------- Info panels: tech stack, trophy case, radio log ----------------
+function wireTrophies(list) {
+  const body = $('#panel-body'), plaque = $('#gh-plaque');
+  const pick = (i, quiet) => {
+    const a = list[i]; if (!a) return;
+    body.querySelectorAll('[data-trophy]').forEach((x) => x.setAttribute('aria-selected', String(+x.dataset.trophy === i)));
+    plaque.innerHTML = plaqueHtml(a);
+    plaque.querySelector('[data-enlarge-trophy]')?.addEventListener('click', () => openLightbox((a.images || []).map((src) => ({ src, caption: a.title })), 0));
+    if (!quiet) sfx.open();
+  };
+  body.querySelectorAll('[data-trophy]').forEach((b) => b.addEventListener('click', () => pick(+b.dataset.trophy)));
+  pick(0, true);
+}
+
 function openInfoPanel(it) {
   face(it); player.play('interact');
   const c = state.content;
+  const NEW = {
+    skills: () => skilltreeHtml(c, skillIcon), skilltree: () => skilltreeHtml(c, skillIcon),
+    achievements: () => trophiesHtml(c.achievements || []), trophies: () => trophiesHtml(c.achievements || []),
+    experience: () => questsHtml(c), quests: () => questsHtml(c),
+    profile: () => profileHtml(c, portraitURL(), ['lake-park', 'winter-campus', 'monsoon-campus'].map((d) => chapterFor(c, d)).filter(Boolean)),
+  };
+  if (NEW[it.panel]) {
+    const name = { skills: 'toolbox', skilltree: 'skill-tree', achievements: 'trophies', experience: 'quest-log' }[it.panel] || it.panel;
+    showPanel(`${pathOf(it.district)}/${name}.txt`, NEW[it.panel](), it);
+    if (!it.visited) markVisited(it);
+    if (it.panel === 'skilltree' || it.panel === 'skills') world.apis.guild_skill_tree?.trigger();
+    if (it.panel === 'trophies' || it.panel === 'achievements') { world.apis.guild_trophy_stand?.trigger(); wireTrophies(c.achievements || []); }
+    return;
+  }
   let html = '';
-  if (it.panel === 'skills') {
-    html = `<p class="eyebrow">THE GARAGE · PEGBOARD</p><h2 id="panel-title">Tech stack</h2>
-      <p class="subtitle">The tools I reach for, grouped the way I use them.</p>
-      ${(c.skills || []).map((g) => `<p class="eyebrow" style="margin-top:14px">${esc(g.group)}</p><ul class="chips">${(g.items || []).map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`).join('') || '<p>Add skills in the admin.</p>'}`;
-  } else if (it.panel === 'achievements') {
-    html = `<p class="eyebrow">SIGNAL TOWER · TROPHY CASE</p><h2 id="panel-title">Achievements</h2>
-      ${(c.achievements || []).length ? `<ul class="highlights">${c.achievements.map((a) => `<li><b>${esc(a.title)}</b>${a.org ? ` · ${esc(a.org)}` : ''} <span class="muted">${esc(a.year || '')}</span>${a.detail ? `<br>${esc(a.detail)}` : ''}${achGallery(a)}</li>`).join('')}</ul>` : '<p>Add achievements in the admin.</p>'}`;
-  } else if (it.panel === 'experience') {
-    html = `<p class="eyebrow">SIGNAL TOWER · RADIO LOG</p><h2 id="panel-title">Experience</h2>
-      ${(c.experience || []).length ? `<ul class="highlights">${c.experience.map((e) => `<li class="has-logo">${orgLogo(e)}<b>${esc(e.role)}</b> · ${esc(e.org)} <span class="muted">${esc(e.period || '')}</span><br>${esc(e.summary || '')}</li>`).join('')}</ul>` : '<p>Add experience in the admin.</p>'}
-      ${c.profile?.resumeUrl ? `<div class="transmit"><a class="btn" href="${esc(safeUrl(c.profile.resumeUrl))}" target="_blank" rel="noopener">Full resume ↗</a></div>` : ''}`;
-  } else if (it.panel === 'skilltree') {
-    const groups = c.skills || [];
-    const total = groups.reduce((n, g) => n + (g.items || []).length, 0);
-    html = `<div class="sk-fixed">
-      <header class="sk-hero"><img class="sk-hero-face" src="${portraitURL()}" alt=""><div><p class="eyebrow">GUILD HALL</p><h2 id="panel-title">Skill tree</h2><small>MY TECH STACK &amp; SKILLS</small></div></header>
-      <div class="sk-stats"><span><i>&lt;/&gt;</i><b>${total}</b>SKILLS</span><span><i>▤</i><b>${groups.length}</b>DOMAINS</span><span><i>♛</i><b>MAX</b>CURIOSITY</span></div>
-      <div class="sk-tabs"><button type="button" class="gh-branch" data-branch="all" aria-expanded="true">▦ All</button>${groups.map((g, i) => `<button type="button" class="gh-branch" data-branch="${i}" aria-expanded="false" style="--bc:var(--sk${i % 5})">${groupIcon(g)}${esc(g.group)} <em>${(g.items || []).length}</em></button>`).join('')}</div>
-    </div>
-    <div class="gh-nodes sk-scroll" id="gh-nodes" aria-live="polite"></div>`;
-  } else if (it.panel === 'trophies') {
-    const tier = (a) => /winner|first/i.test(a.title) ? 'gold' : /runner|second|third/i.test(a.title) ? 'silver' : 'bronze';
-    html = `<p class="eyebrow">GUILD HALL · TROPHY COLLECTION</p><h2 id="panel-title">Trophies</h2>
-      <p class="subtitle">${(c.achievements || []).length} trophies. Select one to read the plaque.</p>
-      <div class="gh-trophies">${(c.achievements || []).map((a, i) => `<button type="button" class="gh-trophy ${tier(a)}" data-trophy="${i}"><span class="cup"></span><b>${esc(a.title)}</b></button>`).join('')}</div>
-      <div class="gh-plaque" id="gh-plaque" aria-live="polite"></div>`;
-  } else if (it.panel === 'quests') {
-    const exp = c.experience || [];
-    const main = exp.filter((e) => /hewlett|hpe|sez/i.test(e.org)), side = exp.filter((e) => !main.includes(e));
-    const q = (e, kind) => `<details class="gh-quest ${kind}"${kind === 'main' ? ' open' : ''}><summary><span class="quest-logo">${e.logo ? `<img src="${esc(safeUrl(e.logo))}" alt="${esc(e.org)} logo">` : esc((e.org || '?')[0])}</span><span class="quest-info"><span class="tag">${kind === 'main' ? '★ MAIN QUEST' : '◆ SIDE QUEST'}</span><b>${esc(e.org)}</b><span class="quest-role">${esc(e.role)}${e.period ? ` <i>${esc(e.period)}</i>` : ''}</span></span><span class="quest-caret">▾</span></summary><p>${esc(e.summary || '')}</p></details>`;
-    html = `<p class="eyebrow">GUILD HALL · QUEST LOG</p><h2 id="panel-title">Quest log</h2>
-      ${main.map((e) => q(e, 'main')).join('')}${side.map((e) => q(e, 'side')).join('')}`;
-  } else if (it.panel === 'profile') {
-    const p = c.profile || {};
-    const edu = ['lake-park', 'winter-campus', 'monsoon-campus'].map((d) => chapterFor(c, d)).filter(Boolean);
-    html = `<p class="eyebrow">GUILD HALL · CHARACTER PROFILE</p>
-      <div class="gh-profile"><img class="mini-portrait" src="${portraitURL()}" alt=""><div><h2 id="panel-title">${esc(p.name || 'Nathan')}</h2><p class="subtitle">${esc(p.role || '')}${p.location ? ' · ' + esc(p.location) : ''}</p></div></div>
-      ${p.summary ? `<p>${esc(p.summary)}</p>` : ''}
-      <p class="eyebrow" style="margin-top:14px">EDUCATION</p>
-      <ol class="gh-edu">${edu.map((ch) => `<li><b>${esc(ch.subtitle || ch.title)}</b>${ch.period ? `<span class="muted"> · ${esc(ch.period)}</span>` : ''}${(ch.highlights || [])[0] ? `<br><span class="muted">${esc(ch.highlights[0])}</span>` : ''}</li>`).join('')}</ol>
-      <p class="eyebrow" style="margin-top:14px">PROJECTS · ${(c.projects || []).length}</p>
-      <ul class="gh-proj">${(c.projects || []).map((pr) => `<li><b>${esc(pr.title)}</b>${pr.year ? `<span class="muted"> · ${esc(pr.year)}</span>` : ''}${pr.school ? ' <span class="gh-first">FIRST UI PROJECT</span>' : ''}<br><span class="muted">${esc(pr.pitch || '')}</span>${pr.github ? ` <a href="${esc(safeUrl(pr.github))}" target="_blank" rel="noopener">Code ↗</a>` : ''}</li>`).join('')}</ul>
-      <div class="transmit">${p.resumeUrl ? `<a class="btn primary" href="${esc(safeUrl(p.resumeUrl))}" target="_blank" rel="noopener">Resume ↗</a>` : ''}${(c.links || []).filter((l) => !l.url.startsWith('mailto:')).map((l) => `<a class="btn" href="${esc(safeUrl(l.url))}" target="_blank" rel="noopener">${esc(l.label)} ↗</a>`).join('')}</div>`;
-  } else if (it.panel === 'place') {
+  if (it.panel === 'place') {
     const pl = state.tahiti?.places?.[it.place] || {};
     const gang = state.tahiti?.gangs?.[pl.gang];
     html = `<p class="eyebrow">TAHITI</p><h2 id="panel-title">${esc(pl.title || it.title)}</h2>
@@ -1308,36 +1203,9 @@ function openInfoPanel(it) {
       ${it.interest === 'spider-man' ? '<div class="transmit"><button type="button" class="btn primary" id="pop-go">Start the challenge</button></div>' : ''}
       <p class="pop-note">A fan tribute made for this game. Not affiliated with or endorsed by the rights holders.</p>`;
   }
-  showPanel(`${it.district}/${it.panel}.txt`, html, it, it.panel === 'skilltree' ? 'sk-panel' : '');
+  showPanel(`${pathOf(it.district)}/${it.panel}.txt`, html, it);
   if (!it.visited) { markVisited(it); }
-  const body = $('#panel-body');
-  if (it.panel === 'skilltree') {
-    const groups = c.skills || [];
-    world.apis.guild_skill_tree?.trigger();
-    const drawSkills = (which) => {
-      const list = which === 'all' ? groups.map((g, i) => [g, i]) : [[groups[+which], +which]];
-      $('#gh-nodes').innerHTML = list.map(([g, gi]) => `<section class="sk-branch" style="--bc:var(--sk${gi % 5})"><h3>${groupIcon(g)}${esc(g.group)}<em>${(g.items || []).length} / ${(g.items || []).length}</em></h3>
-        <ul class="gh-node-list sk-grid">${(g.items || []).map((x, i) => `<li style="animation-delay:${i * 40}ms"><span class="sk-icon">${skillIcon(x)}</span><b>${esc(x)}</b></li>`).join('')}</ul></section>`).join('');
-      $('#gh-nodes').querySelectorAll('.sk-icon img, .gh-ico img').forEach(pixelateIcon);
-    };
-    body.querySelectorAll('.gh-ico img').forEach(pixelateIcon);
-    drawSkills('all');
-    body.querySelectorAll('[data-branch]').forEach((b) => b.addEventListener('click', () => {
-      body.querySelectorAll('[data-branch]').forEach((x) => x.setAttribute('aria-expanded', String(x === b)));
-      drawSkills(b.dataset.branch); $('#gh-nodes').scrollTop = 0;
-      sfx.open();
-    }));
-  } else if (it.panel === 'trophies') {
-    world.apis.guild_trophy_stand?.trigger();
-    mountPhotoViewer($('#gh-plaque'), allAchievementSlides(c.achievements || []));
-    body.querySelectorAll('[data-trophy]').forEach((b) => b.addEventListener('click', () => {
-      const a = c.achievements[+b.dataset.trophy];
-      body.querySelectorAll('[data-trophy]').forEach((x) => x.classList.toggle('on', x === b));
-      $('#gh-plaque').innerHTML = `<b>${esc(a.title)}</b>${a.org ? `<span class="muted"> · ${esc(a.org)}</span>` : ''}${a.year ? `<span class="muted"> · ${esc(a.year)}</span>` : ''}${a.detail ? `<p>${esc(a.detail)}</p>` : ''}`;
-      mountPhotoViewer($('#gh-plaque'), (a.images || []).map((src) => ({ src, caption: a.title })));
-      sfx.open();
-    }));
-  } else if (it.panel === 'pop') {
+  if (it.panel === 'pop') {
     const ctx = { toast, sfx };
     const api = world.apis[it.attraction];
     if (it.interest === 'spider-man') $('#pop-go')?.addEventListener('click', () => { closePanel(); api?.trigger(ctx); });
@@ -1347,54 +1215,17 @@ function openInfoPanel(it) {
 
 
 // ---------------- Education journey ----------------
-function passportHTML() {
-  const c = state.content, got = state.save.stamps || [];
-  return `<div class="passport" aria-label="Education passport"><p class="eyebrow">EDUCATION PASSPORT · ${got.length}/${(c.education || []).length}</p>
-    <div class="stamps">${(c.education || []).map((e) => `<span class="stamp ${got.includes(e.id) ? 'on' : ''}" title="${got.includes(e.id) ? 'Stamped' : 'Visit the campus to stamp'}"><b>${esc(e.label)}</b><i>${got.includes(e.id) ? 'STAMPED' : '· · ·'}</i></span>`).join('')}</div>
-    <p class="muted passport-note">Optional. Stamps come from visiting each campus; everything here is open either way.</p></div>`;
-}
-function educationExtras(e, ch = null) {
-  const c = state.content, s = state.save;
-  const mems = (c.memories || []).filter((m) => m.district === e.district);
-  // skip whatever the chapter header already says (school name, tagline, place)
-  const seen = `${ch?.title || ''} ${ch?.subtitle || ''} ${ch?.period || ''} ${(ch?.highlights || []).join(' ')}`.toLowerCase();
-  const has = (t) => !!t && seen.includes(String(t).toLowerCase());
-  const tag = has(e.tagline) ? '' : `: ${esc(e.tagline)}`;
-  const bits = [has(e.institution) ? '' : `<b>${esc(e.institution)}</b>`, e.place && !has(e.place) ? esc(e.place) : ''].filter(Boolean).join(', ');
-  const detail = e.detail && !has(e.detail) ? `<span class="muted">${esc(e.detail)}</span>` : '';
-  const inst = bits || detail ? `<p>${bits}${bits && detail ? '<br>' : ''}${detail}</p>` : '';
-  let h = `<p class="eyebrow">EDUCATION · ${esc(e.num)} · ${esc(e.label)}${tag}</p>${inst}`;
-  if (mems.length) h += `<p class="eyebrow" style="margin-top:12px">MEMORIES</p><ul class="highlights">${mems.map((m) => s.memories.includes(m.id) ? `<li><b>${esc(m.title)}</b><br>${esc(m.text)}</li>` : `<li class="muted">✦ ${esc(m.title)} · find it on campus</li>`).join('')}</ul>`;
-  if (e.activities) {
-    const acts = (c.experience || []).filter((x) => /tce/i.test(x.org));
-    if (acts.length) h += `<p class="eyebrow">COLLEGE ACTIVITIES</p><ul class="role-list">${acts.map((x) => `<li>${orgLogo(x)}<div><b>${esc(x.role)}</b><span>${esc(x.org)}</span>${x.summary ? `<details><summary>What I did</summary><p>${esc(x.summary)}</p></details>` : ''}</div></li>`).join('')}</ul>`;
-    if ((c.achievements || []).length) h += `<p class="eyebrow">ACHIEVEMENTS · ${c.achievements.length}</p><ul class="trophy-grid">${c.achievements.map((a) => {
-      const [name, result = ''] = String(a.title).split(/:\s*(?=[^:]*$)/);
-      const win = /winner|first/i.test(result || a.title);
-      return `<li class="${win ? 'win' : 'place'}"${a.detail ? ` title="${esc(a.detail)}"` : ''}><span class="tr-ico" aria-hidden="true">${win ? '🏆' : '🥈'}</span><b>${esc(name)}</b>${result ? `<em>${esc(result)}</em>` : ''}${a.detail ? `<small>${esc(a.detail)}</small>` : ''}</li>`;
-    }).join('')}</ul>`;
-  }
-  const schoolProjects = (c.projects || []).filter((p) => p.school && e.id === 'montfort');
-  if (schoolProjects.length) h += `<p class="eyebrow" style="margin-top:12px">SCHOOL PROJECT</p><div class="panel-projects">${schoolProjects.map(projectCard).join('')}</div>`;
-  return h;
-}
 function openEducation(readId = null) {
   const c = state.content, list = c.education || [];
   if (readId) {
     const e = list.find((x) => x.id === readId);
     const ch = chapterFor(c, e.district) || { title: e.label, body: [] };
-    const head = { ...ch, period: `${e.num} · ${e.label}: ${e.tagline}` };
-    showPanel(`education/${e.id}.txt`, chapterCardHtml(`${chapterHeader(head)}
-      ${(ch.body || []).map((p) => `<p>${esc(p)}</p>`).join('')}
-      <div class="transmit"><button type="button" class="btn primary" data-travel="${esc(e.id)}">Travel to campus →</button><button type="button" class="btn" data-edu-back>← All chapters</button></div>`,
-      educationExtras(e, head), false, 'School'), null, 'education chapter-card');
-    wireChapterPager();
+    const mems = (c.memories || []).filter((m) => m.district === e.district);
+    const found = mems.filter((m) => state.save.memories.includes(m.id)).length;
+    showPanel(`education/${e.id}.txt`, chapterHtml(c, ch, { district: e.district, mems, found, iconFn: skillIcon, travel: e.id }), null);
+    mountChapterMedia(ch);
   } else {
-    showPanel('education/journey.txt', `<p class="eyebrow">EDUCATION</p><h2 id="panel-title">The education journey</h2>
-      <p class="subtitle">Three chapters, three campuses.</p>
-      <ol class="edu-list">${list.map((e) => `<li><div class="edu-num">${esc(e.num)}</div><div><p class="eyebrow">${esc(e.label)}: ${esc(e.tagline)}</p><b>${esc(e.institution)}</b><span class="muted">${esc(e.place || '')}</span>
-        <div class="edu-actions"><button type="button" class="btn primary" data-read="${esc(e.id)}">Read journey</button><button type="button" class="btn" data-travel="${esc(e.id)}">Travel to campus</button></div></div></li>`).join('')}</ol>
-      ${passportHTML()}`, null, 'education');
+    showPanel('education/journey.txt', educationListHtml(list, state.save.stamps || []), null);
   }
   const body = $('#panel-body');
   body.querySelectorAll('[data-read]').forEach((b) => b.addEventListener('click', () => openEducation(b.dataset.read)));
@@ -1459,7 +1290,7 @@ function gymHud() {
 }
 
 function interactGym(it) {
-  if (it.station === 'discipline') return openDiscipline(it);
+  if (it.station === 'discipline') return openInteractable(it);
   startWorkout(it.station);
 }
 
@@ -1636,54 +1467,6 @@ function jackedMode(big) {
   b.classList.remove('hidden', 'big'); void b.offsetWidth; b.classList.add('show'); if (big) b.classList.add('big');
   setTimeout(() => b.classList.remove('show'), 2600);
   // after the full session Nathan stays jacked (restored on load from the save)
-}
-
-function mountChapterMedia(ch) {
-  if (!ch?.media?.length) return;
-  const box = document.createElement('div'); box.className = 'proj-media';
-  mountPhotoViewer(box, ch.media.map((src) => ({ src, caption: ch.title })));
-  if (!box.childElementCount) return;
-  const page = $('#panel-body').querySelector('.ch-project');
-  if (page) page.prepend(box); else $('#panel-body').querySelector('.chapter-head')?.after(box);
-}
-function openDiscipline(it, view = 'menu') {
-  if (view === 'menu') { face(it); player.play('interact'); }
-  const ch = (state.content.chapters || []).find((c) => c.id === 'fitness') || chapterFor(state.content, 'iron-yard') || { title: 'The Discipline', body: [], highlights: [] };
-  const done = state.save.gym || [];
-  const back = '<div class="transmit"><button class="btn" data-dz="menu">← Back</button></div>';
-  let html = '';
-  if (view === 'menu') {
-    html = `${chapterHeader({ ...ch, period: 'Iron Yard · story board' })}
-      <div class="gym-menu">
-        <button class="btn primary" data-dz="story">Read My Fitness Journey</button>
-        <button class="btn" data-dz="start">Start Workout</button>
-        <button class="btn" data-dz="progress">View Progress</button>
-        <button class="btn" data-dz="exit">Exit</button>
-      </div>`;
-  } else if (view === 'story') {
-    html = `${chapterHeader(ch)}
-      ${(ch.highlights || []).length ? `<ol class="gym-timeline">${ch.highlights.map((h) => `<li>${esc(h)}</li>`).join('')}</ol>` : ''}
-      ${(ch.body || []).map((p) => `<p>${esc(p)}</p>`).join('')}${back}`;
-  } else if (view === 'progress') {
-    html = `<p class="eyebrow">Iron Yard · this save file</p><h2 id="panel-title">Gym session ${done.length}/3</h2>
-      <ul class="gym-progress">${GYM_IDS.map((id) => `<li class="${done.includes(id) ? 'done' : ''}"><span>${done.includes(id) ? '✓' : '○'}</span>${esc(GYM[id].name)}</li>`).join('')}</ul>
-      <p class="muted">Only in-game sets are tracked here.</p>${back}`;
-  }
-  showPanel('iron-yard/the-discipline.txt', html, it);
-  if (view === 'menu') mountChapterMedia(ch);
-  $('#panel-body').querySelectorAll('[data-dz]').forEach((b) => b.addEventListener('click', () => {
-    const v = b.dataset.dz;
-    if (v === 'exit') return closePanel();
-    if (v === 'story') return openInteractable(it);   // the full chapter: story, highlights, lift + tempo
-    if (v === 'start') {
-      closePanel();
-      const next = GYM_IDS.find((id) => !done.includes(id)) || 'bench';
-      const target = world.interactables.find((i) => i.kind === 'gym' && i.station === next);
-      if (target) walkToInteractable(target);
-      return;
-    }
-    openDiscipline(it, v);
-  }));
 }
 
 // ---------------- Mounts: one controller for bicycles and the horse ----------------
@@ -2159,13 +1942,6 @@ async function tourGoTo(stop) {
   }
   return ok;
 }
-/** Garage stop only: a compact way into the featured projects, inside the normal project panel. */
-function tourOverviewHtml(c, currentId) {
-  if (!tour.active || tour.stop?.id !== 'garage') return '';
-  const feat = (c.projects || []).filter((p) => p.featured);
-  if (!feat.length) return '';
-  return `<div class="tour-overview"><p class="eyebrow">Featured projects</p>${feat.map((p) => `<button type="button" data-tour-project="${esc(p.id)}"${p.id === currentId ? ' class="on" aria-current="true"' : ''}><b>${esc(p.title)}</b><small>${esc(p.pitch || '')}</small></button>`).join('')}</div>`;
-}
 const characters = createCharacters({
   content: () => state.content,
   level: () => state.level,
@@ -2471,14 +2247,14 @@ function runFinale(it) {
           <p class="eyebrow">END OF ISLAND 01 · ORIGIN ISLE</p>
           <h2 id="finale-title">Thanks for playing my story.</h2>
           <p>${esc(chapterFor(c, 'lighthouse')?.body?.[0] || "If you'd like to build something together, I'd love to hear from you.")}</p>
-          <div class="finale-stats"><span class="crest-chip" role="img" aria-label="${main} of ${MAIN_DISTRICTS.length} chapters complete">${crestSVG(main === MAIN_DISTRICTS.length, 18)} ${main}/${MAIN_DISTRICTS.length} chapters</span><span>⏱ ${formatTime(s.seconds)}</span></div>
+          <div class="finale-stats"><span class="crest-chip" role="img" aria-label="${main} of ${MAIN_DISTRICTS.length} chapters complete">${crestSVG(main === MAIN_DISTRICTS.length, 18)} ${main}/${MAIN_DISTRICTS.length} chapters</span><span class="finale-time">${ico('flag', 14)} ${formatTime(s.seconds)}</span></div>
           <div class="transmit">
-            ${email ? `<a class="btn primary" href="${esc(safeUrl(email.url))}?subject=${encodeURIComponent('Hello from NATHAN.EXE')}">Say hello ✉</a>` : ''}
-            ${c.profile?.resumeUrl ? `<a class="btn" href="${esc(safeUrl(c.profile.resumeUrl))}" target="_blank" rel="noopener">Resume ↗</a>` : ''}
-            ${(c.links || []).filter((l) => !l.url.startsWith('mailto:')).map((l) => `<a class="btn" href="${esc(safeUrl(l.url))}" target="_blank" rel="noopener">${esc(l.label)} ↗</a>`).join('')}
+            ${email ? `<a class="btn primary" href="${esc(safeUrl(email.url))}?subject=${encodeURIComponent('Hello from NATHAN.EXE')}">${ico('mail', 14)}<span>Say hello</span></a>` : ''}
+            ${c.profile?.resumeUrl ? `<a class="btn" href="${esc(safeUrl(c.profile.resumeUrl))}" target="_blank" rel="noopener">${ico('doc', 14)}<span>Resume</span></a>` : ''}
+            ${(c.links || []).filter((l) => !l.url.startsWith('mailto:')).map((l) => `<a class="btn" href="${esc(safeUrl(l.url))}" target="_blank" rel="noopener">${ico(l.label === 'GitHub' ? 'code' : 'user', 14)}<span>${esc(l.label)}</span></a>`).join('')}
           </div>
           <p class="finale-credits">Designed, built and lived by ${esc(c.profile?.name || 'Nathan')}.</p>
-          <button class="btn dark" id="finale-close">Keep exploring</button>
+          <button class="btn dark" id="finale-close">${ico('arrow', 14)}<span>Keep exploring</span></button>
         </div>
       </div>`;
     el.classList.remove('hidden');
@@ -2498,19 +2274,11 @@ function openStations(here) {
   face(here);
   const c = state.content;
   // Stops are listed in story order (Montfort → Tomsk → TCE → Airport), not track order
-  const rows = [...world.stations].sort((a, b) => (a.order || 0) - (b.order || 0)).map((st) => {
+  const stops = [...world.stations].sort((x, y) => (x.order || 0) - (y.order || 0)).map((st) => {
     const ch = chapterFor(c, st.district);
-    const cur = st === here;
-    const sub = st.tagline || (ch ? `${ch.title}${ch.period ? ' · ' + ch.period : ''}` : '');
-    return `<li class="${cur ? 'current' : ''}">
-      <div><b>${st.order ? String(st.order).padStart(2, '0') + ' · ' : ''}${esc(st.name)}</b><span>${esc(sub)}</span></div>
-      ${cur ? '<em>You are here</em>' : `<button class="btn primary" data-board="${esc(st.stationId)}">Board →</button>`}</li>`;
-  }).join('');
-  showPanel('memory-line/timetable.txt', `
-    <p class="eyebrow">MEMORY LINE</p>
-    <h2 id="panel-title">Where to next?</h2>
-    <p class="subtitle">The line loops the town, one stop per chapter of my life.</p>
-    <ol class="timetable">${rows}</ol>`, here, 'stations');
+    return { id: st.stationId, current: st === here, num: st.order ? String(st.order).padStart(2, '0') : '--', name: st.name, sub: st.tagline || (ch ? `${ch.title}${ch.period ? ' · ' + ch.period : ''}` : '') };
+  });
+  showPanel('memory-line/timetable.txt', timetableHtml(stops), here);
   $('#panel-body').querySelectorAll('[data-board]').forEach((b) => b.addEventListener('click', () => {
     const dest = world.stations.find((s) => s.stationId === b.dataset.board);
     if (dest) travel(here, dest);
