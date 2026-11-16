@@ -1363,3 +1363,14 @@ body.game .look #look-time { grid-column: 1 / -1; }
   .tour-card .tc-row { flex-wrap: nowrap; gap: 8px; margin: 0 10px; }
   .tour-card .tour-btn.hw-btn { min-height: 34px; font-size: 16px; padding: 2px 8px; }
 }
+
+/* gold, used sparingly: tag label, ".EXE" and the banner underline only */
+.tour-modal.hw, .tour-card { box-shadow: 6px 6px 0 #203E35, 0 0 0 4px #ADC29B; }
+.hw-banner { border-bottom: 4px solid #FFDF32; }
+.tour-modal.hw h2 b { color: #FFF1D2; }
+.tour-modal.hw h2 i { color: #FFDF32; }
+.hw-lead b { background: #ADC29B; color: #203E35; }
+.hw-title { text-shadow: none; }
+.hw-list li { border-left: 3px solid #203E35; }
+.tour-card .tc-step { color: #FFF1D2; }
+@media (max-width: 760px), (max-height: 520px) and (orientation: landscape) { .hw-banner { border-bottom-width: 3px; } }
