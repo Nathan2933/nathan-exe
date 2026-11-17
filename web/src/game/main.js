@@ -6,7 +6,7 @@ import { RetroRenderer } from './retro.js';
 import { applyPalette, SKY } from './palette.js';
 import { setGlowBoost } from './kit.js';
 import { sfx, setSound, setRain, setMusic, setTheme, setOcean, setEngine } from './audio.js';
-import { createTahiti } from './tahiti.js';
+import { createTahiti, RIDE_SEATS } from './tahiti.js';
 import { createXrayOcclusion } from './xray.js';
 import { createGuruRoutine } from './guru.js';
 import { createShabeerRoutine } from './shabeer.js';
@@ -22,7 +22,7 @@ import { runLift, runTempo } from './minigame.js';
 import { loadSave, writeSave, resetSave, addUnique, formatTime } from './save.js';
 import { createTour, findStopInteractable } from './tour.js';
 import { loadContent, esc, safeUrl, chapterFor, DISTRICTS, MAIN_DISTRICTS } from '../shared/content.js';
-import { aboutHtml, projectHtml, projectSlides, chapterHtml, memoryHtml, trophiesHtml, plaqueHtml, questsHtml, skilltreeHtml, profileHtml, educationListHtml, timetableHtml, ico, genericHtml, splitTitle, openLightbox, installPanelModal } from './cards.js';
+import { aboutHtml, projectHtml, projectSlides, chapterHtml, memoryHtml, trophiesHtml, questsHtml, skilltreeHtml, profileHtml, educationListHtml, timetableHtml, fitCard, ico, genericHtml, splitTitle, openLightbox, installPanelModal } from './cards.js';
 
 const $ = (s) => document.querySelector(s);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -542,6 +542,7 @@ function setupUI() {
 
   $('#prompt').addEventListener('click', () => state.nearby && interact(state.nearby));
   $('#panel-close').addEventListener('click', closePanel);
+  { let rt = 0; const refit = () => { clearTimeout(rt); rt = setTimeout(() => { if (state.panelOpen) fitCard($('#panel-body')); }, 120); }; addEventListener('resize', refit); addEventListener('orientationchange', refit); const pb = $('#panel-body'); pb.addEventListener('load', refit, true); pb.addEventListener('loadedmetadata', refit, true); }   // pictures that land late change the card's height
   panelModal = installPanelModal({ panel: $('#panel'), scrim: $('#panel-scrim'), close: closePanel });
   $('#album-btn')?.addEventListener('click', openAlbum);
   $('#look-palette').addEventListener('click', () => { look.palette = look.palette === 'pastel' ? 'bright' : 'pastel'; applyLook(); });
@@ -862,11 +863,11 @@ function openProjectById(id) {
 /** Behaviour shared by every card: project links, photo enlarge, gym start, skill logos. */
 function wireCard(root = $('#panel-body')) {
   const c = state.content;
-  root.querySelectorAll('.cd-sk-logo img').forEach(pixelateIcon);
+  root.querySelectorAll('.cd-sk-logo img, .cd-tech-ic img').forEach(pixelateIcon);
   root.querySelectorAll('[data-open-project], [data-proj]').forEach((b) => b.addEventListener('click', () => openProjectById(b.dataset.openProject || b.dataset.proj)));
   root.querySelectorAll('[data-enlarge]').forEach((b) => b.addEventListener('click', () => {
     const p = (c.projects || []).find((x) => x.id === b.dataset.enlarge);
-    if (p) openLightbox(projectSlides(p), 0);
+    if (p) openLightbox(projectSlides(p), +b.dataset.slide || 0);
   }));
   root.querySelectorAll('[data-open-panel]').forEach((b) => b.addEventListener('click', () => {
     const it = world.interactables.find((i) => i.kind === 'panel' && i.panel === b.dataset.openPanel);
@@ -894,7 +895,7 @@ function openInteractable(it) {
     const p = c.projects.find((x) => x.id === it.projectId);
     if (!p) return;
     bar = `projects/${p.id}.exe`;
-    html = projectHtml(c, p, projectNavFor(c, p.id));
+    html = projectHtml(c, p, { ...projectNavFor(c, p.id), iconFn: skillIcon });
   } else if (it.kind === 'about') {
     bar = 'about/readme.txt';
     html = aboutHtml(c, portraitURL());
@@ -953,7 +954,8 @@ function showPanel(bar, html, it = null, cls = '') {
   wireCard();
   // every open / card change starts at the title: reset every scroller now and after layout
   const resetScroll = () => { $('#panel').scrollTop = 0; $('#panel-body').scrollTop = 0; };
-  resetScroll(); requestAnimationFrame(() => { resetScroll(); setTimeout(resetScroll, 120); });
+  fitCard($('#panel-body'));
+  resetScroll(); requestAnimationFrame(() => { resetScroll(); fitCard($('#panel-body')); setTimeout(() => { resetScroll(); fitCard($('#panel-body')); }, 150); setTimeout(() => fitCard($('#panel-body')), 500); });
   sfx.open();
   state.panelOpen = it || { x: player.group.position.x, z: player.group.position.z, radius: 99 };
   $('#prompt').classList.add('hidden');
@@ -1071,9 +1073,9 @@ function unlockMemory(id, it = world.interactables.find((i) => i.kind === 'memor
 const orgLogo = (e) => e.logo ? `<img class="org-logo" src="${esc(safeUrl(e.logo))}" alt="" loading="lazy">` : '';
 const DEVICON = { Python: 'python', Java: 'java', JavaScript: 'javascript', TypeScript: 'typescript', C: 'c', 'C++': 'cplusplus', SQL: 'azuresqldatabase', Solidity: 'solidity',
   HTML: 'html5', CSS: 'css3', React: 'react', 'Next.js': 'nextjs', Flask: 'flask', 'Node.js': 'nodejs', 'Tailwind CSS': 'tailwindcss', MySQL: 'mysql', MongoDB: 'mongodb', SQLite: 'sqlite',
-  Docker: 'docker', Kubernetes: 'kubernetes', Grafana: 'grafana', Git: 'git', GitHub: 'github', 'Blender (learning)': 'blender', 'Three.js': 'threejs', 'Ethereum / Ganache': 'ethereum' };
+  Docker: 'docker', Kubernetes: 'kubernetes', Grafana: 'grafana', Git: 'git', GitHub: 'github', 'Blender (learning)': 'blender', 'Three.js': 'threejs', 'Ethereum / Ganache': 'ethereum', Ethereum: 'ethereum', Blender: 'blender' };
 const SIMPLE_ICON = { 'Ethereum / Ganache': 'ethereum' };
-const GLYPH = { Falco: '🦅', 'Audit-event monitoring': '🛡️', 'AI-assisted prototyping': '🤖', 'Prompt engineering': '💬', Reflect: '🪞', 'BugBug.io': '🐞', 'Ethereum / Ganache': '⬨' };
+const GLYPH = { Falco: '🦅', 'Audit-event monitoring': '🛡️', 'AI-assisted prototyping': '🤖', 'Prompt engineering': '💬', Reflect: '🪞', 'BugBug.io': '🐞', 'Ethereum / Ganache': '⬨', Ethereum: '⬨' };
 const glyphOf = (name) => GLYPH[name] || name[0];
 const skillIcon = (name) => {
   const gl = esc(glyphOf(name));
@@ -1148,6 +1150,7 @@ function mountPhotoViewer(box, slides) {
     title.textContent = s.caption || ''; count.textContent = `${i + 1} / ${slides.length}`;
     v.querySelectorAll('.pv-nav').forEach((b) => { b.hidden = slides.length < 2; });
   };
+  box.classList.toggle('single', slides.length < 2);
   v.querySelector('.prev').addEventListener('click', () => { i = (i - 1 + slides.length) % slides.length; show(); });
   v.querySelector('.next').addEventListener('click', () => { i = (i + 1) % slides.length; show(); });
   img.addEventListener('click', () => window.open(slides[i].src, '_blank', 'noopener'));
@@ -1158,16 +1161,18 @@ const allAchievementSlides = (list) => list.flatMap((a) => (a.images || []).map(
 
 // ---------------- Info panels: tech stack, trophy case, radio log ----------------
 function wireTrophies(list) {
-  const body = $('#panel-body'), plaque = $('#gh-plaque');
+  const body = $('#panel-body');
   const pick = (i, quiet) => {
-    const a = list[i]; if (!a) return;
-    body.querySelectorAll('[data-trophy]').forEach((x) => x.setAttribute('aria-selected', String(+x.dataset.trophy === i)));
-    plaque.innerHTML = plaqueHtml(a);
-    plaque.querySelector('[data-enlarge-trophy]')?.addEventListener('click', () => openLightbox((a.images || []).map((src) => ({ src, caption: a.title })), 0));
+    if (!list[i]) return;
+    body.querySelectorAll('[data-trophy]').forEach((x) => x.setAttribute('aria-expanded', String(+x.dataset.trophy === i)));   // one row open at a time
     if (!quiet) sfx.open();
   };
   body.querySelectorAll('[data-trophy]').forEach((b) => b.addEventListener('click', () => pick(+b.dataset.trophy)));
-  pick(0, true);
+  body.querySelectorAll('[data-enlarge-trophy]').forEach((b) => b.addEventListener('click', () => {
+    const a = list[+b.dataset.enlargeTrophy];
+    openLightbox((a.images || []).map((src) => ({ src, caption: a.title })), 0);
+  }));
+  fitCard(body);
 }
 
 function openInfoPanel(it) {
@@ -1474,8 +1479,8 @@ function jackedMode(big) {
 // back as soon as Nathan gets off.
 const VEHICLES = {
   bike: { speed: 5.2, boost: 7.0, accel: 5, brake: 9, turn: 4.2, seatY: 0.3, pose: 'cycle', r: 0.42, yaw: 0, jumpV: 5.4, avoid: ['water'], label: 'bicycle' },
-  moto: { speed: 7.0, boost: 9.5, accel: 6, brake: 10, turn: 3.6, seatY: 0.62, pose: 'ride', r: 0.5, yaw: 0, jumpV: 5.4, avoid: ['water'], label: 'motorcycle' },
-  scooty: { speed: 5.6, boost: 7.6, accel: 4.2, brake: 9, turn: 3.6, seatY: 0.15, pose: 'scooty', r: 0.45, yaw: 0, jumpV: 5.2, avoid: ['water'], label: 'scooty' },
+  moto: { speed: 7.0, boost: 9.5, accel: 6, brake: 10, turn: 3.6, seatY: 0.62, rear: RIDE_SEATS.moto.rear, pose: 'ride', r: 0.5, yaw: 0, jumpV: 5.4, avoid: ['water'], label: 'motorcycle' },
+  scooty: { speed: 5.6, boost: 7.6, accel: 4.2, brake: 9, turn: 3.6, seatY: 0.15, rear: RIDE_SEATS.scooty.rear, pose: 'scooty', r: 0.45, yaw: 0, jumpV: 5.2, avoid: ['water'], label: 'scooty' },
   horse: { speed: 4.0, boost: 6.6, accel: 3.5, brake: 7, turn: 3.0, seatY: 0.7, pose: 'ride', r: 0.6, yaw: -Math.PI / 2, jumpV: 6.4, avoid: ['water'], label: 'horse' },
 };
 const _qBuf = [];
@@ -1518,18 +1523,31 @@ function mount(it) {
   player.jumpY = 0; player.jumpV = 0;
   it.beacon.group.visible = false; state.nearby = null; // refresh the prompt to 'Dismount'
   player.play('interact'); sfx.open();
-  if (it.vtype === 'moto') tahiti.onMotoMount(state.mount);
+  if (state.level === 'tahiti' && RIDE_SEATS[it.vtype]) {
+    const role = tahiti.rideRole(it), m = state.mount;
+    if (role === 'rear') {                                   // an NPC already drives: Nathan sits behind them
+      const S = RIDE_SEATS[it.vtype], g = it.model.group, h = it.heading || 0;
+      m.rearOff = cfg.rear; m.offH = h; m.npcDrives = true; m.route = null;
+      player.group.position.set(g.position.x + Math.sin(h) * (S.back - cfg.rear), g.position.y, g.position.z + Math.cos(h) * (S.back - cfg.rear));
+    }
+    tahiti.onRideMount(m, role);
+  }
   if (!state.rideHint) { state.rideHint = true; toast(`${isTouch ? 'Tap to steer' : 'WASD to steer · Shift for speed · Space to jump'} · E to get off${isTouch ? '' : ' · R returns it to its rack'}`); }
 }
 function dismount(force = false) {
   const m = state.mount; if (!m) return;
   if (!force && (m.jumpY || 0) > 0.05) return;
   const p = player.group.position, h = m.heading;
+  if (m.rearOff) { p.x += Math.sin(m.offH) * m.rearOff; p.z += Math.cos(m.offH) * m.rearOff; m.rearOff = 0; }   // back to the vehicle's own anchor
   const cands = [[Math.cos(h), -Math.sin(h)], [-Math.cos(h), Math.sin(h)], [-Math.sin(h), -Math.cos(h)], [Math.sin(h), Math.cos(h)]];
-  let spot = null;
-  for (const d of [1.1, 1.6]) for (const [ox, oz] of cands) { const x = p.x + ox * d, z = p.z + oz * d; if (solidFree(x, z) && nav.isWalkable(x, z, 0.32)) { spot = { x, z }; break; } if (spot) break; }
-  if (!spot && !force) { toast('No room to get off here. Ride a little further.'); return; }
-  spot = spot || { x: p.x, z: p.z };
+  // up to two free spots beside the vehicle: one for Nathan, one for the other rider (never the same spot)
+  const spots = [];
+  for (const d of [1.1, 1.6, 2.1]) for (const [ox, oz] of cands) {
+    const x = p.x + ox * d, z = p.z + oz * d;
+    if (solidFree(x, z) && nav.isWalkable(x, z, 0.32) && spots.every((q) => Math.hypot(q.x - x, q.z - z) > 0.8)) spots.push({ x, z });
+  }
+  if (!spots.length && !force) { toast('No room to get off here. Ride a little further.'); return; }
+  const spot = spots[0] || { x: p.x, z: p.z }, spot2 = spots[1] || null;
   const it = m.it;
   it.x = p.x; it.z = p.z; it.heading = h;
   it.beacon.group.position.set(p.x, heightAt(p.x, p.z) + 0.04, p.z); it.beacon.group.visible = true;
@@ -1543,7 +1561,8 @@ function dismount(force = false) {
   player.pose = null;
   player.riding = false;
   player.jumpY = 0; player.jumpV = 0;
-  if (it.vtype === 'moto') { setEngine(null); tahiti.onMotoDismount(spot); }
+  if (it.vtype === 'moto') setEngine(null);
+  if (state.level === 'tahiti' && RIDE_SEATS[it.vtype]) tahiti.onRideDismount(spot2);
   p.set(spot.x, heightAt(spot.x, spot.z), spot.z);
   player.heading = Math.atan2(it.x - spot.x, it.z - spot.z);
   sfx.close();
@@ -1558,13 +1577,41 @@ function resetMount() {
   const home = m.it.home;
   player.group.position.set(home.x, heightAt(home.x, home.z), home.z);
   m.heading = home.heading; m.speed = 0;
+  if (m.rearOff) { m.offH = home.heading; player.group.position.set(home.x - Math.sin(home.heading) * m.rearOff, heightAt(home.x, home.z), home.z - Math.cos(home.heading) * m.rearOff); }
   toast(`Back at the ${m.cfg.label} rack.`);
 }
 const rideDir = new THREE.Vector3();
+// A driver-NPC route: a random dry, rideable point 12-30 m away, reached along the nav grid (every waypoint rideable).
+function pickDriveRoute(from, cfg) {
+  for (let i = 0; i < 40; i++) {
+    const a = Math.random() * Math.PI * 2, r = 12 + Math.random() * 18;
+    const x = from.x + Math.cos(a) * r, z = from.z + Math.sin(a) * r;
+    if (!vehicleFree(x, z, cfg) || isWet(x, z)) continue;
+    const path = nav.findPath(from.x, from.z, x, z);
+    if (path.length && path.every((p) => vehicleFree(p.x, p.z, cfg))) return path.map((p) => ({ x: p.x, z: p.z }));
+  }
+  return [];
+}
 function rideUpdate(dt, t, kx, kz, running) {
   const m = state.mount, cfg = m.cfg, it = m.it, pos = player.group.position;
+  if (m.rearOff) { pos.x += Math.sin(m.offH) * m.rearOff; pos.z += Math.cos(m.offH) * m.rearOff; }   // Nathan sits behind: steer from the vehicle's own anchor
   let want = false;
-  if (!state.minigame && !state.ko) {
+  if (m.npcDrives) {
+    // Nathan is the passenger: the driver follows their own route and Nathan's steering input is ignored.
+    if (!state.minigame && !state.ko && tahiti.passengerReady()) {
+      if (!m.route || !m.route.length) m.route = pickDriveRoute(pos, cfg);
+      const wp = m.route[0];
+      if (wp) {
+        const dx = wp.x - pos.x, dz = wp.z - pos.z, d = Math.hypot(dx, dz);
+        if (d < 0.6) m.route.shift();
+        else { rideDir.set(dx / d, 0, dz / d); want = true; }
+        // blocked (real displacement, not speed): give up on this route and pick another
+        const moved = Math.hypot(pos.x - (m.lx ?? pos.x), pos.z - (m.lz ?? pos.z)); m.lx = pos.x; m.lz = pos.z;
+        m.stuck = moved < 0.5 * dt ? (m.stuck || 0) + dt : 0;
+        if (m.stuck > 1.2) { m.route = null; m.stuck = 0; m.speed = 0; }
+      }
+    }
+  } else if (!state.minigame && !state.ko) {
     if (kx || kz) { state.path = []; marker.visible = false; rideDir.set(0, 0, 0).addScaledVector(right, kx).addScaledVector(fwd, kz).normalize(); want = true; }
     else if (state.path.length) {
       const wp = state.path[0], dx = wp.x - pos.x, dz = wp.z - pos.z, d = Math.hypot(dx, dz);
@@ -1572,7 +1619,7 @@ function rideUpdate(dt, t, kx, kz, running) {
       else { rideDir.set(dx / d, 0, dz / d); want = true; }
     }
   }
-  const hold = it.vtype === 'moto' && !tahiti.passengerReady();               // wait for the passenger to climb on
+  const hold = state.level === 'tahiti' && !!RIDE_SEATS[it.vtype] && !tahiti.passengerReady();               // wait for the passenger to climb on
   const target = want && !hold ? (running || state.path.length > 6 ? cfg.boost : cfg.speed) : 0;
   const dv = target - m.speed;
   m.speed += Math.max(-cfg.brake * dt, Math.min(cfg.accel * dt, dv));
@@ -1617,7 +1664,8 @@ function rideUpdate(dt, t, kx, kz, running) {
   const back = it.vtype === 'moto' ? 0.28 : it.vtype === 'scooty' ? -0.36 : 0;   // scooty: its seat sits 0.36 m behind the model centre                                  // bike sits a little behind the driver so the passenger fits
   g.position.set(pos.x - Math.sin(m.heading) * back, ground + jY, pos.z - Math.cos(m.heading) * back);
   g.rotation.y = m.heading + cfg.yaw;
-  it.x = pos.x; it.z = pos.z;
+  it.x = pos.x; it.z = pos.z; it.heading = m.heading;
+  if (m.rearOff) { pos.x -= Math.sin(m.heading) * m.rearOff; pos.z -= Math.cos(m.heading) * m.rearOff; m.offH = m.heading; }   // ...then sit back on the pillion seat
   const sp = Math.abs(m.speed);
   if (it.vtype === 'bike') {
     for (const w of it.model.wheels) w.rotation.x += (m.speed * dt) / 0.34;
@@ -2775,6 +2823,7 @@ function update(dt, t) {
   let best = null, bestD = Infinity;
   for (const it of world.interactables) {
     if ((it.kind === 'memory' && it.visited) || it.disabled) continue;
+    if (it.kind === 'npc' && it.passenger) continue;   // someone already on a vehicle is not a chat target: the vehicle's own prompt ("Ride behind …") must win
     const d = Math.hypot(pos.x - it.x, pos.z - it.z);
     const score = it.kind === 'npc' ? d - 0.8 : d; // people take priority when you're beside them
     if (d < it.radius && score < bestD) { best = it; bestD = score; }
@@ -3363,16 +3412,17 @@ function solidFree(x, z) {
     if (c.r !== undefined) { if (Math.hypot(x - c.cx, z - c.cz) < c.r + r) return false; }
     else if (x > c.minX - r && x < c.maxX + r && z > c.minZ - r && z < c.maxZ + r) return false;
   }
-  if (Math.hypot(x, z) > (map.props.islandRadius || 44) + 3) return false; // don't swim to the horizon
+  if (Math.hypot(x, z) > world.discRadiusAt(x, z) + 2.5) return false; // don't swim to the horizon (limit follows the real shoreline)
   // a stopped train is solid
   if (world.railway && world.railway.speed < 0.5 && trainNear(x, z, 0.3)) return false;
   return !charBlocks(x, z);
 }
 function onFloor(x, z) { return world ? world.floorAt(x, z) !== null : false; }
-function isWet(x, z) {
+// Water = anywhere the rendered shoreline (world.landAt) says there is no sand/ground. `pad` (m) widens the land
+// so the drowning check has a small tolerance and cannot flicker on the edge.
+function isWet(x, z, pad = 0) {
   if (onFloor(x, z)) return false;
-  const t = tileAt(map, x, z);
-  return !t || t.type === 'water';
+  return !world.landAt(x, z, pad);
 }
 const trainLocal = new THREE.Vector3();
 function trainNear(x, z, pad = 0) {
@@ -3395,7 +3445,9 @@ function checkHazards(dt) {
     if (!isWet(p.x + 0.8, p.z) && !isWet(p.x - 0.8, p.z) && !isWet(p.x, p.z + 0.8) && !isWet(p.x, p.z - 0.8)) lastSafe.copy(p);
     safeT = 0.25;
   }
-  if (!player.airborne && isWet(p.x, p.z)) return knockout('water');
+  // feet position (group origin, ground level) against the shoreline, 0.2 m tolerance; a rider is judged at the vehicle's anchor
+  const fx = state.mount ? state.mount.it.x : p.x, fz = state.mount ? state.mount.it.z : p.z;
+  if (!player.airborne && isWet(fx, fz, 0.2)) return knockout('water');
 }
 
 // ---------------- Memory Line collisions ----------------
@@ -3782,10 +3834,8 @@ function trainCollisionDeath(car) {
     player.pose = null;
     player.riding = false;
     player.pedal = 0;
-    if (it.vtype === 'moto') {
-      setEngine(null);
-      if (state.level === 'tahiti') tahiti.onMotoDismount({ x: p.x, z: p.z });
-    }
+    if (it.vtype === 'moto') setEngine(null);
+    if (state.level === 'tahiti' && RIDE_SEATS[it.vtype]) tahiti.onRideDismount({ x: p.x, z: p.z });
     parkVehicle(it, it.home, it.home.heading, true);
     toast(`Your ${VEHICLES[it.vtype]?.label || 'ride'} is back at its parking spot.`);
   }
@@ -3969,6 +4019,19 @@ function deathBlood(at, dir) {
   setTimeout(() => runParticles([], 2500, (k) => decals.forEach((d) => { d.material.opacity = 0.9 * (1 - k); if (k >= 1) scene.remove(d); })), 6000);
 }
 
+// A respawn point that is really dry, clear and a step back from the water: the remembered spot if it still
+// qualifies, else the nearest ring point that does (spiralling out from where Nathan fell in), else the plaza start.
+function verifiedLandSpot(pref, from) {
+  const good = (x, z) => !isWet(x, z) && solidFree(x, z) && nav.isWalkable(x, z, 0.32)
+    && !isWet(x + 1, z) && !isWet(x - 1, z) && !isWet(x, z + 1) && !isWet(x, z - 1)
+    && !(world.railway && trainNear(x, z, 1.5));
+  if (good(pref.x, pref.z)) return pref;
+  for (let d = 1; d <= 30; d += 1) for (let k = 0; k < 16; k++) {
+    const a = (k / 16) * Math.PI * 2, x = from.x + Math.cos(a) * d, z = from.z + Math.sin(a) * d;
+    if (good(x, z)) return new THREE.Vector3(x, 0, z);
+  }
+  return new THREE.Vector3(1.2, 0, 6.2);
+}
 function knockout(kind) {
   if (kind === 'train') return trainCollisionDeath(world?.railway?.train?.[0]);
   state.ko = kind;
@@ -4018,6 +4081,7 @@ function knockout(kind) {
         const s = world.stations.reduce((a, b) => (Math.hypot(a.x - p.x, a.z - p.z) <= Math.hypot(b.x - p.x, b.z - p.z) ? a : b));
         spawn = new THREE.Vector3(s.x, 0, s.z);
       }
+      if (kind === 'water') spawn = verifiedLandSpot(spawn, p);
       p.set(spawn.x, heightAt(spawn.x, spawn.z), spawn.z);
       player.group.rotation.x = 0; player.group.rotation.z = 0;
       camTarget.set(p.x, 0, p.z);
@@ -4045,6 +4109,7 @@ function updatePrompt() {
   const c = state.content;
   const npc = best.kind === 'npc' && (c.npcs || []).find((n) => n.id === best.npcId);
   const mem = best.kind === 'memory' && (c.memories || []).find((m) => m.id === best.memoryId);
+  const rideLbl = best.kind === 'vehicle' && !state.mount && state.level === 'tahiti' ? tahiti.rideLabel(best) : '';
   const isGuruScootyRide = best.kind === 'vehicle' && best.vtype === 'scooty' && state.level === 'island1' && guruRoutine.isGuruMounted();
   const [kind, title] = {
     project: ['Inspect project', c.projects.find((p) => p.id === best.projectId)?.title],
@@ -4055,9 +4120,9 @@ function updatePrompt() {
     station: ['Memory Line', best.name ? `${best.name} station` : 'Station'],
     panel: ['Look', best.title],
     group: ['Group', best.title || 'Join in'],
-    activity: ['Tahiti', best.title],
+    activity: [best.act === 'vgevents' ? '' : 'Tahiti', best.title],
     seat: ['Bench', state.seated ? 'Stand up' : 'Sit down'],
-    vehicle: [{ horse: 'Horse', moto: best.id === 'vehicle:moto-shabeer' ? "Shabeer's Bike" : 'Motorcycle', scooty: best.label || "Guru's Scooty" }[best.vtype] || 'Bicycle', state.mount ? 'Dismount' : best.id === 'vehicle:moto-shabeer' ? 'Ride with Shabeer' : isGuruScootyRide ? 'Ride along with Guru' : { horse: 'Ride horse', moto: 'Ride motorcycle', scooty: 'RIDE SCOOTY' }[best.vtype] || 'Ride bicycle'],
+    vehicle: [{ horse: 'Horse', moto: best.id === 'vehicle:moto-shabeer' ? "Shabeer's Bike" : 'Motorcycle', scooty: best.label || "Guru's Scooty" }[best.vtype] || 'Bicycle', state.mount ? 'Dismount' : rideLbl ? rideLbl : best.id === 'vehicle:moto-shabeer' ? 'Ride with Shabeer' : isGuruScootyRide ? 'Ride along with Guru' : { horse: 'Ride horse', moto: 'Ride motorcycle', scooty: 'RIDE SCOOTY' }[best.vtype] || 'Ride bicycle'],
     finale: ['Departures', state.save.finale ? 'See the whole island again' : 'End of Origin Isle'],
     chapter: ['Open chapter', chapterFor(c, best.district)?.title],
     gym: [best.station === 'discipline' ? 'Story' : 'Workout', (best.title || '').toUpperCase()],
@@ -4088,13 +4153,14 @@ const tahiti = createTahiti({
   setView(v) { if (v) { state.camOverride = { x: v.x, z: v.z }; state.zoom = v.zoom; } else { state.camOverride = null; state.zoom = 1; } updateCameraFrustum(); },
   persist,
   jetPoint() { const j = world.apis.private_jet; return j ? j.doorPoint() : { x: 0, z: 0 }; },
-  hasMoto() { return world.interactables.some((i) => i.kind === 'vehicle' && i.vtype === 'moto'); },
+  hasRide() { return world.interactables.some((i) => i.kind === 'vehicle' && RIDE_SEATS[i.vtype]); },
+  rideVehicles() { return world.interactables.filter((i) => i.kind === 'vehicle' && RIDE_SEATS[i.vtype] && i.model && state.mount?.it !== i); },
   panel: (bar, html) => showPanel(bar, `<div class="panel-body-inner">${html}</div>`),
   choose(title, options, cb) {
     const el = document.createElement('div'); el.className = 'tahiti-choose window';
     el.innerHTML = `<div class="window-bar"><span class="title">ride.exe</span></div><div class="mg-body"><h2>${esc(title)}</h2><div class="choose-list"></div></div>`;
     const list = el.querySelector('.choose-list');
-    options.forEach((o, i) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn' + (i === 0 ? ' primary' : ''); b.textContent = o.label; b.addEventListener('click', () => { el.remove(); state.choosing = null; cb(o.value); }); list.append(b); });
+    options.forEach((o, i) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn' + (i === 0 ? ' primary' : ''); b.textContent = o.label; if (o.note) { const n = document.createElement('small'); n.textContent = o.note; b.append(n); } if (o.disabled) b.disabled = true; b.addEventListener('click', () => { if (o.disabled) return; el.remove(); state.choosing = null; cb(o.value); }); list.append(b); });
     document.body.append(el); state.choosing = el;
     setTimeout(() => list.querySelector('button')?.focus(), 0);
   },
@@ -4305,7 +4371,7 @@ function loop() {
 if (import.meta.env.DEV) {
   // Dev-only hook for automated testing: step the simulation without rAF.
   window.__game = {
-    state, player, camera, sun, scene, camTarget, get world() { return world; }, renderer, dialogue, nightSettings: NIGHT_SETTINGS,
+    fitCard, state, player, camera, sun, scene, camTarget, get world() { return world; }, renderer, dialogue, nightSettings: NIGHT_SETTINGS,
     step(frames = 60) { for (let i = 0; i < frames; i++) update(1 / 60, clock.elapsedTime + i / 60); retro.render(scene, camera); },
     tap: handleTap, walkTo, interact, knockout, trainCrash: trainCollisionDeath, respawn: respawnNathanAfterDeath, startFlight, skipCine, switchLevel, get map() { return map; }, get nav() { return nav; }, tahiti: () => tahiti, guru: () => guruRoutine, tour, keys,
   };

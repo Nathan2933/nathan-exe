@@ -10,6 +10,11 @@ const BITS = {
   folder: ['####........', '#####.......', '############', '############', '############', '############', '############', '############', '############'],
   mallet: ['.#######....', '.#######....', '.#######....', '...###......', '...###......', '...###......', '...###......', '...###......'],
   arch: ['####....####', '####....####', '####....####', '..##....##..', '..########..', '.....##.....', '....####....', '....####....', '....####....'],
+  server: ['############', '#..........#', '#.##.......#', '############', '############', '#..........#', '#.##.......#', '############'],
+  window: ['############', '#.#.#.....##', '############', '#..........#', '#.########.#', '#.#......#.#', '#.########.#', '############'],
+  grid: ['############', '#..#..#..#.#', '############', '#..#..#..#.#', '############', '#..#..#..#.#', '############'],
+  cube: ['....####....', '..########..', '############', '#..##..##..#', '#..##..##..#', '#..##..##..#', '.##########.', '...######...'],
+  gem: ['.....##.....', '....####....', '...######...', '..########..', '...######...', '....####....', '.....##.....', '....####....'],
   chip: ['..#.#.#.#...', '.##########.', '###......###', '.##.####.##.', '###.####.###', '.##.####.##.', '###......###', '.##########.', '..#.#.#.#...'],
   trophy: ['.##########.', '###.####.###', '#.#.####.#.#', '#.#.####.#.#', '.##.####.##.', '..########..', '...######...', '....####....', '.....##.....', '...######...', '...######...'],
   medal: ['..##....##..', '...##..##...', '....####....', '...######...', '..########..', '..###..###..', '..###..###..', '..########..', '...######...'],
@@ -68,10 +73,34 @@ export const col = (inner, cls = '') => `<div class="cd-col ${cls}">${inner}</di
 export function frame({ kind = 'info', narrow = false, head: h, body, foot = '' }) {
   return `<div class="cd cd-${kind}${narrow ? ' cd-narrow' : ''}">${h}<div class="cd-body">${body}</div>${foot ? `<footer class="cd-foot">${foot}</footer>` : ''}</div>`;
 }
+/** Role labels per project technology. Only roles stated in the project's own write-up or visible in its code; anything else is left out. */
+const STACK_ROLES = {
+  aratro: { Python: 'Workflows', Solidity: 'Smart contracts', Ethereum: 'Blockchain', Ganache: 'Local chain' },
+  'microservices-security': { Kubernetes: 'Monitoring pipeline', Falco: 'Runtime detection', Grafana: 'Dashboards' },
+  'tce-event-scheduler': { Flask: 'Web framework', SQL: 'Database', HTML: 'Frontend', CSS: 'Frontend' },
+  cauverysite: { 'Next.js': 'App framework', 'Tailwind CSS': 'Styling' },
+  'nathan-exe': { 'Three.js': '3D rendering', JavaScript: 'Game logic', Tiled: 'Town map', glTF: 'Models' },
+  'hospital-management': { Tkinter: 'Desktop UI' },
+};
+// Technologies without a real logo get a pixel icon from the card icon family (never a letter placeholder)
+const PIXEL_TECH = { Falco: 'shield', Ganache: 'server', Tkinter: 'window', Tiled: 'grid', glTF: 'cube', Ethereum: 'gem' };
+/** Reusable tech stack: one tile per technology, in the project's own order. Icon (iconFn) + full name + optional role. */
+export function techStack(list, project = {}, iconFn = null) {
+  if (!list?.length) return '';
+  const roles = STACK_ROLES[project.id] || {};
+  return `<ul class="cd-tech">${list.map((n) => {
+    const r = roles[n];
+    const ic = PIXEL_TECH[n] ? ico(PIXEL_TECH[n], 22, 'tech-px') : iconFn ? iconFn(n) : ico('chip', 22, 'tech-px');
+    return `<li><span class="cd-tech-ic">${ic}</span><span class="cd-tech-tx"><b class="cd-tech-n">${esc(n)}</b>${r ? `<small class="cd-tech-r">${esc(r)}</small>` : ''}</span></li>`;
+  }).join('')}</ul>`;
+}
 export const tags = (list) => `<ul class="cd-tags">${(list || []).map((s) => `<li>${esc(s)}</li>`).join('')}</ul>`;
 export const points = (list) => `<ul class="cd-points">${(list || []).map((p) => `<li>${ico(p.icon || 'star', 14)}<span>${rich(p.text)}</span></li>`).join('')}</ul>`;
 export const paras = (list) => (list || []).map((t) => `<p>${rich(t)}</p>`).join('');
-export const foot = (left = '', right = '') => `<div class="cd-foot-l">${left}</div><div class="cd-foot-r">${right}</div>`;
+/** Footer rows: [page row, added by fitCard] / one compact action row / optional extra row (project switcher).
+ *  Returns '' when there is nothing to show: the title bar's X already closes every card. */
+export const foot = (left = '', right = '', extra = '') =>
+  (left || right ? `<div class="cd-acts"><div class="cd-foot-l">${left}</div><div class="cd-foot-r">${right}</div></div>` : '') + extra;
 
 export function linkBtn(icon, label, href, { primary = false, ext = true, attrs = '' } = {}) {
   const u = safeUrl(href);
@@ -80,7 +109,6 @@ export function linkBtn(icon, label, href, { primary = false, ext = true, attrs 
 }
 export const actBtn = (icon, label, attrs, primary = false) =>
   `<button type="button" class="btn${primary ? ' primary' : ''}" ${attrs}>${icon ? ico(icon, 14) : ''}<span>${esc(label)}</span></button>`;
-const closeBtn = () => actBtn('close', 'Close', 'data-card-close');
 
 // ---------- helpers ----------
 export const splitTitle = (t) => {
@@ -118,13 +146,13 @@ export function aboutHtml(c, portrait) {
   });
   const left = col(`<p class="cd-lead">${rich(k.intro || p.summary || '')}</p>${k.note ? `<p class="cd-note">${rich(k.note)}</p>` : ''}`);
   const right = col(`<ul class="cd-facts">${hl.map((x) => `<li>${ico(x.icon, 16)}<div><h4>${esc(x.label)}</h4><p>${rich(x.text)}</p></div></li>`).join('')}</ul>`);
-  const f = foot(closeBtn(), `${linkBtn('user', 'Full profile', './#about', { ext: false })}${linkBtn('doc', 'Resume', p.resumeUrl, { primary: true })}`);
+  const f = foot('', `${linkBtn('user', 'Full profile', './#about', { ext: false })}${linkBtn('doc', 'Resume', p.resumeUrl, { primary: true })}`);
   return frame({ kind: 'about', head: h, body: left + right, foot: f });
 }
 
 // ---------- Projects ----------
-const SEC = { problem: ['bolt', 'The problem'], part: ['mallet', 'My part'], result: ['trophy', 'Result'], what: ['star', 'What it is'], status: ['flag', 'Status'], learned: ['book', 'What it taught me'] };
-export function projectHtml(c, p, { index = 0, total = 1, prev = null, next = null } = {}) {
+const SEC = { problem: ['bolt', 'Problem'], part: ['mallet', 'My Contribution'], result: ['trophy', 'Result'], what: ['star', 'What it is'], status: ['flag', 'Status'], learned: ['book', 'What it taught me'] };
+export function projectHtml(c, p, { index = 0, total = 1, prev = null, next = null, iconFn = null } = {}) {
   const k = p.card || {};
   const [name, subTitle] = splitTitle(p.title);
   const media = mediaList(p);
@@ -133,16 +161,19 @@ export function projectHtml(c, p, { index = 0, total = 1, prev = null, next = nu
     meta: p.year ? `<span class="cd-year">${ico('calendar', 14)}${esc(p.year)}</span>` : '',
   });
   const secs = (k.sections || []).map((s) => sec(...(SEC[s.k] || ['star', s.k]), `<p>${rich(s.text)}</p>`, s.k === 'result' || s.k === 'status' ? 'is-result' : '')).join('')
-    || sec('star', 'About', `<p>${esc(p.description || p.pitch || '')}</p>`);
-  const shot = media.length ? `<figure class="cd-shot"><button type="button" class="cd-shot-btn" data-enlarge="${esc(p.id)}" aria-label="Enlarge photo of ${esc(name)}"><img src="${esc(safeUrl(media[0]))}" alt=""><span class="cd-shot-zoom">${ico('ext', 12)}Enlarge${media.length > 1 ? ` · ${media.length} photos` : ''}</span></button></figure>` : '';
-  const flow = k.flow ? sec('arch', 'Supply flow', `<ol class="cd-flow">${k.flow.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>${k.flowNote ? `<p class="cd-small">${esc(k.flowNote)}</p>` : ''}`) : '';
-  const stack = p.stack?.length ? sec('chip', 'Tech stack', tags(p.stack)) : '';
-  const lead = `<p class="cd-lead cd-span">${rich(k.summary || p.pitch || '')}</p>`;
-  const left = col(secs);
-  const right = col(`${shot}${flow}${stack}`);
+    || '';
+  const thumbs = media.slice(1, 4).map((u, i) => `<button type="button" class="cd-ph-t" data-enlarge="${esc(p.id)}" data-slide="${i + 1}" aria-label="Enlarge photo ${i + 2} of ${media.length}"><img src="${esc(safeUrl(u))}" alt="" loading="lazy"></button>`).join('');
+  const shot = media.length ? `<figure class="cd-photo"><button type="button" class="cd-ph-main" data-enlarge="${esc(p.id)}" data-slide="0" aria-label="Enlarge photo of ${esc(name)}"><img src="${esc(safeUrl(media[0]))}" alt=""><span class="cd-ph-tag">${ico('ext', 12)}Enlarge${media.length > 1 ? ` · ${media.length} photos` : ''}</span></button>${thumbs ? `<div class="cd-ph-strip">${thumbs}${media.length > 4 ? `<span class="cd-ph-more">+${media.length - 4}</span>` : ''}</div>` : ''}</figure>` : '';
+  const flow = k.flow ? sec('arch', 'Supply flow', `<div class="cd-flowbox"><ol class="cd-flow">${k.flow.map((s) => `<li>${esc(s)}</li>`).join('')}</ol></div>${k.flowNote ? `<p class="cd-small">${esc(k.flowNote)}</p>` : ''}`) : '';
+  const stack = p.stack?.length ? sec('chip', 'Tech stack', techStack(p.stack, p, iconFn)) : '';
+  const lead = '';
+  const overview = sec('star', 'Overview', `<p>${rich(k.summary || p.pitch || '')}</p>`);
+  const left = col(overview + secs + flow);
+  const right = col(`${shot}${stack}`);
   const links = `${linkBtn('code', 'GitHub', p.github)}${linkBtn('ext', 'Live demo', p.demo)}`;
-  const nav = total > 1 ? `<span class="cd-count">Project ${index + 1} of ${total}</span>${prev ? actBtn('back', prev.name, `data-proj="${esc(prev.id)}" aria-label="Previous project: ${esc(prev.name)}"`) : ''}${next ? `<button type="button" class="btn" data-proj="${esc(next.id)}" aria-label="Next project: ${esc(next.name)}"><span>${esc(next.name)}</span>${ico('arrow', 14)}</button>` : ''}` : '';
-  return frame({ kind: 'project', head: h, body: lead + left + right, foot: foot(`${closeBtn()}${links}`, nav) });
+  const sw = (to, dir) => (to ? `<button type="button" class="btn cd-sw ${dir}" data-proj="${esc(to.id)}" aria-label="${dir === 'prev' ? 'Previous' : 'Next'} project: ${esc(to.name)}">${dir === 'prev' ? ico('back', 14) : ''}<span class="cd-sw-t"><small>${dir === 'prev' ? 'Previous project:' : 'Next project:'}</small><b>${esc(to.name)}</b></span>${dir === 'next' ? ico('arrow', 14) : ''}</button>` : '');
+  const nav = total > 1 ? `<nav class="cd-switch" aria-label="Switch project">${sw(prev, 'prev')}${sw(next, 'next')}</nav>` : '';
+  return frame({ kind: 'project', head: h, body: lead + left + right, foot: foot(links, "", nav) });
 }
 export const projectSlides = (p) => mediaList(p).map((src) => ({ src, caption: splitTitle(p.title)[0] }));
 
@@ -158,7 +189,7 @@ export function skillsHtml(groups, iconFn, { dense = false } = {}) {
   const GI = ['code', 'globe', 'shield', 'bolt', 'folder'];
   return `<div class="cd-skills${dense ? ' dense' : ''}">${(groups || []).map((g, i) => `<section class="cd-sk-group"><h3 class="cd-h">${ico(GI[i % GI.length], 14)}<span>${esc(g.group)}</span><em>${(g.items || []).length}</em></h3><ul>${(g.items || []).map((s) => {
     const m = String(s).match(/^(.*?)\s*\((learning)\)$/i);
-    return `<li><span class="cd-sk-logo">${iconFn(m ? m[1] : s)}</span><span>${esc(m ? m[1] : s)}</span>${m ? '<i class="cd-learn">learning</i>' : ''}</li>`;
+    return `<li${m ? ' class="is-learning"' : ''}><span class="cd-sk-logo">${iconFn(m ? m[1] : s)}</span><span class="cd-sk-n">${esc(m ? m[1] : s)}</span>${m ? '<i class="cd-learn">Learning</i>' : ''}</li>`;
   }).join('')}</ul></section>`).join('')}</div>`;
 }
 
@@ -169,13 +200,13 @@ export function chapterHtml(c, ch, o = {}) {
   const mem = o.mems?.length ? `<p class="cd-mem">${ico('star', 14)}Memories here: <b>${o.found}/${o.mems.length}</b>${o.found < o.mems.length ? ' · look for the glowing ✦ nearby' : ' · all found'}</p>` : '';
   const h = head({ tile: tile(ico(k.icon || 'star', 28)), eyebrow: k.eyebrow || ch.period || '', title: ch.title, sub: esc(ch.subtitle || ''), meta: d === 'signal-tower' ? countStrip(c.achievements || []) : ch.period ? `<span class="cd-year">${ico('calendar', 14)}${esc(ch.period)}</span>` : '' });
   const mediaSlot = ch.media?.length ? '<div class="cd-media" data-media></div>' : '';
-  let left = col(`${intro}${pts}${mem}`), right = '', narrow = false, span = '', footR = '', footL = closeBtn();
+  let left = col(`${intro}${pts}${mem}`), right = '', narrow = false, span = '', footR = '', footL = '';
   const acts = (c.experience || []).filter((x) => /tce/i.test(x.org));
   if (d === 'lake-park') {
     const sp = (c.projects || []).filter((p) => p.school);
     right = col(sp.map((p) => {
       const pk = p.card || {};
-      return sec('folder', 'My first UI project', `<div class="cd-mini"><b class="cd-t">${esc(splitTitle(p.title)[0])} <span class="cd-year">${esc(p.year || '')}</span></b><p>${rich(pk.summary || p.pitch)}</p>${tags(p.stack)}</div>`) ;
+      return sec('folder', 'My first UI project', `<div class="cd-mini"><b class="cd-t">${esc(splitTitle(p.title)[0])} <span class="cd-year">${esc(p.year || '')}</span></b><p>${rich(pk.summary || p.pitch)}</p>${techStack(p.stack, p, o.iconFn)}</div>`) ;
     }).join(''));
     footR = sp.map((p) => actBtn('arrow', 'Open project', `data-open-project="${esc(p.id)}"`)).join('');
   } else if (d === 'winter-campus') {
@@ -205,30 +236,27 @@ export function chapterHtml(c, ch, o = {}) {
     footR = linkBtn('doc', 'Resume', c.profile?.resumeUrl) + (email ? linkBtn('mail', 'Send a message', `${email.url}?subject=${encodeURIComponent('Hello from NATHAN.EXE')}`, { primary: true, ext: false }) : '');
   }
   if (o.travel) { footL += actBtn('arrow', 'Travel to campus', `data-travel="${esc(o.travel)}"`, true) + actBtn('back', 'All chapters', 'data-edu-back'); footR = ''; }
-  return frame({ kind: d === 'signal-tower' ? 'chapter cd-toolbox' : 'chapter', narrow: narrow && !o.travel ? true : narrow, head: h, body: left + right + span, foot: foot(footL, footR) });
+  return frame({ kind: d === 'signal-tower' ? 'chapter cd-toolbox' : d === 'iron-yard' ? 'chapter cd-gym' : 'chapter', narrow: narrow && !o.travel ? true : narrow, head: h, body: left + right + span, foot: foot(footL, footR) });
 }
 
 // ---------- Memory ----------
 export function memoryHtml(m, label) {
   const h = head({ tile: tile(ico('star', 28)), eyebrow: label, title: m.title, sub: esc(m.year || '') });
   const img = m.image ? `<img class="cd-memimg" src="${esc(safeUrl(m.image))}" alt="">` : '';
-  return frame({ kind: 'memory', narrow: !m.image, head: h, body: col(`<p class="cd-lead">${esc(m.text)}</p>`) + (img ? col(img) : ''), foot: foot(closeBtn(), actBtn('book', 'Open memory album', 'id="mem-album"')) });
+  return frame({ kind: 'memory', narrow: !m.image, head: h, body: col(`<p class="cd-lead">${esc(m.text)}</p>`) + (img ? col(img) : ''), foot: foot('', actBtn('book', 'Open memory album', 'id="mem-album"')) });
 }
 
 // ---------- Trophies ----------
 export function trophiesHtml(list) {
-  const h = head({ tile: tile(ico('trophy', 28)), eyebrow: 'Guild Hall · Trophy collection', title: 'Trophies', sub: esc(`${list.length} results. Pick one to see the plaque.`), meta: countStrip(list) });
-  const rows = `<ul class="cd-ach pick" role="listbox" aria-label="Achievements">${list.map((a, i) => {
+  const h = head({ tile: tile(ico('trophy', 28)), eyebrow: 'Guild Hall · Trophy collection', title: 'Trophies', sub: esc(`${list.length} results. Tap one to open its plaque.`), meta: countStrip(list) });
+  const rows = `<ul class="cd-ach pick" aria-label="Achievements">${list.map((a, i) => {
     const { name, result, tier, icon } = achParts(a);
-    return `<li role="none"><button type="button" role="option" aria-selected="${i === 0}" class="tier-${tier}" data-trophy="${i}">${ico(icon, 18)}<span class="n">${esc(name)}</span><span class="r">${esc(result)}</span></button></li>`;
+    const img = (a.images || [])[0];
+    const thumb = img ? `<button type="button" class="cd-thumb" data-enlarge-trophy="${i}" aria-label="View full photo: ${esc(name)}"><img src="${esc(safeUrl(img))}" alt=""><span class="cd-thumb-z">${ico('ext', 10)}View</span></button>` : '';
+    const meta = achMeta(a);
+    return `<li class="tier-${tier}"><button type="button" class="cd-ach-h" aria-expanded="${i === 0}" data-trophy="${i}">${ico(icon, 18)}<span class="n">${esc(name)}</span><span class="r">${esc(result)}</span></button><div class="cd-ach-det${img ? ' has-thumb' : ''}">${thumb}<div class="cd-ach-tx"><p class="cd-sub">${esc(meta)}</p>${a.detail ? `<p>${esc(a.detail)}</p>` : ''}</div></div></li>`;
   }).join('')}</ul>`;
-  return frame({ kind: 'trophies', head: h, body: col(rows, 'cd-list') + col('<div class="cd-plaque" id="gh-plaque" aria-live="polite"></div>'), foot: foot(closeBtn(), '') });
-}
-export function plaqueHtml(a) {
-  const { name, result, tier, icon } = achParts(a);
-  const img = (a.images || [])[0];
-  return `<div class="cd-plaque-photo">${img ? `<button type="button" class="cd-shot-btn" data-enlarge-trophy aria-label="Enlarge photo"><img src="${esc(safeUrl(img))}" alt="${esc(name)}"><span class="cd-shot-zoom">${ico('ext', 12)}Enlarge</span></button>` : `<div class="cd-nophoto tier-${tier}">${ico(icon, 48)}<span>No photo for this one</span></div>`}</div>
-    <div class="cd-plaque-text tier-${tier}"><p class="cd-plaque-res">${ico(icon, 16)}${esc(result)}</p><h3>${esc(name)}</h3><p class="cd-sub">${esc(achMeta(a))}</p><p class="cd-plaque-detail">${a.detail ? esc(a.detail) : ''}</p></div>`;
+  return frame({ kind: 'trophies', narrow: true, head: h, body: col(rows, 'cd-list'), foot: '' });
 }
 
 // ---------- Quest log / experience ----------
@@ -238,14 +266,14 @@ export function questsHtml(c) {
   const q = (e, kind) => `<li class="quest ${kind}">${orgLogoImg(e)}<div><span class="cd-badge">${ico(kind === 'main' ? 'star' : 'flag', 12)}${kind === 'main' ? 'Main quest' : 'Side quest'}</span><b class="cd-t">${esc(e.role)}</b><span class="cd-sub">${esc(e.org)}${e.period ? ` · <i>${esc(e.period)}</i>` : ''}</span><p>${rich(e.short || e.summary || '')}</p></div></li>`;
   const h = head({ tile: tile(ico('quest', 28)), eyebrow: 'Guild Hall · Quest log', title: 'Quest log', sub: esc(`${exp.length} quests: internships and campus roles`) });
   return frame({ kind: 'quests', head: h, body: col(`<ul class="cd-quests">${main.map((e) => q(e, 'main')).join('')}</ul>`) + col(`<ul class="cd-quests">${side.map((e) => q(e, 'side')).join('')}</ul>`),
-    foot: foot(closeBtn(), linkBtn('doc', 'Full resume', c.profile?.resumeUrl, { primary: true })) });
+    foot: foot('', linkBtn('doc', 'Full resume', c.profile?.resumeUrl, { primary: true })) });
 }
 
 // ---------- Skill tree ----------
 export function skilltreeHtml(c, iconFn) {
   const groups = c.skills || [], total = groups.reduce((n, g) => n + (g.items || []).length, 0);
   const h = head({ tile: tile(ico('chip', 28)), eyebrow: 'Guild Hall · Skill tree', title: 'Skill tree', sub: esc('My tech stack and skills'), meta: `<span class="cd-year">${ico('code', 14)}<b>${total}</b> skills · <b>${groups.length}</b> domains</span>` });
-  return frame({ kind: 'skilltree', head: h, body: `<div class="cd-span">${skillsHtml(groups, iconFn)}</div>`, foot: foot(closeBtn(), '') });
+  return frame({ kind: 'skilltree', head: h, body: `<div class="cd-span">${skillsHtml(groups, iconFn)}</div>`, foot: foot('', '') });
 }
 
 // ---------- Profile ----------
@@ -255,20 +283,121 @@ export function profileHtml(c, portrait, eduChapters) {
   const edu = `<ol class="cd-rows">${eduChapters.map((ch) => `<li><span class="cd-logo">${ico('school', 16)}</span><div><b class="cd-t">${esc(ch.subtitle || ch.title)}</b>${ch.period ? `<span class="cd-sub">${esc(ch.period)}</span>` : ''}</div></li>`).join('')}</ol>`;
   const projs = `<ul class="cd-rows">${(c.projects || []).map((pr) => `<li><span class="cd-logo">${ico(pr.card?.icon || 'folder', 16)}</span><div><b class="cd-t">${esc(splitTitle(pr.title)[0])}${pr.year ? ` <span class="cd-year">${esc(pr.year)}</span>` : ''}</b><span class="cd-sub">${esc(pr.card?.short || '')}</span></div></li>`).join('')}</ul>`;
   const links = (c.links || []).filter((l) => !l.url.startsWith('mailto:')).map((l) => linkBtn(l.label === 'GitHub' ? 'code' : 'user', l.label, l.url)).join('');
-  return frame({ kind: 'profile', head: h, body: col(`<p class="cd-lead">${rich(k.intro || p.summary || '')}</p>${sec('school', 'Education', edu)}`) + col(sec('folder', `Projects · ${(c.projects || []).length}`, projs)), foot: foot(closeBtn(), `${links}${linkBtn('doc', 'Resume', p.resumeUrl, { primary: true })}`) });
+  return frame({ kind: 'profile', head: h, body: col(`<p class="cd-lead">${rich(k.intro || p.summary || '')}</p>${sec('school', 'Education', edu)}`) + col(sec('folder', `Projects · ${(c.projects || []).length}`, projs)), foot: foot('', `${links}${linkBtn('doc', 'Resume', p.resumeUrl, { primary: true })}`) });
 }
 
 // ---------- Education journey list ----------
 export function educationListHtml(list, stamps) {
   const h = head({ tile: tile(ico('school', 28)), eyebrow: 'Education', title: 'The education journey', sub: 'Three chapters, three campuses.', meta: `<span class="cd-year">${ico('flag', 14)}Passport <b>${stamps.length}/${list.length}</b></span>` });
   const rows = `<ol class="cd-edu">${list.map((e) => `<li><span class="cd-num">${esc(e.num)}</span><div class="cd-edu-t"><span class="cd-sub">${esc(e.label)} · ${esc(e.tagline)}</span><b class="cd-t">${esc(e.institution)}</b><span class="cd-sub">${esc(e.place || '')}${e.detail ? ` · ${esc(e.detail)}` : ''}</span></div><span class="cd-stamp${stamps.includes(e.id) ? ' on' : ''}">${stamps.includes(e.id) ? 'STAMPED' : 'NOT YET'}</span><div class="cd-edu-a">${actBtn('book', 'Read journey', `data-read="${esc(e.id)}"`, true)}${actBtn('arrow', 'Travel to campus', `data-travel="${esc(e.id)}"`)}</div></li>`).join('')}</ol>`;
-  return frame({ kind: 'edu', head: h, body: `<div class="cd-span">${rows}<p class="cd-small">Optional. Stamps come from visiting each campus. Everything here is open either way.</p></div>`, foot: foot(closeBtn(), '') });
+  return frame({ kind: 'edu', head: h, body: `<div class="cd-span">${rows}<p class="cd-small">Optional. Stamps come from visiting each campus. Everything here is open either way.</p></div>`, foot: foot('', '') });
 }
 
 // ---------- generic wrapper for legacy/simple panels ----------
-export const genericHtml = (inner) => `<div class="cd cd-generic"><div class="cd-body"><div class="cd-span cd-prose">${inner}</div></div><footer class="cd-foot">${foot(closeBtn(), '')}</footer></div>`;
+export const genericHtml = (inner) => `<div class="cd cd-generic"><div class="cd-body"><div class="cd-span cd-prose">${inner}</div></div></div>`;
 
 export { plain };
+
+// ---------- paging: a card never scrolls, long content turns into Prev / Page n of m / Next ----------
+/**
+ * Lays out the open card as pages when it is taller than the screen allows. Units (sections, paragraphs,
+ * list rows) are measured with everything visible, packed greedily into pages, and the rest hidden with
+ * .pg-off. The card is held at the height of its tallest page so the page row never moves.
+ * Call after every render and on resize; it is idempotent.
+ */
+export function fitCard(panelBody, tight = false) {
+  const root = panelBody.querySelector('.cd');
+  if (!root) return;
+  const body = root.querySelector('.cd-body');
+  root.querySelectorAll('.pg-off').forEach((e) => e.classList.remove('pg-off'));
+  root.querySelector('.cd-pager')?.remove();
+  root.querySelector('.cd-foot-auto')?.remove();
+  root.classList.remove('is-paged', 'cd-flat');
+  root.classList.toggle('cd-tight', tight);
+  if (body) body.style.minHeight = '';
+  if (!body || panelBody.scrollHeight <= panelBody.clientHeight + 1) return;   // already fits: no pages
+  if (root.querySelector('.cd-skills:not(.dense)')) {   // skill tiles stack one domain per row when the grid is too tall
+    root.classList.add('cd-flat');
+    if (panelBody.scrollHeight <= panelBody.clientHeight + 1) return;
+  }
+  let footEl = root.querySelector('.cd-foot');
+  if (!footEl) { footEl = document.createElement('footer'); footEl.className = 'cd-foot cd-foot-auto'; root.append(footEl); }
+  const undo = () => { pager.remove(); root.querySelector('.cd-foot-auto')?.remove(); };
+  const room = () => panelBody.clientHeight - (root.offsetHeight - body.offsetHeight)
+    - parseFloat(getComputedStyle(body).paddingTop) - parseFloat(getComputedStyle(body).paddingBottom);
+  const pager = document.createElement('div');
+  pager.className = 'cd-pager';
+  pager.innerHTML = `<button type="button" class="btn" data-pg="-1" aria-label="Previous page">${ico('back', 14)}<span>Prev</span></button><span class="cd-pg-n" aria-live="polite"></span><button type="button" class="btn primary" data-pg="1" aria-label="Next page"><span>Next</span>${ico('arrow', 14)}</button>`;
+  footEl.prepend(pager);
+  const budget = room() - 8;
+  const gap = parseFloat(getComputedStyle(body).rowGap) || 8;
+  const hOf = (e) => { const cs = getComputedStyle(e); return e.offsetHeight + parseFloat(cs.marginTop) + parseFloat(cs.marginBottom); };
+  // accordion lists (trophies): one row is open at a time, so every page keeps room for the tallest opened row
+  let reserve = 0;
+  const dets = [...body.querySelectorAll('.cd-ach-det')];
+  dets.forEach((d) => { const li = d.closest('li'); li.classList.add('open-measure'); reserve = Math.max(reserve, d.offsetHeight + 4); li.classList.remove('open-measure'); });
+  const openLi = body.querySelector('[data-trophy][aria-expanded="true"]')?.closest('li');
+  const openExtra = openLi ? openLi.querySelector('.cd-ach-det').offsetHeight : 0;
+  // flatten: grid children, with columns opened up
+  const units = [];
+  [...body.children].forEach((c) => (c.classList.contains('cd-col') ? units.push(...c.children) : units.push(c)));
+  const atoms = [];   // {el, h, group?, base?}
+  units.forEach((el) => {
+    const h = hOf(el), lst = el.matches('ul, ol') ? el : (el.querySelector('.cd-skills, .cd-tiles') || (el.querySelector('.cd-flowbox') ? null : el.querySelector('ul, ol'))), items = lst ? [...lst.children] : [];
+    if (h > budget - reserve && items.length > 1) {
+      const ig = parseFloat(getComputedStyle(lst).rowGap) || 0;
+      const ih = items.map((it) => hOf(it) - (it === openLi ? openExtra : 0));
+      const base = Math.max(0, h - openExtra - ih.reduce((x, y) => x + y, 0) - (items.length - 1) * ig);
+      items.forEach((it, i) => atoms.push({ el: it, h: ih[i] + ig, group: el, base }));
+    } else atoms.push({ el, h: h + gap });
+  });
+  // side-by-side columns fill up independently, so a page is as tall as its tallest column plus anything spanning both
+  const multi = getComputedStyle(body).gridTemplateColumns.trim().split(/\s+/).length > 1;
+  const keyOf = (el) => (multi ? (el.closest('.cd-col') || 'span') : 'one');
+  const total = (u) => { let m = 0; for (const k of Object.keys(u)) if (k !== 'span') m = Math.max(m, u[k]); return (u.span || 0) + m; };
+  const pages = [[]]; let use = { span: reserve }, seen = new Set();
+  const cost = (a) => a.h + (a.group && !seen.has(a.group) ? a.base : 0);
+  atoms.forEach((a) => {
+    const k = a.key = keyOf(a.el);
+    const fits = () => { const t = { ...use }; t[k] = (t[k] || 0) + cost(a); return total(t) <= budget; };
+    if (!fits() && pages.at(-1).length) { pages.push([]); use = { span: reserve }; seen = new Set(); }
+    use[k] = (use[k] || 0) + cost(a);
+    if (a.group) seen.add(a.group);
+    pages.at(-1).push(a);
+  });
+  if (!tight && (reserve > budget * 0.5 || atoms.some((a) => a.h - gap > budget - reserve))) { undo(); return fitCard(panelBody, true); }   // one piece is taller than a page: tighten the type and try again
+  if (pages.length < 2) { undo(); return; }
+  root.classList.add('is-paged');
+  let at = Math.min(+root.dataset.pgAt || 0, pages.length - 1);
+  const apply = () => {
+    const on = new Set(pages[at].map((a) => a.el)), groups = new Set(pages[at].map((a) => a.group).filter(Boolean));
+    atoms.forEach((a) => a.el.classList.toggle('pg-off', !on.has(a.el)));
+    new Set(atoms.map((a) => a.group).filter(Boolean)).forEach((g) => g.classList.toggle('pg-off', !groups.has(g)));
+    body.querySelectorAll('.cd-col').forEach((c) => c.classList.toggle('pg-off', ![...c.children].some((k) => !k.classList.contains('pg-off'))));
+  };
+  // hold the body at the tallest page so Prev / Next never jumps
+  let tall = 0;
+  body.style.flex = '0 0 auto';   // measure the content, not the stretched grid
+  pages.forEach((_, i) => { at = i; apply(); tall = Math.max(tall, body.getBoundingClientRect().height - (openLi && !openLi.classList.contains('pg-off') ? openExtra : 0) + reserve); });
+  body.style.flex = '';
+  at = Math.min(+root.dataset.pgAt || 0, pages.length - 1);
+  const show = () => {
+    apply();
+    body.style.minHeight = `${Math.ceil(tall)}px`;
+    pager.querySelector('.cd-pg-n').textContent = `Page ${at + 1} of ${pages.length}`;
+    pager.querySelector('[data-pg="-1"]').disabled = at === 0;
+    pager.querySelector('[data-pg="1"]').disabled = at === pages.length - 1;
+    root.dataset.pgAt = at; panelBody.scrollTop = 0;
+    const sel = body.querySelector('[data-trophy][aria-expanded="true"]');
+    if (sel && sel.closest('li').classList.contains('pg-off')) body.querySelector('li:not(.pg-off) [data-trophy]')?.click();   // the open row always lives on the visible page
+  };
+  pager.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-pg]'); if (!b || b.disabled) return;
+    at = Math.max(0, Math.min(pages.length - 1, at + +b.dataset.pg)); show();
+    (pager.querySelector(`[data-pg="${b.dataset.pg}"]:not(:disabled)`) || pager.querySelector('button:not(:disabled)'))?.focus({ preventScroll: true });
+  });
+  show();
+}
 
 // ---------- modal behaviour ----------
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select, textarea, summary, video[controls], [tabindex]:not([tabindex="-1"])';
@@ -355,5 +484,5 @@ export function installPanelModal({ panel, scrim, close, onOpen }) {
 export function timetableHtml(stops) {
   const h = head({ tile: tile(ico('flag', 28)), eyebrow: 'Memory Line', title: 'Where to next?', sub: 'The line loops the town, one stop per chapter of my life.' });
   const rows = `<ol class="cd-edu cd-stops">${stops.map((s) => `<li class="${s.current ? 'current' : ''}"><span class="cd-num">${esc(s.num)}</span><div class="cd-edu-t"><b class="cd-t">${esc(s.name)}</b><span class="cd-sub">${esc(s.sub)}</span></div>${s.current ? `<span class="cd-stamp on">${ico('pin', 12)} You are here</span>` : actBtn('arrow', 'Board', `data-board="${esc(s.id)}"`, true)}</li>`).join('')}</ol>`;
-  return frame({ kind: 'edu', head: h, body: `<div class="cd-span">${rows}</div>`, foot: foot(closeBtn(), '') });
+  return frame({ kind: 'edu', head: h, body: `<div class="cd-span">${rows}</div>`, foot: foot('', '') });
 }

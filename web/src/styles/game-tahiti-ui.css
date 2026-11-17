@@ -1,0 +1,71 @@
+/* Tahiti UI on the website palette: cream cards, forest borders, hard green offset shadow.
+   Yellow stays reserved for the Portfolio button. Portrait colours (--npc) are untouched. */
+body.game {
+  --tu-cream: #FFF1D0;
+  --tu-forest: #214B3D;
+  --tu-shadow: #173B30;
+  --tu-muted: #647568;
+  --tu-soft: #DFE8CD;
+}
+
+/* ---- character directory ---- */
+body.game .chars-panel.window { background: var(--tu-cream); color: var(--tu-forest); border: 2px solid var(--tu-forest); box-shadow: 4px 4px 0 var(--tu-shadow); border-radius: 0; }
+body.game .chars-panel .window-bar { background: var(--tu-cream); color: var(--tu-forest); border-bottom: 2px solid var(--tu-forest); }
+body.game .chars-panel .window-bar .title { color: var(--tu-forest); }
+body.game .chars-note { color: var(--tu-muted); border-bottom: 1.5px dashed var(--tu-muted); }
+body.game .chars-note.warn { color: var(--tu-forest); }
+body.game .chars-row { border-bottom: 1px solid rgba(33, 75, 61, .22); }
+body.game .chars-av { border-color: var(--tu-forest); }
+body.game .chars-info b { color: var(--tu-forest); }
+body.game .chars-info small { color: var(--tu-muted); }
+body.game .chars-visit, body.game .chars-toggle { background: var(--tu-cream); color: var(--tu-forest); border: 2px solid var(--tu-forest); border-radius: 0; box-shadow: 2px 2px 0 var(--tu-shadow); }
+body.game .chars-visit:hover:not(:disabled), body.game .chars-visit:focus-visible,
+body.game .chars-toggle:hover, body.game .chars-toggle:focus-visible, body.game .chars-toggle[aria-expanded="true"] { background: var(--tu-soft); color: var(--tu-forest); }
+body.game .chars-visit:active { transform: translate(2px, 2px); box-shadow: 0 0 0 var(--tu-shadow); }
+
+/* ---- contextual action buttons (Invite for a Ride, Euphonium Photo, ...) ---- */
+body.game .tahiti-hints button, body.game .tahiti-hints span {
+  background: var(--tu-cream); color: var(--tu-forest); border: 2px solid var(--tu-forest); border-radius: 0; box-shadow: 3px 3px 0 var(--tu-shadow); text-shadow: none;
+}
+body.game .tahiti-hints span { color: var(--tu-muted); }
+body.game .tahiti-hints button:hover, body.game .tahiti-hints button:focus-visible { background: var(--tu-soft); }
+body.game .tahiti-hints button:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--tu-shadow); }
+body.game .tahiti-hints kbd { background: var(--tu-forest); color: var(--tu-cream); border-radius: 0; }
+body.game .th-sheet { background: var(--tu-cream); border: 2px solid var(--tu-forest); box-shadow: 3px 3px 0 var(--tu-shadow); }
+
+/* ---- event cards and selection buttons ---- */
+body.game .tahiti-choose.window { background: var(--tu-cream); color: var(--tu-forest); border: 2px solid var(--tu-forest); box-shadow: 4px 4px 0 var(--tu-shadow); border-radius: 0; }
+body.game .tahiti-choose .window-bar { background: var(--tu-forest); color: var(--tu-cream); border-bottom: 2px solid var(--tu-forest); }
+body.game .tahiti-choose .window-bar .title { color: var(--tu-cream); }
+body.game .tahiti-choose h2 { color: var(--tu-forest); font-size: 16px; line-height: 1.25; }
+body.game .tahiti-choose .muted { color: var(--tu-muted); }
+body.game .tahiti-choose .choose-list { gap: 8px; }
+body.game .tahiti-choose .btn, body.game .tahiti-choose .btn.primary {
+  background: var(--tu-cream); color: var(--tu-forest); border: 2px solid var(--tu-forest); border-radius: 0; box-shadow: 3px 3px 0 var(--tu-shadow);
+  font-family: var(--font-pixel); font-size: 11px; letter-spacing: .04em; text-align: left; padding: 9px 12px; min-height: 40px; width: 100%;
+}
+body.game .tahiti-choose .btn:hover:not(:disabled), body.game .tahiti-choose .btn:focus-visible { background: var(--tu-soft); transform: none; box-shadow: 3px 3px 0 var(--tu-shadow); }
+body.game .tahiti-choose .btn:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--tu-shadow); }
+body.game .tahiti-choose .btn:disabled { opacity: 1; background: var(--tu-cream); color: var(--tu-muted); border-color: var(--tu-muted); box-shadow: 3px 3px 0 rgba(23, 59, 48, .35); cursor: not-allowed; }
+body.game .tahiti-choose .btn small { display: block; margin-top: 3px; font: 400 10px/1.3 var(--font-mono); color: var(--tu-muted); letter-spacing: 0; text-transform: none; }
+
+/* ---- speech bubbles ---- */
+body.game .tahiti-bubble { background: var(--tu-cream); color: var(--tu-forest); border: 2px solid var(--tu-forest); border-radius: 0; box-shadow: 3px 3px 0 var(--tu-shadow); text-shadow: none; }
+body.game .tahiti-bubble::after { border-top-color: var(--tu-forest); }
+
+@media (max-width: 760px), (max-height: 520px) and (orientation: landscape) {
+  body.game .tahiti-choose.window { width: min(340px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow-y: auto; }
+  body.game .tahiti-hints { gap: 6px; }
+  body.game .tahiti-hints button { max-width: calc(100vw - 24px); }
+}
+
+/* characters list: still scrolls, scrollbar hidden */
+body.game .chars-list { scrollbar-width: none; -ms-overflow-style: none; }
+body.game .chars-list::-webkit-scrollbar { display: none; }
+
+/* activity / mini-game cards: centred like every other card, sized to their content, X easy to tap */
+body.game .minigame {
+  top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(460px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); overflow-y: auto;
+}
+body.game .minigame .panel-close { min-width: 44px; min-height: 40px; display: grid; place-items: center; }

@@ -65,7 +65,7 @@ const ACTIVITIES = {
     photowalk_ol: { w: 3, owners: ['tahiti_cf2', 'tahiti_cf7'], roam: true, slots: [[...on('ol', -4, 1.0), 'film', seaFace('ol')], [26.6, -17.8, 'film', 200], [7.5, -9.5, 'film', 250], [32.6, -15.0, 'film', 90]], lines: ['Golden hour!', 'One for the album.', 'Look at that sky.'] },
     finance_sv: { w: 5, owner: 'tahiti_cf9', slots: [[7.94, 7.83, 'look', 45]], poses: ['look', 'phone', 'look', 'type'], lines: ['Green day. Stay patient.', 'Diversify, then leave it alone.', 'Wealth is what you do not need.', 'Check the ledger, not the noise.'] },
     feast: { w: 5, owner: 'tahiti_cf4', slots: [[18.6, -12.35, 'eat', 180]], poses: ['eat', 'eat', 'sit', 'eat', 'cheer'], lines: ['Round two of snacks.', 'This is training. For the contest.', 'Who wants to challenge me?', 'Mmm. Undefeated.'] },
-    tvgame: { w: 5, owner: 'tahiti_cf5', slots: [[27.4, 11.15, 'sittype', 180]], poses: ['sittype', 'sittype', 'cheer', 'sittype'], lines: ['Boss level!', 'Nathan, grab the other controller.', 'NO. One more try.', 'High score!'] },
+    tvgame: { w: 5, owner: 'tahiti_cf5', slots: [[16.9, 14.15, 'sittype', 150]], poses: ['sittype', 'sittype', 'cheer', 'sittype'], lines: ['Boss level!', 'Nathan, grab the other controller.', 'NO. One more try.', 'High score!'] },
     firepit: { w: 2, slots: [[28.0, -16.2, 'sing', 0, { free: true }], [30.2, -14.0, 'sing', -90, { free: true }], [25.8, -14.0, 'sing', 90, { free: true }], [28.0, -12.2, 'sit', 180]], lines: ['Fire\'s perfect tonight.', '♪ one more song ♪', 'Who\'s got the marshmallows?'] },
     volley: { w: 3, owners: ['tahiti_cf3', 'tahiti_cf6', 'tahiti_cf8'], slots: volleySlots('ol'), lines: ['Mine!', 'Set it up!', 'Spike it!', 'Out! That was out!'] },
     selfie: { w: 1, slots: [[17.4, -1.6, 'phone', 135], [17.9, -2.5, 'cheer', 135], [16.9, -2.7, 'look', 135]], lines: ['Smile!', 'One more, someone blinked.'] },
@@ -123,10 +123,20 @@ function disposeObj(obj) {
   });
 }
 
+// Two-up seats: where the rear rider sits behind the driver, and the driver's seat on the model
+// (back = how far the driver anchor sits ahead of the model centre).
+export const RIDE_SEATS = {
+  moto: { seatY: 0.62, back: 0.28, rear: 1.2, pose: 'ride' },
+  scooty: { seatY: 0.15, back: -0.36, rear: 0.62, pose: 'scooty' },
+};
+const INVITE_BOARD_MS = 15000;   // an invited rider has this long to reach the vehicle and get on
+const INVITE_WAIT_MS = 30000;    // how long a friend waits for Nathan to pick a vehicle / climb on behind
+
 export function createTahiti(ctx) {
   const { state, player } = ctx;
   let partyMood = { vg: 'party', ol: 'party' }, partyView = null, partyNathan = null;
-  let brains = [], bubbles = [], layer = null, party = { vg: 0, ol: 0 }, partyLights = {}, passenger = null, buddy = null;
+  let brains = [], bubbles = [], layer = null, party = { vg: 0, ol: 0 }, partyLights = {}, passenger = null, buddy = null, invite = null, driverNpc = null;
+  const seatOwner = new Map();   // vehicle interactable -> the one NPC holding its second seat
   let photo = null, session = null, lastPhotoInfo = null, race = null, hunt = null, lastHint = 0;
   let lastDepart = { vg: 0, ol: 0 }, inHideout = false, hideoutSince = 0;
   let epoch = 0, buddyTimer = 0, treasureItems = [], photoSpotList = [], study = null;
@@ -507,7 +517,8 @@ export function createTahiti(ctx) {
       }
     } else if (b.mode === 'idle' && !b.forced && now > (b.wake || 0)) {
       const h = b.goHome && homeOf(b); b.goHome = false;
-      const a = h && freeSlot(b.group, h, b) !== undefined ? h : pickActivity(b); if (a) assign(b, a);
+      // during a solo practice the court is Nathan's: Anu goes elsewhere instead of walking back to her hoop spot
+      const a = h && !(h === 'hoop' && state.hoop) && freeSlot(b.group, h, b) !== undefined ? h : pickActivity(b); if (a) assign(b, a);
     }
     // Shabeer (and anyone filming) snaps a photo now and then: a little white flash
     if (b.mode === 'stay' && ch.pose === 'film' && Math.random() < dt * 0.25) camFlash(gp, ch.heading);
@@ -615,6 +626,7 @@ export function createTahiti(ctx) {
         const s = slotOf(b.group, a, i); const g = b.it.character.group.position; g.x = s.x; g.z = s.z; arrive(b);
         b.until = t0 + (0.35 + Math.random() * 0.65) * (b.until - t0);   // each on their own clock
       }
+      for (const b of brains) if (b.id === 'tahiti_cf5' && b.act === 'tvgame') b.until = Math.max(b.until, t0 + 75000);   // Akshai settles in at his console
       lastDepart = { vg: t0, ol: t0 - 6000 };
       partyLights = { vg: ctx.world.apis.party_lights_vg, ol: ctx.world.apis.party_lights_ol };
       courts = { vg: newCourt('vg'), ol: newCourt('ol') }; ballMesh(); hoopMesh(); buildFestive();
@@ -644,7 +656,7 @@ export function createTahiti(ctx) {
       hud?.remove(); hud = null; layer?.remove(); layer = null;
       bubbles = []; brains = []; study = null; party = { vg: 0, ol: 0 }; partyNathan = null;
       if (partyView) { ctx.setView(null); partyView = null; }
-      passenger = null; buddy = null; photo = null; session = null; lastPhotoInfo = null; race = null;
+      passenger = null; buddy = null; invite = null; driverNpc = null; seatOwner.clear(); photo = null; session = null; lastPhotoInfo = null; race = null;
       state.joined = null; state.photoPath = false;
     },
     harrisState() { return harris()?.hstate; },
@@ -695,6 +707,8 @@ export function createTahiti(ctx) {
         (it) => (it._b.forced || it._b.mode === 'party' || it._b.swim || it._b.onBed || it._b.bedMove ? 0 : it._b.mode === 'stay' ? 0.15 : 1), dt, (x, z) => ctx.nav.isWalkable(x, z));
       // Nathan joined an activity: hold the slot and pose until he moves
       if (state.joined) { const j = state.joined, p = P(); p.set(j.x, ctx.heightAt(j.x, j.z) + (j.swim ? -0.55 : 0), j.z); player.heading = j.face; player.pose = j.pose; }
+      inviteTick(dt);
+      if (driverNpc && !state.mount) updateDriverNpc(dt, t);
       if (passenger) updatePassenger(dt, t);
       if (session) sessionTick(dt);
       if (photo) photoTick(dt);
@@ -721,7 +735,7 @@ export function createTahiti(ctx) {
       if (state.volley) return [state.volley.phase === 'serve' && state.volley.server?.nathan ? 'Space Serve' : 'Space Spike'];
       if (state.hoop) return state.hoop.turnNathan ? ['Space Shoot'] : [];
       if (state.mount || state.joined) return state.joined ? ['Move to leave'] : [];
-      if (nearestNpc(2.4) && ctx.hasMoto()) h.push('R Invite for a ride');
+      if (nearestNpc(2.4) && ctx.hasRide()) h.push('R Invite for a ride');
       if (joinable()) h.push('F Join activity');
       const ps = nearPhotoSpot(); if (ps) h.push(`G ${GANG_NAME[ps.gang]} Photo`);
       const tg = hunt && huntTarget(); if (tg) { const d = dist(P(), tg); h.push(`Treasure ${(state.save.tahitiTreasure || []).length + 1}/5: ${d < 6 ? 'HOT!' : d < 14 ? 'warm' : d < 28 ? 'cool' : 'cold'}`); }
@@ -738,22 +752,25 @@ export function createTahiti(ctx) {
     },
     leaveJoin() { if (!state.joined) return; const wasPhoto = !!state.joined.photo; state.joined = null; player.pose = null; const p = P(); p.y = ctx.heightAt(p.x, p.z); if (wasPhoto && session && session.phase === 'gather') cancelSession(true); if (wasPhoto && photo && photo.phase === 'gather') cancelPhoto(true); },
     interact(it) { return activityInteract(it); },
-    // motorcycle passengers
-    onMotoMount(m) {
-      if (buddy) { const b = buddy; buddy = null; boardPassenger(b, m); return; }
-      ctx.choose('Who do you want to ride with?', [...brains.filter((b) => !b.riding && dist(b.it.character.group.position, P()) < 30).map((b) => ({ label: def(b.id).name || b.id, value: b })), { label: 'Ride alone', value: null }], (b) => { if (b) boardPassenger(b, m); });
+    // two-up riding (motorcycles and scooties)
+    /** 'rear' when an invited NPC already sits at the handlebars of this vehicle (Nathan rides pillion), else null. */
+    rideRole(it) { return driverNpc && driverNpc.seated && driverNpc.v === it ? 'rear' : null; },
+    rideLabel(it) { return driverNpc && driverNpc.seated && driverNpc.v === it ? `Ride behind ${def(driverNpc.b.id).name || 'them'}` : ''; },
+    onRideMount(m, role) {
+      if (role === 'rear' && driverNpc && driverNpc.v === m.it) {
+        const b = driverNpc.b; driverNpc = null; invite = null;
+        passenger = { b, m, seated: true, front: true };
+        bubble(b.it, 'Hold on, Nathan!', 2.4);
+        return;
+      }
+      if (invite?.drive) cancelInvite(true);                   // Nathan took a different vehicle: the waiting driver stands down
+      if (buddy && !buddy.riding) { const b = buddy; buddy = null; boardPassenger(b, m); return; }
+      const pool = brains.filter((b) => !b.riding && !b.it.passenger && !isReserved(b) && dist(b.it.character.group.position, P()) < 30);
+      ctx.choose('Who do you want to ride with?', [...pool.map((b) => ({ label: def(b.id).name || b.id, value: b })), { label: 'Ride alone', value: null }], (b) => { if (b && state.mount === m) boardPassenger(b, m); });
     },
     passengerReady() { return !passenger || passenger.seated; },
-    onMotoDismount(spot) {
-      if (!passenger) return;
-      const b = passenger.b; const side = spot ? { x: spot.x + 0.9, z: spot.z + 0.5 } : null;
-      const gp = b.it.character.group.position;
-      const s = side && ctx.solidFree(side.x, side.z) ? side : spot || { x: gp.x, z: gp.z };
-      gp.set(s.x, ctx.heightAt(s.x, s.z), s.z);
-      b.riding = false; b.it.passenger = false; b.forced = false; b.it.character.pose = null; b.mode = 'idle'; release(b); b.it.beacon.group.visible = true;
-      bubble(b.it, 'That was fun!', 2.5);
-      passenger = null;
-    },
+    /** Nathan got off (or the ride ended some other way): the other rider steps off beside the vehicle and resumes their routine. */
+    onRideDismount(spot) { finishRide(spot); },
   };
 
   // ---------- joining activities ----------
@@ -782,33 +799,147 @@ export function createTahiti(ctx) {
     return true;
   }
 
-  // ---------- motorcycle: invite + passenger ----------
+  // ---------- two-up riding: invite + passenger / driver ----------
   function nearestNpc(r) { let best = null, bd = r; for (const b of brains) { const d = dist(b.it.character.group.position, P()); if (d < bd && !b.riding) { bd = d; best = b; } } return best; }
+  const isReserved = (b) => { for (const o of seatOwner.values()) if (o === b) return true; return false; };
+  const vehPos = (it) => it.model?.group?.position || it;
+  function sideSpot(it, avoid) {
+    const c = vehPos(it), h = it.heading || 0;
+    for (const d of [0.95, 1.4]) for (const sign of [1, -1]) {
+      const sp = { x: c.x + Math.cos(h) * d * sign, z: c.z - Math.sin(h) * d * sign };
+      if (ctx.nav.isWalkable(sp.x, sp.z) && ctx.solidFree(sp.x, sp.z) && (!avoid || dist(sp, avoid) > 0.7)) return sp;
+    }
+    return { x: c.x, z: c.z };
+  }
   function inviteRide() {
-    const b = nearestNpc(2.4); if (!b || !ctx.hasMoto()) return false;
-    buddy = b; release(b); b.forced = true;
-    stepOffBed(b, () => { if (buddy === b) b.mode = 'follow'; });
-    bubble(b.it, rand(["Let's go for a ride!", 'Finally, a ride!', 'You drive, I DJ.']), 3);
-    ctx.toast(`${def(b.id).name || 'Friend'} is coming along. Get on a motorcycle.`);
+    const b = nearestNpc(2.4); if (!b || !ctx.hasRide() || state.mount) return false;
+    const name = def(b.id).name || 'Friend';
+    const free = ctx.rideVehicles().filter((v) => !seatOwner.has(v));
+    const opts = [{ label: `I drive, ${name} rides behind`, value: 'me' }];
+    if (free.length) opts.push({ label: `Ride behind ${name} (${name} drives)`, value: 'them' });
+    opts.push({ label: 'Cancel', value: null });
+    ctx.choose('Invite for a ride', opts, (v) => {
+      if (!v || !brains.includes(b) || b.riding || state.mount || state.joined || state.hoop || state.volley) return;
+      if (invite) cancelInvite(true);
+      if (v === 'me') startInvite(b); else startDriverInvite(b);
+    });
     return true;
   }
+  function holdForRide(b) {
+    if (b.rush) { b.rush.done = true; b.rush = null; }
+    release(b); b.forced = true; b.vball = false; b.path = []; b.then = null;
+  }
+  // Nathan drives: the friend follows him, then climbs on behind once he is on a vehicle
+  function startInvite(b) {
+    buddy = b; holdForRide(b);
+    invite = { b, phase: 'wait', t: 0 };
+    stepOffBed(b, () => { if (buddy === b) b.mode = 'follow'; });
+    bubble(b.it, rand(["Let's go for a ride!", 'Finally, a ride!', 'You drive, I DJ.']), 3);
+    ctx.toast(`${def(b.id).name || 'Friend'} is coming along. Get on a scooty or motorcycle.`);
+  }
+  // The friend drives: they walk to the nearest free vehicle, get on, and wait for Nathan to climb on behind
+  function startDriverInvite(b) {
+    const gp = b.it.character.group.position;
+    const v = ctx.rideVehicles().filter((x) => !seatOwner.has(x)).sort((a, c) => dist(a, gp) - dist(c, gp))[0];
+    if (!v) return;
+    holdForRide(b);
+    seatOwner.set(v, b);
+    invite = { b, phase: 'board', t: 0, drive: true, v };
+    bubble(b.it, rand(["I'll drive. Hop on!", 'Hold on tight!', 'Meet you at the ride!']), 3);
+    ctx.toast(`${def(b.id).name || 'Friend'} is getting the ${v.vtype === 'scooty' ? 'scooty' : 'motorcycle'}.`);
+    const spot = sideSpot(v);
+    stepOffBed(b, () => {
+      if (invite?.b !== b) return;
+      goTo(b, spot.x, spot.z, () => {
+        if (invite?.b !== b || !invite.drive) return;
+        if (dist(b.it.character.group.position, vehPos(v)) > 3.2) return;   // never mount from afar: the timer cancels it
+        driverNpc = { b, v, seated: true };
+        b.riding = true; b.it.passenger = true;
+        invite.phase = 'ready'; invite.t = 0;
+        bubble(b.it, 'Hop on behind me, Nathan!', 3);
+        ctx.toast(`Walk up and ride behind ${def(b.id).name || 'them'}.`);
+      }, true);
+    });
+  }
   function boardPassenger(b, m) {
-    release(b); b.forced = true;
+    if (seatOwner.has(m.it) && seatOwner.get(m.it) !== b) return;                // that second seat is already taken
+    for (const [v, o] of [...seatOwner]) if (o === b && v !== m.it) seatOwner.delete(v);
+    if (invite && invite.b !== b) cancelInvite(true);
+    holdForRide(b);
+    seatOwner.set(m.it, b);
     passenger = { b, m, seated: false };
-    const bp = m.it.model.group.position;
-    goTo(b, bp.x - 0.9, bp.z + 0.4, () => { passenger && (passenger.seated = true); b.riding = true; b.it.passenger = true; bubble(b.it, 'Hold on tight? You hold on tight.', 2.6); }, true);
+    invite = { b, phase: 'board', t: 0 };
+    const spot = sideSpot({ heading: m.heading, model: m.it.model, x: m.it.x, z: m.it.z });
+    stepOffBed(b, () => {
+      if (passenger?.b !== b) return;
+      goTo(b, spot.x, spot.z, () => {
+        if (passenger?.b !== b || state.mount !== m) return;
+        if (dist(b.it.character.group.position, vehPos(m.it)) > 3.2) return;   // too far to climb on: the timer cancels the invite
+        passenger.seated = true; invite = null; buddy = null;                 // both riders mounted: the invite timer is over
+        b.riding = true; b.it.passenger = true;
+        bubble(b.it, 'Hold on tight? You hold on tight.', 2.6);
+      }, true);
+    });
   }
   function updatePassenger(dt, t) {
     const { b, m } = passenger;
-    if (!state.mount || state.mount !== m) { passenger = null; b.riding = false; b.it.passenger = false; b.forced = false; return; }
+    if (!state.mount || state.mount !== m) { finishRide(null); return; }
     if (!passenger.seated) return;
-    const ch = b.it.character, g = m.it.model.group, h = m.heading;
-    // rear of the two-up seat, level with Nathan, so the passenger never covers him
-    ch.group.position.set(g.position.x - Math.sin(h) * 0.92, g.position.y + 0.6, g.position.z - Math.cos(h) * 0.92);
-    ch.heading = h; ch.pose = 'ride';
+    seatNpc(b, m.it, m.heading, passenger.front ? 0 : RIDE_SEATS[m.it.vtype].rear, dt, t);
+  }
+  function updateDriverNpc(dt, t) {
+    const { b, v } = driverNpc;
+    seatNpc(b, v, v.heading || 0, 0, dt, t);
+  }
+  // seat one NPC: off = metres behind the driver's seat (0 = at the handlebars)
+  function seatNpc(b, it, h, off, dt, t) {
+    const S = RIDE_SEATS[it.vtype], ch = b.it.character, g = it.model.group;
+    const ax = g.position.x + Math.sin(h) * S.back, az = g.position.z + Math.cos(h) * S.back;
+    ch.group.position.set(ax - Math.sin(h) * off, g.position.y + S.seatY, az - Math.cos(h) * off);
+    ch.heading = h; ch.pose = S.pose; ch.steer = off ? 0 : (player.steer || 0);
     ch.update(dt, _zeroV, t);
     b.it.x = ch.group.position.x; b.it.z = ch.group.position.z;
     b.it.beacon.group.visible = false;
+  }
+  // The other rider gets off safely beside the vehicle; routine and every reservation are restored.
+  function finishRide(spot, say = true) {
+    const b = passenger?.b || driverNpc?.b || invite?.b;
+    const hadSeat = !!(passenger?.seated || driverNpc);
+    const veh = passenger?.m?.it || driverNpc?.v || null;
+    passenger = null; driverNpc = null; buddy = null; invite = null; seatOwner.clear();
+    if (!b) return;
+    const gp = b.it.character.group.position;
+    if (hadSeat) {
+      let s = spot ? { x: spot.x, z: spot.z } : null;
+      if (veh) { const side = sideSpot(veh, spot); if (!s || !ctx.solidFree(s.x, s.z)) s = side; }
+      s = s || { x: gp.x, z: gp.z };
+      gp.set(s.x, ctx.heightAt(s.x, s.z), s.z);
+      if (say) bubble(b.it, 'That was fun!', 2.5);
+    }
+    b.riding = false; b.it.passenger = false; b.path = []; b.then = null;
+    b.it.character.pose = null; b.it.beacon.group.visible = true;
+    resume([b]);                                                     // un-forced, back to their station and routine
+  }
+  function cancelInvite(silent) {
+    const inv = invite; if (!inv) return;
+    const b = inv.b;
+    if (passenger?.seated || driverNpc?.seated) { finishRide(null, false); return; }
+    passenger = null; driverNpc = null; buddy = null; invite = null;
+    for (const [v, o] of [...seatOwner]) if (o === b) seatOwner.delete(v);
+    b.riding = false; b.it.passenger = false; b.path = []; b.then = null; b.goal = null;
+    resume([b]);
+    if (!silent) { bubble(b.it, rand(["Can't make it, maybe next time!", 'Too slow, I will catch the next one.']), 3); ctx.toast(`${def(b.id).name || 'Your friend'} could not get on in time. Ride invitation cancelled.`); }
+  }
+  // 15 s to reach and mount; the timer stops the moment both riders are seated, so it can never interrupt a ride
+  function inviteTick(dt) {
+    if (!invite) return;
+    if (passenger?.seated) { invite = null; return; }
+    if (state.cine || state.joined || state.hoop || state.volley || photo || session || race || !brains.includes(invite.b)) { cancelInvite(true); return; }
+    if (dist(invite.b.it.character.group.position, P()) > 45) { cancelInvite(true); return; }
+    if (invite.phase === 'wait' && state.mount) { invite.phase = 'board'; invite.t = 0; }   // never reached when a seated ride is on
+    invite.t += dt;
+    const limit = invite.phase === 'board' ? INVITE_BOARD_MS : INVITE_WAIT_MS;
+    if (invite.t * 1000 >= limit) cancelInvite(false);
   }
 
   // ---------- group photo ----------
@@ -1023,11 +1154,67 @@ export function createTahiti(ctx) {
       setTimeout(() => { if (epoch !== myEpoch) return; resume([r.b]); race = null; }, 1500);
     }
   }
+  // ---------- Vanderlinde EVENTS noticeboard ----------
+  // Lists the gang's existing events (beach party, volleyball, gang photo), snaps the crew to their positions at once
+  // and starts the normal event flow; each flow already hands everyone back to their routines when it ends.
+  function vgEventBlock() {
+    if (state.mount) return 'Get off your ride first.';
+    if (state.seated) return 'Stand up first.';
+    if (state.hoop || state.minigame || state.cine || state.groupScene) return 'Finish what you are doing first.';
+    if (assembling()) return 'Everyone is still getting into place.';
+    return null;
+  }
+  function vgPrepare() {
+    state.joined = null; state.path = []; state.photoPath = false; ctx.clearMarker?.();
+    player.pose = null;
+    for (const b of brains) if (b.group === 'vg' && !b.riding) { b.onBed = null; b.bedMove = null; }
+  }
+  function vgSnapCrew() {
+    for (const b of brains) if (b.group === 'vg' && b.rush && !b.rush.done) snapToRush(b);
+  }
+  function vgPlace(x, z, faceTo) {
+    state.path = []; state.photoPath = false;
+    const p = P(); p.set(x, ctx.heightAt(x, z), z);
+    if (faceTo) player.heading = Math.atan2(faceTo.x - x, faceTo.z - z);
+  }
+  function openVgEvents() {
+    if (state.choosing) return;
+    const block = vgEventBlock();
+    const off = (cond, why) => (block ? { disabled: true, note: block } : cond ? { disabled: true, note: why } : {});
+    ctx.choose('Vanderlinde Events', [
+      { label: 'Beach Party', value: 'party', ...off(party.vg > 0, 'A party is already running.') },
+      { label: 'Beach Volleyball', value: 'volley', ...off(!!state.volley || !courts.vg, 'A match is already running.') },
+      { label: 'Gang Photo', value: 'photo', ...off(!!photo || !!session, 'A photo is already being set up.') },
+      { label: 'Close', value: null },
+    ], (v) => {
+      if (!v || vgEventBlock()) return;
+      if (v === 'party') {
+        if (party.vg > 0) return;
+        ctx.choose('Pick the party mood', [{ label: 'Retro Dance', value: 'retro' }, { label: 'Chill Beach', value: 'chill' }, { label: 'Party Beats', value: 'party' }], (mood) => {
+          if (party.vg > 0) return;
+          vgPrepare(); runParty('vg', mood || 'party'); vgSnapCrew();
+          if (partyNathan) vgPlace(partyNathan.x, partyNathan.z);
+        });
+      } else if (v === 'volley') {
+        if (state.volley) return;
+        vgPrepare(); startMatch('vg'); vgSnapCrew();
+      } else if (v === 'photo') {
+        if (photo || session) return;
+        const spot = photoSpotList.find((s) => s.gang === 'vg'); if (!spot) return;
+        vgPrepare();
+        if (startPhoto(spot) !== false && photo) {
+          vgSnapCrew();
+          vgPlace(photo.nathanSlot.x, photo.nathanSlot.z, photo.tripodPos);
+        }
+      }
+    });
+  }
   function activityInteract(it) {
     // a group is still gathering: swallow repeated presses so nothing starts twice
     if (assembling() && !['gallery', 'clues', 'treasure_item'].includes(it.act)) return true;
     if ((it.act === 'hoop' || it.act === 'anuhoop') && (state.hoop || (hoopMenu && document.querySelector('.tahiti-choose')))) return true;
     switch (it.act) {
+      case 'vgevents': openVgEvents(); return true;
       case 'party': startParty(it.gang); return true;
       case 'race': startRace(); return true;
       case 'dance': danceBattle(); return true;
@@ -1049,7 +1236,10 @@ export function createTahiti(ctx) {
     ctx.panel('tahiti/treasure.txt', `<p class="eyebrow">TAHITI · TREASURE HUNT · ${got.length}/5</p><h2 id="panel-title">${next ? `Clue ${got.length + 1}` : 'Hunt complete'}</h2>
       ${note ? `<p class="subtitle">${note}</p>` : ''}
       ${next ? `<p class="clue-text">“${next.clue}”</p><p class="muted">The chest glows when you're close. The hint bar says how warm you are, and friends drop hints too.</p>` : '<p>All five found. The bandana is yours.</p>'}
-      <ol class="highlights">${TREASURE.map((tr, i) => `<li>${got.includes(tr.id) ? `✓ ${tr.prize}` : i === got.length ? 'You are here' : '???'}</li>`).join('')}</ol>`);
+      <ol class="highlights trail" data-label="Treasure trail · ${got.length}/5">${TREASURE.map((tr, i) => {
+        const done = got.includes(tr.id), cur = !done && i === got.length;
+        return `<li class="${done ? 'done' : cur ? 'cur' : 'lock'}"><span class="tr-n">${done ? '✓' : i + 1}</span><span class="tr-t">${done ? tr.prize : cur ? 'You are here' : '???'}</span><span class="tr-s">${done ? 'Found' : cur ? 'Searching' : 'Locked'}</span></li>`;
+      }).join('')}</ol>`);
   }
   function clues() { hunt = hunt || { started: true }; cluePanel(); }
   function foundTreasure(it) {
@@ -1728,10 +1918,10 @@ export function createTahiti(ctx) {
   function tvGame() {
     const ak = brainOf('tahiti_cf5');
     const tv = ctx.world.apis.tv_corner;
-    state.joined = { x: 28.6, z: 11.15, pose: 'sittype', face: Math.PI, swim: false }; state.path = [];
+    state.joined = { x: 18.1, z: 14.15, pose: 'sittype', face: (195 * Math.PI) / 180, swim: false }; state.path = [];
     if (ak) {
-      const ap = ak.it.character.group.position; ap.x = 27.4; ap.z = 11.15;   // already on his seat: no walk while the game runs
-      bring(ak, 27.4, 11.15, 'sittype', 180); bubble(ak.it, 'Player two has entered the game!', 2.6); }
+      const ap = ak.it.character.group.position; ap.x = 16.9; ap.z = 14.15;   // already on his seat: no walk while the game runs
+      bring(ak, 16.9, 14.15, 'sittype', 150); bubble(ak.it, 'Player two has entered the game!', 2.6); }
     tv?.setBusy?.(true);
     ctx.minigame(`<h2>PIXEL DEFENDERS</h2><p class="muted">← → (or A / D) move · SPACE fire · Akshai plays the orange ship. 60 seconds, 3 lives.</p>
       <canvas id="pd" width="240" height="180" style="width:100%;max-width:480px;aspect-ratio:4/3;image-rendering:pixelated;background:#0d0f24;display:block;margin:0 auto;border:2px solid #fff6e6"></canvas>
@@ -2090,19 +2280,33 @@ export function createTahiti(ctx) {
     bb.mesh.position.set(bb.x, bb.y + 0.02, bb.z); bb.mesh.rotation.x += dt * 5;
   }
 
+  // the court plus a margin for the ball path and the south entrance (x 17-18): nobody parks or idles in here during practice
+  const inCourtZone = (x, z) => x > 11.5 && x < 24.5 && z > -30.5 && z < -18.2;
+  const PRACTICE_SPOTS = [[26.5, -22.5], [26.5, -19.5], [9.5, -22.5], [9.5, -19.5], [27, -17], [9, -17]];
   let hoopMenu = false, hoopBeacons = null;
   function startShootout(opts = {}) {
     hoopMenu = false;
     if (state.hoop || state.volley) return;
     // Practice is solo: anyone ambling around the court (Anu) leaves and resumes their routine
-    if (opts.crew && !opts.crew.length) resume(brains.filter((b) => b.group === 'ol' && b.act === 'hoop'));
+    // (whatever state they are in: standing at the hoop, walking back to it, or already on the court)
+    let held = [];
+    if (opts.crew && !opts.crew.length) {
+      held = brains.filter((b) => b.group === 'ol' && !b.riding && !b.vball && (b.act === 'hoop' || b.id === 'tahiti_cf1' || dist(b.it.character.group.position, RIM) < 8));
+      // a designated spot beside the court (east / west sideline): in camera view, clear of the shooting area, ball path and the south entrance
+      const away = PRACTICE_SPOTS.filter(([x, z]) => ctx.nav.isWalkable(x, z) && !inCourtZone(x, z));
+      held.forEach((b, i) => {
+        const [x, z] = away[i % Math.max(1, away.length)] || PRACTICE_SPOTS[0];
+        b.practiceSpot = { x, z }; b.practiceAway = false;
+        rushTo(b, x, z, () => { b.mode = 'held'; b.practiceAway = true; faceRimB(b); });   // 'held' mode: no idle wandering back onto the court
+      });
+    }
     const crew = opts.crew || brains.filter((b) => b.group === 'ol' && !b.riding && !b.vball && dist(b.it.character.group.position, RIM) < 30).sort((a, b) => dist(a.it.character.group.position, RIM) - dist(b.it.character.group.position, RIM)).slice(0, 3);
     const players = [{ nathan: true, name: 'Nathan', score: 0 }, ...crew.map((b, i) => ({ b, name: def(b.id).name, score: 0, side: SIDELINE[i] }))];
     for (const p of players) if (p.b) { const b = p.b; rushTo(b, p.side.x, p.side.z, () => { b.mode = 'bb'; p.ready = true; faceRimB(b); }); }
     bb.q = []; bb.cur = null; bb.busy = false; bb.hold = null;
     state.joined = null; state.path = [];
     { const sp = SPOTS[0], p = P(); p.set(sp.x, ctx.heightAt(sp.x, sp.z), sp.z); player.heading = Math.atan2(RIM.x - sp.x, RIM.z - sp.z); player.pose = null; bb.hold = players[0]; }
-    state.hoop = { players, turn: 0, round: 0, rounds: opts.rounds || 3, phase: 'gather', t: 0, meter: 0, shooting: false };
+    state.hoop = { players, turn: 0, round: 0, rounds: opts.rounds || 3, phase: 'gather', t: 0, meter: 0, shooting: false, held };
     ctx.toast(opts.msg || 'Shootout! One shooter at a time, three rounds. Waiting for everyone...');
   }
   function faceRimB(b) { const p = b.it.character.group.position; b.it.character.heading = Math.atan2(RIM.x - p.x, RIM.z - p.z); b.it.character.pose = 'look'; }
@@ -2110,6 +2314,13 @@ export function createTahiti(ctx) {
     const s = state.hoop; s.t += dt;
     const who = s.players[s.turn], spot = SPOTS[(s.round * 2 + s.turn) % SPOTS.length];
     s.turnNathan = who.nathan && s.phase === 'aim';
+    // practice: whoever was sent aside stays aside (never drifts or is nudged back onto the court)
+    for (const b of s.held || []) {
+      if (!b.practiceSpot) continue;
+      const gp = b.it.character.group.position;
+      if (b.practiceAway && (inCourtZone(gp.x, gp.z) || dist(gp, b.practiceSpot) > 1.4)) { b.practiceAway = false; rushTo(b, b.practiceSpot.x, b.practiceSpot.z, () => { b.mode = 'held'; b.practiceAway = true; faceRimB(b); }); }
+      else if (b.practiceAway) { b.mode = 'held'; b.path = []; }
+    }
     bb.ring.visible = who.nathan && (s.phase === 'aim' || s.phase === 'walk');
     if (bb.ring.visible) { bb.ring.position.set(spot.x, ctx.heightAt(spot.x, spot.z) + 0.04, spot.z); bb.ring.scale.setScalar(1 + Math.sin(t * 8) * 0.08); }
     if (s.phase === 'gather') {
@@ -2167,7 +2378,8 @@ export function createTahiti(ctx) {
   }
   function endShootout(silent) {
     const s = state.hoop; if (!s) return;
-    resume(s.players.filter((p) => p.b).map((p) => p.b));
+    for (const b of s.held || []) { b.practiceSpot = null; b.practiceAway = false; }
+    resume([...s.players.filter((p) => p.b).map((p) => p.b), ...(s.held || [])]);
     state.hoop = null; bb.q = []; bb.cur = null; bb.hold = null; bb.busy = false;
     if (bb.ring) bb.ring.visible = false; hud?.classList.add('hidden');
     if (!silent) player.pose = null;

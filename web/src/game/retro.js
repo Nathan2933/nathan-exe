@@ -146,7 +146,9 @@ export class RetroRenderer {
       w = Math.ceil(cssW / this.pixelSize); h = Math.ceil(cssH / this.pixelSize);
     } else {
       // Smooth: render at screen resolution (up to 1.5× on high-DPI screens).
-      this.pixelSize = 1 / Math.min(1.5, window.devicePixelRatio || 1);
+      // Phones (coarse pointer) render at 1x CSS resolution: 1.5x on a 3x-DPR panel is ~2.25x the pixels and drops frames.
+      const cap = matchMedia('(pointer: coarse)').matches ? 1 : 1.5;
+      this.pixelSize = 1 / Math.min(cap, window.devicePixelRatio || 1);
       w = Math.round(cssW / this.pixelSize); h = Math.round(cssH / this.pixelSize);
     }
     this.target.setSize(Math.max(1, w), Math.max(1, h));

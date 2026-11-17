@@ -58,7 +58,7 @@ const still = { x: 0, y: 0, z: 0, set(x, y, z) { this.x = x; this.y = y; this.z 
 export function createShabeerRoutine(ctx) {
   let phase = 'idle';          // idle | walk | ride
   let wp = 0, speed = 0, stuck = 0, guruFree = 0;
-  let passenger = false, dismounting = false, hold = 0;
+  let passenger = false, dismounting = false, hold = 0, grace = 0;
   const pos = { x: PARK.x, z: PARK.z };
   let heading = PARK.heading, npc = null, bike = null;
   const vel = { x: 0, y: 0, z: 0, set(x, y, z) { this.x = x; this.y = y; this.z = z; } };
@@ -92,7 +92,7 @@ export function createShabeerRoutine(ctx) {
     const pp = ctx.player?.group?.position;
     for (let d = 0.4; d <= dist; d += 0.4) {
       const x = pos.x + sx * d, z = pos.z + cz * d;
-      if (pp && !passenger && Math.hypot(pp.x - x, pp.z - z) < 1.1) return d;
+      if (pp && !passenger && grace <= 0 && Math.hypot(pp.x - x, pp.z - z) < 1.1) return d;
       for (const n of ctx.world?.npcs || []) {
         if (n === npc || n.npcId === 'guru') continue;   // riders pass each other
         const p = n.character?.group?.position;
@@ -139,7 +139,7 @@ export function createShabeerRoutine(ctx) {
     pl.heading = Math.atan2(pos.x - spot.x, pos.z - spot.z);
     ctx.velocity?.set(0, 0, 0);
     st.path = []; st.nearby = null;
-    hold = 1.6; stuck = 0;
+    hold = 1.6; stuck = 0; grace = 4;
     if (!silent) ctx.toast('Got off the bike.');
   }
 
@@ -203,6 +203,7 @@ export function createShabeerRoutine(ctx) {
 
     // ride
     if (hold > 0) hold -= dt;
+    if (grace > 0) grace -= dt;
     const tw = ROUTE[wp], dx = tw.x - pos.x, dz = tw.z - pos.z;
     if (Math.hypot(dx, dz) < 1.2) {
       if (wp < ROUTE.length - 1) wp++; else { finishRide(n); return; }
@@ -217,7 +218,7 @@ export function createShabeerRoutine(ctx) {
     if (dismounting || (hold > 0 && !passenger)) { target = 0; speed = Math.max(0, speed - BRAKE * dt); }
     else if (hit) { target = hit < 1.25 ? 0 : 1.5; speed = Math.max(0, speed - BRAKE * dt); }
     else speed = speed < target ? Math.min(target, speed + ACCEL * dt) : Math.max(target, speed - BRAKE * 0.5 * dt);
-    stuck = speed < 0.15 && !dismounting && hold <= 0 ? stuck + dt : 0;
+    stuck = speed < 0.15 && !dismounting && hold <= 0 && grace <= 0 ? stuck + dt : 0;
     if (stuck > 3) { finishRide(n); return; }   // boxed in: give up and park
     const step = speed * dt;
     pos.x += Math.sin(heading) * step; pos.z += Math.cos(heading) * step;

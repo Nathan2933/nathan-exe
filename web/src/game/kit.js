@@ -4137,6 +4137,17 @@ export const KIT = {
     const pool = lightPool(1.8, 0xffd08a); pool.position.set(0, 0.08, 0.7); g.add(pool);
     return { obj: g, nightGlow: [pool], colliders: [{ x: -0.9, z: 0, r: 0.1 }, { x: 0.9, z: 0, r: 0.1 }] };
   },
+  events_board() {
+    // Vanderlinde EVENTS noticeboard: cream panel, forest frame, small warm lamp. Faces +z (the camera side).
+    const g = new THREE.Group(), k = kit(g);
+    for (const x of [-0.8, 0.8]) k.box(0.12, 1.7, 0.12, 0x214B3D, x, 0, 0);
+    k.box(2.0, 1.0, 0.1, 0x214B3D, 0, 1.0, 0);
+    const face = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 0.8), new THREE.MeshBasicMaterial({ map: signTexture('EVENTS', { fg: '#214B3D', bg: '#FFF1D0', w: 144, h: 64, size: 30 }) }));
+    face.position.set(0, 1.5, 0.06); g.add(face);
+    k.box(0.1, 0.1, 0.1, glow(0xffd08a), 0, 2.08, 0.1, { shadow: false });
+    const pool = lightPool(1.4, 0xffd08a); pool.position.set(0, 0.08, 0.8); g.add(pool);
+    return { obj: g, nightGlow: [pool], colliders: [{ x: -0.8, z: 0, r: 0.15 }, { x: 0.8, z: 0, r: 0.15 }] };
+  },
   curb({ len = 6 } = {}) {
     // low pale edging stones along a path border (no collider: never blocks a walk)
     const g = new THREE.Group(), k = kit(g);

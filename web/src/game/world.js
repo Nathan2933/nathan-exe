@@ -113,6 +113,15 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
     p.setX(i, x * k); p.setZ(i, z * k);
   }
   geo.computeVertexNormals();
+  // The one shoreline definition: the top face of the base disc above is exactly the sand the player sees
+  // past the last map tile. Dry land = a non-water tile, or anywhere on that disc top. `pad` grows the disc
+  // (metres) so callers can add a small hysteresis at the water's edge.
+  const discRadiusAt = (x, z) => (R + 1.5) * islandR(Math.atan2(z, x)) / R;
+  const landAt = (x, z, pad = 0) => {
+    const t = tileAt(map, x, z);
+    if (t) return t.type !== 'water';
+    return Math.hypot(x, z) < discRadiusAt(x, z) + pad;
+  };
   // the base disc shows past the shoreline tiles: colour it from the map's own sand tile so no
   // second (yellow) sand tone appears between the water and the beach
   let sandHex = 0xe0c391;
@@ -267,7 +276,7 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
 
   // ---------- interactables ----------
   const isTahiti = map.props?.island === 'tahiti';
-  const beacon = (x, _y, z, { small = false, pillar: withPillar = true } = {}) => {
+  const beacon = (x, _y, z, { small = false, pillar: withPillar = true, keep = false } = {}) => {
     const R = small ? 0.65 : 0.95;
     const usePillar = isTahiti ? false : withPillar;
     const tile = tileAt(map, x, z);
@@ -287,7 +296,7 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
       prom: 1,
       setVisited() {},
     };
-    beacons.push({ api, R, hPillar, x, pr: 1 });
+    beacons.push({ api, R, hPillar, x, pr: 1, keep });
     return api;
   };
   const sparkle = (x, z) => {
@@ -322,7 +331,7 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
     model.group.position.set(o.x, tile ? Math.max(0, groundHeight(tile.type)) : 0, o.z); model.group.rotation.y = heading;
     root.add(model.group);
     const it = { x: o.x, z: o.z, visited: false, id: si ? `vehicle:scooty-${si}` : 'vehicle:scooty', kind: 'vehicle', vtype: 'scooty', label: o.props?.name || "Guru's Scooty", model, heading, home: { x: o.x, z: o.z, heading }, district: o.props?.district || (map.props?.island === 'tahiti' ? 'tahiti' : 'winter-campus'), radius: 1.4 };
-    it.beacon = beacon(o.x, 1.6, o.z, { small: true }); hitBox(it, 1.2, 2, 1.4); interactables.push(it);
+    it.beacon = beacon(o.x, 1.6, o.z, { small: true, keep: true }); hitBox(it, 1.2, 2, 1.4); interactables.push(it);
   });
   for (const it of seats) {
     if (!isTahiti) it.beacon = beacon(it.x, 1.2, it.z, { small: true });
@@ -362,7 +371,7 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
     } else if (o.type === 'activity') {
       // Tahiti activity spot (party, race, dance battle, food, volleyball, clues, treasure, gallery)
       const it = { ...base, id: `activity:${pr.id}`, kind: 'activity', act: pr.act, title: pr.title || pr.act, treasureId: pr.treasure, gang: pr.gang, district: 'tahiti', radius: 1.6 };
-      it.beacon = beacon(o.x, 1.6, o.z, { small: true }); hitBox(it, 1.4, 2.2, 1.4); interactables.push(it);
+      it.beacon = beacon(o.x, 1.6, o.z, { small: true, keep: pr.act === 'vgevents' }); hitBox(it, 1.4, 2.2, 1.4); interactables.push(it);
     } else if (o.type === 'group') {
       // shared group conversation spot (Join the Gang / Join the Outlaws)
       const it = { ...base, id: `group:${pr.id}`, kind: 'group', groupId: pr.id, title: pr.title || 'Join in', district: 'tahiti', radius: 1.6 };
@@ -377,7 +386,7 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
       model.group.rotation.y = heading + (vt === 'horse' ? -Math.PI / 2 : 0);
       root.add(model.group);
       const it = { ...base, id: `vehicle:${pr.id}`, kind: 'vehicle', vtype: vt, model, heading, home: { x: o.x, z: o.z, heading }, district: pr.district, radius: 1.5 };
-      it.beacon = beacon(o.x, 1.6, o.z, { small: true }); hitBox(it, 1.4, 2, 1.4); interactables.push(it);
+      it.beacon = beacon(o.x, 1.6, o.z, { small: true, keep: true }); hitBox(it, 1.4, 2, 1.4); interactables.push(it);
     } else if (o.type === 'station') {
       const it = { ...base, id: `station:${pr.id}`, kind: 'station', stationId: pr.id, name: pr.name || pr.id, district: pr.district, order: pr.order || 0, tagline: pr.tagline || '', radius: 2.4 };
       it.beacon = beacon(o.x, 2.3, o.z, { small: true }); hitBox(it, 2.4, 3, 2.4); interactables.push(it);
@@ -491,7 +500,7 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
           const r = rooms[ri], q = api.group.position;
           if (q.x > r.minX && q.x < r.maxX && q.z > r.minZ && q.z < r.maxZ && !(r.api.isOpen ? r.api.isOpen() : r.api.isInside())) { roofed = true; break; }
         }
-        if (!api.group.visible || pr <= 0.02 || roofed) {
+        if ((isTahiti && !b.keep) || !api.group.visible || pr <= 0.02 || roofed) {
           _m4.makeScale(0, 0, 0);
           discInst.setMatrixAt(i, _m4);
           ringInst.setMatrixAt(i, _m4);
@@ -630,7 +639,7 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
     colliderGrid.clear();
   };
 
-  return { root, colliders, interactables, animated, labels, footprints, npcs, walkers, map, floors, railway, stations, weather, apis, nightGlow, vehicles, queryColliders, floorAt, dispose };
+  return { root, colliders, interactables, animated, labels, footprints, npcs, walkers, map, floors, railway, stations, weather, apis, nightGlow, vehicles, queryColliders, floorAt, landAt, discRadiusAt, dispose };
 }
 
 let _radial = null, _pillar = null;
