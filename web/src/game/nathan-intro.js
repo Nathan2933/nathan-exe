@@ -133,7 +133,15 @@ export function createNathanIntro(ctx) {
   }
 
   // ---------- pass ----------
-  const memoriesFound = () => (state.save?.memories || []).length;
+  // only memories that exist in the current content (old saves can hold ids from earlier versions)
+  const memoriesFound = () => { const ids = new Set((state.content?.memories || []).map((m) => m.id)); return (state.save?.memories || []).filter((id) => ids.has(id)).length; };
+  const memoriesTotal = () => (state.content?.memories || []).length;
+  function progressLine() {
+    const left = unexplored(), parts = [`${pass.stamps.length}/${STAMPS.length} stamps`, `${pass.found.length}/${DISCOVERIES.length} discoveries`];
+    if (memoriesTotal()) parts.push(`${memoriesFound()}/${memoriesTotal()} memories`);
+    parts.push(left ? `${left} ${left === 1 ? 'place' : 'places'} still unexplored` : 'every place visited');
+    return parts.join(' · ');
+  }
   const unexplored = () => {
     const all = (state.content?.chapters || []).map((c) => c.district).filter(Boolean);
     return all.filter((d) => !(state.save?.chapters || []).includes(d)).length;
@@ -161,7 +169,7 @@ export function createNathanIntro(ctx) {
       <p class="pc-title">${esc(title())}</p>
       <ul class="pc-stamps">${STAMPS.map(stamp).join('')}</ul>
       <p class="pc-sub">Optional discoveries</p><ul class="pc-disc">${DISCOVERIES.map(disc).join('')}</ul>
-      <p class="pc-prog">${memoriesFound()} memories found · ${unexplored()} places still unexplored</p>
+      <p class="pc-prog">${progressLine()}</p>
       <div class="pc-acts"><button type="button" class="ns-btn" data-pc="postcard">Make my postcard</button></div>`;
   }
   function toggleCard(force) {
@@ -326,7 +334,7 @@ export function createNathanIntro(ctx) {
       g.font = '500 14px "Pixelify Sans", monospace'; g.fillText(s.label, x, y + 54); g.textAlign = 'left';
     });
     g.fillStyle = '#ACC8B5'; g.font = '16px "IBM Plex Mono", monospace';
-    g.fillText(`${pass.found.length}/${DISCOVERIES.length} discoveries · ${memoriesFound()} memories found`, 330, 390);
+    g.fillText(`${pass.found.length}/${DISCOVERIES.length} discoveries · ${pass.stamps.length}/${STAMPS.length} stamps`, 330, 390);
     g.fillText(new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }), 40, 420);
     g.fillStyle = '#F3E9C8'; g.fillText('nathan.exe · the final page was you', 40, 460);
     const url = cv.toDataURL('image/png');
