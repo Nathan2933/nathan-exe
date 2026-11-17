@@ -1,149 +1,139 @@
 /* =====================================================================
    The Toolbox (Guild Hall): skills inventory + experience timeline.
+   Type pairing: Press Start 2P (title, buttons) / Pixelify Sans (headings, labels) / IBM Plex Mono (content).
    Loaded last so it wins over the shared chapter-card rules.
    ===================================================================== */
 body.game {
-  --tb-bg: #12382D;
-  --tb-bar: #102D25;
-  --tb-card: #1D493B;
-  --tb-text: #F3E9C8;
-  --tb-sub: #ACC8B5;
-  --tb-mint: #91C7AF;
-  --tb-line: #6F9783;
-  --tb-gold: #E7C65A;
-  --tb-gold-soft: #CDB562;
+  --tb-bg: #12382D; --tb-bar: #102D25; --tb-card: #1D493B;
+  --tb-cream: #F3E9C8; --tb-desc: #E2E5CE; --tb-mint: #91C7AF; --tb-mint-soft: #ACC8B5; --tb-line: #6F9783; --tb-gold: #E7C65A;
+  --tb-title: 'Press Start 2P', 'Silkscreen', monospace;
+  --tb-head: 'Pixelify Sans', 'Silkscreen', monospace;
+  --tb-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
 }
-
-/* dim the game behind the card */
 body.game:has(#panel .cd-tbx) .panel-scrim { background: rgba(4, 14, 10, .8); }
 
-/* shell */
+/* shell: truly centred (inset + auto margins, no translate), height follows content */
 body.game .panel.chapter-card:has(.cd-tbx) {
-  width: min(1120px, calc(100vw - 48px));
-  max-height: calc(100dvh - 48px);
+  position: fixed; inset: 0; margin: auto; translate: none; transform: none;
+  width: min(1240px, calc(100vw - 48px)); height: fit-content; max-height: calc(100dvh - 32px);
   background: var(--tb-bg); border: 2px solid var(--tb-line); box-shadow: 0 0 0 2px var(--tb-bar), 6px 6px 0 rgba(0, 0, 0, .5);
 }
-body.game .panel.chapter-card:has(.cd-tbx) .window-bar { min-height: 32px; background: var(--tb-bar); border-bottom: 1px solid color-mix(in srgb, var(--tb-line) 55%, transparent); }
-body.game .panel.chapter-card:has(.cd-tbx) .window-bar .title { color: var(--tb-sub); font-size: 10px; }
-body.game .panel.chapter-card:has(.cd-tbx) .panel-close { height: 32px; min-height: 32px; color: var(--tb-text); }
-body.game .panel.chapter-card:has(.cd-tbx) .panel-close:hover,
-body.game .panel.chapter-card:has(.cd-tbx) .panel-close:focus-visible { color: var(--tb-gold); }
+body.game .panel.chapter-card:has(.cd-tbx) .window-bar { min-height: 30px; background: var(--tb-bar); border-bottom: 1px solid color-mix(in srgb, var(--tb-line) 55%, transparent); }
+body.game .panel.chapter-card:has(.cd-tbx) .window-bar .title { color: var(--tb-mint-soft); font-family: var(--tb-mono); font-size: 12px; letter-spacing: 0; }
+body.game .panel.chapter-card:has(.cd-tbx) .panel-close { height: 30px; min-height: 30px; color: var(--tb-cream); }
+body.game .panel.chapter-card:has(.cd-tbx) .panel-close:hover, body.game .panel.chapter-card:has(.cd-tbx) .panel-close:focus-visible { color: var(--tb-gold); }
 body.game .panel.chapter-card:has(.cd-tbx) .panel-body { background: var(--tb-bg); overflow-x: hidden; scrollbar-color: var(--tb-line) var(--tb-bg); }
 
-.cd-tbx { position: relative; display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; color: var(--tb-text); font-family: var(--font-sans); background: var(--tb-bg); }
-/* pixel corner ticks */
-.cd-tbx::before {
-  content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 3;
-  --g: var(--tb-gold);
-  background:
-    linear-gradient(var(--g), var(--g)) 4px 4px / 6px 6px no-repeat,
-    linear-gradient(var(--g), var(--g)) calc(100% - 4px) 4px / 6px 6px no-repeat,
-    linear-gradient(var(--g), var(--g)) 4px calc(100% - 4px) / 6px 6px no-repeat,
-    linear-gradient(var(--g), var(--g)) calc(100% - 4px) calc(100% - 4px) / 6px 6px no-repeat;
-  opacity: .75;
-}
+body.game .panel.chapter-card .cd-tbx { position: relative; display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; color: var(--tb-desc); font-family: var(--tb-mono); font-size: 15px; line-height: 1.5; text-transform: none; letter-spacing: 0; background: var(--tb-bg); }
+body.game .panel.chapter-card .cd-tbx::before { content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 3; opacity: .7; --g: var(--tb-gold);
+  background: linear-gradient(var(--g), var(--g)) 4px 4px / 6px 6px no-repeat, linear-gradient(var(--g), var(--g)) calc(100% - 4px) 4px / 6px 6px no-repeat,
+    linear-gradient(var(--g), var(--g)) 4px calc(100% - 4px) / 6px 6px no-repeat, linear-gradient(var(--g), var(--g)) calc(100% - 4px) calc(100% - 4px) / 6px 6px no-repeat; }
 
 /* header */
-.tbx-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 22px; background: var(--tb-bar); border-bottom: 1px solid color-mix(in srgb, var(--tb-line) 55%, transparent); }
-.tbx-titles { min-width: 0; }
-.tbx-eyebrow { margin: 0 0 3px; font-family: var(--font-pixel); font-size: 9px; letter-spacing: .14em; color: var(--tb-mint); }
-.cd-tbx h2 { margin: 0; font-family: var(--font-pixel); font-size: 22px; line-height: 1.1; letter-spacing: .06em; color: var(--tb-text); font-weight: 400; text-shadow: 2px 2px 0 rgba(0, 0, 0, .35); }
-.tbx-sub { margin: 4px 0 0; font-size: 13px; color: var(--tb-sub); }
-.tbx-counts { flex: none; display: flex; flex-wrap: wrap; gap: 6px 14px; justify-content: flex-end; }
-.tbx-counts span { display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px; border: 1px solid color-mix(in srgb, var(--tb-line) 60%, transparent); background: color-mix(in srgb, var(--tb-bg) 70%, transparent); font-size: 12px; color: var(--tb-sub); white-space: nowrap; }
-.tbx-counts em { font-style: normal; }
-.tbx-counts b { font-family: var(--font-pixel); font-size: 13px; font-weight: 400; color: var(--tier); }
-.tbx-counts .px { color: var(--tier); }
-.tbx-counts .tier-gold { --tier: var(--tb-gold); } .tbx-counts .tier-silver { --tier: #C7D2D6; } .tbx-counts .tier-bronze { --tier: #C79B72; }
+body.game .panel.chapter-card .cd-tbx .tbx-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 9px 22px; background: var(--tb-bar); border-bottom: 1px solid color-mix(in srgb, var(--tb-line) 55%, transparent); }
+body.game .panel.chapter-card .cd-tbx .tbx-titles { min-width: 0; }
+body.game .panel.chapter-card .cd-tbx .tbx-eyebrow { margin: 0 0 4px; font-family: var(--tb-head); font-weight: 500; font-size: 13px; letter-spacing: .08em; line-height: 1.2; color: var(--tb-mint); }
+body.game .panel.chapter-card .cd-tbx h2 { margin: 0; font-family: var(--tb-title); font-weight: 400; font-size: 24px; line-height: 1.15; letter-spacing: 0; color: var(--tb-cream); text-shadow: 2px 2px 0 rgba(0, 0, 0, .35); }
+body.game .panel.chapter-card .cd-tbx .tbx-sub { margin: 5px 0 0; font-size: 14px; line-height: 1.3; color: var(--tb-mint-soft); }
+body.game .panel.chapter-card .cd-tbx .tbx-counts { flex: none; display: flex; flex-wrap: wrap; gap: 6px 10px; justify-content: flex-end; }
+body.game .panel.chapter-card .cd-tbx .tbx-counts span { display: inline-flex; align-items: center; gap: 7px; padding: 4px 9px; border: 1px solid color-mix(in srgb, var(--tb-line) 60%, transparent); background: color-mix(in srgb, var(--tb-bg) 70%, transparent); font-size: 13px; line-height: 1.2; color: var(--tb-mint-soft); white-space: nowrap; }
+body.game .panel.chapter-card .cd-tbx .tbx-counts em { font-style: normal; }
+body.game .panel.chapter-card .cd-tbx .tbx-counts b { font-family: var(--tb-head); font-weight: 500; font-size: 16px; color: var(--tier); }
+body.game .panel.chapter-card .cd-tbx .tbx-counts .px { color: var(--tier); }
+body.game .panel.chapter-card .cd-tbx .tbx-counts .tier-gold { --tier: var(--tb-gold); }
+body.game .panel.chapter-card .cd-tbx .tbx-counts .tier-silver { --tier: #C7D2D6; }
+body.game .panel.chapter-card .cd-tbx .tbx-counts .tier-bronze { --tier: #C79B72; }
 
-/* two columns: about 55% skills, 45% experience */
-.tbx-body { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: minmax(0, 11fr) minmax(0, 9fr); gap: 0; }
-.tbx-skills, .tbx-exp { padding: 14px 22px 16px; min-width: 0; }
-.tbx-exp { border-left: 1px solid color-mix(in srgb, var(--tb-line) 45%, transparent); }
-.tbx-h { margin: 0 0 8px; font-family: var(--font-pixel); font-size: 10px; font-weight: 400; letter-spacing: .14em; text-transform: uppercase; color: var(--tb-gold); }
+/* two columns */
+body.game .panel.chapter-card .cd-tbx .tbx-body { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: minmax(0, 11fr) minmax(0, 10fr); }
+body.game .panel.chapter-card .cd-tbx .tbx-skills, body.game .panel.chapter-card .cd-tbx .tbx-exp { padding: 12px 22px 14px; min-width: 0; }
+body.game .panel.chapter-card .cd-tbx .tbx-exp { border-left: 1px solid color-mix(in srgb, var(--tb-line) 45%, transparent); }
+body.game .panel.chapter-card .cd-tbx .tbx-h { margin: 0 0 8px; font-family: var(--tb-head); font-weight: 500; font-size: 17px; line-height: 1.2; letter-spacing: .06em; text-transform: uppercase; color: var(--tb-cream); }
 
-/* skill inventory: rows separated by rules, category label then a shared chip grid */
-.tbx-row { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 12px; align-items: start; padding: 9px 0; border-top: 1px solid color-mix(in srgb, var(--tb-line) 40%, transparent); }
-.tbx-cat { margin: 0; display: flex; align-items: center; gap: 8px; min-height: 28px; font-family: var(--font-pixel); font-size: 9.5px; font-weight: 400; line-height: 1.25; letter-spacing: .06em; text-transform: uppercase; color: var(--tb-mint); }
-.tbx-cat .px { flex: none; width: 16px; }
-.tbx-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
-.tbx-chip { display: flex; align-items: center; gap: 7px; height: 28px; padding: 0 8px 0 5px; min-width: 0; background: color-mix(in srgb, var(--tb-card) 80%, transparent); border: 1px solid color-mix(in srgb, var(--tb-line) 45%, transparent); }
-.tbx-chip.wide { }
-.tbx-ic { flex: none; width: 20px; height: 20px; display: grid; place-items: center; padding: 2px; background: #F3E9C8; }
-.tbx-ic img { width: 100%; height: 100%; object-fit: contain; display: block; }
-.tbx-ic .sk-fallback { font-family: var(--font-pixel); font-size: 10px; line-height: 1; color: #12382D; }
-.tbx-n { min-width: 0; font-size: 12.5px; line-height: 1; color: var(--tb-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tbx-learn { flex: none; margin-left: auto; font-style: normal; font-family: var(--font-pixel); font-size: 7.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--tb-gold); border: 1px solid var(--tb-gold); padding: 2px 4px; }
+/* skills */
+body.game .panel.chapter-card .cd-tbx .tbx-row { display: grid; grid-template-columns: 124px minmax(0, 1fr); gap: 10px; align-items: start; padding: 7px 0; border-top: 1px solid color-mix(in srgb, var(--tb-line) 40%, transparent); }
+body.game .panel.chapter-card .cd-tbx .tbx-cat { margin: 0; display: flex; align-items: center; gap: 8px; min-height: 30px; font-family: var(--tb-head); font-weight: 500; font-size: 14px; line-height: 1.15; letter-spacing: .02em; text-transform: none; color: var(--tb-mint); }
+body.game .panel.chapter-card .cd-tbx .tbx-cat .px { flex: none; width: 16px; color: var(--tb-mint); }
+body.game .panel.chapter-card .cd-tbx .tbx-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+body.game .panel.chapter-card .cd-tbx .tbx-chip { display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 9px 0 6px; min-width: 0; max-width: 100%; background: color-mix(in srgb, var(--tb-card) 80%, transparent); border: 1px solid color-mix(in srgb, var(--tb-line) 45%, transparent); }
+body.game .panel.chapter-card .cd-tbx .tbx-ic { flex: none; width: 18px; height: 18px; display: grid; place-items: center; padding: 1px; background: #F3E9C8; }
+body.game .panel.chapter-card .cd-tbx .tbx-ic img { width: 100%; height: 100%; object-fit: contain; display: block; }
+body.game .panel.chapter-card .cd-tbx .tbx-ic .sk-fallback { font-family: var(--tb-head); font-size: 11px; line-height: 1; color: #12382D; }
+body.game .panel.chapter-card .cd-tbx .tbx-n { min-width: 0; font-size: 15px; line-height: 1; color: var(--tb-cream); white-space: nowrap; }
+body.game .panel.chapter-card .cd-tbx .tbx-learn { flex: none; margin-left: 2px; font-style: normal; font-family: var(--tb-head); font-weight: 500; font-size: 11px; letter-spacing: .04em; text-transform: uppercase; color: var(--tb-mint); border: 1px solid var(--tb-mint); padding: 1px 4px; }
 
-/* experience: vertical timeline */
-.tbx-timeline { list-style: none; margin: 0; padding: 0 0 0 18px; position: relative; display: grid; gap: 10px; }
-.tbx-timeline::before { content: ''; position: absolute; left: 4px; top: 8px; bottom: 8px; width: 2px; background: color-mix(in srgb, var(--tb-line) 70%, transparent); }
-.tbx-card { position: relative; display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; padding: 10px 12px; background: var(--tb-card); border: 1px solid color-mix(in srgb, var(--tb-line) 55%, transparent); }
-.tbx-card::before { content: ''; position: absolute; left: -18px; top: 18px; width: 10px; height: 10px; background: var(--tb-gold); box-shadow: 0 0 0 2px var(--tb-bg); }
-.tbx-logo { width: 40px; height: 40px; display: grid; place-items: center; background: #F3E9C8; color: #12382D; font-family: var(--font-pixel); font-size: 16px; overflow: hidden; }
-.tbx-logo img { width: 100%; height: 100%; object-fit: contain; padding: 3px; display: block; }
-.tbx-tx { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-.tbx-role { font-size: 14px; font-weight: 600; line-height: 1.25; color: var(--tb-text); }
-.tbx-org { font-size: 12.5px; color: var(--tb-sub); }
-.tbx-date { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--tb-mint); }
-.tbx-tx p { margin: 4px 0 0; font-size: 12.5px; line-height: 1.45; color: var(--tb-sub); }
-.tbx-tx p b { font-weight: 600; color: var(--tb-gold-soft); }
+/* experience timeline */
+body.game .panel.chapter-card .cd-tbx .tbx-timeline { list-style: none; margin: 0; padding: 0 0 0 18px; position: relative; display: grid; gap: 9px; }
+body.game .panel.chapter-card .cd-tbx .tbx-timeline::before { content: ''; position: absolute; left: 4px; top: 8px; bottom: 8px; width: 2px; background: color-mix(in srgb, var(--tb-line) 70%, transparent); }
+body.game .panel.chapter-card .cd-tbx .tbx-card { position: relative; display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; padding: 9px 12px; background: var(--tb-card); border: 1px solid color-mix(in srgb, var(--tb-line) 55%, transparent); }
+body.game .panel.chapter-card .cd-tbx .tbx-card::before { content: ''; position: absolute; left: -18px; top: 16px; width: 10px; height: 10px; background: var(--tb-mint); box-shadow: 0 0 0 2px var(--tb-bg); }
+body.game .panel.chapter-card .cd-tbx .tbx-logo { width: 40px; height: 40px; display: grid; place-items: center; background: #F3E9C8; color: #12382D; font-family: var(--tb-head); font-size: 16px; overflow: hidden; }
+body.game .panel.chapter-card .cd-tbx .tbx-logo img { width: 100%; height: 100%; object-fit: contain; padding: 3px; display: block; }
+body.game .panel.chapter-card .cd-tbx .tbx-tx { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+body.game .panel.chapter-card .cd-tbx .tbx-role { font-size: 18px; font-weight: 500; line-height: 1.25; color: var(--tb-cream); overflow-wrap: anywhere; }
+body.game .panel.chapter-card .cd-tbx .tbx-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0 10px; font-size: 14px; line-height: 1.4; color: var(--tb-mint-soft); }
+body.game .panel.chapter-card .cd-tbx .tbx-org, body.game .panel.chapter-card .cd-tbx .tbx-date { font-size: 14px; color: var(--tb-mint-soft); }
+body.game .panel.chapter-card .cd-tbx .tbx-date { display: inline-flex; align-items: center; gap: 5px; }
+body.game .panel.chapter-card .cd-tbx .tbx-tx p { margin: 3px 0 0; font-size: 15px; line-height: 1.45; color: var(--tb-desc); }
+body.game .panel.chapter-card .cd-tbx .tbx-tx p b { font-weight: 600; font-size: inherit; color: var(--tb-gold); }
 
 /* footer */
-.tbx-foot { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 22px; background: var(--tb-bar); border-top: 1px solid color-mix(in srgb, var(--tb-line) 55%, transparent); }
-.tbx-trophy { display: inline-flex; align-items: center; gap: 8px; min-height: 34px; padding: 0 14px; font-family: var(--font-pixel); font-size: 10px; letter-spacing: .1em; color: var(--tb-gold); background: color-mix(in srgb, var(--tb-gold) 10%, var(--tb-bar)); border: 2px solid var(--tb-gold); border-radius: 0; cursor: pointer; box-shadow: 3px 3px 0 rgba(0, 0, 0, .35); }
-.tbx-trophy:hover, .tbx-trophy:focus-visible { background: color-mix(in srgb, var(--tb-gold) 22%, var(--tb-bar)); color: var(--tb-text); outline: 0; }
-.tbx-trophy:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 rgba(0, 0, 0, .35); }
-.tbx-esc { font-size: 12px; color: var(--tb-sub); }
-.tbx-esc kbd { font-family: var(--font-pixel); font-size: 9px; padding: 2px 5px; border: 1px solid var(--tb-line); color: var(--tb-text); background: var(--tb-bg); }
+body.game .panel.chapter-card .cd-tbx .tbx-foot { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 22px; background: var(--tb-bar); border-top: 1px solid color-mix(in srgb, var(--tb-line) 55%, transparent); }
+body.game .panel.chapter-card .cd-tbx .tbx-trophy { display: inline-flex; align-items: center; gap: 9px; min-height: 36px; padding: 0 14px; font-family: var(--tb-title); font-size: 11px; line-height: 1; letter-spacing: 0; color: var(--tb-gold); background: color-mix(in srgb, var(--tb-gold) 10%, var(--tb-bar)); border: 2px solid var(--tb-gold); border-radius: 0; cursor: pointer; box-shadow: 3px 3px 0 rgba(0, 0, 0, .35); }
+body.game .panel.chapter-card .cd-tbx .tbx-trophy:hover, body.game .panel.chapter-card .cd-tbx .tbx-trophy:focus-visible { background: color-mix(in srgb, var(--tb-gold) 22%, var(--tb-bar)); color: var(--tb-cream); outline: 0; }
+body.game .panel.chapter-card .cd-tbx .tbx-trophy:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 rgba(0, 0, 0, .35); }
+body.game .panel.chapter-card .cd-tbx .tbx-esc { font-size: 13px; color: var(--tb-mint-soft); }
+body.game .panel.chapter-card .cd-tbx .tbx-esc kbd { font-family: var(--tb-head); font-weight: 500; font-size: 13px; padding: 1px 6px; border: 1px solid var(--tb-line); color: var(--tb-cream); background: var(--tb-bg); }
 
-/* medium desktops: tighten, three-up chips stay */
-@media (max-width: 1100px) { .tbx-row { grid-template-columns: 96px minmax(0, 1fr); } .tbx-skills, .tbx-exp { padding-left: 16px; padding-right: 16px; } }
-/* short desktop windows (1366x768 and down): a little less vertical air */
+/* short desktop screens (1366x768 and below): trim padding only, text stays full size */
 @media (max-height: 800px) and (min-width: 901px) {
-  .tbx-head { padding-top: 8px; padding-bottom: 8px; }
-  .cd-tbx h2 { font-size: 19px; }
-  .tbx-skills, .tbx-exp { padding-top: 10px; padding-bottom: 10px; }
-  .tbx-row { padding: 6px 0; }
-  .tbx-chip { height: 26px; }
-  .tbx-timeline { gap: 8px; }
-  .tbx-card { padding: 8px 10px; }
-  .tbx-foot { padding-top: 6px; padding-bottom: 6px; }
+  body.game .panel.chapter-card .cd-tbx .tbx-head { padding-top: 6px; padding-bottom: 6px; }
+  body.game .panel.chapter-card .cd-tbx h2 { font-size: 22px; }
+  body.game .panel.chapter-card .cd-tbx .tbx-sub { margin-top: 3px; }
+  body.game .panel.chapter-card .cd-tbx .tbx-skills, body.game .panel.chapter-card .cd-tbx .tbx-exp { padding-top: 8px; padding-bottom: 8px; }
+  body.game .panel.chapter-card .cd-tbx .tbx-row { padding: 5px 0; }
+  body.game .panel.chapter-card .cd-tbx .tbx-timeline { gap: 7px; }
+  body.game .panel.chapter-card .cd-tbx .tbx-card { padding: 7px 12px; }
+  body.game .panel.chapter-card .cd-tbx .tbx-foot { padding-top: 6px; padding-bottom: 6px; }
 }
-
-/* tablets and phones: one column, the card scrolls, text stays full size */
+@media (max-width: 1100px) { body.game .panel.chapter-card .cd-tbx .tbx-row { grid-template-columns: 104px minmax(0, 1fr); } body.game .panel.chapter-card .cd-tbx .tbx-skills, body.game .panel.chapter-card .cd-tbx .tbx-exp { padding-left: 16px; padding-right: 16px; } }
+/* tablets and phones: one column, the card scrolls, text keeps its size */
 @media (max-width: 900px) {
   body.game .panel.chapter-card:has(.cd-tbx) { width: calc(100vw - 16px); max-height: calc(100dvh - 16px); }
-  .tbx-head { flex-direction: column; align-items: flex-start; padding: 12px 16px; gap: 10px; }
-  .tbx-counts { justify-content: flex-start; }
-  .tbx-body { grid-template-columns: minmax(0, 1fr); }
-  .tbx-exp { border-left: 0; border-top: 1px solid color-mix(in srgb, var(--tb-line) 45%, transparent); }
-  .tbx-skills, .tbx-exp { padding: 14px 16px; }
-  .tbx-foot { padding: 8px 16px; }
+  body.game .panel.chapter-card .cd-tbx .tbx-head { flex-direction: column; align-items: flex-start; padding: 12px 16px; gap: 10px; }
+  body.game .panel.chapter-card .cd-tbx .tbx-counts { justify-content: flex-start; }
+  body.game .panel.chapter-card .cd-tbx .tbx-body { grid-template-columns: minmax(0, 1fr); }
+  body.game .panel.chapter-card .cd-tbx .tbx-exp { border-left: 0; border-top: 1px solid color-mix(in srgb, var(--tb-line) 45%, transparent); }
+  body.game .panel.chapter-card .cd-tbx .tbx-skills, body.game .panel.chapter-card .cd-tbx .tbx-exp { padding: 14px 16px; }
+  body.game .panel.chapter-card .cd-tbx .tbx-foot { padding: 8px 16px; }
 }
 @media (max-width: 520px) {
-  .tbx-row { grid-template-columns: minmax(0, 1fr); gap: 6px; }
-  .tbx-chips { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .tbx-chip.wide { grid-column: span 2; }
-  .tbx-esc { display: none; }
-  .tbx-trophy { flex: 1; justify-content: center; }
-  .cd-tbx h2 { font-size: 18px; }
+  body.game .panel.chapter-card .cd-tbx .tbx-row { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  body.game .panel.chapter-card .cd-tbx .tbx-esc { display: none; }
+  body.game .panel.chapter-card .cd-tbx .tbx-trophy { flex: 1; justify-content: center; }
+  body.game .panel.chapter-card .cd-tbx h2 { font-size: 20px; }
+  body.game .panel.chapter-card .cd-tbx .tbx-role { font-size: 17px; }
 }
 
-/* beat the shared card typography (mono, uppercase, large) with a more specific scope */
-body.game .panel.chapter-card .cd-tbx { font-family: var(--font-sans); text-transform: none; letter-spacing: 0; line-height: 1.4; font-size: 13px; }
-body.game .panel.chapter-card .cd-tbx :is(.tbx-sub, .tbx-n, .tbx-role, .tbx-org, .tbx-date, .tbx-tx p, .tbx-counts span, .tbx-esc) { font-family: var(--font-sans); text-transform: none; letter-spacing: 0; }
-body.game .panel.chapter-card .cd-tbx :is(.tbx-eyebrow, .tbx-h, .tbx-cat, .tbx-trophy, .tbx-learn, h2) { font-family: var(--font-pixel); }
-body.game .panel.chapter-card .cd-tbx .tbx-eyebrow { text-transform: none; }
-body.game .panel.chapter-card .cd-tbx .tbx-sub { font-size: 13px; }
-body.game .panel.chapter-card .cd-tbx .tbx-n { font-size: 12.5px; }
-body.game .panel.chapter-card .cd-tbx .tbx-role { font-size: 14px; font-weight: 600; }
-body.game .panel.chapter-card .cd-tbx .tbx-org { font-size: 12.5px; }
-body.game .panel.chapter-card .cd-tbx .tbx-date { font-size: 11.5px; }
-body.game .panel.chapter-card .cd-tbx .tbx-tx p { font-size: 12.5px; line-height: 1.4; margin: 3px 0 0; }
-body.game .panel.chapter-card .cd-tbx .tbx-counts span { font-size: 12px; }
-body.game .panel.chapter-card .cd-tbx .tbx-esc { font-size: 12px; }
-body.game .panel.chapter-card .cd-tbx h2 { font-size: 22px; letter-spacing: .05em; }
-body.game .panel.chapter-card .cd-tbx .tbx-cat { font-size: 9.5px; text-transform: uppercase; letter-spacing: .05em; }
-@media (max-height: 800px) and (min-width: 901px) { body.game .panel.chapter-card .cd-tbx h2 { font-size: 19px; } }
-body.game .panel.chapter-card .cd-tbx .tbx-tx p b { font-family: var(--font-sans); font-weight: 600; text-transform: none; letter-spacing: 0; font-size: inherit; }
+/* neutralise inherited card typography (uppercase, pixel, tracking) for everything inside; specific rules above re-apply the pixel faces */
+body.game .panel.chapter-card .cd-tbx * { text-transform: none; letter-spacing: normal; font-family: var(--tb-mono); }
+body.game .panel.chapter-card .cd-tbx .tbx-eyebrow { letter-spacing: .08em; font-family: var(--tb-head); }
+body.game .panel.chapter-card .cd-tbx h2, body.game .panel.chapter-card .cd-tbx .tbx-trophy { font-family: var(--tb-title); letter-spacing: 0; }
+body.game .panel.chapter-card .cd-tbx .tbx-h { text-transform: uppercase; letter-spacing: .06em; font-family: var(--tb-head); }
+body.game .panel.chapter-card .cd-tbx :is(.tbx-cat, .tbx-learn, .tbx-counts b, .tbx-esc kbd, .tbx-ic .sk-fallback, .tbx-logo) { font-family: var(--tb-head); }
+body.game .panel.chapter-card .cd-tbx .tbx-learn { text-transform: uppercase; letter-spacing: .04em; }
+body.game .panel.chapter-card .cd-tbx .tbx-cat { letter-spacing: .02em; }
+body.game .panel.chapter-card .cd-tbx .tbx-trophy span { font-family: var(--tb-title); text-transform: uppercase; }
+/* the shared card sets a pixel face on every span/li/b: re-assert mono on content text */
+body.game .panel.chapter-card .cd-tbx :is(.tbx-n, .tbx-role, .tbx-org, .tbx-date, .tbx-tx p, .tbx-tx p b, .tbx-sub, .tbx-counts span, .tbx-counts em, .tbx-esc) { font-family: var(--tb-mono); text-transform: none; letter-spacing: normal; }
+body.game .panel.chapter-card .cd-tbx .tbx-counts b, body.game .panel.chapter-card .cd-tbx .tbx-cat, body.game .panel.chapter-card .cd-tbx .tbx-cat span { font-family: var(--tb-head); }
+/* extra vertical trim for 720p-class screens; fonts unchanged */
+@media (max-height: 800px) and (min-width: 901px) {
+  body.game .panel.chapter-card .cd-tbx .tbx-chip { height: 28px; }
+  body.game .panel.chapter-card .cd-tbx .tbx-cat { min-height: 28px; }
+  body.game .panel.chapter-card .cd-tbx .tbx-row { padding: 4px 0; }
+  body.game .panel.chapter-card .cd-tbx .tbx-chips { gap: 5px; }
+  body.game .panel.chapter-card .cd-tbx .tbx-timeline { gap: 6px; }
+  body.game .panel.chapter-card .cd-tbx .tbx-card { padding: 6px 12px; }
+  body.game .panel.chapter-card .cd-tbx .tbx-h { margin-bottom: 6px; }
+}
