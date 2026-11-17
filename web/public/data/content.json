@@ -1401,13 +1401,5 @@
    },
    "activities": true
   }
- ],
- "intro": {
-  "abandoned": {
-   "title": "Untitled idea #7",
-   "what": "A side project that started on a Friday night with a lot of confidence.",
-   "why": "It grew a second feature before the first one worked, and then a third. Nothing shipped.",
-   "note": "PLACEHOLDER: replace with the real story of a project you never finished (edit intro.abandoned in content.json)."
-  }
- }
+ ]
 }

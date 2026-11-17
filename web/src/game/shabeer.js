@@ -58,7 +58,7 @@ const still = { x: 0, y: 0, z: 0, set(x, y, z) { this.x = x; this.y = y; this.z 
 export function createShabeerRoutine(ctx) {
   let phase = 'idle';          // idle | walk | ride
   let wp = 0, speed = 0, stuck = 0, guruFree = 0;
-  let passenger = false, dismounting = false, hold = 0, grace = 0;
+  let passenger = false, dismounting = false, hold = 0, grace = 0, bypass = 0;
   const pos = { x: PARK.x, z: PARK.z };
   let heading = PARK.heading, npc = null, bike = null;
   const vel = { x: 0, y: 0, z: 0, set(x, y, z) { this.x = x; this.y = y; this.z = z; } };
@@ -206,20 +206,24 @@ export function createShabeerRoutine(ctx) {
     if (grace > 0) grace -= dt;
     const tw = ROUTE[wp], dx = tw.x - pos.x, dz = tw.z - pos.z;
     if (Math.hypot(dx, dz) < 1.2) {
-      if (wp < ROUTE.length - 1) wp++; else { finishRide(n); return; }
+      if (wp < ROUTE.length - 1) wp++; else { const wasPassenger = passenger; finishRide(n); if (wasPassenger) ctx.toast('Full circle! Back where we started.'); return; }
     }
     const th = Math.atan2(dx, dz), diff = Math.atan2(Math.sin(th - heading), Math.cos(th - heading));
     heading += diff * Math.min(1, dt * TURN);
     const steer = Math.max(-0.45, Math.min(0.45, diff * 0.75));
     if (b.model.bars) b.model.bars.rotation.y = steer;
     ch.steer = steer;
-    const hit = blocked(Math.max(1.8, speed * 0.75));
+    if (bypass > 0) bypass -= dt;
+    const hit = bypass > 0 ? 0 : blocked(Math.max(1.8, speed * 0.75));   // after a long wait, edge past whatever is in the way
     let target = Math.abs(diff) > 0.5 ? 3.2 : CRUISE;
     if (dismounting || (hold > 0 && !passenger)) { target = 0; speed = Math.max(0, speed - BRAKE * dt); }
     else if (hit) { target = hit < 1.25 ? 0 : 1.5; speed = Math.max(0, speed - BRAKE * dt); }
     else speed = speed < target ? Math.min(target, speed + ACCEL * dt) : Math.max(target, speed - BRAKE * 0.5 * dt);
     stuck = speed < 0.15 && !dismounting && hold <= 0 && grace <= 0 ? stuck + dt : 0;
-    if (stuck > 3) { finishRide(n); return; }   // boxed in: give up and park
+    if (stuck > 3) {
+      // with Nathan on the back the ride always completes the full circle: wait, then edge past the blocker instead of teleporting home
+      if (passenger) { bypass = 2.5; stuck = 0; } else { finishRide(n); return; }
+    }
     const step = speed * dt;
     pos.x += Math.sin(heading) * step; pos.z += Math.cos(heading) * step;
     const y = ctx.heightAt(pos.x, pos.z);
