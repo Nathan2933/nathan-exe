@@ -90,7 +90,7 @@ function characterFile(c) {
         <h1 id="about-h">${esc((p.name || '').toUpperCase())}</h1>
         <p class="role"><span class="d-only">${esc(p.role)}</span><span class="m-only">${esc(p.mobileRole || 'IT Undergrad · Builder')}</span></p>
         ${p.location ? `<p class="loc">${esc(p.location)}</p>` : ''}
-        <p class="summary"><span class="d-only">${rich(p.summary)}</span><span class="m-only">${esc(p.mobileSummary || 'I like figuring out how things work and building stuff with what I learn.')}</span></p>
+        <p class="summary"><span class="d-only">${rich(p.summary)}</span><span class="m-only">${esc(p.mobileSummary || 'I follow loose wires just to see where they go. Sometimes, something boots up.')}</span></p>
         <div class="hero-actions">
           ${resume ? `<a class="btn primary" href="${esc(resume)}" target="_blank" rel="noopener">Resume ↗</a>` : ''}
           <a class="btn" href="#projects">Projects</a>
