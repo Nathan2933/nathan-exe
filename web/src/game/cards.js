@@ -189,11 +189,42 @@ export function skillsHtml(groups, iconFn, { dense = false } = {}) {
   const GI = ['code', 'globe', 'shield', 'bolt', 'folder'];
   return `<div class="cd-skills${dense ? ' dense' : ''}">${(groups || []).map((g, i) => `<section class="cd-sk-group"><h3 class="cd-h">${ico(GI[i % GI.length], 14)}<span>${esc(g.group)}</span><em>${(g.items || []).length}</em></h3><ul>${(g.items || []).map((s) => {
     const m = String(s).match(/^(.*?)\s*\((learning)\)$/i);
-    return `<li${m ? ' class="is-learning"' : ''}><span class="cd-sk-logo">${iconFn(m ? m[1] : s)}</span><span class="cd-sk-n">${esc(m ? m[1] : s)}</span>${m ? '<i class="cd-learn">Learning</i>' : ''}</li>`;
+    return `<li${m ? ' class="is-learning"' : ''}><span class="cd-sk-logo">${iconFn(m ? m[1] : s)}</span><span class="cd-sk-n">${esc(m ? m[1] : s)}</span>${m ? '<i class="tbx-learn">Learning</i>' : ''}</li>`;
   }).join('')}</ul></section>`).join('')}</div>`;
 }
 
+// ---------- The Toolbox (Guild Hall): skills inventory + experience timeline ----------
+const TB_GROUPS = [
+  ['Languages', 'code', ['Python', 'Java', 'JavaScript', 'TypeScript', 'SQL', 'Solidity']],
+  ['Web', 'globe', ['HTML', 'CSS', 'React', 'Next.js', 'Flask', 'Node.js', 'Tailwind CSS']],
+  ['Data', 'server', ['MySQL', 'MongoDB', 'SQLite']],
+  ['Cloud & Security', 'shield', ['Docker', 'Kubernetes', 'Falco', 'Grafana', 'Audit-event monitoring', 'Ethereum / Ganache']],
+  ['AI', 'chip', ['AI-assisted prototyping', 'Prompt engineering']],
+  ['Tools', 'mallet', ['Git', 'GitHub', 'Reflect', 'BugBug.io', 'Blender', 'Three.js']],
+];
+const tbBase = (s) => String(s).replace(/\s*\((learning)\)$/i, '').trim();
+/** Regroup the content's skills into the Toolbox categories. Every item keeps its own spelling; strays land in Tools. */
+export function toolboxGroups(skills) {
+  const flat = (skills || []).flatMap((g) => g.items || []);
+  const used = new Set();
+  const out = TB_GROUPS.map(([name, icon, want]) => ({ name, icon, items: want.map((w) => flat.find((f) => tbBase(f).toLowerCase() === w.toLowerCase())).filter((f) => f && !used.has(f) && used.add(f)) }));
+  const stray = flat.filter((f) => !used.has(f));
+  if (stray.length) out[out.length - 1].items.push(...stray);
+  return out.filter((g) => g.items.length);
+}
+export function toolboxHtml(c, iconFn) {
+  const list = c.achievements || [], n = achCounts(list);
+  const counts = `<div class="tbx-counts" aria-label="${list.length} achievements">${[['gold', 'trophy', 'Winner'], ['silver', 'medal', 'Runner-up'], ['bronze', 'medal', 'Second runner-up']].map(([t, i, l]) => `<span class="tier-${t}">${ico(i, 16)}<b>${n[t]}</b><em>${l}</em></span>`).join('')}</div>`;
+  const rows = toolboxGroups(c.skills).map((g) => `<section class="tbx-row"><h3 class="tbx-cat">${ico(g.icon, 16)}<span>${esc(g.name)}</span></h3><ul class="tbx-chips">${g.items.map((s) => {
+    const m = String(s).match(/^(.*?)\s*\((learning)\)$/i), name = m ? m[1] : s;
+    return `<li class="tbx-chip${name.length > 15 ? ' wide' : ''}${m ? ' is-learning' : ''}"><span class="tbx-ic">${iconFn(name)}</span><span class="tbx-n">${esc(name)}</span>${m ? '<i class="tbx-learn">Learning</i>' : ''}</li>`;
+  }).join('')}</ul></section>`).join('');
+  const exp = (c.experience || []).map((e) => `<li class="tbx-card"><span class="tbx-logo">${e.logo ? `<img src="${esc(safeUrl(e.logo))}" alt="" loading="lazy">` : esc((e.org || '?')[0])}</span><div class="tbx-tx"><b class="tbx-role">${esc(e.role)}</b><span class="tbx-org">${esc(e.org)}</span>${e.period ? `<span class="tbx-date">${ico('calendar', 11)}${esc(e.period)}</span>` : ''}<p>${rich(e.short || e.summary || '')}</p></div></li>`).join('');
+  return `<div class="cd cd-tbx"><header class="tbx-head"><div class="tbx-titles"><p class="tbx-eyebrow">GUILD HALL / FIELD NOTES</p><h2 id="panel-title">THE TOOLBOX</h2><p class="tbx-sub">Skills collected. Experience earned.</p></div>${counts}</header><div class="tbx-body"><section class="tbx-skills" aria-label="Skills"><h3 class="tbx-h">Skill inventory</h3>${rows}</section><section class="tbx-exp" aria-label="Experience"><h3 class="tbx-h">Experience</h3><ol class="tbx-timeline">${exp}</ol></section></div><footer class="tbx-foot"><button type="button" class="tbx-trophy" data-open-panel="trophies">${ico('trophy', 14)}<span>OPEN TROPHY CASE</span></button><span class="tbx-esc"><kbd>Esc</kbd> · Close</span></footer></div>`;
+}
+
 export function chapterHtml(c, ch, o = {}) {
+  if (o.district === 'signal-tower' && !o.travel) return toolboxHtml(c, o.iconFn);
   const k = ch.card || {}, d = o.district;
   const intro = k.intro?.length ? paras(k.intro) : paras((ch.body || []).slice(0, 1));
   const pts = k.points?.length ? points(k.points) : (ch.highlights || []).length ? points(ch.highlights.map((t) => ({ icon: 'star', text: t }))) : '';
@@ -307,7 +338,7 @@ export { plain };
  */
 export function fitCard(panelBody, tight = false) {
   const root = panelBody.querySelector('.cd');
-  if (!root) return;
+  if (!root || root.classList.contains('cd-tbx')) return;   // the Toolbox is one screen that scrolls on small displays, never paged
   const body = root.querySelector('.cd-body');
   root.querySelectorAll('.pg-off').forEach((e) => e.classList.remove('pg-off'));
   root.querySelector('.cd-pager')?.remove();

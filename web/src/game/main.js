@@ -826,6 +826,7 @@ function interact(it) {
     if (it.id === 'vehicle:moto-shabeer' && state.level === 'island1') return void shabeerRoutine.boardNathanAsPassenger();
     return mount(it);
   }
+  if (it.kind === 'exit') return leaveBuilding(it);
   if (it.kind === 'seat') return sitDown(it);
   if (it.kind === 'npc') return talkTo(it);
   if (it.kind === 'minigame') return startMinigame(it);
@@ -835,6 +836,19 @@ function interact(it) {
   if (it.kind === 'finale') return runFinale(it);
   if (it.kind === 'gym') return interactGym(it);
   openInteractable(it);
+}
+
+/** E · Exit: step out through the doorway. Walking out works the same; this is the reliable second way. */
+function leaveBuilding(it) {
+  const p = player.group.position;
+  let ox = it.outX, oz = it.outZ;
+  if (!solidFree(ox, oz)) { ox = it.x + (it.outX - it.x) * 1.4; oz = it.z + (it.outZ - it.z) * 1.4; }
+  player.heading = Math.atan2(it.outX - it.x, it.outZ - it.z);
+  p.set(ox, heightAt(ox, oz), oz);
+  if (state.prevPlayerPos) state.prevPlayerPos.set(ox, p.y, oz);
+  velocity.set(0, 0, 0);
+  state.nearby = null; $('#prompt').classList.add('hidden');
+  sfx.step?.();
 }
 
 function face(target) {
@@ -4121,6 +4135,7 @@ function updatePrompt() {
     panel: ['Look', best.title],
     group: ['Group', best.title || 'Join in'],
     activity: [best.act === 'vgevents' ? '' : 'Tahiti', best.title],
+    exit: ['', '· Exit'],
     seat: ['Bench', state.seated ? 'Stand up' : 'Sit down'],
     vehicle: [{ horse: 'Horse', moto: best.id === 'vehicle:moto-shabeer' ? "Shabeer's Bike" : 'Motorcycle', scooty: best.label || "Guru's Scooty" }[best.vtype] || 'Bicycle', state.mount ? 'Dismount' : rideLbl ? rideLbl : best.id === 'vehicle:moto-shabeer' ? 'Ride with Shabeer' : isGuruScootyRide ? 'Ride along with Guru' : { horse: 'Ride horse', moto: 'Ride motorcycle', scooty: 'RIDE SCOOTY' }[best.vtype] || 'Ride bicycle'],
     finale: ['Departures', state.save.finale ? 'See the whole island again' : 'End of Origin Isle'],

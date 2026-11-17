@@ -219,6 +219,14 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
       else rb.setFromObject(piece.obj);
       rooms.push({ minX: rb.min.x + 0.4, maxX: rb.max.x - 0.4, minZ: rb.min.z + 0.4, maxZ: rb.max.z - 0.4, api: piece.api });
     }
+    if (piece.exit && piece.api?.isInside) {
+      // "E · Exit": only offered while Nathan is inside, always a reliable way out besides walking through the door
+      piece.obj.updateMatrixWorld(true);
+      const ex = piece.exit, api = piece.api;
+      const inside = new THREE.Vector3(ex.x, 0, ex.z).applyMatrix4(piece.obj.matrixWorld);
+      const out = new THREE.Vector3(ex.outX, 0, ex.outZ).applyMatrix4(piece.obj.matrixWorld);
+      interactables.push({ id: `exit:${type}:${x.toFixed(0)},${z.toFixed(0)}`, kind: 'exit', x: inside.x, z: inside.z, outX: out.x, outZ: out.z, radius: 2.0, visited: true, district: 'plaza', get disabled() { return !api.isInside(); } });
+    }
     if (piece.nightGlow) nightGlow.push(...piece.nightGlow);
     // Night dressing for buildings: lit windows + street lamps (window materials reused so static panes merge cleanly)
     {

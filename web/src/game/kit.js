@@ -187,7 +187,8 @@ export function createBuildingCutawayController({
         // the doorway slab between the interior edge and the threshold: only counts once Nathan is already in
         // (prevents flicker while he pauses on the threshold)
         const edgeZ = doorway ? (doorway.dir >= 0 ? interiorBounds.maxZ : interiorBounds.minZ) : 0;
-        const inSlab = inDoorX && (doorway.dir >= 0 ? (v.z >= edgeZ && v.z <= doorway.thresholdZ) : (v.z <= edgeZ && v.z >= doorway.thresholdZ));
+        const HYST = 0.25;   // leaving needs a step past the threshold, so pausing on it never flips the shell
+        const inSlab = inDoorX && (doorway.dir >= 0 ? (v.z >= edgeZ && v.z <= doorway.thresholdZ + HYST) : (v.z <= edgeZ && v.z >= doorway.thresholdZ - HYST));
 
         if (wasInside) {
           inside = inBox || inSlab;
@@ -229,6 +230,50 @@ export function createBuildingCutawayController({
         const sh = fade > 0.5;
         if (sh !== shadowsOn) { shadowsOn = sh; for (const o of shadowMeshes) o.castShadow = sh; }
       }
+    },
+  };
+}
+
+/**
+ * Doorway marker for an enterable building. It is NOT part of the fading shell, so while the walls and roof
+ * are cut away the frame, threshold, amber glow and a camera-facing "EXIT" label stay visible. It only shows
+ * while Nathan is inside (so it can never appear through other buildings) and fades with the cutaway.
+ * Returns { obj, update, exit } where `exit` is the local-space interaction data for the E · Exit prompt.
+ */
+export function createInteriorExit({ group, cutaway, doorX, doorW, doorH, floorY, wallZ, T, dir = 1 }) {
+  const root = new THREE.Group(); root.userData.dynamic = true; root.visible = false; group.add(root);
+  const wood = new THREE.MeshLambertMaterial({ color: 0x5a3a26, flatShading: true });
+  const amber = new THREE.MeshBasicMaterial({ color: 0xffb347, transparent: true, opacity: 0.95 });
+  const add = (geo, m, x, y, z) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); root.add(o); return o; };
+  const fz = wallZ + dir * (T / 2 + 0.03);                     // just proud of the wall's outer face
+  const postGeo = new THREE.BoxGeometry(0.16, doorH, T + 0.08);
+  for (const s of [-1, 1]) add(postGeo, wood, doorX + s * (doorW / 2 + 0.08), floorY + doorH / 2, wallZ);
+  add(new THREE.BoxGeometry(doorW + 0.32, 0.14, T + 0.08), wood, doorX, floorY + doorH + 0.07, wallZ);
+  add(new THREE.BoxGeometry(doorW, 0.05, 0.5), amber, doorX, floorY + 0.045, wallZ);   // glowing threshold strip
+  // soft warm pool on the floor just inside the door
+  const glow = add(new THREE.PlaneGeometry(doorW * 1.5, 1.7), new THREE.MeshBasicMaterial({ color: 0xffb347, map: poolTex(), transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending }), doorX, floorY + 0.07, wallZ - dir * 0.7);
+  glow.rotation.x = -Math.PI / 2; glow.renderOrder = 2;
+  // pixel label: "EXIT" plus a down arrow, always facing the camera
+  const cv = document.createElement('canvas'); cv.width = 192; cv.height = 64;
+  const draw = () => {
+    const c = cv.getContext('2d'); c.clearRect(0, 0, 192, 64);
+    c.fillStyle = 'rgba(16,45,37,.92)'; c.fillRect(2, 8, 188, 48); c.strokeStyle = '#e7c65a'; c.lineWidth = 3; c.strokeRect(3.5, 9.5, 185, 45);
+    c.font = '700 26px Silkscreen, "Courier New", monospace'; c.textBaseline = 'middle'; c.textAlign = 'center'; c.fillStyle = '#f3e9c8'; c.fillText('EXIT', 74, 33);
+    c.fillStyle = '#ffb347'; c.beginPath(); c.moveTo(134, 24); c.lineTo(158, 24); c.lineTo(158, 34); c.lineTo(166, 34); c.lineTo(146, 48); c.lineTo(126, 34); c.lineTo(134, 34); c.closePath(); c.fill();
+  };
+  draw();
+  const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.LinearFilter;
+  document.fonts?.ready?.then(() => { draw(); tex.needsUpdate = true; });
+  const labelMat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false, depthWrite: false });
+  const label = new THREE.Sprite(labelMat); label.scale.set(1.5, 0.5, 1); label.position.set(doorX, floorY + doorH + 0.55, fz); label.renderOrder = 30; label.userData.dynamic = true; label.raycast = () => {};   // never an occluder or a click target
+  root.add(label);
+  return {
+    obj: root,
+    exit: { x: doorX, z: wallZ - dir * 0.9, outX: doorX, outZ: wallZ + dir * 1.5, dir },
+    update() {
+      const a = THREE.MathUtils.clamp((1 - cutaway.getFade()) * 1.6, 0, 1);   // follows the cutaway; full once the walls are gone
+      root.visible = a > 0.02;
+      labelMat.opacity = a; amber.opacity = 0.95 * a; glow.material.opacity = 0.55 * a;
     },
   };
 }
@@ -1012,6 +1057,7 @@ export const KIT = {
       elements: [sign],
       fadeDuration: 0.065,
     });
+    const doorExit = createInteriorExit({ group: g, cutaway, doorX: DX, doorW: DW, doorH: DH, floorY: B, wallZ: hd - T / 2, T });
 
     const api = {
       obj: g,
@@ -1045,8 +1091,10 @@ export const KIT = {
       ],
       floors: [{ x: 0, z: 0, w: W - 2 * T, d: D - 2 * T, h: B }, { x: DX, z: hd, w: DW, d: 1.0, h: B }],
       nightGlow: pools,
+      exit: doorExit.exit,
       animate: (t, state) => {
         cutaway.update(t, state);
+        doorExit.update();
       },
     };
   },
@@ -2475,6 +2523,7 @@ export const KIT = {
       elements: [sign, signBits],
       fadeDuration: 0.065,
     });
+    const doorExit = createInteriorExit({ group: g, cutaway, doorX: 0, doorW: DOOR, doorH: H - 0.7, floorY: B, wallZ: hd - T / 2, T });
 
     return {
       obj: g,
@@ -2490,8 +2539,10 @@ export const KIT = {
       ],
       floors: [{ x: 0, z: 0, w: W - 2 * T, d: D - 2 * T, h: B }, { x: 0, z: hd + 0.1, w: DOOR, d: 0.8, h: B }],
       nightGlow: pools,
+      exit: doorExit.exit,
       animate: (t, state) => {
         cutaway.update(t, state);
+        doorExit.update();
       },
     };
   },
@@ -3459,6 +3510,7 @@ export const KIT = {
       elements: [sign, signBits],
       fadeDuration: 0.065,
     });
+    const doorExit = createInteriorExit({ group: g, cutaway, doorX: 0, doorW: DOOR, doorH: H - 0.8, floorY: B, wallZ: hd - T / 2, T });
 
     const api = {
       obj: g,
@@ -3477,8 +3529,10 @@ export const KIT = {
       ],
       floors: [{ x: 0, z: 0, w: W - 2 * T, d: D - 2 * T, h: B }, { x: 0, z: hd + 0.15, w: DOOR, d: 0.7, h: B }],
       nightGlow: [entryPool],
+      exit: doorExit.exit,
       animate: (t, state) => {
         cutaway.update(t, state);
+        doorExit.update();
       },
     };
   },
