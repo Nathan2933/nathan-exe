@@ -88,13 +88,13 @@ export function createTour(ctx) {
     return ok;
   }
 
-  async function start() {
+  async function start(at = 0) {
     if (moving) return;
     hideModal();
     offered = true;
     const was = active, prev = index;
     active = true;
-    if (await visit(0)) return;
+    if (await visit(Math.max(0, Math.min(lastIndex, at | 0)))) return;
     active = was; index = prev;
     if (active) renderCard();
   }
@@ -148,7 +148,7 @@ export function createTour(ctx) {
       $('#recruiter-bar')?.classList.remove('open');
       $('#menu-toggle')?.setAttribute('aria-expanded', 'false');
       if (!state.started || moving) return;
-      start();
+      start(0);
     });
   }
 

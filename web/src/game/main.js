@@ -20,7 +20,8 @@ import { conversationSystem, CANONICAL_MAP } from './conversation.js';
 import { createCharacters } from './characters.js';
 import { runLift, runTempo } from './minigame.js';
 import { loadSave, writeSave, resetSave, addUnique, formatTime } from './save.js';
-import { createTour, findStopInteractable } from './tour.js';
+import { createTour, findStopInteractable, TOUR_STOPS } from './tour.js';
+import { createNathanIntro } from './nathan-intro.js';
 import { loadContent, esc, safeUrl, chapterFor, DISTRICTS, MAIN_DISTRICTS } from '../shared/content.js';
 import { aboutHtml, projectHtml, projectSlides, chapterHtml, memoryHtml, trophiesHtml, questsHtml, skilltreeHtml, profileHtml, educationListHtml, timetableHtml, fitCard, ico, genericHtml, splitTitle, openLightbox, installPanelModal } from './cards.js';
 
@@ -466,6 +467,7 @@ async function initInner() {
   await yieldFrame();
   world = buildWorld(scene, state.content, map, overrides);
   nav = makeNav();
+  placeAbandonedProject();
   setLoad('world', 0.7);
   await yieldFrame();
   const s = state.save;
@@ -480,6 +482,7 @@ async function initInner() {
   setLoad('world', 1);
   setupUI();
   tour.bind();
+  $('#nav-intro')?.addEventListener('click', (e) => { e.preventDefault(); $('#recruiter-bar')?.classList.remove('open'); if (state.started && !state.nathanSays) { closePanel(); intro.replay(); } });
   setupLabels();
   setupMinimap();
   resize();
@@ -569,7 +572,7 @@ function setupUI() {
   window.addEventListener('keydown', (e) => {
     if (e.key === 'F3' && !e.repeat) { e.preventDefault(); toggleDebug(); return; }
     if (state.minigame && mgRoot()?.onkey && !e.repeat) { const k = e.key.length === 1 ? e.key.toLowerCase() : e.key; if (k.startsWith('Arrow') || k === ' ' || k === 'e' || k === 'Enter') { e.preventDefault(); mgRoot().onkey(k); return; } }
-    if (!state.started || state.minigame || state.ko || state.flightStarting) return;
+    if (!state.started || state.minigame || state.ko || state.flightStarting || state.nathanSays) return;
     if (e.target.closest?.('input, textarea, select, [contenteditable="true"]')) return;
     if (state.gym) {
       const k = e.key.toLowerCase();
@@ -720,6 +723,7 @@ function setupUI() {
       return;
     }
     if (name === 'tahiti-photo') {
+      intro.discover('photo');
       dialogue.close();
       conversationSystem.recordEvent(state.save, 'shabesh', 'photo_session');
       conversationSystem.recordEvent(state.save, 'sathesh', 'photo_session');
@@ -884,8 +888,10 @@ function wireCard(root = $('#panel-body')) {
     if (p) openLightbox(projectSlides(p), +b.dataset.slide || 0);
   }));
   root.querySelectorAll('[data-open-panel]').forEach((b) => b.addEventListener('click', () => {
-    const it = world.interactables.find((i) => i.kind === 'panel' && i.panel === b.dataset.openPanel);
-    if (it) openInfoPanel(it);
+    const want = b.dataset.openPanel, alias = want === 'trophies' ? 'achievements' : want;
+    const it = world.interactables.find((i) => i.kind === 'panel' && (i.panel === want || i.panel === alias))
+      || { kind: 'panel', panel: want, district: 'signal-tower', x: player.group.position.x, z: player.group.position.z, radius: 99, visited: true };   // always opens, even from a tour stop or another island
+    openInfoPanel(it);
   }));
   root.querySelectorAll('[data-dz="start"]').forEach((b) => b.addEventListener('click', () => {
     closePanel();
@@ -931,6 +937,7 @@ function openInteractable(it) {
 
   // Garage exhibits open The Builder chapter (the Garage has no separate chapter spot)
   const chapterId = it.kind === 'chapter' ? it.district : it.kind === 'project' ? 'garage' : null;
+  if (chapterId) intro.cardOpened(chapterId);
   if (chapterId && addUnique(state.save.chapters, chapterId)) {
     if (it.kind === 'chapter') markVisited(it);
     persist();
@@ -976,6 +983,28 @@ function showPanel(bar, html, it = null, cls = '') {
   panelModal?.focus();
 }
 
+/** Optional discovery: a dusty crate behind the Garage with Nathan's unshipped idea (text lives in content.json intro.abandoned). */
+function placeAbandonedProject() {
+  if (state.level !== 'island1' || !world) return;
+  const stations = world.interactables.filter((i) => i.kind === 'project');
+  if (!stations.length) return;
+  const cx = stations.reduce((a, s) => a + s.x, 0) / stations.length, cz = stations.reduce((a, s) => a + s.z, 0) / stations.length;
+  let spot = null;
+  for (let r = 7; r < 16 && !spot; r += 1) for (let a = 0; a < Math.PI * 2; a += Math.PI / 8) {
+    const x = cx + Math.cos(a) * r, z = cz + Math.sin(a) * r;
+    if (solidFree(x, z) && solidFree(x + 0.8, z) && solidFree(x - 0.8, z) && solidFree(x, z + 0.8) && solidFree(x, z - 0.8)) { spot = { x, z }; break; }
+  }
+  if (!spot) return;
+  const g = new THREE.Group(); g.userData.dynamic = true;
+  const box = (w, h, d, c, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshLambertMaterial({ color: c, flatShading: true })); m.position.set(x, y + h / 2, z); m.castShadow = true; g.add(m); return m; };
+  box(0.9, 0.6, 0.7, 0x8a5a36, 0, 0, 0); box(0.94, 0.06, 0.74, 0x5a3a26, 0, 0.6, 0);
+  box(0.5, 0.32, 0.04, 0x2a2440, 0.05, 0.66, -0.1).rotation.x = -0.4;       // a cracked old monitor on top
+  box(0.42, 0.24, 0.02, 0x4a6a8a, 0.05, 0.7, -0.07).rotation.x = -0.4;
+  box(0.05, 0.9, 0.05, 0x5a3a26, -0.6, 0, 0.3); box(0.5, 0.3, 0.03, 0xf3e9c8, -0.6, 0.75, 0.32);   // "WIP" sign post
+  g.position.set(spot.x, heightAt(spot.x, spot.z), spot.z); world.root.add(g);
+  world.interactables.push({ id: 'panel:abandoned', kind: 'panel', panel: 'abandoned', title: 'Dusty crate', district: 'garage', x: spot.x, z: spot.z, radius: 1.6, visited: false });
+}
+
 function closePanel() {
   stopPanelMedia();
   if (!state.panelOpen) return;
@@ -983,6 +1012,7 @@ function closePanel() {
   sfx.close();
   state.panelOpen = null;
   state.nearby = null; // re-evaluate prompt next frame
+  intro.cardClosed();
 }
 
 async function talkTo(it) {
@@ -1196,6 +1226,7 @@ function openInfoPanel(it) {
     skills: () => skilltreeHtml(c, skillIcon), skilltree: () => skilltreeHtml(c, skillIcon),
     achievements: () => trophiesHtml(c.achievements || []), trophies: () => trophiesHtml(c.achievements || []),
     experience: () => questsHtml(c), quests: () => questsHtml(c),
+    abandoned: () => { intro.discover('project'); const a = c.intro?.abandoned || {}; return genericHtml(`<p class="eyebrow">Behind the Garage</p><h2 id="panel-title">${esc(a.title || 'An abandoned project')}</h2><p>${esc(a.what || '')}</p><p><b>Why it never shipped:</b> ${esc(a.why || '')}</p><p class="cd-small">${esc(a.note || '')}</p>`); },
     profile: () => profileHtml(c, portraitURL(), ['lake-park', 'winter-campus', 'monsoon-campus'].map((d) => chapterFor(c, d)).filter(Boolean)),
   };
   if (NEW[it.panel]) {
@@ -1798,6 +1829,7 @@ async function switchLevel(name) {
   map = m; state.level = name;
   world = buildWorld(scene, state.content, map, kitOverrides);
   nav = makeNav();
+  placeAbandonedProject();
   railPts = null;
   world.interactables.forEach((it) => { if (isDone(it)) markVisited(it, true); });
   const jet = world.apis.private_jet;
@@ -2742,7 +2774,7 @@ function start() {
   document.body.classList.add('started');
   setSound(!!look.sound);
   if (state.level !== 'tahiti') setTimeout(() => toast('ISLAND 01 · ORIGIN ISLE'), 900);
-  tour.offerWhenReady();
+  intro.whenReady(() => !!state.panelOpen || dialogue.open || !!state.minigame || !!state.cine || !!state.flightStarting);
 }
 
 const _camR = new THREE.Vector3(), _camU = new THREE.Vector3();
@@ -2772,7 +2804,7 @@ function update(dt, t) {
     }
     return;
   }
-  const frozen = !!state.minigame || !!state.groupScene || !!state.gym;
+  const frozen = !!state.minigame || !!state.groupScene || !!state.gym || !!state.nathanSays;
   if (state.cine) runCine(dt);
 
   if (state.seated && (kx || kz || state.path.length)) standUp();
@@ -2949,6 +2981,7 @@ function update(dt, t) {
   placePrompt();
   placeHints();
   tour.update();
+  intro.update(dt);
   if (state.started && !hintHidden && (t > 14 || state.save.chapters.length)) { hintHidden = true; $('#hint').classList.add('faded'); }
 
   if (state.save.chapters.length !== _lastChapLen) {
@@ -4154,8 +4187,9 @@ const tour = createTour({
   goTo: tourGoTo,
   busy: () => !state.started || state.intro < 1 || !!state.panelOpen || dialogue.open || !!state.minigame || !!state.cine || !!state.gym
     || !!state.groupScene || !!state.ko || !!state.choosing || !!state.visiting || !!state.flightStarting || !!state.volley || !!state.hoop
-    || !$('#bigmap').classList.contains('hidden') || !!state.passengerOf,
+    || !$('#bigmap').classList.contains('hidden') || !!state.passengerOf || !!state.nathanSays,
 });
+const intro = createNathanIntro({ state, sfx, toast: (m) => toast(m), tour, stops: TOUR_STOPS, touch: matchMedia('(pointer: coarse)').matches });
 
 // ---------------- Tahiti: companion AI, activities and events ----------------
 const mgRoot = () => $('#minigame');
@@ -4388,7 +4422,7 @@ if (import.meta.env.DEV) {
   window.__game = {
     fitCard, state, player, camera, sun, scene, camTarget, get world() { return world; }, renderer, dialogue, nightSettings: NIGHT_SETTINGS,
     step(frames = 60) { for (let i = 0; i < frames; i++) update(1 / 60, clock.elapsedTime + i / 60); retro.render(scene, camera); },
-    tap: handleTap, walkTo, interact, knockout, trainCrash: trainCollisionDeath, respawn: respawnNathanAfterDeath, startFlight, skipCine, switchLevel, get map() { return map; }, get nav() { return nav; }, tahiti: () => tahiti, guru: () => guruRoutine, tour, keys,
+    get intro() { return intro; }, tap: handleTap, walkTo, interact, knockout, trainCrash: trainCollisionDeath, respawn: respawnNathanAfterDeath, startFlight, skipCine, switchLevel, get map() { return map; }, get nav() { return nav; }, tahiti: () => tahiti, guru: () => guruRoutine, tour, keys,
   };
 }
 
