@@ -4161,7 +4161,7 @@ const tour = createTour({
     || !!state.groupScene || !!state.ko || !!state.choosing || !!state.visiting || !!state.flightStarting || !!state.volley || !!state.hoop
     || !$('#bigmap').classList.contains('hidden') || !!state.passengerOf || !!state.nathanSays,
 });
-const intro = createNathanIntro({ state, sfx, getPos: () => (state.started && !state.passengerOf && !state.mount ? player.group.position : null), touch: () => document.body.classList.contains('touch-ui-on') });
+const intro = createNathanIntro({ state, sfx, getPos: () => (state.started && !state.passengerOf && !state.mount ? player.group.position : null), touch: () => document.body.classList.contains('touch-ui-on'), onFirstDone: () => { if (!tour.active) tour.start(0); } });
 
 // ---------------- Tahiti: companion AI, activities and events ----------------
 const mgRoot = () => $('#minigame');

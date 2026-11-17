@@ -35,13 +35,13 @@ const KEY_STEPS = [
   { face: 'grin', line: 'Hey, I am Nathan. Walk me around.', keys: ['W', 'A', 'S', 'D'], done: (st) => st.walked > 4 },
   { face: 'proud', line: 'Hold Shift while walking to run.', keys: ['Shift'], done: (st) => st.ran > 1.2 },
   { face: 'oops', line: 'Jump!', keys: ['Space'], done: (st) => st.hit.has('Space') },
-  { face: 'think', line: 'Glowing circles are things to open. Stand on one and press E.', keys: ['E'], done: (st) => st.hit.has('E') },
+  { face: 'think', line: 'See a glowing circle? Walk onto it and press E, or just click the circle. That opens my story.', keys: ['E', 'Click'], done: (st) => st.hit.has('E') || st.opened },
   { face: 'smile', line: 'M opens the map. H shows every control.', keys: ['M', 'H'], done: (st) => st.hit.has('M') || st.hit.has('H') },
 ];
 const TOUCH_STEPS = [
   { face: 'grin', line: 'Hey, I am Nathan. Drag the stick to walk me around.', glow: '#tc-stick', done: (st) => st.walked > 4 },
   { face: 'oops', line: 'Tap Jump!', glow: '#tc-jump', done: (st) => st.hit.has('tap:tc-jump') },
-  { face: 'think', line: 'Glowing circles are things to open. Stand on one and tap USE.', glow: '#tc-act', done: (st) => st.hit.has('tap:tc-act') },
+  { face: 'think', line: 'See a glowing circle? Walk onto it and tap USE, or just tap the circle. That opens my story.', glow: '#tc-act', done: (st) => st.hit.has('tap:tc-act') || st.opened },
 ];
 const CAP_OF = { w: 'W', a: 'A', s: 'S', d: 'D', arrowup: 'W', arrowleft: 'A', arrowdown: 'S', arrowright: 'D', shift: 'Shift', ' ': 'Space', e: 'E', m: 'M', h: 'H' };
 
@@ -55,7 +55,7 @@ export function createNathanIntro(ctx) {
   document.body.append(root);
   const face = root.querySelector('.nc-face'), text = root.querySelector('.nc-text'), keysEl = root.querySelector('.nc-keys');
 
-  let steps = null, i = -1, st = null, last = null, glowEl = null, active = false, endT = 0;
+  let steps = null, i = -1, st = null, last = null, glowEl = null, active = false, endT = 0, firstVisit = false;
   const reduce = () => state.reduceMotion || matchMedia('(prefers-reduced-motion: reduce)').matches;
   const capOf = (key) => CAP_OF[String(key).toLowerCase()] || CAP_OF[key];
 
@@ -76,13 +76,14 @@ export function createNathanIntro(ctx) {
     show(0);
   }
   function stop() {
+    if (active && endT <= 0 && firstVisit) { firstVisit = false; setTimeout(() => ctx.onFirstDone?.(), 300); }   // skipped: still offer the tour
     active = false; root.classList.add('hidden'); document.body.classList.remove('nc-on');
     glowEl?.classList.remove('nc-glow'); glowEl = null;
     sset(WELCOME_KEY, 'seen');
   }
   function finish() {
     glowEl?.classList.remove('nc-glow'); glowEl = null;
-    drawFace(face, 'proud'); text.textContent = "That's everything. Go explore, the island is yours."; keysEl.innerHTML = '';
+    drawFace(face, 'proud'); text.textContent = firstVisit ? "That's everything. Now let me show you around: five quick stops." : "That's everything. Go explore, the island is yours."; keysEl.innerHTML = '';
     root.classList.add('done'); sfx.chapter?.(); endT = 3.2;
     sset(WELCOME_KEY, 'seen');
   }
@@ -102,20 +103,22 @@ export function createNathanIntro(ctx) {
     st.hit.add(cap); press(cap, true);
   }, true);
   addEventListener('keyup', (e) => { const cap = capOf(e.key); if (cap) press(cap, false); }, true);
-  addEventListener('pointerdown', (e) => { if (!active) return; const b = e.target.closest?.('#tc-jump, #tc-act'); if (b) st.hit.add(`tap:${b.id}`); }, true);
+  addEventListener('pointerdown', (e) => { if (!active) return; const b = e.target.closest?.('#tc-jump, #tc-act'); if (b) st.hit.add(`tap:${b.id}`); if (e.target.tagName === 'CANVAS') press('Click', true); }, true);
+  addEventListener('pointerup', () => { if (active) press('Click', false); }, true);
   root.querySelector('.nc-skip').addEventListener('click', stop);
 
   return {
     /** First visit only: wait until the game is playable, then start coaching. */
     whenReady(busy) {
       if (sget(WELCOME_KEY) === 'seen') return;
-      const tick = () => { if (state.started && state.bootWarmed && state.intro >= 1 && !busy()) start(); else setTimeout(tick, 400); };
+      const tick = () => { if (state.started && state.bootWarmed && state.intro >= 1 && !busy()) { firstVisit = true; start(); } else setTimeout(tick, 400); };
       setTimeout(tick, 800);
     },
     replay() { start(); },
     update(dt) {
       if (!active) return;
-      if (endT > 0) { endT -= dt; if (endT <= 0) stop(); return; }
+      if (endT > 0) { endT -= dt; if (endT <= 0) { stop(); if (firstVisit) { firstVisit = false; ctx.onFirstDone?.(); } } return; }
+      if (state.panelOpen) st.opened = true;
       const p = ctx.getPos();
       if (p && last) {
         const d = Math.hypot(p.x - last.x, p.z - last.z);
