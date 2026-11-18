@@ -46,7 +46,7 @@ export async function drawStoryCard(r, { artBase = '/reviews/art/', coverSrc = '
   g.fillStyle = 'rgba(243,234,211,.45)'; g.fillRect(175, 184, W - 350, 2);
 
   // framed poster (hangs on the wall under a small lamp)
-  const fx = 517, fy = 236, fw = 505, fh = 640;
+  const fx = 517, fy = 236, fw = 505, fh = 580;
   const lamp = g.createRadialGradient(fx + fw / 2, fy - 4, 4, fx + fw / 2, fy - 4, 330); lamp.addColorStop(0, 'rgba(243,234,211,.20)'); lamp.addColorStop(1, 'rgba(243,234,211,0)');
   g.fillStyle = lamp; g.fillRect(fx - 120, fy - 40, fw + 240, fh + 120);
   g.fillStyle = IV; g.fillRect(fx + fw / 2 - 70, fy - 22, 140, 12);
@@ -68,7 +68,7 @@ export async function drawStoryCard(r, { artBase = '/reviews/art/', coverSrc = '
 
   // text column (live data)
   const tx = 560, tw = 460; g.textAlign = 'left'; g.shadowColor = 'rgba(0,0,0,.55)'; g.shadowBlur = 8;
-  let y = 968, ts = 64; g.fillStyle = IV;
+  let y = fy + fh + 90, ts = 64; g.fillStyle = IV;
   const title = String(r.title || '').toUpperCase();
   let tl = wrap(title, pix(ts), tw, 3);
   const widest = (ls) => Math.max(...ls.map((l) => g.measureText(l).width));
@@ -82,13 +82,27 @@ export async function drawStoryCard(r, { artBase = '/reviews/art/', coverSrc = '
     g.fillStyle = 'rgba(243,234,211,.66)'; g.font = sans(30, 500); g.fillText(r.creator ? who : 'Year', tx, y + 52);
     g.fillStyle = IV; g.font = sans(40, 700); const ml = wrap(meta, sans(40, 700), tw, 2); ml.forEach((l, i) => g.fillText(l, tx, y + 100 + i * 48)); y += 100 + (ml.length - 1) * 48;
   }
-  y += 38; g.fillStyle = 'rgba(243,234,211,.5)'; g.fillRect(tx, y, tw, 2);
-  const n = clampRating(r.rating); y += 82; g.font = '56px sans-serif';
+  y += 30; g.fillStyle = 'rgba(243,234,211,.5)'; g.fillRect(tx, y, tw, 2);
+  const n = clampRating(r.rating); y += 76; g.font = '56px sans-serif';
   for (let i = 0; i < 5; i++) { g.fillStyle = i < n ? IV : 'rgba(243,234,211,.22)'; g.fillText('★', tx + i * 58, y); }
   g.fillStyle = IV; g.font = pix(52); g.textAlign = 'right'; g.fillText(`${n}/5`, tx + tw, y); g.textAlign = 'left';
-  y += 34; g.fillStyle = 'rgba(243,234,211,.5)'; g.fillRect(tx, y, tw, 2);
-  g.fillStyle = IV; g.font = sans(38, 500, 'italic'); y += 62;
-  for (const l of wrap(r.oneliner || excerptOf(r.body, 150), sans(38, 500, 'italic'), tw, 3)) { g.fillText(l, tx, y); y += 52; }
+  y += 30; g.fillStyle = 'rgba(243,234,211,.5)'; g.fillRect(tx, y, tw, 2);
+  y += 26;
+  const one = String(r.oneliner || '').trim();
+  const bodyTxt = excerptOf(r.body, 220);
+  if (one) {
+    // the one-liner: bigger than the description, plain (shrinks if a long word would overflow)
+    g.shadowColor = 'rgba(0,0,0,.55)'; g.shadowBlur = 8;
+    let fs = 44, ol, f1;
+    for (;; fs -= 2) { f1 = sans(fs, 700, 'italic'); ol = wrap(one, f1, tw, 3); g.font = f1; if (fs <= 22 || Math.max(...ol.map((l) => g.measureText(l).width)) <= tw) break; }
+    g.fillStyle = IV; g.font = f1; const lh1 = Math.round(fs * 1.25);
+    ol.forEach((l, i) => g.fillText(l, tx, y + fs + i * lh1));
+    y += ol.length * lh1 + 26;
+  }
+  // then the descriptive text, smaller, as much as fits above the link slot
+  const f2 = sans(28, 500); const room = Math.floor((1500 - y) / 38);
+  g.shadowColor = 'rgba(0,0,0,.55)'; g.shadowBlur = 8; g.fillStyle = 'rgba(243,234,211,.9)';
+  if (room >= 1) for (const l of wrap(one ? bodyTxt : excerptOf(r.body, 150), one ? f2 : sans(38, 500, 'italic'), tw, Math.min(one ? room : 3, 6))) { g.font = one ? f2 : sans(38, 500, 'italic'); g.fillText(l, tx, y + 30); y += one ? 38 : 52; }
   g.shadowBlur = 0; g.shadowColor = 'transparent';
 
   // link-sticker slot: Instagram can't make an image tappable, so leave a clear spot for its Link sticker

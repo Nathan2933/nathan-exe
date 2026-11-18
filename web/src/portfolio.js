@@ -39,7 +39,7 @@ const JOURNEY_IMG = { montfort: 'assets/journey/montfort.png', tce: 'assets/jour
 function section(id, file, title, body, extraCls = '') {
   return `
     <section id="${id}" class="window section ${extraCls}" aria-labelledby="${id}-h">
-      <div class="window-bar"><span class="title">${esc(file)}</span></div>
+      ${file ? `<div class="window-bar"><span class="title">${esc(file)}</span></div>` : ''}
       <div class="section-body"><h2 id="${id}-h">${esc(title)}</h2>${body}</div>
     </section>`;
 }
@@ -449,7 +449,7 @@ function reviewStars(n) {
 function reviewsSection(list) {
   if (!list.length) return '';
   const base = import.meta.env.BASE_URL || '/';
-  return section('reviews', 'reviews.log', 'Latest Reviews', `
+  return section('reviews', '', 'Latest Reviews', `
     <p class="sub">Films, shows, music, books and games, rated out of five.</p>
     <ul class="rv-strip">${list.slice(0, 4).map((x) => `
       <li><a class="rv-tile" href="${esc(base)}reviews/${esc(x.slug)}/">
