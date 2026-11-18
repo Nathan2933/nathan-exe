@@ -16,7 +16,7 @@ function notice(msg) {
 const ext = (url) => (String(url).startsWith('mailto:') ? '' : ' target="_blank" rel="noopener"');
 const chips = (items, cls = 'chips') => (items?.length ? `<ul class="${cls}">${items.map((s) => `<li>${esc(s)}</li>`).join('')}</ul>` : '');
 const TECH_RE = /\b(Kubernetes|Falco|Grafana|Docker|Python|Solidity|Ethereum|Ganache|Flask|Next\.js|TypeScript|Tailwind CSS|Three\.js|Blender|Reflect|BugBug\.io|React|Node\.js|MongoDB|MySQL|SQLite|Tkinter)\b/g;
-const KEY_RE = /\b((?:19|20)\d\d|Winner|Runner-up|Second runner-up|Hack Odyssey 2K25|Aratro|CauverySite|TCE Event Scheduler|NATHAN\.EXE|Hospital Management System)\b/g;
+const KEY_RE = /\b((?:19|20)\d\d|Winner|Runner-up|Second runner-up|Hack Odyssey 2K25|Aratro|CauverySite|TCE Event Scheduler|NATHAN\.EXE|Hospital Management System|Hewlett Packard Enterprise|HPE|SEZ US|TCE IT Association|IT Association|Office Bearer|Entrepreneurship Cell|E-Cell|technical and cultural events|flagship events|security logging and monitoring|web and mobile)\b/g;
 const NUM_RE = /\b(\d[\d,]*\+\s+(?:participants|attendees|students|teams|users))/g;
 /** Escapes text, then adds restrained emphasis: navy bold keys, teal tech, yellow for meaningful numbers. */
 function rich(text) {
@@ -370,7 +370,22 @@ function terminal(c) {
   }).join('');
   return section('contact', 'comm_terminal.exe', 'Communication Terminal', `
     ${ch ? `<h3 class="sub-h">${esc(ch.title)}</h3>${paras(ch.body)}` : ''}
-    <ul class="term">${rows}${resume ? `<li><span class="k">RESUME</span><a href="${esc(resume)}" target="_blank" rel="noopener">resume.pdf ↗</a></li>` : ''}</ul>`, 'terminal');
+    <ul class="term">${rows}${resume ? `<li><span class="k">RESUME</span><a href="${esc(resume)}" target="_blank" rel="noopener">resume.pdf ↗</a></li>` : ''}</ul>
+    <form class="contact-form" id="contact-form" name="contact" method="POST" action="/" novalidate>
+      <div class="cf-bar"><span class="cf-dot" aria-hidden="true"></span>new_message.msg</div>
+      <h3 class="cf-title">Send me a message</h3>
+      <input type="hidden" name="form-name" value="contact">
+      <p class="cf-hp" aria-hidden="true"><label>Leave this empty <input name="bot-field" tabindex="-1" autocomplete="off"></label></p>
+      <div class="cf-grid">
+        <label class="cf-row"><span>&gt; NAME</span><input name="name" type="text" required maxlength="100" autocomplete="name" placeholder="Your name"></label>
+        <label class="cf-row"><span>&gt; EMAIL</span><input name="email" type="email" required maxlength="200" autocomplete="email" placeholder="you@example.com"></label>
+      </div>
+      <label class="cf-row"><span>&gt; MESSAGE</span><textarea name="message" rows="5" required maxlength="3000" placeholder="Tell me about your project, role or idea…"></textarea></label>
+      <div class="cf-foot">
+        <button type="submit" class="btn primary">▶ Send message</button>
+        <p class="cf-status" id="cf-status" role="status" aria-live="polite"></p>
+      </div>
+    </form>`, 'terminal');
 }
 
 // 8x8 retro pixel icons for the project list (palette: navy / teal / sun / orange / cream)
@@ -446,6 +461,7 @@ function render(c) {
   main.append(noticeEl);
   main.insertAdjacentHTML('beforeend', characterFile(c) + journey(c) + missions(c, sorted) + skillTree(c) + careerLog(c) + terminal(c));
   wireSkillTabs();
+  wireContact();
   loadShots();
   main.removeAttribute('aria-busy');
 
@@ -504,6 +520,27 @@ function wireMissions(c) {
   });
 }
 
+
+// Contact form: posts to the /api/contact serverless function (web/api/contact.js), which emails the message via Resend
+function wireContact() {
+  const form = document.getElementById('contact-form');
+  if (!form) return;
+  const status = document.getElementById('cf-status');
+  const btn = form.querySelector('button[type="submit"]');
+  const say = (msg, kind) => { status.textContent = msg; status.dataset.kind = kind || ''; };
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!form.checkValidity()) { form.reportValidity(); return; }
+    btn.disabled = true; say('Sending…');
+    try {
+      const res = await fetch('/api/contact', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.fromEntries(new FormData(form))) });
+      if (!res.ok) throw new Error(res.status);
+      form.reset(); say('Message sent. Thanks, I will reply soon.', 'ok');
+    } catch {
+      say('Could not send. Please email nathanjerald293@gmail.com directly.', 'err');
+    } finally { btn.disabled = false; }
+  });
+}
 
 function wireTrophies() {
   const grid = document.getElementById('trophy-grid');
