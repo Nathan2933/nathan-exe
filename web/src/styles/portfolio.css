@@ -830,7 +830,7 @@ body.portfolio .career-card .row-head h3 { font-weight: 700 !important; }
   #projects .sub { margin: 0 0 8px; font-size: 11px; }
   #projects .mission-grid { flex: 1; gap: clamp(10px, 1.6svh, 16px) 16px; grid-template-rows: repeat(2, minmax(0, 1fr)); }
   #projects .mission { grid-row: auto; grid-template-rows: auto auto auto minmax(0, 1fr) auto auto; min-height: 0; }
-  #projects .mission .m-shot { aspect-ratio: auto; height: clamp(60px, 12svh, 120px); }
+  #projects .mission .m-shot { aspect-ratio: auto; height: clamp(80px, 17svh, 180px); }
   #projects .mission .m-head { padding-top: 8px; }
   #projects .mission h3 { margin-top: 4px; margin-bottom: 4px; font-size: clamp(12px, 1.9svh, 15px); }
   #projects .mission .m-pitch { font-size: clamp(10.5px, 1.5svh, 12px); line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
@@ -1152,3 +1152,9 @@ body.portfolio .career-card .row-head h3 { font-weight: 700 !important; }
 .tour-invite.is-instant *, .tour-invite.is-instant { transition: none !important; }
 .tour-invite.is-instant .ti-dim { display: none; }
 @media (max-width: 560px) { .ti-nathan { width: 80px; height: 80px; } .ti-bubble { margin-bottom: 20px; } .ti-bubble p { font-size: 12px; } }
+
+/* ---- project card images: whole picture always visible, blurred copy of it fills the spare space ---- */
+.m-frame { position: relative; overflow: hidden; background: var(--navy); }
+.m-frame img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.m-frame .m-bg { object-fit: cover; filter: blur(14px) brightness(.6) saturate(1.2); transform: scale(1.15); }
+.m-frame .m-img { object-fit: contain; }

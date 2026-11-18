@@ -196,7 +196,7 @@ function missionCard(c, p, i) {
   ].filter(Boolean).join('');
   return `
     <article class="mission${p.featured ? ' is-featured' : ''}" data-project="${esc(p.id)}">
-      ${p.image ? `<img class="m-shot" src="${esc(safeUrl(p.image))}" alt="" loading="lazy">` : `<div class="m-shot m-ph" aria-hidden="true"><span>M-${String(i + 1).padStart(2, '0')}</span></div>`}
+      ${p.image ? `<div class="m-shot m-frame" aria-hidden="true"><img class="m-bg" src="${esc(safeUrl(p.image))}" alt="" loading="lazy"><img class="m-img" src="${esc(safeUrl(p.image))}" alt="" loading="lazy"></div>` : `<div class="m-shot m-ph" aria-hidden="true"><span>M-${String(i + 1).padStart(2, '0')}</span></div>`}
       <div class="m-body">
         <div class="m-head">
           <span class="m-id">MISSION ${String(i + 1).padStart(2, '0')}${p.featured ? ' · FEATURED' : ''}</span>
