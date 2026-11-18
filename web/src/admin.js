@@ -1,4 +1,5 @@
 import { loadContent, DISTRICTS } from './shared/content.js';
+import { mountReviews } from './admin-reviews.js';
 
 // Schema-driven editor for public/data/content.json.
 // Field types: text, textarea, url, file (url + upload), checkbox, select, lines (string[] one per line), tags (string[] comma separated).
@@ -143,6 +144,7 @@ const SCHEMA = [
       { key: 'id', label: 'ID (used for the Tiled route)', type: 'text' },
     ],
   },
+  { key: '__reviews', label: 'Reviews', type: 'reviews' },
   { key: '__raw', label: 'Raw JSON', type: 'raw' },
 ];
 
@@ -196,7 +198,12 @@ function render() {
   ed.append(el('h1', {}, sec.label));
   if (sec.note) ed.append(el('p', { class: 'note' }, sec.note));
 
-  if (sec.type === 'object') {
+  if (sec.type === 'reviews') {
+    ed.append(el('p', { class: 'note' }, 'Write, preview and publish reviews. Drafts and covers stay private on this computer until you publish.'));
+    const host = el('div', { class: 'rv-admin' });
+    ed.append(host);
+    mountReviews(host, setStatus);
+  } else if (sec.type === 'object') {
     data[sec.key] ||= {};
     ed.append(el('div', { class: 'card' }, ...sec.fields.map((f) => field(f, data[sec.key]))));
   } else if (sec.type === 'array') {

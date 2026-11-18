@@ -36,6 +36,12 @@
   [headers.values]
     Cache-Control = "no-cache"
 
+# /reviews without the trailing slash goes to the reviews page
+[[redirects]]
+  from = "/reviews"
+  to = "/reviews/"
+  status = 301
+
 # The admin is local-only: never serve it from the live site
 [[redirects]]
   from = "/admin*"
@@ -48,3 +54,21 @@
   to = "/404.html"
   status = 404
   force = true
+
+# ---- security headers (all pages) ----
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "SAMEORIGIN"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=()"
+
+# ---- review pages: always revalidate, so an unpublished review stops being served as soon as the site is redeployed ----
+# Static pages with no third-party scripts, so a strict CSP is safe here (it also limits any future stored-XSS).
+[[headers]]
+  for = "/reviews/*"
+  [headers.values]
+    Cache-Control = "no-cache"
+    Content-Security-Policy = "default-src 'none'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; script-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"

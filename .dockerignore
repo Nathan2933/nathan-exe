@@ -13,3 +13,4 @@ docs
 **/*.log
 .env
 .env.*
+web/review-data

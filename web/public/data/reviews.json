@@ -1,0 +1,15 @@
+{
+  "reviews": [
+    {
+      "slug": "scene",
+      "title": "Scene",
+      "category": "Movie",
+      "creator": "Jithu Madhavan",
+      "year": "",
+      "rating": 3,
+      "cover": "reviews/scene/cover.jpg",
+      "excerpt": "Scene was Scenun",
+      "publishedAt": "2026-11-18T10:43:42.732Z"
+    }
+  ]
+}

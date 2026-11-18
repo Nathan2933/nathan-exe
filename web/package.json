@@ -7,7 +7,8 @@
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "admin:password": "node tools/admin-password.mjs"
+    "admin:password": "node tools/admin-password.mjs",
+    "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {
     "three": "^0.180.0"

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Reviews · NATHAN.EXE</title>
+<meta name="description" content="Nathan's reviews: films, shows, music, books, games and more, rated out of five stars.">
+<meta name="theme-color" content="#101F45">
+<meta property="og:title" content="Reviews · NATHAN.EXE">
+<meta property="og:description" content="Films, shows, music, books and games, rated out of five.">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="stylesheet" href="reviews.css">
+</head>
+<body class="rv-page rv-list">
+<header class="rv-top">
+  <a class="rv-brand" href="../">NATHAN.EXE <b>/ reviews</b></a>
+  <a class="rv-back" href="../">Portfolio</a>
+</header>
+<main class="rv-wrap">
+  <section class="rv-hero">
+    <div class="rv-hero-txt">
+      <p class="rv-kicker">Player one reviews</p>
+      <h1>Reviews</h1>
+      <p>Things I watched, played, read and listened to, with honest star ratings.</p>
+      <p class="rv-stats" id="rv-stats" aria-live="polite"></p>
+    </div>
+    <div class="rv-hero-art" aria-hidden="true"><img src="/assets/journey/watching-film.webp" alt="" width="240" height="240"><span class="rv-bubble">Rate it. Review it.</span></div>
+  </section>
+  <div class="rv-tools">
+    <label class="rv-search"><span class="rv-sr">Search reviews</span><input id="rv-q" type="search" placeholder="Search titles, creators, thoughts…" autocomplete="off"></label>
+    <label class="rv-sort"><span class="rv-sr">Sort</span><select id="rv-sort"><option value="new">Newest</option><option value="top">Top rated</option><option value="az">A to Z</option></select></label>
+  </div>
+  <div class="rv-filter" id="rv-filter" role="group" aria-label="Filter by category"></div>
+  <ul class="rv-grid" id="rv-grid" aria-live="polite"><li class="rv-empty">Loading…</li></ul>
+</main>
+<script src="reviews.js"></script>
+</body>
+</html>
