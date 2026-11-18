@@ -1,6 +1,7 @@
 import { loadContent, esc, safeUrl, chapterFor } from './shared/content.js';
 import { portraitURL } from './game/portrait.js';
 import { initPortraitGlitch } from './portrait-glitch.js';
+import { initTourInvite } from './tour-invite.js';
 
 const main = document.getElementById('main');
 const params = new URLSearchParams(location.search);
@@ -575,7 +576,7 @@ placeMenu();
 document.getElementById('portrait').src = portraitURL();
 if (params.has('nowebgl')) notice("Your browser couldn't start the 3D version, so here's the classic portfolio.");
 
-loadContent().then((c) => { render(c); initPortraitGlitch(); window.nxLoader?.page(); }).catch((err) => {
+loadContent().then((c) => { render(c); initPortraitGlitch(); initTourInvite(); window.nxLoader?.page(); }).catch((err) => {
   console.error(err);
   main.innerHTML = '<p class="loading">Could not load portfolio content. Please refresh.</p>';
   window.nxLoader?.fail('Could not load the archive. Check your connection and try again.');

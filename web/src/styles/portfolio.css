@@ -1057,3 +1057,98 @@ body.portfolio .career-card .row-head h3 { font-weight: 700 !important; }
 .pg-cy { filter: sepia(1) hue-rotate(150deg) saturate(6); mix-blend-mode: screen; }
 .pg-mag { filter: sepia(1) hue-rotate(290deg) saturate(6); mix-blend-mode: screen; }
 .pg-after { filter: drop-shadow(3px 3px 0 #101F45) contrast(1.2); }
+
+/* "Virtual Tour" CTA: gentle bounce + glow pulse + shine sweep to draw the eye */
+.site-head .play, .side-actions a[href="./play.html"] { position: relative; overflow: hidden; animation: tour-pulse 2.4s ease-in-out infinite; }
+.site-head .play::after, .side-actions a[href="./play.html"]::after {
+  content: ""; position: absolute; top: 0; left: -60%; width: 40%; height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(255,255,255,.55), transparent);
+  transform: skewX(-20deg); animation: tour-shine 2.4s ease-in-out infinite; pointer-events: none;
+}
+@keyframes tour-pulse {
+  0%, 70%, 100% { transform: translateY(0); filter: drop-shadow(0 0 0 rgba(255,240,42,0)); }
+  78% { transform: translateY(-3px); filter: drop-shadow(0 0 8px rgba(255,240,42,.9)); }
+  86% { transform: translateY(0); }
+  92% { transform: translateY(-1px); }
+}
+@keyframes tour-shine { 0%, 55% { left: -60%; } 85%, 100% { left: 130%; } }
+@media (prefers-reduced-motion: reduce) {
+  .site-head .play, .side-actions a[href="./play.html"] { animation: none; }
+  .site-head .play::after, .side-actions a[href="./play.html"]::after { display: none; }
+}
+
+/* ---- phones: project cards lead with the screenshot, then title + tech stack, then a short pitch ---- */
+@media (max-width: 560px) {
+  #projects .mission-grid { gap: 20px; }
+  #projects .mission { position: relative; }
+  #projects .mission .m-shot { aspect-ratio: 16 / 10; border-bottom: 3px solid var(--navy); }
+  #projects .mission .m-ph { background-color: #d9f6f6; }
+  #projects .mission .m-ph span { font-size: 28px; }
+  #projects .mission .m-body { padding: 12px 14px 16px; }
+  #projects .mission .m-head { order: 0; }
+  #projects .mission h3 { order: 1; font-size: 17px; margin: 8px 0 8px; }
+  #projects .mission .chips { order: 2; margin: 0 0 10px; gap: 6px; flex-wrap: wrap; }
+  body.portfolio #projects .mission .chips li { font-size: 11.5px; padding: 3px 8px; background: var(--sun); border: 2px solid var(--navy); border-radius: 4px; color: var(--navy); }
+  #projects .mission .m-pitch { order: 3; font-size: 12px; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  #projects .mission .m-actions { order: 4; padding-top: 14px; display: grid; grid-template-columns: 1fr; gap: 10px; }
+  #projects .mission .m-actions .btn { width: 100%; min-height: 46px; justify-content: center; }
+  #projects .mission .m-links { justify-content: center; gap: 22px; }
+}
+
+/* ---- sidebar tour button: icon + label centred as one group, same width as Resume ---- */
+.side-actions { container-type: inline-size; }
+.side-actions .btn { width: 100%; box-sizing: border-box; }
+.side-tour .st-group { display: inline-flex; align-items: center; justify-content: center; gap: 8px; max-width: 100%; }
+.side-tour .st-ico { flex: none; }
+.side-tour .st-txt { text-align: center; line-height: 1.2; }
+@container (max-width: 240px) { .side-tour .st-txt { letter-spacing: .01em; } .side-tour .st-group { gap: 6px; } }
+@container (max-width: 200px) { .side-tour { font-size: 14px !important; letter-spacing: 0; } }
+
+/* ---- rocket ticket (every visit) ---- */
+.fly-ticket { position: fixed; left: 0; top: 0; z-index: 60; width: 64px; height: 38px; pointer-events: none; will-change: transform; filter: drop-shadow(3px 3px 0 rgba(16,31,69,.6)); }
+.fly-ticket svg { position: relative; display: block; width: 100%; height: 100%; }
+.tk-flame { position: absolute; right: 92%; top: 50%; width: 46px; height: 22px; transform: translateY(-50%); transform-origin: right center;
+  background: radial-gradient(ellipse at 100% 50%, #fff 0 18%, #FFF02A 30%, #FF9A1F 55%, rgba(255,80,30,.0) 75%);
+  clip-path: polygon(100% 0, 0 50%, 100% 100%); animation: tk-flick .07s steps(2) infinite alternate; }
+@keyframes tk-flick { from { transform: translateY(-50%) scaleX(1); } to { transform: translateY(-50%) scaleX(1.35) scaleY(.85); } }
+.tk-smoke, .tk-ember, .tk-spark { position: fixed; z-index: 59; pointer-events: none; }
+.tk-smoke { width: 14px; height: 14px; margin: -7px 0 0 -7px; background: rgba(255,248,230,.85); border: 2px solid rgba(16,31,69,.35); border-radius: 3px; animation: tk-smoke .7s ease-out forwards; }
+@keyframes tk-smoke { to { transform: translate(var(--dx), var(--dy)) scale(2.2) rotate(45deg); opacity: 0; } }
+.tk-ember { width: 5px; height: 5px; margin: -2px 0 0 -2px; background: #FF9A1F; box-shadow: 0 0 6px #FFB300; animation: tk-ember .45s linear forwards; }
+@keyframes tk-ember { to { transform: translate(var(--dx), var(--dy)); opacity: 0; } }
+.tk-spark { width: 6px; height: 6px; margin: -3px 0 0 -3px; background: #FFF02A; border: 1px solid #101F45; animation: tk-spark .5s cubic-bezier(.2,.8,.3,1) forwards; }
+@keyframes tk-spark { to { transform: translate(var(--dx), var(--dy)) scale(.3); opacity: 0; } }
+.site-head .play.ticket-hit, .side-actions a.ticket-hit { animation: ticket-dip .5s ease-out; }
+@keyframes ticket-dip {
+  0% { transform: translateY(0); background: var(--sun); }
+  20% { transform: translate(3px, 4px) scale(.96); box-shadow: 0 0 0 var(--navy); background: #FFB300; filter: drop-shadow(0 0 14px rgba(255,179,0,1)); }
+  100% { transform: translateY(0); background: var(--sun); }
+}
+.site-head .play .st-group { display: inline-flex; align-items: center; gap: 6px; }
+/* label hidden until impact, then types in left to right */
+.tour-cta.st-armed .st-group { opacity: 0; }
+.tour-cta.st-reveal .st-ico { animation: st-pop .35s cubic-bezier(.3,1.8,.5,1) both; }
+.tour-cta.st-reveal .st-txt { animation: st-type .7s steps(10) .12s both; }
+@keyframes st-pop { from { transform: scale(0); } to { transform: scale(1); } }
+@keyframes st-type { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+
+/* ---- end-of-scroll invite: Nathan slides in bottom-left ---- */
+.tour-invite { position: fixed; inset: 0; z-index: 55; pointer-events: none; transition: opacity .3s; }
+.tour-invite.is-gone { opacity: 0; }
+.ti-dim { position: absolute; inset: 0; background: rgba(16,31,69,.55); opacity: 0; transition: opacity .5s; }
+.tour-invite.is-in .ti-dim { opacity: 1; }
+.tour-invite.is-undim .ti-dim { opacity: 0; transition-duration: 1s; }
+.ti-wrap { position: absolute; left: 16px; bottom: 16px; display: flex; align-items: flex-end; gap: 10px; max-width: min(520px, calc(100vw - 32px));
+  transform: translate(-40px, 110%); opacity: 0; transition: transform .6s cubic-bezier(.2,1.2,.4,1), opacity .3s; pointer-events: auto; }
+.tour-invite.is-in .ti-wrap { transform: none; opacity: 1; }
+.ti-nathan { width: 120px; height: 120px; flex: none; image-rendering: pixelated; border: 3px solid var(--navy); background: var(--turq); box-shadow: 0 0 0 2px var(--cyan); border-radius: 6px; }
+.ti-bubble { position: relative; margin-bottom: 40px; padding: 14px 16px; background: #FFF8E6; border: 3px solid var(--navy); border-radius: 6px; box-shadow: 4px 4px 0 var(--navy); font-family: var(--font-pixel); color: var(--navy); }
+.ti-bubble::before { content: ""; position: absolute; left: -12px; bottom: 14px; border: 6px solid transparent; border-right-color: var(--navy); border-bottom-color: var(--navy); }
+.ti-bubble p { margin: 0 22px 0 0; font-size: 13px; line-height: 1.5; }
+.ti-close { position: absolute; top: 4px; right: 6px; background: none; border: 0; font-size: 14px; cursor: pointer; color: var(--navy); }
+.ti-go { margin-top: 12px; font-family: var(--font-pixel); font-size: 15px; font-weight: 700; background: var(--sun); border-color: var(--navy); box-shadow: 3px 3px 0 var(--navy);
+  opacity: 0; transform: scale(.6); transition: opacity .25s, transform .3s cubic-bezier(.3,1.6,.5,1); visibility: hidden; }
+.tour-invite.is-ask .ti-go { opacity: 1; transform: none; visibility: visible; }
+.tour-invite.is-instant *, .tour-invite.is-instant { transition: none !important; }
+.tour-invite.is-instant .ti-dim { display: none; }
+@media (max-width: 560px) { .ti-nathan { width: 80px; height: 80px; } .ti-bubble { margin-bottom: 20px; } .ti-bubble p { font-size: 12px; } }
