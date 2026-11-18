@@ -65,6 +65,21 @@ export function buildRailway(root, map, stations, animated) {
   };
   train.push(car(C.accent, C.ink, true), car(C.teal, C.ink, false), car(C.yellow, C.ink, false));
 
+  // Sliding doors on the middle carriage (both sides; only the platform side opens during an arrival).
+  // Added after the merge so the panels stay separate meshes we can move.
+  const DOOR_CAR = 1;
+  const doors = [-1, 1].map((sgn) => {
+    const mk = (w, h, d, color, x, y, z) => {
+      const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color));
+      o.position.set(x, y, z); train[DOOR_CAR].add(o); return o;
+    };
+    mk(0.03, 0.95, 0.64, C.ink, sgn * 0.74, 1.08, 0);                       // dark doorway
+    const a = mk(0.04, 0.95, 0.32, C.teal, sgn * 0.765, 1.08, -0.16);       // sliding halves
+    const b = mk(0.04, 0.95, 0.32, C.teal, sgn * 0.765, 1.08, 0.16);
+    return { sgn, a, b, k: 0 };
+  });
+  const door = { sgn: 1, target: 0, k: 0 };
+
   // Arc-length position of each station along the loop
   const SAMPLES = 400;
   const samplePts = curve.getSpacedPoints(SAMPLES);
@@ -74,11 +89,17 @@ export function buildRailway(root, map, stations, animated) {
     return { s: (best / SAMPLES) * L, station: st };
   }).sort((a, b) => a.s - b.s);
 
-  const state = { s: stops.length ? stops[0].s - 20 : 0, v: 0, wait: 0, nextStop: 0, last: 0 };
+  const state = { s: stops.length ? stops[0].s - 20 : 0, v: 0, wait: 0, nextStop: 0, last: 0, script: false };
   const VMAX = 6.5, ACC = 2.2;
   animated.push((t) => {
     const dt = Math.min(0.05, Math.max(0, t - state.last)); state.last = t;
-    if (state.wait > 0) { state.wait -= dt; }
+    door.k += Math.sign(door.target - door.k) * Math.min(Math.abs(door.target - door.k), dt / 0.4);
+    for (const d of doors) {
+      const k = d.sgn === door.sgn ? door.k * door.k * (3 - 2 * door.k) : 0;
+      d.a.position.z = -0.16 - k * 0.3; d.b.position.z = 0.16 + k * 0.3;
+    }
+    if (state.script) { /* driven by an arrival cutscene */ }
+    else if (state.wait > 0) { state.wait -= dt; }
     else if (stops.length) {
       const target = stops[state.nextStop].s;
       let dist = (target - state.s) % L; if (dist < 0) dist += L;
@@ -95,5 +116,29 @@ export function buildRailway(root, map, stations, animated) {
       g.rotation.y = Math.atan2(tan.x, tan.z);
     });
   });
-  return { curve, length: L, train, get speed() { return state.v; } };
+  const stopOf = (st) => stops.findIndex((q) => q.station === st);
+  return {
+    curve, length: L, train, get speed() { return state.v; },
+    /** Where a station's track point is, the track direction, which way the platform lies, and how far away it is. */
+    stopGeometry(st) {
+      const q = stops[stopOf(st)]; if (!q) return null;
+      const u = q.s / L, p = curve.getPointAt(u), tan = curve.getTangentAt(u);
+      let nx = tan.z, nz = -tan.x;
+      if ((st.x - p.x) * nx + (st.z - p.z) * nz < 0) { nx = -nx; nz = -nz; }
+      return { p, tan, side: { x: nx, z: nz }, dist: (st.x - p.x) * nx + (st.z - p.z) * nz, doorCar: DOOR_CAR, carGap: 3.0 };
+    },
+    /** Cutscene control: put the door carriage `back` metres short of the platform centre, moving at v. */
+    drive(st, back, v) {
+      const q = stops[stopOf(st)]; if (!q) return;
+      state.script = true; state.v = v; state.wait = 0;
+      state.s = ((q.s + DOOR_CAR * 3.0 - back) % L + L) % L;
+    },
+    setDoor(sgnTowardPlatform, open) { door.sgn = sgnTowardPlatform; door.target = open ? 1 : 0; },
+    /** Hand the train back to its normal loop: it waits a moment, then heads for the next stop. */
+    release(st) {
+      state.script = false; state.v = 0; state.wait = 2.4;
+      const i = stopOf(st); if (i >= 0) state.nextStop = (i + 1) % stops.length;
+      door.target = 0;
+    },
+  };
 }

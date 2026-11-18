@@ -881,6 +881,20 @@ function wireCard(root = $('#panel-body')) {
   const c = state.content;
   root.querySelectorAll('.cd-sk-logo img, .cd-tech-ic img').forEach(pixelateIcon);
   root.querySelectorAll('[data-open-project], [data-proj]').forEach((b) => b.addEventListener('click', () => openProjectById(b.dataset.openProject || b.dataset.proj)));
+  const pj = root.querySelector('.pj-pager');
+  if (pj) {
+    const pages = [...root.querySelectorAll('.pj-page')];
+    let at = 0;
+    const show = (n) => {
+      at = Math.max(0, Math.min(pages.length - 1, n));
+      pages.forEach((pg, i) => { pg.hidden = i !== at; });
+      pj.querySelector('.cd-pg-n').textContent = `Page ${at + 1} of ${pages.length} · ${pages[at].dataset.title}`;
+      pj.querySelector('[data-pj="-1"]').disabled = at === 0;
+      pj.querySelector('[data-pj="1"]').disabled = at === pages.length - 1;
+      root.scrollTop = 0; root.closest('.panel-body, #panel-body')?.scrollTo?.(0, 0);
+    };
+    pj.querySelectorAll('[data-pj]').forEach((b) => b.addEventListener('click', () => show(at + +b.dataset.pj)));
+  }
   root.querySelectorAll('[data-enlarge]').forEach((b) => b.addEventListener('click', () => {
     const p = (c.projects || []).find((x) => x.id === b.dataset.enlarge);
     if (p) openLightbox(projectSlides(p), +b.dataset.slide || 0);
@@ -2337,6 +2351,7 @@ function runFinale(it) {
 
 // ---------------- Memory Line (fast travel between chapters) ----------------
 function openStations(here) {
+  if (state.travelBusy || state.arrival) return;
   face(here);
   const c = state.content;
   // Stops are listed in story order (Montfort → Tomsk → TCE → Airport), not track order
@@ -2368,6 +2383,8 @@ const TRAIN_SVG = `<svg viewBox="0 0 66 22" width="132" height="44" shape-render
 </svg>`;
 
 function travel(from, dest) {
+  if (state.travelBusy || state.arrival) return;   // one ride at a time: ignore repeat taps on the timetable
+  state.travelBusy = true;
   if (state.mount) dismount(true);
   closePanel();
   const c = state.content;
@@ -2386,28 +2403,105 @@ function travel(from, dest) {
     </div>`;
   el.classList.remove('hidden');
   sfx.whistle();
-  state.minigame = 'travel'; // freezes movement while the card is up
+  state.minigame = 'travel'; // freezes movement while the card and the arrival play
   let done = false;
+  // The title card is a short beat; the real arrival (train pulls in, Nathan steps out) is played in the world.
   const finish = () => {
     if (done) return;
     done = true;
     window.removeEventListener('keydown', onKey, true);
-    const off = 1.2;
-    const a = Math.atan2(dest.x, dest.z);
-    player.group.position.set(dest.x, heightAt(dest.x, dest.z), dest.z);
-    player.heading = a + Math.PI;
-    state.path = []; state.pendingOpen = null; marker.visible = false;
-    camTarget.copy(player.group.position); camTarget.y = 0;
     el.classList.add('leaving');
-    setTimeout(() => { el.classList.add('hidden'); el.classList.remove('leaving'); state.minigame = null; persist(); }, reducedMotion ? 0 : 450);
-    if (!state.save.chapters.includes(dest.district)) toast(`Arrived: ${dest.name}. Find the ◆ to open this chapter.`);
-    void off;
+    setTimeout(() => { el.classList.add('hidden'); el.classList.remove('leaving'); }, reducedMotion ? 0 : 450);
+    beginArrival(dest);
   };
   const onKey = (e) => { e.preventDefault(); e.stopPropagation(); finish(); };
   window.addEventListener('keydown', onKey, true);
   el.querySelector('.travel-skip').addEventListener('click', finish);
   el.addEventListener('click', finish, { once: true });
-  setTimeout(finish, reducedMotion ? 600 : 3200);
+  setTimeout(finish, reducedMotion ? 500 : 1100);
+}
+
+// ---- Arrival at a Memory Line platform: train pulls in, a door opens, Nathan steps out (~3 s) ----
+const ARR = { IN: 1.6, DIST: 9, WALK0: 1.95, WALK: 0.9, END: 3.0, ZOOM_OUT: 0.7 };
+function beginArrival(dest) {
+  const rw = world.railway, g = rw && rw.stopGeometry(dest);
+  const pos = player.group.position;
+  state.path = []; state.pendingOpen = null; marker.visible = false;
+  if (!g) {   // no track at this stop: just stand on the platform
+    pos.set(dest.x, heightAt(dest.x, dest.z), dest.z);
+    player.heading = Math.atan2(dest.x, dest.z) + Math.PI;
+    camTarget.copy(pos); camTarget.y = 0;
+    endArrival(dest, null);
+    return;
+  }
+  const ry = Math.atan2(g.tan.x, g.tan.z);
+  const lx = Math.cos(ry), lz = -Math.sin(ry);                       // the carriage's local +x in world space
+  const sgn = (lx * g.side.x + lz * g.side.z) >= 0 ? 1 : -1;         // which carriage side faces the platform
+  const reach = Math.max(1.4, g.dist - 0.4);                          // landing spot: on the platform, clear of the train
+  const a = state.arrival = {
+    dest, g, rw, sgn, t: 0, vel: new THREE.Vector3(), skip: false,
+    start: { x: g.p.x + lx * sgn * 0.72, z: g.p.z + lz * sgn * 0.72 },  // the doorway threshold: he stays hidden until the doors are fully open, then steps out of the dark opening
+    end: { x: g.p.x + g.side.x * reach, z: g.p.z + g.side.z * reach },
+    heading: Math.atan2(g.side.x, g.side.z),
+    zoom: window.innerWidth / Math.max(1, window.innerHeight) < 1 ? 1.1 : 1.3,
+    cam: { x: g.p.x + g.side.x * g.dist * 0.6, z: g.p.z + g.side.z * g.dist * 0.6 },
+  };
+  a.onKey = (e) => { if (['Enter', ' ', 'Escape', 'e', 'E'].includes(e.key)) { e.preventDefault(); a.skip = true; } };
+  window.addEventListener('keydown', a.onKey, true);
+  state.invulnerableUntil = performance.now() + 9000; state.trainGuard = true;
+  player.group.visible = false; player.speed = 0;
+  pos.set(a.start.x, heightAt(a.start.x, a.start.z), a.start.z);
+  player.heading = a.heading;
+  // cut straight to the platform (the destination is already part of this world), framed wide
+  state.camOverride = a.cam; state.zoom = a.zoom; updateCameraFrustum();
+  camTarget.set(a.cam.x, 0, a.cam.z); camVel.set(0, 0, 0);
+  rw.setDoor(sgn, false);
+  rw.drive(dest, ARR.DIST, 2 * ARR.DIST / ARR.IN);
+  // Platforms on the far side of the train (from the fixed camera) leave Nathan behind the carriage:
+  // keep the game's orange see-through outline on him until he or the train has moved clear.
+  state.arrXray = (g.side.x + g.side.z < 0) ? { car: rw.train[g.doorCar], until: performance.now() + 9000 } : null;
+  if (reducedMotion) a.t = ARR.END - 0.5;
+}
+function runArrival(dt) {
+  const a = state.arrival; if (!a) return;
+  a.t += dt;
+  if (a.skip) a.t = Math.max(a.t, ARR.END);
+  const t = a.t, rw = a.rw, pos = player.group.position;
+  const u = Math.min(1, t / ARR.IN), back = ARR.DIST * (1 - u) * (1 - u);
+  rw.drive(a.dest, back, 2 * ARR.DIST * (1 - u) / ARR.IN);          // eases to a stop with the door car at the platform centre
+  if (t >= ARR.IN - 0.1) rw.setDoor(a.sgn, true);
+  const tw = t - ARR.WALK0;
+  if (tw >= 0) {
+    const w = Math.min(1, tw / ARR.WALK);
+    pos.x = a.start.x + (a.end.x - a.start.x) * w; pos.z = a.start.z + (a.end.z - a.start.z) * w;
+    a.vel.set(a.end.x - a.start.x, 0, a.end.z - a.start.z).multiplyScalar(1 / ARR.WALK);
+    if (w >= 1) a.vel.set(0, 0, 0);
+    player.heading = a.heading;
+    player.group.visible = true;
+  } else a.vel.set(0, 0, 0);
+  const z0 = ARR.END - ARR.ZOOM_OUT;
+  if (t >= z0) {
+    state.camOverride = null;
+    const k = Math.min(1, (t - z0) / ARR.ZOOM_OUT);
+    state.zoom = a.zoom + (1 - a.zoom) * k * k * (3 - 2 * k);
+    updateCameraFrustum();
+  }
+  if (t >= ARR.END) endArrival(a.dest, a);
+}
+function endArrival(dest, a) {
+  const pos = player.group.position;
+  if (a) {
+    window.removeEventListener('keydown', a.onKey, true);
+    pos.x = a.end.x; pos.z = a.end.z; player.heading = a.heading;
+    a.rw.release(dest);
+  }
+  pos.y = heightAt(pos.x, pos.z);
+  player.group.visible = true; player.speed = 0;
+  state.camOverride = null; state.zoom = 1; updateCameraFrustum();
+  state.arrival = null; state.minigame = null; state.travelBusy = false;
+  state.invulnerableUntil = performance.now() + 2500;
+  persist();
+  if (!state.save.chapters.includes(dest.district)) toast(`Arrived: ${dest.name}. Find the ◆ to open this chapter.`);
 }
 
 function openAlbum() {
@@ -2828,9 +2922,17 @@ function update(dt, t) {
   if (state.gym && (!gymApi() || state.level === 'tahiti' || state.cine)) resetGym();
   if (state.gym) gymUpdate(dt);
   if (!state.ko && !state.joined) pos.y += (heightAt(pos.x, pos.z) - pos.y) * Math.min(1, dt * 18);
-  if (!state.cine) checkHazards(dt);
+  if (state.arrival) runArrival(dt);
+  if (!state.cine && !state.arrival) checkHazards(dt);
   if (state.cine) velocity.copy(state.cine.vel);
+  else if (state.arrival) velocity.copy(state.arrival.vel);
   xrayGate.update(dt);
+  if (state.arrXray) {
+    const x = state.arrXray, p = player.group.position;
+    if (!player.group.visible) { /* still inside the carriage */ }
+    else if (performance.now() > x.until || Math.hypot(p.x - x.car.position.x, p.z - x.car.position.z) > 3.8) { state.arrXray = null; player.xrayBlocked = false; }
+    else player.xrayBlocked = true;
+  }
   player.update(dt, velocity, t);
   if (state.gym) gymSync();
   stepT -= dt * Math.hypot(velocity.x, velocity.z);
