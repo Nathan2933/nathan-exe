@@ -267,6 +267,26 @@ export function createInteriorExit({ group, cutaway, doorX, doorW, doorH, floorY
   const labelMat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false, depthWrite: false });
   const label = new THREE.Sprite(labelMat); label.scale.set(1.5, 0.5, 1); label.position.set(doorX, floorY + doorH + 0.55, fz); label.renderOrder = 30; label.userData.dynamic = true; label.raycast = () => {};   // never an occluder or a click target
   root.add(label);
+  // ---- entrance marker: a glowing translucent yellow cone hanging in the doorway, tip pointing down.
+  // Pale at the wide top, saturated toward the tip; unlit so it glows the same in day and night.
+  // Deliberately a different shape and hue from the flat orange mission rings on the ground.
+  const marker = new THREE.Group(); marker.userData.dynamic = true; group.add(marker);
+  const CONE_R = 0.42, CONE_H = 1.15;
+  const coneGeo = new THREE.ConeGeometry(CONE_R, CONE_H, 32, 6, false).rotateX(Math.PI);   // tip at -y
+  const top = new THREE.Color(0xfff6a8), tip = new THREE.Color(0xffd800), col = [];
+  const pos = coneGeo.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const k = THREE.MathUtils.clamp((pos.getY(i) + CONE_H / 2) / CONE_H, 0, 1);   // 0 at tip, 1 at top
+    const c = tip.clone().lerp(top, k * k); col.push(c.r, c.g, c.b);
+  }
+  coneGeo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  const gold = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.9, depthWrite: false });
+  const cone = new THREE.Mesh(coneGeo, gold); cone.renderOrder = 25; cone.raycast = () => {}; marker.add(cone);
+  const S = Math.min((doorW * 0.55) / (2 * CONE_R), (doorH * 0.7) / CONE_H);   // fill the opening, whatever the door size
+  const markerZ = wallZ + dir * (T / 2 + 0.3);               // on the door: centred in the opening, just proud of the wall face
+  const markerY = floorY + doorH / 2 + 0.1;                 // centred in the doorway
+  marker.position.set(doorX, markerY, markerZ);
+  marker.scale.setScalar(S);
   return {
     obj: root,
     exit: { x: doorX, z: wallZ - dir * 0.9, outX: doorX, outZ: wallZ + dir * 1.5, dir },
@@ -274,6 +294,13 @@ export function createInteriorExit({ group, cutaway, doorX, doorW, doorH, floorY
       const a = THREE.MathUtils.clamp((1 - cutaway.getFade()) * 1.6, 0, 1);   // follows the cutaway; full once the walls are gone
       root.visible = a > 0.02;
       labelMat.opacity = a; amber.opacity = 0.95 * a; glow.material.opacity = 0.55 * a;
+      // entrance marker is the inverse: shown outdoors, hidden once inside, back when Nathan steps out
+      const e = 1 - a, t = performance.now() / 1000;
+      marker.visible = e > 0.02;
+      if (marker.visible) {
+        marker.position.y = markerY + Math.sin(t * 2.2) * 0.1;    // gentle bob
+        gold.opacity = 0.9 * e;
+      }
     },
   };
 }

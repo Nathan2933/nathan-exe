@@ -1086,8 +1086,8 @@ body.portfolio .career-card .row-head h3 { font-weight: 700 !important; }
   #projects .mission .m-ph span { font-size: 28px; }
   #projects .mission .m-body { padding: 12px 14px 16px; }
   #projects .mission .m-head { order: 0; }
-  #projects .mission h3 { order: 1; font-size: 17px; margin: 8px 0 8px; }
-  #projects .mission .chips { order: 2; margin: 0 0 10px; gap: 6px; flex-wrap: wrap; }
+  #projects .mission h3 { order: 1; font-size: 17px; margin: 8px 14px; }
+  #projects .mission .chips { order: 2; margin: 0 14px 10px; gap: 6px; flex-wrap: wrap; }
   body.portfolio #projects .mission .chips li { font-size: 11.5px; padding: 3px 8px; background: var(--sun); border: 2px solid var(--navy); border-radius: 4px; color: var(--navy); }
   #projects .mission .m-pitch { order: 3; font-size: 12px; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
   #projects .mission .m-actions { order: 4; padding-top: 14px; display: grid; grid-template-columns: 1fr; gap: 10px; }
