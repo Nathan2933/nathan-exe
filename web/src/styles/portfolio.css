@@ -35,8 +35,6 @@ body.portfolio {
 html { scroll-behavior: smooth; }
 .hidden { display: none !important; }
 .portfolio :focus-visible { outline: 3px solid var(--cyan); outline-offset: 2px; box-shadow: 0 0 0 5px var(--navy); }
-.skip { position: absolute; left: -9999px; top: 8px; z-index: 50; background: var(--sun); color: var(--navy); padding: 8px 12px; font-family: var(--font-mono); border: var(--line); }
-.skip:focus { left: 8px; }
 
 /* ---------- shared bits: windows, buttons ---------- */
 .portfolio .window { background: var(--ivory); border: 3px solid var(--navy); border-radius: 6px; box-shadow: 0 0 0 3px var(--cyan), 6px 6px 0 3px rgba(16, 31, 69, .55); overflow: hidden; }
