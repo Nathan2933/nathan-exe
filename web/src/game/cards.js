@@ -160,20 +160,27 @@ export function projectHtml(c, p, { index = 0, total = 1, prev = null, next = nu
     tile: tile(ico(k.icon || 'folder', 28)), eyebrow: `Project ${index + 1} of ${total}${p.school ? ' · School' : ''}`, title: name, sub: esc(subTitle),
     meta: p.year ? `<span class="cd-year">${ico('calendar', 14)}${esc(p.year)}</span>` : '',
   });
-  const secs = (k.sections || []).map((s) => sec(...(SEC[s.k] || ['star', s.k]), `<p>${rich(s.text)}</p>`, s.k === 'result' || s.k === 'status' ? 'is-result' : '')).join('')
-    || '';
+  const kinds = (...ks) => (k.sections || []).filter((s) => ks.includes(s.k));
+  const secOf = (s) => sec(...(SEC[s.k] || ['star', s.k]), `<p>${rich(s.text)}</p>`, s.k === 'result' || s.k === 'status' ? 'is-result' : '');
   const thumbs = media.slice(1, 4).map((u, i) => `<button type="button" class="cd-ph-t" data-enlarge="${esc(p.id)}" data-slide="${i + 1}" aria-label="Enlarge photo ${i + 2} of ${media.length}"><img src="${esc(safeUrl(u))}" alt="" loading="lazy"></button>`).join('');
   const shot = media.length ? `<figure class="cd-photo"><button type="button" class="cd-ph-main" data-enlarge="${esc(p.id)}" data-slide="0" aria-label="Enlarge photo of ${esc(name)}"><img src="${esc(safeUrl(media[0]))}" alt=""><span class="cd-ph-tag">${ico('ext', 12)}Enlarge${media.length > 1 ? ` · ${media.length} photos` : ''}</span></button>${thumbs ? `<div class="cd-ph-strip">${thumbs}${media.length > 4 ? `<span class="cd-ph-more">+${media.length - 4}</span>` : ''}</div>` : ''}</figure>` : '';
   const flow = k.flow ? sec('arch', 'Supply flow', `<div class="cd-flowbox"><ol class="cd-flow">${k.flow.map((s) => `<li>${esc(s)}</li>`).join('')}</ol></div>${k.flowNote ? `<p class="cd-small">${esc(k.flowNote)}</p>` : ''}`) : '';
-  const stack = p.stack?.length ? sec('chip', 'Tech stack', techStack(p.stack, p, iconFn)) : '';
-  const lead = '';
-  const overview = sec('star', 'Overview', `<p>${rich(k.summary || p.pitch || '')}</p>`);
-  const left = col(overview + secs + flow);
-  const right = col(`${shot}${stack}`);
+  const stack = p.stack?.length ? sec('chip', 'Tech stack', techStack(p.stack, p, iconFn), 'cd-stack') : '';
   const links = `${linkBtn('code', 'GitHub', p.github)}${linkBtn('ext', 'Live demo', p.demo)}`;
   const sw = (to, dir) => (to ? `<button type="button" class="btn cd-sw ${dir}" data-proj="${esc(to.id)}" aria-label="${dir === 'prev' ? 'Previous' : 'Next'} project: ${esc(to.name)}">${dir === 'prev' ? ico('back', 14) : ''}<span class="cd-sw-t"><small>${dir === 'prev' ? 'Previous project:' : 'Next project:'}</small><b>${esc(to.name)}</b></span>${dir === 'next' ? ico('arrow', 14) : ''}</button>` : '');
   const nav = total > 1 ? `<nav class="cd-switch" aria-label="Switch project">${sw(prev, 'prev')}${sw(next, 'next')}</nav>` : '';
-  return frame({ kind: 'project', head: h, body: lead + left + right, foot: foot(links, "", nav) });
+  // Three pages at most: 1 picture + tech stack + the problem in a line, 2 my part, 3 outcome.
+  const lead = kinds('problem', 'what')[0];
+  const p1 = `${shot}${col(`${sec('bolt', lead ? SEC[lead.k][1] : 'Overview', `<p>${rich(lead ? lead.text : (k.summary || p.pitch || ''))}</p>`)}${stack}`)}`;
+  const p2 = col(`${sec('star', 'Overview', `<p>${rich(k.summary || p.pitch || '')}</p>`)}${kinds('part').map(secOf).join('')}${flow}`);
+  const outcome = kinds('result', 'status', 'learned').map(secOf).join('');
+  const p3 = col(`${outcome || sec('trophy', 'In short', `<p>${rich(k.summary || p.pitch || '')}</p>`)}${links ? sec('ext', 'Take a look', `<div class="cd-linkrow">${links}</div>`) : ''}${nav}`);
+  const pages = [['Overview', p1], ['My part', p2], ['Outcome', p3]];
+  const body = pages.map(([t, h], i) => `<div class="pj-page" data-pj-page="${i}" data-title="${t}"${i ? ' hidden' : ''}>${h}</div>`).join('');
+  const pager = `<div class="cd-pager pj-pager"><button type="button" class="btn" data-pj="-1" aria-label="Previous page" disabled>${ico('back', 14)}<span>Prev</span></button><span class="cd-pg-n" aria-live="polite">Page 1 of 3 · Overview</span><button type="button" class="btn primary" data-pj="1" aria-label="Next page"><span>Next</span>${ico('arrow', 14)}</button></div>`;
+  // Desktop keeps the original two-column card; phones get the three pages above.
+  const old = `${col(sec('star', 'Overview', `<p>${rich(k.summary || p.pitch || '')}</p>`) + (k.sections || []).map(secOf).join('') + flow, 'pj-desk')}${col(`${shot}${stack}`, 'pj-desk')}`;
+  return frame({ kind: 'project cd-pj', head: h, body: `${old}<div class="pj-mob">${body}</div>`, foot: `<div class="pj-desk-foot">${foot(links, '', nav)}</div><div class="pj-mob">${pager}</div>` });
 }
 export const projectSlides = (p) => mediaList(p).map((src) => ({ src, caption: splitTitle(p.title)[0] }));
 
@@ -341,11 +348,12 @@ export function fitCard(panelBody, tight = false) {
   if (!root || root.classList.contains('cd-tbx')) return;   // the Toolbox is one screen that scrolls on small displays, never paged
   const body = root.querySelector('.cd-body');
   root.querySelectorAll('.pg-off').forEach((e) => e.classList.remove('pg-off'));
-  root.querySelector('.cd-pager')?.remove();
+  root.querySelector('.cd-pager:not(.pj-pager)')?.remove();
   root.querySelector('.cd-foot-auto')?.remove();
   root.classList.remove('is-paged', 'cd-flat');
   root.classList.toggle('cd-tight', tight);
   if (body) body.style.minHeight = '';
+  if (root.classList.contains('cd-pj') && matchMedia('(max-width: 760px)').matches) return;   // phones: project cards use their own three pages
   if (!body || panelBody.scrollHeight <= panelBody.clientHeight + 1) return;   // already fits: no pages
   if (root.querySelector('.cd-skills:not(.dense)')) {   // skill tiles stack one domain per row when the grid is too tall
     root.classList.add('cd-flat');
