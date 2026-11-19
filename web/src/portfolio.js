@@ -433,32 +433,6 @@ function trophyStrip(c) {
       </ul>
     </section>`;
 }
-// Latest Reviews: published reviews from data/reviews.json (a missing or empty file just hides the section)
-async function loadReviews() {
-  try {
-    const base = import.meta.env.BASE_URL || '/';
-    const r = await fetch(`${base}data/reviews.json`, { cache: 'no-cache' });
-    return r.ok ? ((await r.json()).reviews || []) : [];
-  } catch { return []; }
-}
-function reviewStars(n) {
-  let o = '';
-  for (let i = 1; i <= 5; i++) o += `<span class="${i <= n ? 'on' : 'off'}" aria-hidden="true">★</span>`;
-  return `<span class="stars" role="img" aria-label="${n} out of 5 stars">${o}</span>`;
-}
-function reviewsSection(list) {
-  if (!list.length) return '';
-  const base = import.meta.env.BASE_URL || '/';
-  return section('reviews', '', 'Latest Reviews', `
-    <p class="sub">Films, shows, music, books and games, rated out of five.</p>
-    <ul class="rv-strip">${list.slice(0, 4).map((x) => `
-      <li><a class="rv-tile" href="${esc(base)}reviews/${esc(x.slug)}/">
-        <span class="rv-pic${x.cover ? '' : ' none'}">${x.cover ? `<span class="rv-bl" style="background-image:url('${esc(base)}${esc(x.cover)}')"></span><img src="${esc(base)}${esc(x.cover)}" alt="" loading="lazy" decoding="async">` : '<span aria-hidden="true">★</span>'}</span>
-        <span class="rv-tb"><span class="rv-tc">${esc(x.category)}</span><b>${esc(x.title)}</b>${reviewStars(x.rating)}${x.excerpt ? `<span class="rv-tx">${esc(x.excerpt)}</span>` : ''}</span>
-      </a></li>`).join('')}
-    </ul>
-    <p class="rv-all"><a class="btn primary" href="${esc(base)}reviews/">All reviews →</a></p>`, 'reviews-section');
-}
 // real Island 01 buildings, rendered once in the background
 async function loadShots() {
   const els = [...main.querySelectorAll('[data-shot]')];
@@ -473,7 +447,7 @@ async function loadShots() {
 }
 
 // ---------- render + behaviour ----------
-function render(c, reviews = []) {
+function render(c) {
   const p = c.profile || {};
   document.title = `${p.name || 'Nathan'} · Player Archive`;
   document.getElementById('foot-name').textContent = `© ${new Date().getFullYear()} ${p.name || 'Nathan'}`;
@@ -485,8 +459,7 @@ function render(c, reviews = []) {
   const noticeEl = document.getElementById('notice');
   main.innerHTML = '';
   main.append(noticeEl);
-  main.insertAdjacentHTML('beforeend', characterFile(c) + journey(c) + missions(c, sorted) + skillTree(c) + careerLog(c) + reviewsSection(reviews) + terminal(c));
-  if (reviews.length && !document.querySelector('#side-nav a[href="#reviews"]')) document.querySelector('#side-nav a[href="#contact"]')?.insertAdjacentHTML('beforebegin', '<a href="#reviews"><i aria-hidden="true"><svg viewBox="0 0 14 14" shape-rendering="crispEdges"><path fill="#101F45" d="M6 0h2v1H6zM6 1h2v3H6zM0 4h6v1H0zM8 4h6v1H8zM1 5h12v1H1zM2 6h10v1H2zM3 7h8v1H3zM3 8h8v1H3zM2 9h4v1H2zM8 9h4v1H8zM1 10h3v2H1zM10 10h3v2h-3z"/><path fill="#FFF02A" d="M6 1h2v3H6zM1 5h12v1H1zM2 6h10v1H2zM3 7h8v1H3zM3 8h8v1H3zM2 9h4v1H2zM8 9h4v1H8zM2 10h2v1H2zM10 10h2v1h-2z"/></svg></i>Reviews</a>');
+  main.insertAdjacentHTML('beforeend', characterFile(c) + journey(c) + missions(c, sorted) + skillTree(c) + careerLog(c) + terminal(c));
   wireSkillTabs();
   wireContact();
   loadShots();
@@ -640,7 +613,7 @@ placeMenu();
 document.getElementById('portrait').src = portraitURL();
 if (params.has('nowebgl')) notice("Your browser couldn't start the 3D version, so here's the classic portfolio.");
 
-Promise.all([loadContent(), loadReviews()]).then(([c, rv]) => { render(c, rv); initPortraitGlitch(); initTourInvite(); window.nxLoader?.page(); }).catch((err) => {
+loadContent().then((c) => { render(c); initPortraitGlitch(); initTourInvite(); window.nxLoader?.page(); }).catch((err) => {
   console.error(err);
   main.innerHTML = '<p class="loading">Could not load portfolio content. Please refresh.</p>';
   window.nxLoader?.fail('Could not load the archive. Check your connection and try again.');
