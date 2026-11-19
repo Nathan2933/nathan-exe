@@ -69,3 +69,8 @@ body.game .minigame {
   max-height: calc(100dvh - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); overflow-y: auto;
 }
 body.game .minigame .panel-close { min-width: 44px; min-height: 40px; display: grid; place-items: center; }
+
+/* Tahiti nav: Events, Tour, Controls and Portfolio only */
+#nav-events { display: none; }
+body.on-tahiti #nav-events { display: inline-flex; }
+body.on-tahiti #recruiter-bar > :not(#nav-events):not(#nav-tour):not(#nav-intro):not(.dark) { display: none; }

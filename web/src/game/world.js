@@ -284,6 +284,7 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
 
   // ---------- interactables ----------
   const isTahiti = map.props?.island === 'tahiti';
+  const TAHITI_EVENT_ACTS = new Set(['vgevents', 'party', 'race', 'dance', 'volley', 'photosession', 'foodcontest', 'tvgame', 'anuhoop', 'photo']);
   const beacon = (x, _y, z, { small = false, pillar: withPillar = true, keep = false } = {}) => {
     const R = small ? 0.65 : 0.95;
     const usePillar = isTahiti ? false : withPillar;
@@ -339,7 +340,7 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
     model.group.position.set(o.x, tile ? Math.max(0, groundHeight(tile.type)) : 0, o.z); model.group.rotation.y = heading;
     root.add(model.group);
     const it = { x: o.x, z: o.z, visited: false, id: si ? `vehicle:scooty-${si}` : 'vehicle:scooty', kind: 'vehicle', vtype: 'scooty', label: o.props?.name || "Guru's Scooty", model, heading, home: { x: o.x, z: o.z, heading }, district: o.props?.district || (map.props?.island === 'tahiti' ? 'tahiti' : 'winter-campus'), radius: 1.4 };
-    it.beacon = beacon(o.x, 1.6, o.z, { small: true, keep: true }); hitBox(it, 1.2, 2, 1.4); interactables.push(it);
+    it.beacon = beacon(o.x, 1.6, o.z, { small: true }); hitBox(it, 1.2, 2, 1.4); interactables.push(it);
   });
   for (const it of seats) {
     if (!isTahiti) it.beacon = beacon(it.x, 1.2, it.z, { small: true });
@@ -379,7 +380,7 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
     } else if (o.type === 'activity') {
       // Tahiti activity spot (party, race, dance battle, food, volleyball, clues, treasure, gallery)
       const it = { ...base, id: `activity:${pr.id}`, kind: 'activity', act: pr.act, title: pr.title || pr.act, treasureId: pr.treasure, gang: pr.gang, district: 'tahiti', radius: 1.6 };
-      it.beacon = beacon(o.x, 1.6, o.z, { small: true, keep: pr.act === 'vgevents' }); hitBox(it, 1.4, 2.2, 1.4); interactables.push(it);
+      it.beacon = beacon(o.x, 1.6, o.z, { small: true, keep: TAHITI_EVENT_ACTS.has(pr.act) }); hitBox(it, 1.4, 2.2, 1.4); interactables.push(it);   // Tahiti: rings for events alone
     } else if (o.type === 'group') {
       // shared group conversation spot (Join the Gang / Join the Outlaws)
       const it = { ...base, id: `group:${pr.id}`, kind: 'group', groupId: pr.id, title: pr.title || 'Join in', district: 'tahiti', radius: 1.6 };
@@ -394,7 +395,7 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
       model.group.rotation.y = heading + (vt === 'horse' ? -Math.PI / 2 : 0);
       root.add(model.group);
       const it = { ...base, id: `vehicle:${pr.id}`, kind: 'vehicle', vtype: vt, model, heading, home: { x: o.x, z: o.z, heading }, district: pr.district, radius: 1.5 };
-      it.beacon = beacon(o.x, 1.6, o.z, { small: true, keep: true }); hitBox(it, 1.4, 2, 1.4); interactables.push(it);
+      it.beacon = beacon(o.x, 1.6, o.z, { small: true }); hitBox(it, 1.4, 2, 1.4); interactables.push(it);
     } else if (o.type === 'station') {
       const it = { ...base, id: `station:${pr.id}`, kind: 'station', stationId: pr.id, name: pr.name || pr.id, district: pr.district, order: pr.order || 0, tagline: pr.tagline || '', radius: 2.4 };
       it.beacon = beacon(o.x, 2.3, o.z, { small: true }); hitBox(it, 2.4, 3, 2.4); interactables.push(it);

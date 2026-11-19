@@ -481,6 +481,7 @@ async function initInner() {
   setLoad('world', 1);
   setupUI();
   tour.bind();
+  $('#nav-events')?.addEventListener('click', (e) => { e.preventDefault(); $('#recruiter-bar')?.classList.remove('open'); if (state.level === 'tahiti' && state.started && !state.choosing && !state.cine) tahiti.openGuide?.(); });
   $('#nav-intro')?.addEventListener('click', (e) => { e.preventDefault(); $('#recruiter-bar')?.classList.remove('open'); if (state.started && !state.nathanSays) { closePanel(); intro.replay(); } });
   setupLabels();
   setupMinimap();
@@ -1785,7 +1786,26 @@ function makeNav() {
  * {allowed} for a signed session cookie. Until that exists the prototype
  * runs open, and ships only placeholder, non-personal Tahiti content.
  */
+let _tahitiAccess = null, _tahitiAccessAt = 0;
 async function checkTahitiAccess() {
+  if (_tahitiAccess?.allowed && Date.now() - _tahitiAccessAt < 300000) return _tahitiAccess;   // a recent yes is reused: no wait on every Visit
+  const r = await checkTahitiAccessNow();
+  _tahitiAccess = r; _tahitiAccessAt = Date.now();
+  return r;
+}
+/** Warm Tahiti in the background (access check, data, map) so travelling there takes a moment, not seconds. */
+function prefetchTahiti() {
+  const run = async () => {
+    try {
+      const access = await checkTahitiAccess();
+      if (!access.allowed) return;
+      await loadTahitiData();
+      if (!mapCache.tahiti) mapCache.tahiti = await loadTiledMap(`${BASE}${LEVELS.tahiti}?v=${BUILD}`);
+    } catch { /* it loads on demand instead */ }
+  };
+  (window.requestIdleCallback || ((f) => setTimeout(f, 3000)))(run);
+}
+async function checkTahitiAccessNow() {
   try {
     const r = await fetch('/.netlify/functions/tahiti-session', { credentials: 'include', headers: { accept: 'application/json' } });
     if (r.status === 401 || r.status === 403) return { allowed: false };
@@ -1814,6 +1834,7 @@ async function switchLevel(name) {
   for (const d of dustPool) d.m.visible = false;
   _nightDirty = true;
   map = m; state.level = name;
+  document.body.classList.toggle('on-tahiti', name === 'tahiti');
   world = buildWorld(scene, state.content, map, kitOverrides);
   nav = makeNav();
   railPts = null;
@@ -2833,6 +2854,7 @@ const lookV = new THREE.Vector3();
 function start() {
   if (state.started) return;
   state.started = true;
+  prefetchTahiti();
   if ((state.save.tahitiTreasure || []).length >= 5) giveBandana(false);
   const boot = $('#boot');
   boot.classList.add('fade');
@@ -4273,6 +4295,7 @@ const tahiti = createTahiti({
   isNight: () => night > 0.5,
   aspect: () => renderer.domElement.width / Math.max(1, renderer.domElement.height),
   clearMarker() { marker.visible = false; },
+  walkTo,
   setView(v) { if (v) { state.camOverride = { x: v.x, z: v.z }; state.zoom = v.zoom; } else { state.camOverride = null; state.zoom = 1; } updateCameraFrustum(); },
   persist,
   jetPoint() { const j = world.apis.private_jet; return j ? j.doorPoint() : { x: 0, z: 0 }; },

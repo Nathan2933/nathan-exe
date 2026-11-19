@@ -139,7 +139,30 @@ export function createTahiti(ctx) {
   const seatOwner = new Map();   // vehicle interactable -> the one NPC holding its second seat
   let photo = null, session = null, lastPhotoInfo = null, race = null, hunt = null, lastHint = 0;
   let lastDepart = { vg: 0, ol: 0 }, inHideout = false, hideoutSince = 0;
-  let epoch = 0, buddyTimer = 0, treasureItems = [], photoSpotList = [], study = null;
+  let epoch = 0, buddyTimer = 0, treasureItems = [], photoSpotList = [], study = null, guideAsk = 0;
+
+  // ---------- Tahiti guide: offered on arrival, tells the events and nothing else ----------
+  const EVENT_ACTS = new Set(['vgevents', 'party', 'race', 'dance', 'volley', 'photosession', 'foodcontest', 'tvgame', 'anuhoop', 'photo']);
+  function guideBusy() {
+    return !state.started || state.cine || state.minigame || state.choosing || state.panelOpen || state.groupScene || state.flightStarting || state.ko || dialogue.open;
+  }
+  function askGuide() {
+    ctx.choose('Need a guide for Tahiti?', [
+      { label: 'Yes, show me the events', value: true },
+      { label: 'No thanks, I will explore', value: false },
+    ], (yes) => { if (yes) openGuide(); });
+  }
+  function openGuide() {
+    const events = ctx.world.interactables.filter((i) => i.kind === 'activity' && EVENT_ACTS.has(i.act));
+    const opts = events.map((it) => ({ label: it.act === 'vgevents' ? 'Vanderlinde events board' : it.title, value: it }));
+    opts.push({ label: 'Close', value: null });
+    ctx.choose('Tahiti events: pick one and I will take you there', opts, (it) => {
+      if (!it) return;
+      const x = it.approach?.x ?? it.x, z = it.approach?.z ?? it.z;
+      state.path = []; state.pendingOpen = null; ctx.clearMarker?.();
+      P().set(x, ctx.heightAt(x, z), z);   // teleport next to the event
+    });
+  }
   const harris = () => brains.find((b) => b.id === 'harris');
   const P = () => player.group.position;
   const dist = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
@@ -643,9 +666,11 @@ export function createTahiti(ctx) {
         const gp = buddy.it.character.group.position, p = P();
         if (dist(gp, p) > 2.4 && buddy.mode !== 'walk' && buddy.mode !== 'bed') { goTo(buddy, p.x + 0.9, p.z + 0.9, () => { if (buddy) buddy.mode = 'follow'; }, dist(gp, p) > 6); }
       }, 500);
+      guideAsk = 1.5;   // ask once the player has landed and nothing else is on screen
     },
     exit() {
       epoch++;
+      guideAsk = 0;
       if (buddyTimer) { clearInterval(buddyTimer); buddyTimer = 0; }
       endMatch(true); endShootout(true);
       if (flashM) { clearTimeout(flashM.t); disposeObj(flashM); flashM = null; }
@@ -659,6 +684,7 @@ export function createTahiti(ctx) {
       passenger = null; buddy = null; invite = null; driverNpc = null; seatOwner.clear(); photo = null; session = null; lastPhotoInfo = null; race = null;
       state.joined = null; state.photoPath = false;
     },
+    openGuide,
     harrisState() { return harris()?.hstate; },
     inMatch: () => !!state.volley || !!state.hoop,
     getNpcActivity(npcId) {
@@ -689,6 +715,7 @@ export function createTahiti(ctx) {
 
     update(dt, t) {
       const now = performance.now();
+      if (guideAsk > 0 && !guideBusy()) { guideAsk -= dt; if (guideAsk <= 0) askGuide(); }
       if (state.cine) { const h = harris(); if (h) h.hstate = state.cine.phase === 'board' ? 'BOARDING' : 'TRAVELLING'; drawBubbles(); return; }
       for (const g of ['vg', 'ol']) if (party[g] > 0) { party[g] -= dt; if (party[g] <= 0) endParty(g); }
       { const p = P(), inside = p.x > HIDEOUT.x0 && p.x < HIDEOUT.x1 && p.z > HIDEOUT.z0 && p.z < HIDEOUT.z1; if (inside && !inHideout) hideoutSince = now; inHideout = inside; }

@@ -264,7 +264,7 @@ O('volley_net', ...COURTS[0].c, { len: 6.8, L: 11, rot: COURTS[0].rot }); A('vol
 O('volley_net', ...COURTS[1].c, { len: 6.8, L: 11, rot: COURTS[1].rot }); A('volley', 35.3, -16.9, { id: 'volley-ol', gang: 'ol', title: 'Euphonium volleyball' });
 // Euphonium yard: Sathesh + Shabesh's photo corner in west lawn; Akshai's gaming station at west lawn
 O('photo_station', 4.2, 2.6); A('photosession', 6.4, 4.2, { id: 'photosession', gang: 'ol', title: 'Photography session' });
-O('contest_table', 19.5, -12.5); A('foodcontest', 21.0, -9.4, { id: 'foodcontest', gang: 'ol', title: 'Food challenge' });
+O('contest_table', 19.5, -12.5); A('foodcontest', 18.6, -14.2, { id: 'foodcontest', gang: 'ol', title: 'Food challenge' });
 O('tv_corner', 17.5, 13.0); A('tvgame', 19.4, 13.2, { id: 'tvgame', gang: 'ol', title: 'Play with Akshai' });
 A('anuhoop', 18.0, -22.5, { id: 'anuhoop', gang: 'ol', title: 'Play basketball with Anu' });
 // treasure hunt: clue board at the junction, five chests hidden around the island
