@@ -1201,6 +1201,6 @@ body.portfolio .career-card .row-head h3 { font-weight: 700 !important; }
 /* The side HUD (popcorn scene) is a link to the reviews page */
 a.side-hud { color: inherit; text-decoration: none; cursor: pointer; transition: transform .12s, filter .12s; }
 a.side-hud:hover, a.side-hud:focus-visible { filter: brightness(1.08); transform: translateY(-2px); }
-a.side-hud:hover .hud-title, a.side-hud:focus-visible .hud-title { text-decoration: underline; text-underline-offset: 3px; }
+a.side-hud:hover .hud-title, a.side-hud:focus-visible .hud-title { text-decoration: none; }
 a.side-hud:focus-visible { outline: 3px solid var(--sun); outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) { a.side-hud { transition: none; } a.side-hud:hover, a.side-hud:focus-visible { transform: none; } }
