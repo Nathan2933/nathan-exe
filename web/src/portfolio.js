@@ -588,26 +588,41 @@ function wireNavHighlight() {
 // Mobile menu
 const menuBtn = document.getElementById('menu-btn');
 const sideNav = document.getElementById('side-nav');
-// phones: one compact header: the Menu button moves into the top bar next to Play
-const siteHead = document.querySelector('.site-head'), sideId = document.querySelector('.side-id');
+const sideEl = document.querySelector('.side');
+const siteHead = document.querySelector('.site-head');
 const mobileMQ = matchMedia('(max-width: 820px)');
 function placeMenu() {
-  if (mobileMQ.matches) siteHead.insertBefore(menuBtn, siteHead.querySelector('.play'));
-  else sideId.append(menuBtn);
-  if (!mobileMQ.matches) { menuBtn.setAttribute('aria-expanded', 'false'); sideNav.classList.remove('open'); }
+  if (mobileMQ.matches) {
+    if (menuBtn && siteHead && menuBtn.parentElement !== siteHead) {
+      siteHead.insertBefore(menuBtn, siteHead.querySelector('.play'));
+    }
+  } else {
+    closeMenu();
+  }
 }
 mobileMQ.addEventListener('change', placeMenu);
-menuBtn.addEventListener('click', () => {
-  const open = menuBtn.getAttribute('aria-expanded') !== 'true';
-  menuBtn.setAttribute('aria-expanded', String(open));
-  sideNav.classList.toggle('open', open);
-});
-sideNav.addEventListener('click', (e) => {
-  if (e.target.closest('a')) { menuBtn.setAttribute('aria-expanded', 'false'); sideNav.classList.remove('open'); }
-});
+if (menuBtn) {
+  menuBtn.addEventListener('click', () => {
+    const open = menuBtn.getAttribute('aria-expanded') !== 'true';
+    menuBtn.setAttribute('aria-expanded', String(open));
+    sideNav?.classList.toggle('open', open);
+    sideEl?.classList.toggle('open', open);
+  });
+}
+if (sideNav) {
+  sideNav.addEventListener('click', (e) => {
+    if (e.target.closest('a')) closeMenu();
+  });
+}
 
-const closeMenu = () => { menuBtn.setAttribute('aria-expanded', 'false'); sideNav.classList.remove('open'); };
-document.addEventListener('click', (e) => { if (sideNav.classList.contains('open') && !e.target.closest('.side, #menu-btn')) closeMenu(); });
+const closeMenu = () => {
+  menuBtn?.setAttribute('aria-expanded', 'false');
+  sideNav?.classList.remove('open');
+  sideEl?.classList.remove('open');
+};
+document.addEventListener('click', (e) => {
+  if (sideNav?.classList.contains('open') && !e.target.closest('.side, #menu-btn')) closeMenu();
+});
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenu(); });
 placeMenu();
 document.getElementById('portrait').src = portraitURL();
@@ -645,4 +660,21 @@ document.addEventListener('click', (e) => {
   };
   go();
   [120, 400, 900].forEach((ms) => setTimeout(go, ms));
+});
+
+// Projects link: land the full mission board directly into view below the navbar
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('a[href="#projects"]');
+  const el = document.getElementById('projects');
+  if (!a || !el) return;
+  e.preventDefault();
+  history.replaceState(null, '', '#projects');
+  const go = () => {
+    const head = document.querySelector('.site-head')?.getBoundingClientRect().height || 58;
+    const smt = parseFloat(getComputedStyle(el).scrollMarginTop) || (head + 10);
+    const gap = smt > head ? smt - head : 10;
+    window.scrollTo({ top: Math.max(0, el.getBoundingClientRect().top + window.scrollY - head - gap), behavior: 'instant' });
+  };
+  go();
+  [60, 180, 450, 900].forEach((ms) => setTimeout(go, ms));
 });
