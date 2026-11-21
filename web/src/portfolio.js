@@ -521,7 +521,7 @@ function wireMissions(c) {
 }
 
 
-// Contact form: posts to /contact.php (or /api/contact fallback)
+// Contact form: posts to FormSubmit AJAX endpoint (zero-server free forwarding to Gmail)
 function wireContact() {
   const form = document.getElementById('contact-form');
   if (!form) return;
@@ -533,14 +533,29 @@ function wireContact() {
     if (!form.checkValidity()) { form.reportValidity(); return; }
     btn.disabled = true; say('Sending…');
     try {
-      const payload = JSON.stringify(Object.fromEntries(new FormData(form)));
-      let res = await fetch('/contact.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload });
-      if (!res.ok && res.status === 404) {
-        // Fallback for local dev or platforms using serverless /api/contact
-        res = await fetch('/api/contact', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload });
+      const data = Object.fromEntries(new FormData(form));
+      const res = await fetch('https://formsubmit.co/ajax/nathanjerald293@gmail.com', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          name: data.name,
+          email: data.email,
+          message: data.message,
+          _subject: `Portfolio Message from ${data.name || 'Visitor'}`,
+          _replyto: data.email,
+          _template: 'table',
+          _captcha: 'false'
+        })
+      });
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok || result.success === 'false' || result.success === false) {
+        throw new Error(result.message || res.status);
       }
-      if (!res.ok) throw new Error(res.status);
-      form.reset(); say('Message sent. Thanks, I will reply soon.', 'ok');
+      form.reset();
+      say('Message sent. Thanks, I will reply soon.', 'ok');
     } catch {
       say('Could not send. Please email nathanjerald293@gmail.com directly.', 'err');
     } finally { btn.disabled = false; }
