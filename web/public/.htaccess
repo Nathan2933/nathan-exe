@@ -1,0 +1,76 @@
+# NATHAN.EXE Production .htaccess
+# Place in web/public/.htaccess so Vite copies it to dist/.htaccess during build
+
+Options -Indexes
+RewriteEngine On
+
+# ----------------------------------------------------------------------
+# 1. Security Headers
+# ----------------------------------------------------------------------
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+</IfModule>
+
+# ----------------------------------------------------------------------
+# 2. Block Local Admin & Private Endpoints from Production
+# ----------------------------------------------------------------------
+RewriteRule ^(admin|__admin|\.admin-auth\.json) - [F,L,NC]
+
+# ----------------------------------------------------------------------
+# 3. Clean URLs & Routing
+# ----------------------------------------------------------------------
+# /reviews without trailing slash -> /reviews/
+RewriteRule ^reviews$ /reviews/ [R=301,L]
+
+# Serve .html file if the request matches an existing file with .html extension
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}\.html -f
+RewriteRule ^(.*)$ $1.html [L]
+
+# ----------------------------------------------------------------------
+# 4. Browser Caching
+# ----------------------------------------------------------------------
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresDefault "access plus 1 month"
+
+    # HTML files: never cache so updates take effect immediately
+    ExpiresByType text/html "access plus 0 seconds"
+
+    # JSON content and maps: revalidate immediately
+    ExpiresByType application/json "access plus 0 seconds"
+
+    # Hashed JS and CSS assets: cache aggressively
+    ExpiresByType text/css "access plus 1 year"
+    ExpiresByType application/javascript "access plus 1 year"
+    ExpiresByType text/javascript "access plus 1 year"
+
+    # Media & Fonts
+    ExpiresByType font/woff2 "access plus 1 year"
+    ExpiresByType font/woff "access plus 1 year"
+    ExpiresByType image/svg+xml "access plus 1 year"
+    ExpiresByType image/png "access plus 1 month"
+    ExpiresByType image/jpeg "access plus 1 month"
+    ExpiresByType image/webp "access plus 1 month"
+    ExpiresByType image/x-icon "access plus 1 year"
+</IfModule>
+
+<IfModule mod_headers.c>
+    # Extra header guarantees for HTML and dynamic JSON
+    <FilesMatch "\.(html|htm)$">
+        Header set Cache-Control "no-cache, no-store, must-revalidate"
+    </FilesMatch>
+    <FilesMatch "^content\.json$">
+        Header set Cache-Control "no-cache, must-revalidate"
+    </FilesMatch>
+</IfModule>
+
+# ----------------------------------------------------------------------
+# 5. Compression (Gzip / Brotli)
+# ----------------------------------------------------------------------
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json image/svg+xml
+</IfModule>
