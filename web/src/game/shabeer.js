@@ -45,11 +45,11 @@ const ROUTE = [
   { x: -28.5, z: 3 },
   { x: -31.75, z: 3 }
 ].reverse().slice(1).concat([{ x: PARK.x, z: PARK.z }]);
-// Shabeer rides an inner lane so he and Guru pass side by side instead of through each other.
-const LANE = 1.3;
+// Shabeer rides an outer lane so he stays on the road, passes Guru cleanly, and avoids inner campus hedges/obstacles.
+const LANE = 0.8;
 for (const p of ROUTE) {
-  if (p.x < -24 && p.x > -26) p.x += LANE; else if (p.x > 25) p.x -= LANE;
-  if (p.z < -28) p.z += LANE; else if (p.z > 26.5) p.z -= LANE;
+  if (p.x < -24 && p.x > -26) p.x -= LANE; else if (p.x > 25) p.x += LANE;
+  if (p.z < -28) p.z -= LANE; else if (p.z > 26.5) p.z += LANE;
 }
 // Seats along the bike's own axis (+z is the direction of travel): the driver sits forward, the passenger directly behind
 const DRIVER_Z = -0.05, PASSENGER_Z = -0.52, SEAT_Y = 0.3;
@@ -221,8 +221,8 @@ export function createShabeerRoutine(ctx) {
     else speed = speed < target ? Math.min(target, speed + ACCEL * dt) : Math.max(target, speed - BRAKE * 0.5 * dt);
     stuck = speed < 0.15 && !dismounting && hold <= 0 && grace <= 0 ? stuck + dt : 0;
     if (stuck > 3) {
-      // with Nathan on the back the ride always completes the full circle: wait, then edge past the blocker instead of teleporting home
-      if (passenger) { bypass = 2.5; stuck = 0; } else { finishRide(n); return; }
+      // Shabeer always completes his full round: wait, then edge past any blocker instead of teleporting home
+      bypass = 2.5; stuck = 0;
     }
     const step = speed * dt;
     pos.x += Math.sin(heading) * step; pos.z += Math.cos(heading) * step;

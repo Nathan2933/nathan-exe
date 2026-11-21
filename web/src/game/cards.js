@@ -498,11 +498,19 @@ export function openLightbox(slides, start = 0) {
 export function installPanelModal({ panel, scrim, close, onOpen }) {
   panel.setAttribute('aria-modal', 'true');
   panel.tabIndex = -1;
+  let openedAt = 0;
   const isOpen = () => !panel.classList.contains('hidden');
-  const sync = () => { scrim.classList.toggle('hidden', !isOpen()); };
+  const sync = () => {
+    const open = isOpen();
+    if (open) openedAt = performance.now();
+    scrim.classList.toggle('hidden', !open);
+  };
   new MutationObserver(sync).observe(panel, { attributes: true, attributeFilter: ['class'] });
   sync();
-  scrim.addEventListener('click', () => close());
+  scrim.addEventListener('click', () => {
+    if (performance.now() - openedAt < 350) return;
+    close();
+  });
   panel.addEventListener('click', (e) => { if (e.target.closest('[data-card-close]')) close(); });
   window.addEventListener('keydown', (e) => {
     if (!isOpen() || e.ctrlKey || e.metaKey || e.altKey) return;

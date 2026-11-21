@@ -543,7 +543,13 @@ function setupUI() {
   $('#bigmap').addEventListener('click', (e) => { if (e.target.id === 'bigmap') toggleBigMap(false); });
   initBigMapInput();
 
-  $('#prompt').addEventListener('click', () => state.nearby && interact(state.nearby));
+  const prPrompt = $('#prompt');
+  prPrompt.addEventListener('pointerdown', (e) => e.stopPropagation());
+  prPrompt.addEventListener('pointerup', (e) => e.stopPropagation());
+  prPrompt.addEventListener('click', (e) => {
+    e.stopPropagation();
+    state.nearby && interact(state.nearby);
+  });
   $('#panel-close').addEventListener('click', closePanel);
   { let rt = 0; const refit = () => { clearTimeout(rt); rt = setTimeout(() => { if (state.panelOpen) fitCard($('#panel-body')); }, 120); }; addEventListener('resize', refit); addEventListener('orientationchange', refit); const pb = $('#panel-body'); pb.addEventListener('load', refit, true); pb.addEventListener('loadedmetadata', refit, true); }   // pictures that land late change the card's height
   panelModal = installPanelModal({ panel: $('#panel'), scrim: $('#panel-scrim'), close: closePanel });
@@ -2809,7 +2815,11 @@ function setZoom(z) {
 function handleTap(x, y) {
   if (!state.started || !world || state.minigame || state.ko) return;
   if (state.gym) return gymPush();
-  if (dialogue.open) { dialogue.close(); }
+  if (dialogue.open) {
+    if (performance.now() - (dialogue.openedAt || 0) < 400) return;
+    dialogue.advance();
+    return;
+  }
   ndc.set((x / window.innerWidth) * 2 - 1, -(y / window.innerHeight) * 2 + 1);
   raycaster.setFromCamera(ndc, camera);
   const hits = raycaster.intersectObjects(world.interactables.filter((i) => i.hit && (i.kind !== 'memory' || !i.visited)).map((i) => i.hit), false);
@@ -2839,7 +2849,8 @@ function walkTo(x, z) {
 function walkToInteractable(it) {
   closePanel();
   const pos = player.group.position;
-  if (Math.hypot(pos.x - it.x, pos.z - it.z) < it.radius) return interact(it);
+  const reach = it.radius + (isTouch ? 0.6 : 0);
+  if (Math.hypot(pos.x - it.x, pos.z - it.z) < reach) return interact(it);
   state.pendingOpen = it;
   walkTo(it.approach?.x ?? it.x, it.approach?.z ?? it.z);
 }
@@ -2967,8 +2978,9 @@ function update(dt, t) {
     if ((it.kind === 'memory' && it.visited) || it.disabled) continue;
     if (it.kind === 'npc' && it.passenger) continue;   // someone already on a vehicle is not a chat target: the vehicle's own prompt ("Ride behind …") must win
     const d = Math.hypot(pos.x - it.x, pos.z - it.z);
+    const reach = it.radius + (isTouch ? 0.6 : 0);
     const score = it.kind === 'npc' ? d - 0.8 : d; // people take priority when you're beside them
-    if (d < it.radius && score < bestD) { best = it; bestD = score; }
+    if (d < reach && score < bestD) { best = it; bestD = score; }
   }
   if (state.mount) best = state.mount.it;
   if (state.passengerOf) {

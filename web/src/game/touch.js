@@ -79,13 +79,33 @@ export function initTouchControls(keys) {
   document.addEventListener('visibilitychange', () => { if (document.hidden) reset(); });
   if ('ResizeObserver' in window) new ResizeObserver(() => { if (pid !== null && !stick.getClientRects().length) reset(); }).observe(stick);
 
+  // Prevent touch control events from leaking into the 3D scene canvas underneath
+  root.addEventListener('pointerdown', (e) => e.stopPropagation());
+  root.addEventListener('pointerup', (e) => e.stopPropagation());
+  root.addEventListener('click', (e) => e.stopPropagation());
+
   // ---- action buttons (hold-aware so Jump can be held like Space) ----
   const bind = (id, key) => {
     const b = root.querySelector(id);
     let id_ = null;
-    b.addEventListener('pointerdown', (e) => { e.preventDefault(); id_ = e.pointerId; b.setPointerCapture(id_); b.classList.add('down'); press(key); });
-    const up = (e) => { if (e.pointerId !== id_) return; id_ = null; b.classList.remove('down'); release(key); };
-    b.addEventListener('pointerup', up); b.addEventListener('pointercancel', up); b.addEventListener('lostpointercapture', up);
+    b.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      id_ = e.pointerId;
+      try { b.setPointerCapture(id_); } catch {}
+      b.classList.add('down');
+      press(key);
+    });
+    const up = (e) => {
+      if (e.pointerId !== id_) return;
+      id_ = null;
+      b.classList.remove('down');
+      release(key);
+    };
+    b.addEventListener('pointerup', (e) => { e.stopPropagation(); up(e); });
+    b.addEventListener('pointercancel', (e) => { e.stopPropagation(); up(e); });
+    b.addEventListener('lostpointercapture', (e) => { e.stopPropagation(); up(e); });
+    b.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); });
     new ResizeObserver(() => { if (!b.getClientRects().length && id_ !== null) { id_ = null; b.classList.remove('down'); release(key); } }).observe(b);
     b.addEventListener('contextmenu', (e) => e.preventDefault());
   };

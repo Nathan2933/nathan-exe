@@ -21,8 +21,10 @@ export class Dialogue {
     this.saveRef = null;
     this.goodbye = null;
     this.closedAt = 0;   // performance.now() of the last close: lets callers ignore the same key press
+    this.openedAt = 0;
 
     root.addEventListener('click', (e) => {
+      if (performance.now() - this.openedAt < 350) return;
       const opt = e.target.closest('[data-topic]');
       if (opt) return this.#choose(Number(opt.dataset.topic));
       if (e.target.closest('.dlg-close')) return this.bye();
@@ -60,6 +62,7 @@ export class Dialogue {
       this.queue = (npc.lines || []).flatMap((l) => String(l).split(/\s*\/\/\s*/)).filter(Boolean);
     }
 
+    this.openedAt = performance.now();
     this.root.classList.remove('hidden');
     this.#next();
   }
