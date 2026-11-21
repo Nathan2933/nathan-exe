@@ -40,5 +40,6 @@ jobs:
           protocol: ftps
           port: 21
           local-dir: web/dist/
-          server-dir: /
+          server-dir: ./
+          state-name: .ftp-deploy-sync-state.json
           dangerous-clean-slate: false
