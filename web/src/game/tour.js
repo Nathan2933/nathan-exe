@@ -29,6 +29,7 @@ export function createTour(ctx) {
   const { state, dialogue } = ctx;
   const card = $('#tour-card'), modal = $('#tour-modal');
   let active = false, index = 0, offered = false, modalOpen = false, moving = false;
+  let bound = false, enterKeyDown = false, lastEnterTime = 0;
 
   const lastIndex = TOUR_STOPS.length - 1;
 
@@ -78,13 +79,51 @@ export function createTour(ctx) {
       <button type="button" class="tour-btn hw-btn alt" data-act="free">Explore Freely</button></div>`);
   }
 
+  function isCardOpen() {
+    return active && !modalOpen && !moving && !ctx.busy() && !card.classList.contains('hidden');
+  }
+
+  function getPrimaryBtn() {
+    return card.querySelector('[data-act="next"]') || card.querySelector('[data-act="finish"]');
+  }
+
+  function isPrimaryEnabled() {
+    const btn = getPrimaryBtn();
+    return Boolean(btn && !btn.disabled && !btn.hasAttribute('disabled') && btn.getAttribute('aria-disabled') !== 'true');
+  }
+
+  function isNextEnabled() {
+    const nextBtn = card.querySelector('[data-act="next"]');
+    return Boolean(nextBtn && !nextBtn.disabled && !nextBtn.hasAttribute('disabled') && nextBtn.getAttribute('aria-disabled') !== 'true');
+  }
+
+  function isFinishEnabled() {
+    const finishBtn = card.querySelector('[data-act="finish"]');
+    return Boolean(finishBtn && !finishBtn.disabled && !finishBtn.hasAttribute('disabled') && finishBtn.getAttribute('aria-disabled') !== 'true');
+  }
+
+  function isTyping(e) {
+    const target = e?.target;
+    const activeEl = typeof document !== 'undefined' ? document.activeElement : null;
+    const isInput = (el) => el && (
+      el.tagName === 'INPUT' ||
+      el.tagName === 'TEXTAREA' ||
+      el.tagName === 'SELECT' ||
+      el.isContentEditable ||
+      el.getAttribute?.('contenteditable') === 'true' ||
+      el.getAttribute?.('contenteditable') === '' ||
+      el.closest?.('input, textarea, select, [contenteditable="true"], [contenteditable=""]')
+    );
+    return Boolean(isInput(target) || isInput(activeEl));
+  }
+
   async function visit(i) {
     if (moving) return false;
     moving = true;
     card.classList.add('hidden');
     let ok = false;
     try { ok = await ctx.goTo(TOUR_STOPS[i]); } finally { moving = false; }
-    if (ok) { index = i; renderCard(); }
+    if (ok) { index = i; renderCard(); update(); }
     return ok;
   }
 
@@ -99,21 +138,28 @@ export function createTour(ctx) {
     if (active) renderCard();
   }
 
-  function exit() { active = false; moving = false; card.classList.add('hidden'); }
+  function exit() { active = false; moving = false; enterKeyDown = false; card.classList.add('hidden'); }
 
   function finish() {
     active = false;
+    moving = false;
+    enterKeyDown = false;
     card.classList.add('hidden');
     showModal(`<div class="hw-banner"><span class="hw-press">LEVEL CLEAR</span><h2>Tour <b>complete!</b></h2></div>
       <p class="hw-lead">Now explore freely. Meet the characters, visit more places and try the activities.</p>
       <div class="tm-row"><button type="button" class="tour-btn primary hw-btn" data-act="done">Explore Freely</button></div>`);
   }
 
+  function handleNext() {
+    if (moving) return;
+    return void visit(index + 1);
+  }
+
   function act(a) {
     if (a === 'howto-next') return offerTour();
     if (a === 'take') return start();
     if (a === 'free' || a === 'done') return hideModal();
-    if (a === 'next') return void visit(index + 1);
+    if (a === 'next') return handleNext();
     if (a === 'finish') return finish();
     if (a === 'exit') return exit();
   }
@@ -135,14 +181,59 @@ export function createTour(ctx) {
     setTimeout(tick, 800);
   }
 
+  function onKeyDown(e) {
+    if (e.key !== 'Enter') return;
+    if (e.repeat || enterKeyDown) {
+      if (isCardOpen() && isPrimaryEnabled()) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      return;
+    }
+    if (moving || isTyping(e)) return;
+    const focusedExit = e.target?.closest?.('[data-act="exit"]') || document.activeElement?.closest?.('[data-act="exit"]');
+    if (focusedExit) return;
+    if (isCardOpen() && isPrimaryEnabled()) {
+      const primaryBtn = getPrimaryBtn();
+      const action = primaryBtn?.dataset?.act;
+      if (!action) return;
+      enterKeyDown = true;
+      lastEnterTime = performance.now();
+      e.preventDefault();
+      e.stopPropagation();
+      act(action);
+    }
+  }
+
+  function onKeyUp(e) {
+    if (e.key === 'Enter') {
+      enterKeyDown = false;
+    }
+  }
+
+  function onBlur() {
+    enterKeyDown = false;
+  }
+
   function bind() {
+    if (bound) return;
+    bound = true;
     for (const el of [card, modal]) {
       el.addEventListener('click', (e) => {
         const t = e.target.closest('[data-act]');
-        if (t) { e.preventDefault(); act(t.dataset.act); }
+        if (!t) return;
+        if ((t.dataset.act === 'next' || t.dataset.act === 'finish') && performance.now() - lastEnterTime < 250) {
+          e.preventDefault();
+          return;
+        }
+        e.preventDefault();
+        act(t.dataset.act);
       });
       el.addEventListener('pointerdown', (e) => e.stopPropagation());
     }
+    window.addEventListener('keydown', onKeyDown, true);
+    window.addEventListener('keyup', onKeyUp, true);
+    window.addEventListener('blur', onBlur);
     $('#nav-tour')?.addEventListener('click', (e) => {
       e.preventDefault();
       $('#recruiter-bar')?.classList.remove('open');
@@ -153,11 +244,17 @@ export function createTour(ctx) {
   }
 
   return {
-    bind, offerWhenReady, update, start, exit,
+    bind, offerWhenReady, update, start, exit, finish,
     get active() { return active; },
     get stop() { return active ? TOUR_STOPS[index] : null; },
     get modalOpen() { return modalOpen; },
+    get isCardOpen() { return isCardOpen(); },
+    get isPrimaryEnabled() { return isPrimaryEnabled(); },
+    get isNextEnabled() { return isNextEnabled(); },
+    get isFinishEnabled() { return isFinishEnabled(); },
+    get isMoving() { return moving; },
+    next: handleNext,
     // debug / tests
-    _act: act, _offer: offer,
+    _act: act, _offer: offer, _handleKeyDown: onKeyDown, _handleKeyUp: onKeyUp,
   };
 }

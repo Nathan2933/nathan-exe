@@ -617,6 +617,7 @@ function setupUI() {
     const focused = document.activeElement;
     if (!act || focused?.closest?.('input, textarea, select')) return;
     if (e.key === 'Enter' && focused?.closest?.('a, button')) return; // let Enter press the focused button
+    if (e.key === 'Enter' && tour?.isCardOpen && (tour?.isPrimaryEnabled || tour?.isNextEnabled)) return;
     e.preventDefault();
     if (dialogue.open) dialogue.advance();
     else if (state.nearby && !state.panelOpen && !(e.repeat && state.nearby.kind === 'gym') && performance.now() - dialogue.closedAt > 350) interact(state.nearby);
