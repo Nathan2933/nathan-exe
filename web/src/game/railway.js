@@ -90,7 +90,7 @@ export function buildRailway(root, map, stations, animated) {
   }).sort((a, b) => a.s - b.s);
 
   const state = { s: stops.length ? stops[0].s - 20 : 0, v: 0, wait: 0, nextStop: 0, last: 0, script: false };
-  const VMAX = 6.5, ACC = 2.2;
+  const VMAX = 8.5, ACC = 2.8;
   animated.push((t) => {
     const dt = Math.min(0.05, Math.max(0, t - state.last)); state.last = t;
     door.k += Math.sign(door.target - door.k) * Math.min(Math.abs(door.target - door.k), dt / 0.4);

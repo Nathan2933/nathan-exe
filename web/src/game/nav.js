@@ -1,9 +1,10 @@
 // Walkable grid + A* pathfinding on the ground plane (x/z).
 
 export class NavGrid {
-  constructor({ size = 64, cell = 0.5, islandRadius = 27, colliders = [], agentRadius = 0.45, blocked = null, queryColliders = null }) {
+  constructor({ size = 64, cell = 0.5, islandRadius = 27, colliders = [], agentRadius = 0.45, blocked = null, queryColliders = null, dynamicBlocked = null }) {
     this.blocked = null;
     this.extraBlocked = blocked; // (x, z) => true for non-walkable ground (water…)
+    this.dynamicBlocked = null;
     this.cell = cell;
     this.n = Math.ceil(size / cell);
     this.origin = -size / 2;
@@ -23,11 +24,13 @@ export class NavGrid {
         this.blocked[j * this.n + i] = this.isWalkable(x, z, agentRadius) ? 0 : 1;
       }
     }
+    this.dynamicBlocked = dynamicBlocked;
   }
 
   isWalkable(x, z, r = this.agentRadius) {
     if (Math.hypot(x, z) > this.islandRadius - r) return false;
     if (this.extraBlocked && this.extraBlocked(x, z)) return false;
+    if (this.dynamicBlocked && this.dynamicBlocked(x, z)) return false;
     const list = this.queryColliders ? this.queryColliders(x, z, r, this._qBuf) : this.colliders;
     for (let i = 0; i < list.length; i++) {
       const c = list[i];
@@ -42,7 +45,7 @@ export class NavGrid {
   /** Fast lookup against the pre-baked grid (agent radius already applied). */
   gridFree(x, z) {
     const i = Math.floor((x - this.origin) / this.cell), j = Math.floor((z - this.origin) / this.cell);
-    return this.free(i, j);
+    return this.free(i, j) && !(this.dynamicBlocked && this.dynamicBlocked(x, z));
   }
 
   toCell(x, z) {
@@ -55,7 +58,12 @@ export class NavGrid {
     return { x: this.origin + (i + 0.5) * this.cell, z: this.origin + (j + 0.5) * this.cell };
   }
   free(i, j) {
-    return i >= 0 && j >= 0 && i < this.n && j < this.n && !this.blocked[j * this.n + i];
+    if (i < 0 || j < 0 || i >= this.n || j >= this.n || this.blocked[j * this.n + i]) return false;
+    if (this.dynamicBlocked) {
+      const { x, z } = this.toWorld(i, j);
+      if (this.dynamicBlocked(x, z)) return false;
+    }
+    return true;
   }
 
   nearestFree(i, j) {

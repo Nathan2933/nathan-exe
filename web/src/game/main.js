@@ -1539,10 +1539,10 @@ function vehicleFree(x, z, cfg) {
   for (let i = 0; i < world.npcs.length; i++) { const n = world.npcs[i]; if (n.passenger) continue; const p = n.character.group.position; if (Math.hypot(p.x - x, p.z - z) < r + 0.45) return false; }
   const vehicles = world.vehicles || [];
   for (let i = 0; i < vehicles.length; i++) { const it = vehicles[i]; if (it !== state.mount?.it && Math.hypot(it.x - x, it.z - z) < r + 0.6) return false; }
-  // the railway is just ground to roll over, but never through a train
+  // the railway is just ground to roll over, but never through a stationary train
   if (world.railway) {
     if (!railPts) railPts = world.railway.curve.getSpacedPoints(500);
-    if (trainNear(x, z, 0.6)) return false;
+    if (world.railway.speed < 0.3 && trainNear(x, z, 0.6)) return false;
   }
   return true;
 }
@@ -1784,6 +1784,7 @@ function makeNav() {
       if (world.floorAt(x, z) !== null) return false;
       const t = tileAt(map, x, z); return !t || !t.walkable;
     },
+    dynamicBlocked: (x, z) => !!(world?.railway && world.railway.speed < 0.3 && trainNear(x, z, 0.3)),
   });
 }
 /**
@@ -2946,11 +2947,18 @@ function update(dt, t) {
   // Move with axis-separated sliding (feels better than stopping dead on walls).
   // Keyboard movement only respects solid things, so you *can* walk into the
   // lake or off the island (and pay for it); click-to-move uses the nav grid.
-  const free = keyboardMove ? solidFree : (state.photoPath ? (x, z) => nav.isWalkable(x, z, 0.32) : (x, z) => nav.isWalkable(x, z, 0.32) && !charBlocks(x, z));
+  const free = keyboardMove
+    ? solidFree
+    : (state.photoPath
+      ? (x, z) => nav.isWalkable(x, z, 0.32) && solidFree(x, z)
+      : (x, z) => nav.isWalkable(x, z, 0.32) && !charBlocks(x, z) && solidFree(x, z));
   if (velocity.lengthSq() > 0 && !state.ko) {
     const nx = pos.x + velocity.x * dt, nz = pos.z + velocity.z * dt;
     if (free(nx, pos.z)) pos.x = nx; else velocity.x = 0;
     if (free(pos.x, nz)) pos.z = nz; else velocity.z = 0;
+  }
+  if (!state.mount && !state.arrival && !state.cine && world?.railway) {
+    resolveTrainPenetration(pos);
   }
   if (state.gym && (!gymApi() || state.level === 'tahiti' || state.cine)) resetGym();
   if (state.gym) gymUpdate(dt);
@@ -3568,9 +3576,25 @@ function solidFree(x, z) {
     else if (x > c.minX - r && x < c.maxX + r && z > c.minZ - r && z < c.maxZ + r) return false;
   }
   if (Math.hypot(x, z) > world.discRadiusAt(x, z) + 2.5) return false; // don't swim to the horizon (limit follows the real shoreline)
-  // a stopped train is solid
-  if (world.railway && world.railway.speed < 0.5 && trainNear(x, z, 0.3)) return false;
+  // while train is stationary (speed < 0.3), it is solid so the player cannot walk into/through it
+  if (world.railway && world.railway.speed < 0.3 && trainNear(x, z, 0.3)) return false;
   return !charBlocks(x, z);
+}
+function resolveTrainPenetration(pos) {
+  if (!world?.railway?.train || state.ko || (world.railway.speed >= 0.3)) return;
+  for (const car of world.railway.train) {
+    trainLocal.set(pos.x - car.position.x, 0, pos.z - car.position.z).applyAxisAngle(UP, -car.rotation.y);
+    const penX = (0.85 + 0.3) - Math.abs(trainLocal.x);
+    const penZ = (1.45 + 0.3) - Math.abs(trainLocal.z);
+    if (penX > 0 && penZ > 0) {
+      const push = new THREE.Vector3();
+      if (penX < penZ) push.x = Math.sign(trainLocal.x || 1) * penX;
+      else push.z = Math.sign(trainLocal.z || 1) * penZ;
+      push.applyAxisAngle(UP, car.rotation.y);
+      pos.x += push.x;
+      pos.z += push.z;
+    }
+  }
 }
 function onFloor(x, z) { return world ? world.floorAt(x, z) !== null : false; }
 // Water = anywhere the rendered shoreline (world.landAt) says there is no sand/ground. `pad` (m) widens the land
@@ -3615,22 +3639,25 @@ const trainPrev = [];
 const trainLocal2 = new THREE.Vector3();
 const prevPlayer = new THREE.Vector3();
 let prevPlayerOk = false;
-function boxHit(x, z, cx, cz, ry, padX, padZ) {
+function boxHit(x, z, cx, cz, ry, padX, padZ, isEngine = false) {
   trainLocal2.set(x - cx, 0, z - cz).applyAxisAngle(UP, -ry);
-  return Math.abs(trainLocal2.z) < (1.35 + padZ) && Math.abs(trainLocal2.x) < (0.75 + padX);
+  const maxZ = isEngine ? (1.85 + padZ) : (1.35 + padZ);
+  const minZ = -(1.35 + padZ);
+  return trainLocal2.z >= minZ && trainLocal2.z <= maxZ && Math.abs(trainLocal2.x) < (0.85 + padX);
 }
 function lerpAngle(a, b, k) { return a + Math.atan2(Math.sin(b - a), Math.cos(b - a)) * k; }
 function checkTrain() {
   const rw = world?.railway; if (!rw) return;
   const cars = rw.train, p = player.group.position;
   while (trainPrev.length < cars.length) trainPrev.push({ x: 0, z: 0, ry: 0, ok: false });
-  const moving = rw.speed >= 1.0;
-  const charR = state.mount ? state.mount.cfg.r * (state.mount.it.vtype === 'horse' ? 1.25 : 1) : 0.24;
+  const moving = rw.speed >= 0.25;
+  const charR = state.mount ? state.mount.cfg.r * (state.mount.it.vtype === 'horse' ? 1.25 : 1) : 0.32;
   const now = performance.now();
-  const invulnerable = state.trainGuard || (state.invulnerableUntil && now < state.invulnerableUntil);
-  if (invulnerable && !trainNear(p.x, p.z, 2.2) && (!state.invulnerableUntil || now >= state.invulnerableUntil)) {
+  if (state.invulnerableUntil && now >= state.invulnerableUntil) {
+    state.invulnerableUntil = 0;
     state.trainGuard = false;
   }
+  const invulnerable = (state.invulnerableUntil && now < state.invulnerableUntil);
   const jumpH = state.mount ? (state.mount.jumpY || 0) : player.jumpY;
   const canHit = state.started && !state.ko && !state.cine && !state.seated && moving
     && (jumpH < 1.15);
@@ -3638,7 +3665,7 @@ function checkTrain() {
   if (canHit && !invulnerable) {
     let nearTrain = false;
     for (let i = 0; i < cars.length; i++) {
-      if (Math.hypot(p.x - cars[i].position.x, p.z - cars[i].position.z) < 6.5) {
+      if (Math.hypot(p.x - cars[i].position.x, p.z - cars[i].position.z) < 7.0) {
         nearTrain = true;
         break;
       }
@@ -3646,10 +3673,11 @@ function checkTrain() {
     if (nearTrain) {
       for (let i = 0; i < cars.length && !hit; i++) {
         const c = cars[i], q = trainPrev[i];
-        if (boxHit(p.x, p.z, c.position.x, c.position.z, c.rotation.y, charR, charR)) hit = c;
+        const isEngine = (i === 0);
+        if (boxHit(p.x, p.z, c.position.x, c.position.z, c.rotation.y, charR, charR, isEngine)) hit = c;
         else if (q.ok && prevPlayerOk) {
           const px = (p.x + prevPlayer.x) / 2, pz = (p.z + prevPlayer.z) / 2;
-          if (boxHit(px, pz, (c.position.x + q.x) / 2, (c.position.z + q.z) / 2, lerpAngle(q.ry, c.rotation.y, 0.5), charR, charR)) hit = c;
+          if (boxHit(px, pz, (c.position.x + q.x) / 2, (c.position.z + q.z) / 2, lerpAngle(q.ry, c.rotation.y, 0.5), charR, charR, isEngine)) hit = c;
         }
       }
     }
