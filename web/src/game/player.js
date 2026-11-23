@@ -296,6 +296,7 @@ export class Character {
     this.idleYaw = 0;
     this.buff = 0; this.buffTarget = 0;
     this.jumpY = 0; this.jumpV = 0; // vertical hop offset (metres) and velocity
+    this.joltY = 0; this.joltPitch = 0; // seat jolt vertical and pitch offset
     this.joints = {}; // smoothed joint values
   }
 
@@ -538,6 +539,7 @@ export class Character {
       const ph = i === 0 ? s : -s;
       const back = i === 0 ? Math.max(0, -c) : Math.max(0, c);
       set(`th${i}`, ph * amp * 0.9, 18);
+      set(`tz${i}`, 0, 18);
       set(`kn${i}`, back * (0.5 * walkW + 1.1 * runW) + (1 - walkW) * 0.04, 18);
     }
     for (const [i, arm] of this.arms.entries()) {
@@ -563,8 +565,8 @@ export class Character {
     set('headY', yaw, 6);
     set('headX', this.talking ? Math.sin(t * 7) * 0.06 : 0, 10);
 
-    // --- idle poses for roaming characters (fade in only while standing still) ---
-    this.poseW = damp(this.poseW || 0, this.pose && walkW < 0.2 ? 1 : 0, 4, dt);
+    // --- idle poses for roaming characters (fade in only while standing still or riding) ---
+    this.poseW = damp(this.poseW || 0, this.pose && (walkW < 0.2 || this.riding) ? 1 : 0, 4, dt);
     if (this.poseW > 0.01 && (this.pose || this.lastPose)) {
       if (this.pose) this.lastPose = this.pose;
       const pw = this.poseW, pm = (k, v) => (J[k] = J[k] * (1 - pw) + v * pw), P = this.lastPose;
@@ -650,11 +652,47 @@ export class Character {
       } else if (P === 'scooty') {
         // upright scooter seat: feet forward on the floorboard, both hands on the bars (turn with the steering)
         const st = this.steer || 0;
-        pm('hipY', -0.12); pm('th0', -1.25); pm('th1', -1.25); pm('kn0', 1.05); pm('kn1', 1.05); pm('spineX', 0.25); pm('spineY', st * 0.3);
+        pm('hipY', -0.12); pm('hipX', 0); pm('th0', -1.25); pm('th1', -1.25); pm('kn0', 1.05); pm('kn1', 1.05); pm('spineX', 0.25); pm('spineY', st * 0.3);
         pm('sx0', -1.05 + st * 0.25); pm('sx1', -1.05 - st * 0.25); pm('el0', -0.35); pm('el1', -0.35); pm('sz0', -0.08); pm('sz1', 0.08);
-      } else if (P === 'ride') {
-        pm('hipY', -0.12); pm('th0', -0.95); pm('th1', -0.95); pm('kn0', 1.0); pm('kn1', 1.0); pm('spineX', 0.08);
-        pm('sx0', -0.7); pm('sx1', -0.7); pm('el0', -0.9); pm('el1', -0.9); pm('hipX', 0);
+      } else if (P === 'ride' || P === 'moto') {
+        // Motorcycle riding pose: leaned forward over the tank, elbows bent naturally,
+        // hands firmly on the handlebar grips following the bars when steering (including stopped)
+        const st = this.steer || 0;
+        pm('hipY', -0.22); pm('th0', -0.95); pm('th1', -0.95); pm('kn0', 1.0); pm('kn1', 1.0);
+        pm('spineX', 0.50); pm('spineY', st * 0.25); pm('headX', -0.25);
+        pm('sx0', -0.56 + st * 0.08); pm('sx1', -0.56 - st * 0.08);
+        pm('sz0', 0.34 - st * 0.04); pm('sz1', -0.34 - st * 0.04);
+        pm('el0', -0.46 - st * 0.50); pm('el1', -0.46 + st * 0.50);
+        pm('ez0', 0.08); pm('ez1', -0.08);
+        pm('hipX', 0);
+      } else if (P === 'pillion' || P === 'pillion_moto') {
+        // Motorcycle pillion: slight forward lean, hands at driver's waist,
+        // knees bent back with feet aligned to motorcycle rear footpegs
+        const st = this.steer || 0;
+        pm('hipY', -0.16);
+        pm('th0', -0.80); pm('th1', -0.80);
+        pm('tz0', -0.22); pm('tz1', 0.22);
+        pm('kn0', 1.42); pm('kn1', 1.42);
+        pm('spineX', 0.28); pm('spineY', st * 0.15); pm('headX', -0.10);
+        pm('sx0', -0.48); pm('sx1', -0.48);
+        pm('sz0', 0.30); pm('sz1', -0.30);
+        pm('el0', -0.68); pm('el1', -0.68);
+        pm('ez0', 0); pm('ez1', 0);
+        pm('hipX', 0);
+      } else if (P === 'pillion_scooty') {
+        // Black Zest scooter pillion: slight forward lean, hands near driver's waist,
+        // knees bent to scooter running-board pillion footrests
+        const st = this.steer || 0;
+        pm('hipY', -0.14);
+        pm('th0', -0.96); pm('th1', -0.96);
+        pm('tz0', -0.20); pm('tz1', 0.20);
+        pm('kn0', 1.25); pm('kn1', 1.25);
+        pm('spineX', 0.25); pm('spineY', st * 0.15); pm('headX', -0.08);
+        pm('sx0', -0.45); pm('sx1', -0.45);
+        pm('sz0', 0.28); pm('sz1', -0.28);
+        pm('el0', -0.65); pm('el1', -0.65);
+        pm('ez0', 0); pm('ez1', 0);
+        pm('hipX', 0);
       } else if (P === 'curl') {
         const a = Math.max(0, Math.sin(t * 2.4)), b = Math.max(0, Math.sin(t * 2.4 + Math.PI));
         pm('sx0', -0.15 - 0.25 * a); pm('el0', -0.15 - 2.0 * a); pm('sx1', -0.15 - 0.25 * b); pm('el1', -0.15 - 2.0 * b); pm('sz0', -0.12); pm('sz1', 0.12);
@@ -729,18 +767,30 @@ export class Character {
     }
     if (this.talking && !this.action && this.pose !== 'photo' && this.pose !== 'aim' && this.pose !== 'sleep') J.sx1 += Math.sin(t * 3.1) * 0.12 - 0.25, J.el1 += -0.5;
 
+    // --- upper body delayed lean (pillion passenger follows bike lean with subtle lag) ---
+    if (this.bikeLean !== undefined) {
+      this.upperLean = damp(this.upperLean || 0, this.bikeLean, 5.0, dt);
+      this.spineLeanOffset = -(this.bikeLean - this.upperLean) * 0.75;
+    } else {
+      this.upperLean = 0;
+      this.spineLeanOffset = 0;
+    }
+
     // --- apply ---
-    this.legs.forEach((leg, i) => { leg.thigh.rotation.x = J[`th${i}`]; leg.knee.rotation.x = J[`kn${i}`]; });
+    this.legs.forEach((leg, i) => { leg.thigh.rotation.x = J[`th${i}`]; leg.thigh.rotation.z = J[`tz${i}`] || 0; leg.knee.rotation.x = J[`kn${i}`]; });
     this.arms.forEach((arm, i) => { arm.shoulder.rotation.x = J[`sx${i}`]; arm.shoulder.rotation.z = J[`sz${i}`]; arm.elbow.rotation.x = J[`el${i}`]; arm.elbow.rotation.z = J[`ez${i}`]; });
-    this.hips.position.y = 0.62 + J.hipY;
+    this.hips.position.y = 0.62 + J.hipY + (this.joltY || 0);
     this.hips.position.x = J.hipX;
     this.hips.rotation.z = this.lean;
     this.hips.rotation.x = -(this.lie || 0) * Math.PI / 2;
-    this.spine.rotation.x = J.spineX;
+    this.spine.rotation.x = J.spineX + (this.joltPitch || 0);
     this.spine.rotation.y = J.spineY;
-    this.neck.rotation.x = -J.spineX * 0.6;
+    this.spine.rotation.z = (J.spineZ || 0) + (this.spineLeanOffset || 0);
+    this.neck.rotation.x = -J.spineX * 0.6 - (this.joltPitch || 0) * 0.4;
+    this.neck.rotation.z = -(this.spineLeanOffset || 0) * 0.35;
     this.head.rotation.y = J.headY;
-    this.head.rotation.x = J.headX;
+    this.head.rotation.x = J.headX - (this.joltPitch || 0) * 0.3;
+    this.head.rotation.z = -(this.spineLeanOffset || 0) * 0.35;
 
     // jump arc: tuck legs and raise arms while airborne
     if (this.jumpV !== 0 || this.jumpY > 0) {
@@ -777,7 +827,7 @@ export class Player extends Character {
   }
 
   get riding() {
-    return !!(this._riding || this.pose === 'scooty' || this.pose === 'ride' || this.pose === 'cycle');
+    return !!(this._riding || this.pose === 'scooty' || this.pose === 'ride' || this.pose === 'cycle' || this.pose === 'moto' || this.pose === 'pillion' || this.pose === 'pillion_moto' || this.pose === 'pillion_scooty');
   }
 
   set riding(val) {

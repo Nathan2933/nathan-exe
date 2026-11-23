@@ -10,6 +10,7 @@ import { createTahiti, RIDE_SEATS } from './tahiti.js';
 import { createXrayOcclusion } from './xray.js';
 import { createGuruRoutine } from './guru.js';
 import { createShabeerRoutine } from './shabeer.js';
+import { createBikeCollisionSystem, isBikeVehicle } from './bike-collision.js';
 import { buildWorld, loadKitOverrides, updateWalkers, updateNpcs, groundHeight, markerMats, windowMats } from './world.js';
 import { loadTiledMap, tileAt } from './tiled.js';
 import { NavGrid } from './nav.js';
@@ -573,7 +574,144 @@ function setupUI() {
   // chapter drawer (phones): tapping the dim backdrop or pressing Esc closes it
   const closeDrawer = () => { const j = $('.journey'); if (j.classList.contains('open-m')) { j.classList.remove('open-m'); $('#journey-toggle').setAttribute('aria-expanded', 'false'); } };
   document.addEventListener('pointerdown', (e) => { if ($('.journey').classList.contains('open-m') && !e.target.closest('.journey, #chars-panel')) { e.preventDefault(); closeDrawer(); } }, true);
-  window.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDrawer(); }, true);
+  const closeTopmostCard = () => {
+    // 1. Photo card (z-index 80)
+    const photoCard = document.querySelector('.photo-card');
+    if (photoCard) {
+      const closeBtn = photoCard.querySelector('.pc-close');
+      if (closeBtn) closeBtn.click();
+      else photoCard.remove();
+      return true;
+    }
+
+    // 2. Lightbox (z-index 60)
+    const lb = document.querySelector('.lb');
+    if (lb) {
+      const closeBtn = lb.querySelector('.lb-x');
+      if (closeBtn) closeBtn.click();
+      else lb.remove();
+      return true;
+    }
+
+    // 3. Tour modal (z-index 45)
+    const tourModal = document.querySelector('#tour-modal:not(.hidden)');
+    if (tourModal) {
+      const closeBtn = tourModal.querySelector('[data-act="done"], [data-act="free"], [data-act="exit"]') || tourModal.querySelector('button');
+      if (closeBtn) closeBtn.click();
+      else tourModal.classList.add('hidden');
+      return true;
+    }
+
+    // 4. Recruiter / Menu bar (z-index 40)
+    const recruiterBar = document.querySelector('#recruiter-bar.open');
+    if (recruiterBar) {
+      $('#menu-toggle')?.click() || (recruiterBar.classList.remove('open'), $('#menu-toggle')?.setAttribute('aria-expanded', 'false'));
+      return true;
+    }
+
+    // 5. Characters panel (z-index 31)
+    const charsPanel = document.querySelector('#chars-panel:not(.hidden)');
+    if (charsPanel) {
+      const closeBtn = charsPanel.querySelector('.chars-close');
+      if (closeBtn) closeBtn.click();
+      else charsPanel.classList.add('hidden');
+      return true;
+    }
+
+    // 6. Journey drawer (mobile, z-index 30)
+    const journeyDrawer = document.querySelector('.journey.open-m');
+    if (journeyDrawer) {
+      closeDrawer();
+      return true;
+    }
+
+    // 7. Tahiti choice card (e.g. Photography session, guide, party, basketball, etc.)
+    const chooseCards = document.querySelectorAll('.tahiti-choose');
+    if (chooseCards.length > 0) {
+      const topChoose = chooseCards[chooseCards.length - 1];
+      if (typeof topChoose._closeChoice === 'function') {
+        topChoose._closeChoice();
+      } else {
+        const buttons = Array.from(topChoose.querySelectorAll('button:not(:disabled)'));
+        const exitBtn = buttons.find((b) => /^(exit|cancel|close|never mind|explore on my own|ride alone)$/i.test(b.textContent.trim()))
+          || buttons.find((b) => /exit|cancel/i.test(b.textContent))
+          || buttons[buttons.length - 1];
+        if (exitBtn) exitBtn.click();
+        else { topChoose.remove(); state.choosing = null; }
+      }
+      return true;
+    }
+
+    // 8. Panel modal (z-index 21)
+    if (state.panelOpen || document.querySelector('#panel:not(.hidden)')) {
+      closePanel();
+      return true;
+    }
+
+    // 9. Tour card (z-index 35, tour active HUD)
+    const tourCard = document.querySelector('#tour-card:not(.hidden)');
+    if (tourCard) {
+      const exitBtn = tourCard.querySelector('[data-act="exit"]');
+      if (exitBtn) { exitBtn.click(); return true; }
+    }
+
+    // 10. Minigame (z-index 4 / compact overlay)
+    const minigameEl = document.querySelector('#minigame:not(.hidden)');
+    if (minigameEl || state.minigame) {
+      const closeBtn = minigameEl?.querySelector?.('.mg-x, [data-act="exit"], .panel-close');
+      if (closeBtn) closeBtn.click();
+      else if (state.minigame) {
+        state.minigame = null;
+        minigameEl?.classList.add('hidden');
+      }
+      return true;
+    }
+
+    // 11. Big map (z-index 6)
+    const bigmap = document.querySelector('#bigmap:not(.hidden)');
+    if (bigmap) {
+      toggleBigMap(false);
+      return true;
+    }
+
+    // 12. Controls / help (z-index 4 / compact 14)
+    const controls = document.querySelector('#controls:not(.hidden)');
+    if (controls) {
+      toggleControls(false);
+      return true;
+    }
+
+    // 13. Dialogue (z-index 3 / compact 4)
+    if (dialogue?.open || document.querySelector('#dialogue:not(.hidden)')) {
+      dialogue.close();
+      return true;
+    }
+
+    // 14. Group scene cutscene
+    if (state.groupScene) {
+      endGroupScene();
+      return true;
+    }
+
+    // 15. Gym workout
+    if (state.gym) {
+      gymCancel();
+      return true;
+    }
+
+    return false;
+  };
+
+  window.__closeTopmostCard = closeTopmostCard;
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      if (closeTopmostCard()) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+    }
+  }, true);
   $('#journey-list').addEventListener('click', () => { if (isCompactUI()) setTimeout(closeDrawer, 0); });
   window.addEventListener('keydown', (e) => {
     if (e.key === 'F3' && !e.repeat) { e.preventDefault(); toggleDebug(); return; }
@@ -593,11 +731,12 @@ function setupUI() {
     if (e.key === 'm' || e.key === 'M') { e.preventDefault(); toggleBigMap(); return; }
     if (e.key === 'n' || e.key === 'N') { e.preventDefault(); cycleTime(); return; }
     if ((e.key === 'r' || e.key === 'R') && state.mount) { e.preventDefault(); resetMount(); return; }
-    if (e.key === 'Escape' && state.groupScene) { endGroupScene(); return; }
     if (e.key === 'Escape') {
-      if (!$('#bigmap').classList.contains('hidden')) return toggleBigMap(false);
-      if (!$('#controls').classList.contains('hidden')) return toggleControls(false);
-      if (dialogue.open) dialogue.close(); else closePanel();
+      if (closeTopmostCard()) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
     }
     if (e.key === ' ' && !dialogue.open) {
       e.preventDefault();
@@ -1519,8 +1658,8 @@ function jackedMode(big) {
 // back as soon as Nathan gets off.
 const VEHICLES = {
   bike: { speed: 5.2, boost: 7.0, accel: 5, brake: 9, turn: 4.2, seatY: 0.3, pose: 'cycle', r: 0.42, yaw: 0, jumpV: 5.4, avoid: ['water'], label: 'bicycle' },
-  moto: { speed: 7.0, boost: 9.5, accel: 6, brake: 10, turn: 3.6, seatY: 0.62, rear: RIDE_SEATS.moto.rear, pose: 'ride', r: 0.5, yaw: 0, jumpV: 5.4, avoid: ['water'], label: 'motorcycle' },
-  scooty: { speed: 5.6, boost: 7.6, accel: 4.2, brake: 9, turn: 3.6, seatY: 0.15, rear: RIDE_SEATS.scooty.rear, pose: 'scooty', r: 0.45, yaw: 0, jumpV: 5.2, avoid: ['water'], label: 'scooty' },
+  moto: { speed: 7.0, boost: 9.5, accel: 6, brake: 10, turn: 3.6, seatY: 0.46, pillionSeatY: RIDE_SEATS.moto.pillionSeatY || 0.48, rear: RIDE_SEATS.moto.rear, pose: 'ride', pillionPose: RIDE_SEATS.moto.pillionPose || 'pillion_moto', r: 0.5, yaw: 0, jumpV: 5.4, avoid: ['water'], label: 'motorcycle' },
+  scooty: { speed: 5.6, boost: 7.6, accel: 4.2, brake: 9, turn: 3.6, seatY: 0.15, pillionSeatY: RIDE_SEATS.scooty.pillionSeatY || 0.18, rear: RIDE_SEATS.scooty.rear, pose: 'scooty', pillionPose: RIDE_SEATS.scooty.pillionPose || 'pillion_scooty', r: 0.45, yaw: 0, jumpV: 5.2, avoid: ['water'], label: 'scooty' },
   horse: { speed: 4.0, boost: 6.6, accel: 3.5, brake: 7, turn: 3.0, seatY: 0.7, pose: 'ride', r: 0.6, yaw: -Math.PI / 2, jumpV: 6.4, avoid: ['water'], label: 'horse' },
 };
 const _qBuf = [];
@@ -1537,9 +1676,23 @@ function vehicleFree(x, z, cfg) {
   const tile = tileAt(map, x, z);
   if (!tile || !tile.walkable || cfg.avoid.includes(tile.type)) return false;
   if (Math.hypot(x, z) > (map.props.navRadius || (map.props.islandRadius || 44) - 2.5) - 0.5) return false;
-  for (let i = 0; i < world.npcs.length; i++) { const n = world.npcs[i]; if (n.passenger) continue; const p = n.character.group.position; if (Math.hypot(p.x - x, p.z - z) < r + 0.45) return false; }
+  const curX = player.group.position.x, curZ = player.group.position.z;
+  for (let i = 0; i < world.npcs.length; i++) {
+    const n = world.npcs[i];
+    if (n.passenger || n.character?.pose === 'scooty' || n.character?.pose === 'ride' || n.character?.pose === 'cycle') continue;
+    const p = n.character?.group?.position;
+    if (!p) continue;
+    const d = Math.hypot(p.x - x, p.z - z);
+    if (d < r + 0.45 && d < Math.hypot(p.x - curX, p.z - curZ) - 0.001) return false;
+  }
   const vehicles = world.vehicles || [];
-  for (let i = 0; i < vehicles.length; i++) { const it = vehicles[i]; if (it !== state.mount?.it && Math.hypot(it.x - x, it.z - z) < r + 0.6) return false; }
+  for (let i = 0; i < vehicles.length; i++) {
+    const it = vehicles[i];
+    if (it === state.mount?.it) continue;
+    const d = Math.hypot(it.x - x, it.z - z);
+    const minD = r + 0.55;
+    if (d < minD && d < Math.hypot(it.x - curX, it.z - curZ) - 0.001) return false;
+  }
   // the railway is just ground to roll over, but never through a stationary train
   if (world.railway) {
     if (!railPts) railPts = world.railway.curve.getSpacedPoints(500);
@@ -1568,7 +1721,15 @@ function mount(it) {
     if (role === 'rear') {                                   // an NPC already drives: Nathan sits behind them
       const S = RIDE_SEATS[it.vtype], g = it.model.group, h = it.heading || 0;
       m.rearOff = cfg.rear; m.offH = h; m.npcDrives = true; m.route = null;
-      player.group.position.set(g.position.x + Math.sin(h) * (S.back - cfg.rear), g.position.y, g.position.z + Math.cos(h) * (S.back - cfg.rear));
+      if (g) {
+        g.updateMatrixWorld(true);
+        const sy = cfg.pillionSeatY || S.pillionSeatY || S.seatY;
+        const worldSeat = g.localToWorld(new THREE.Vector3(0, sy, S.back - cfg.rear));
+        player.group.position.copy(worldSeat);
+      } else {
+        player.group.position.set(g.position.x + Math.sin(h) * (S.back - cfg.rear), g.position.y + (cfg.pillionSeatY || S.pillionSeatY || S.seatY), g.position.z + Math.cos(h) * (S.back - cfg.rear));
+      }
+      player.pose = cfg.pillionPose || 'pillion';
     }
     tahiti.onRideMount(m, role);
   }
@@ -1597,9 +1758,18 @@ function dismount(force = false) {
     it.model.group.rotation.z = 0;
     it.model.group.position.y = heightAt(p.x, p.z);
   }
+  if (it.model?.bars) it.model.bars.rotation.y = 0;
   state.mount = null; state.nearby = null;
   player.pose = null;
+  player.lastPose = null;
+  player.poseW = 0;
+  player.steer = 0;
   player.riding = false;
+  player.bikeLean = 0;
+  player.upperLean = 0;
+  player.spineLeanOffset = 0;
+  player.group.rotation.set(0, 0, 0);
+  player.group.rotation.set(0, 0, 0);
   player.jumpY = 0; player.jumpV = 0;
   if (it.vtype === 'moto') setEngine(null);
   if (state.level === 'tahiti' && RIDE_SEATS[it.vtype]) tahiti.onRideDismount(spot2);
@@ -1614,6 +1784,16 @@ function resetMount() {
     m.it.model.group.rotation.x = 0;
     m.it.model.group.rotation.z = 0;
   }
+  if (m.it?.model?.bars) m.it.model.bars.rotation.y = 0;
+  player.steer = 0;
+  player.pose = null;
+  player.lastPose = null;
+  player.poseW = 0;
+  player.riding = false;
+  player.bikeLean = 0;
+  player.upperLean = 0;
+  player.spineLeanOffset = 0;
+  player.group.rotation.set(0, 0, 0);
   const home = m.it.home;
   player.group.position.set(home.x, heightAt(home.x, home.z), home.z);
   m.heading = home.heading; m.speed = 0;
@@ -1660,14 +1840,25 @@ function rideUpdate(dt, t, kx, kz, running) {
     }
   }
   const hold = state.level === 'tahiti' && !!RIDE_SEATS[it.vtype] && !tahiti.passengerReady();               // wait for the passenger to climb on
-  const target = want && !hold ? (running || state.path.length > 6 ? cfg.boost : cfg.speed) : 0;
+  let turn = 0;
+  if (want) {
+    const h = Math.atan2(rideDir.x, rideDir.z);
+    turn = Math.atan2(Math.sin(h - m.heading), Math.cos(h - m.heading));
+  }
+  const wantBack = want && Math.abs(turn) > 2.2;
+  const reversing = wantBack && !m.npcDrives && (m.speed < 0.6 || m.isReversing);
+  m.isReversing = reversing && want;
+  const target = want && !hold ? (reversing ? -2.2 : (running || state.path.length > 6 ? cfg.boost : cfg.speed)) : 0;
   const dv = target - m.speed;
   m.speed += Math.max(-cfg.brake * dt, Math.min(cfg.accel * dt, dv));
   if (want) {
-    const h = Math.atan2(rideDir.x, rideDir.z);
-    const turn = Math.atan2(Math.sin(h - m.heading), Math.cos(h - m.heading));
-    m.heading += turn * Math.min(1, dt * cfg.turn);
-    if (Math.abs(turn) > 2.2) m.speed *= 1 - Math.min(1, dt * 3);          // slow for a hard U-turn
+    if (reversing) {
+      const revTurn = turn > 0 ? turn - Math.PI : turn + Math.PI;
+      m.heading += revTurn * Math.min(1, dt * cfg.turn * 0.45);
+    } else {
+      m.heading += turn * Math.min(1, dt * cfg.turn);
+      if (Math.abs(turn) > 2.2) m.speed *= 1 - Math.min(1, dt * 3);          // slow for a hard U-turn
+    }
   }
   const vx = Math.sin(m.heading) * m.speed, vz = Math.cos(m.heading) * m.speed;
   const nx = pos.x + vx * dt, nz = pos.z + vz * dt;
@@ -1701,8 +1892,9 @@ function rideUpdate(dt, t, kx, kz, running) {
 
   // model follows Nathan
   const g = it.model.group;
-  const back = it.vtype === 'moto' ? 0.28 : it.vtype === 'scooty' ? -0.36 : 0;   // scooty: its seat sits 0.36 m behind the model centre                                  // bike sits a little behind the driver so the passenger fits
-  g.position.set(pos.x - Math.sin(m.heading) * back, ground + jY, pos.z - Math.cos(m.heading) * back);
+  const back = it.vtype === 'moto' ? 0.0 : it.vtype === 'scooty' ? -0.18 : 0;   // scooty: its seat sits 0.18 m behind the model centre                                  // bike sits a little behind the driver so the passenger fits
+  const rx = it.recoilX || 0, rz = it.recoilZ || 0, rp = it.recoilPitch || 0;
+  g.position.set(pos.x - Math.sin(m.heading) * back + rx, ground + jY, pos.z - Math.cos(m.heading) * back + rz);
   g.rotation.y = m.heading + cfg.yaw;
   it.x = pos.x; it.z = pos.z; it.heading = m.heading;
   if (m.rearOff) { pos.x -= Math.sin(m.heading) * m.rearOff; pos.z -= Math.cos(m.heading) * m.rearOff; m.offH = m.heading; }   // ...then sit back on the pillion seat
@@ -1713,15 +1905,19 @@ function rideUpdate(dt, t, kx, kz, running) {
     it.model.crank.rotation.x = m.phase;
     player.pedal = m.phase;
     g.rotation.z = Math.atan2(Math.sin(rideDir.x * 0), 1) * 0;                  // keep upright
-    g.rotation.x = jY > 0 ? -(m.jumpV / 5.4) * 0.16 : 0;
-    pos.y = ground + cfg.seatY * m.lift + hop + jY;
+    g.rotation.x = (jY > 0 ? -(m.jumpV / 5.4) * 0.16 : 0) + rp;
+    pos.y = ground + cfg.seatY * m.lift + hop + jY + (player.joltY || 0);
   } else if (it.vtype === 'moto' || it.vtype === 'scooty') {
     for (const w of it.model.wheels) w.rotation.x += (m.speed * dt) / (it.vtype === 'scooty' ? 0.24 : 0.36);
-    if (it.model.bars) { const steer = want ? Math.atan2(Math.sin(Math.atan2(rideDir.x, rideDir.z) - m.heading), Math.cos(Math.atan2(rideDir.x, rideDir.z) - m.heading)) : 0; it.model.bars.rotation.y = Math.max(-0.5, Math.min(0.5, steer * 0.6)); player.steer = it.model.bars.rotation.y; }
+    if (it.model.bars) {
+      const targetSteer = want ? Math.max(-0.5, Math.min(0.5, Math.atan2(Math.sin(Math.atan2(rideDir.x, rideDir.z) - m.heading), Math.cos(Math.atan2(rideDir.x, rideDir.z) - m.heading)) * 0.6)) : 0;
+      it.model.bars.rotation.y += (targetSteer - it.model.bars.rotation.y) * Math.min(1, dt * 18);
+      player.steer = it.model.bars.rotation.y;
+    }
     const lean = -Math.atan2(Math.sin(Math.atan2(rideDir.x, rideDir.z) - m.heading), 1) * Math.min(1, sp / 6) * 0.25 * (want ? 1 : 0);   // lean into turns
     g.rotation.z = jY > 0 ? lean * Math.max(0, 1 - jY * 2) : lean;
-    g.rotation.x = jY > 0 ? -(m.jumpV / 5.4) * 0.12 : 0;
-    pos.y = ground + cfg.seatY * m.lift + hop + (sp > 0.2 ? Math.sin(t * 40) * 0.006 : 0) + jY;
+    g.rotation.x = (jY > 0 ? -(m.jumpV / 5.4) * 0.12 : 0) + rp;
+    pos.y = ground + cfg.seatY * m.lift + hop + (sp > 0.2 ? Math.sin(t * 40) * 0.006 : 0) + jY + (player.joltY || 0);
     setEngine(Math.min(1, sp / cfg.boost));
     if (sp > 2 && tileAt(map, pos.x, pos.z)?.type?.match(/sand|beach|dirt|path/) && Math.random() < dt * sp * 2) dust(pos.x - Math.sin(m.heading) * 0.8, pos.z - Math.cos(m.heading) * 0.8);
   } else {
@@ -1756,7 +1952,16 @@ function rideUpdate(dt, t, kx, kz, running) {
     pos.y = ground + cfg.seatY * m.lift + hop + bounce + jY;
   }
   player.heading = m.heading;
-  player.pose = cfg.pose;
+  player.pose = m.rearOff ? (cfg.pillionPose || 'pillion') : cfg.pose;
+  if (m.rearOff) {
+    player.group.rotation.z = g.rotation.z || 0;
+    player.group.rotation.x = g.rotation.x || 0;
+    player.bikeLean = g.rotation.z || 0;
+  } else {
+    player.bikeLean = 0;
+    player.upperLean = 0;
+    player.spineLeanOffset = 0;
+  }
   player.update(dt, zeroV, t);
 }
 const zeroV = new THREE.Vector3();
@@ -1836,6 +2041,7 @@ async function switchLevel(name) {
   if (state.level === 'tahiti') { tahiti.exit(); $('#tahiti-hints')?.classList.add('hidden'); hintKey = ''; }
   if (state.level === 'island1') { guruRoutine.exit(); shabeerRoutine.exit(); }
   if (state.mount) dismount(true);
+  bikeCollisions?.reset?.();
   setEngine(null);
   scene.remove(world.root);
   world.dispose?.();
@@ -1937,6 +2143,7 @@ async function visitCharacter(canon) {
     if (state.level === 'tahiti') tahiti.leaveJoin();
     if (state.seated) standUp();
     if (state.mount) dismount(true);
+  bikeCollisions?.reset?.();
     if (target !== lvl) {
       if (target === 'tahiti') {
         const access = await checkTahitiAccess();
@@ -2025,6 +2232,7 @@ async function tourGoTo(stop) {
     if (state.level === 'tahiti') tahiti.leaveJoin();
     if (state.seated) standUp();
     if (state.mount) dismount(true);
+  bikeCollisions?.reset?.();
     if (state.level !== 'island1') { toast('Heading to Island 01…'); await switchLevel('island1'); await sleep(450); }
     const it = findStopInteractable(stop, world.interactables, state.content);
     if (!it) { toast('Could not find that stop right now.'); return false; }
@@ -2125,6 +2333,7 @@ async function startFlightInner(to) {
   leaveGym();
   if (dialogue.open) dialogue.close();
   if (state.mount) dismount(true);
+  bikeCollisions?.reset?.();
   if (state.seated) standUp();
   if (to === 'tahiti') {
     const access = await checkTahitiAccess();
@@ -2415,6 +2624,7 @@ function travel(from, dest) {
   if (state.travelBusy || state.arrival) return;   // one ride at a time: ignore repeat taps on the timetable
   state.travelBusy = true;
   if (state.mount) dismount(true);
+  bikeCollisions?.reset?.();
   closePanel();
   const c = state.content;
   const ch = chapterFor(c, dest.district) || {};
@@ -3054,6 +3264,7 @@ function update(dt, t) {
   }
   if (state.level === 'tahiti') { tahiti.update(dt, t); tahitiHints(); }
   if (state.level === 'island1') { guruRoutine.update(dt, t); shabeerRoutine.update(dt, t); }
+  bikeCollisions.update(dt, t);
   dustTick(dt);
 
   for (const it of world.interactables) {
@@ -3206,10 +3417,35 @@ function placePrompt() {
   const pr = $('#prompt');
   if (!state.nearby && !pr.classList.contains('hidden')) pr.classList.add('hidden');   // never leave a stale prompt behind
   if (isTouch || !state.nearby || pr.classList.contains('hidden')) { _promptTf = ''; return; }
-  const nx = state.nearby.kind === 'passenger' ? player.group.position.x : state.nearby.x;
-  const nz = state.nearby.kind === 'passenger' ? player.group.position.z : state.nearby.z;
-  const gy = heightAt(nx, nz);
-  promptV.set(nx, gy + (state.nearby.kind === 'npc' ? 2.6 : 2.4), nz).project(camera);
+  if (state.mount || state.passengerOf || state.nearby.kind === 'passenger') {
+    player.group.updateMatrixWorld(true);
+    let topY = player.group.position.y + 1.8;
+    if (player.head) {
+      player.head.getWorldPosition(promptV);
+      topY = promptV.y;
+    } else {
+      promptV.set(player.group.position.x, player.group.position.y + 1.8, player.group.position.z);
+    }
+    const other = state.mount
+      ? (tahiti?.getPassengerNpc?.() || tahiti?.getDriverNpc?.())
+      : (state.passengerOf === 'shabeer' ? shabeerRoutine?.getShabeerCharacter?.() : (state.passengerOf === 'guru' ? guruRoutine?.getGuruCharacter?.() : null));
+    const otherChar = other?.character || (other?.head ? other : null);
+    if (otherChar?.head) {
+      otherChar.group.updateMatrixWorld(true);
+      const oHead = new THREE.Vector3();
+      otherChar.head.getWorldPosition(oHead);
+      if (oHead.y > topY) topY = oHead.y;
+      promptV.x = (promptV.x + oHead.x) * 0.5;
+      promptV.z = (promptV.z + oHead.z) * 0.5;
+    }
+    promptV.y = topY + 1.30;
+    promptV.project(camera);
+  } else {
+    const nx = state.nearby.x;
+    const nz = state.nearby.z;
+    const gy = heightAt(nx, nz);
+    promptV.set(nx, gy + (state.nearby.kind === 'npc' ? 2.6 : 2.4), nz).project(camera);
+  }
   const x = (promptV.x * 0.5 + 0.5) * innerWidth, y = (-promptV.y * 0.5 + 0.5) * innerHeight;
   // keep the prompt inside the viewport and clear of the navbar, sidebar card and minimap
   const w = pr.offsetWidth || 160, h = pr.offsetHeight || 40, m = 8;
@@ -4017,6 +4253,7 @@ function trainCollisionDeath(car) {
     state.nearby = null;
     player.pose = null;
     player.riding = false;
+  player.group.rotation.set(0, 0, 0);
     player.pedal = 0;
     if (it.vtype === 'moto') setEngine(null);
     if (state.level === 'tahiti' && RIDE_SEATS[it.vtype]) tahiti.onRideDismount({ x: p.x, z: p.z });
@@ -4347,8 +4584,41 @@ const tahiti = createTahiti({
     const el = document.createElement('div'); el.className = 'tahiti-choose window';
     el.innerHTML = `<div class="window-bar"><span class="title">ride.exe</span></div><div class="mg-body"><h2>${esc(title)}</h2><div class="choose-list"></div></div>`;
     const list = el.querySelector('.choose-list');
-    options.forEach((o, i) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn' + (i === 0 ? ' primary' : ''); b.textContent = o.label; if (o.note) { const n = document.createElement('small'); n.textContent = o.note; b.append(n); } if (o.disabled) b.disabled = true; b.addEventListener('click', () => { if (o.disabled) return; el.remove(); state.choosing = null; cb(o.value); }); list.append(b); });
-    document.body.append(el); state.choosing = el;
+    options.forEach((o, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'btn' + (i === 0 ? ' primary' : '');
+      b.textContent = o.label;
+      if (o.note) {
+        const n = document.createElement('small');
+        n.textContent = o.note;
+        b.append(n);
+      }
+      if (o.disabled) b.disabled = true;
+      b.addEventListener('click', () => {
+        if (o.disabled) return;
+        el.remove();
+        state.choosing = null;
+        cb(o.value);
+      });
+      list.append(b);
+    });
+    el._closeChoice = () => {
+      if (!el.isConnected) return;
+      const buttons = Array.from(list.querySelectorAll('button:not(:disabled)'));
+      const exitBtn = buttons.find((b) => /^(exit|cancel|close|never mind|explore on my own|ride alone)$/i.test(b.textContent.trim()))
+        || buttons.find((b) => /exit|cancel/i.test(b.textContent))
+        || buttons[buttons.length - 1];
+      if (exitBtn) {
+        exitBtn.click();
+      } else {
+        el.remove();
+        state.choosing = null;
+        cb(null);
+      }
+    };
+    document.body.append(el);
+    state.choosing = el;
     setTimeout(() => list.querySelector('button')?.focus(), 0);
   },
   flash(text, white = false) {
@@ -4490,6 +4760,20 @@ const shabeerRoutine = createShabeerRoutine({
   get world() { return world; }
 });
 
+const bikeCollisions = createBikeCollisionSystem({
+  get scene() { return scene; },
+  state,
+  player,
+  get world() { return world; },
+  heightAt,
+  sfx,
+  guruRoutine,
+  shabeerRoutine,
+  triggerCameraShake: (dur) => {
+    if (!reducedMotion) shakeT = Math.max(shakeT, dur);
+  },
+});
+
 // === Debug overlay (?debug or F3) ===
 let dbg = null, dbgLastMs = 0, dbgLastHud = 0;
 const dbgSamples = new Float32Array(120);
@@ -4606,3 +4890,7 @@ window.addEventListener('keydown', (e) => {
     if (islandPeek.left <= 0) endIslandPeek(); else el.textContent = 'MAP VIEW ' + islandPeek.left;
   }, 1000);
 });
+
+if (typeof window !== 'undefined') {
+  window.__DEBUG_GAME__ = { state, player, world, tahiti, shabeerRoutine, guruRoutine, mount, dismount, resetMount };
+}

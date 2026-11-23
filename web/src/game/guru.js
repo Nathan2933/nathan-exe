@@ -361,7 +361,7 @@ export function createGuruRoutine(ctx) {
     if (passengerActive) return;
     passengerActive = true;
     ctx.state.passengerOf = 'guru';
-    ctx.player.pose = 'ride';
+    ctx.player.pose = 'pillion_scooty';
     ctx.player.riding = true;
     ctx.toast('Riding with Guru! Press E anytime to dismount.');
     showBubble('Hold on tight, Nathan! Taking the scenic ring road.', 2.8);
@@ -372,7 +372,13 @@ export function createGuruRoutine(ctx) {
     passengerActive = false;
     ctx.state.passengerOf = null;
     ctx.player.pose = null;
+    ctx.player.lastPose = null;
+    ctx.player.poseW = 0;
     ctx.player.riding = false;
+    ctx.player.bikeLean = 0;
+    ctx.player.upperLean = 0;
+    ctx.player.spineLeanOffset = 0;
+    ctx.player.group.rotation.set(0, 0, 0);
 
     /* Step off to a safe walkable spot beside the scooter */
     const h = scootyHeading;
@@ -630,7 +636,7 @@ export function createGuruRoutine(ctx) {
           scootyPos.z - Math.cos(scootyHeading) * passDist
         );
         ctx.player.heading = scootyHeading;
-        ctx.player.pose = 'ride';
+        ctx.player.pose = 'pillion';
         ctx.player.riding = true;
         ctx.player.update(dt, zeroV, t);
       }
@@ -696,11 +702,9 @@ export function createGuruRoutine(ctx) {
 
         if (obstacle.type === 'player' && hornCooldown <= 0) {
           hornCooldown = 3.5;
-          showBubble('Beep beep! Watch the road, Nathan!', 2.2);
-          ctx.sfx?.tap?.();
+          // Bike collisions play without dialogue
         } else if (obstacle.type === 'npc' && hornCooldown <= 0) {
           hornCooldown = 3.5;
-          showBubble('Honk honk, coming through!', 2.2);
         }
       } else {
         if (currentSpeed < targetSpeed) {
@@ -718,9 +722,11 @@ export function createGuruRoutine(ctx) {
 
       /* Animate scooty model */
       if (scootyModel?.group) {
-        scootyModel.group.position.set(scootyPos.x, currentGround, scootyPos.z);
+        const rx = scooty.recoilX || 0, rz = scooty.recoilZ || 0, rp = scooty.recoilPitch || 0;
+        scootyModel.group.position.set(scootyPos.x + rx, currentGround, scootyPos.z + rz);
         scootyModel.group.rotation.y = scootyHeading;
         scootyModel.group.rotation.z = -steerAngle * 0.25 * Math.min(1, currentSpeed / 4);
+        scootyModel.group.rotation.x = rp;
         if (scootyModel.wheels) {
           for (const w of scootyModel.wheels) {
             w.rotation.x += stepDist / 0.24;
@@ -732,9 +738,9 @@ export function createGuruRoutine(ctx) {
       const driverDist = passengerActive ? 0.22 : 0.32;
       const seatY = 0.15;
       ch.group.position.set(
-        scootyPos.x - Math.sin(scootyHeading) * driverDist,
-        currentGround + seatY,
-        scootyPos.z - Math.cos(scootyHeading) * driverDist
+        scootyPos.x - Math.sin(scootyHeading) * driverDist + (scooty.recoilX || 0),
+        currentGround + seatY + (ch.joltY || 0),
+        scootyPos.z - Math.cos(scootyHeading) * driverDist + (scooty.recoilZ || 0)
       );
       ch.heading = scootyHeading;
       ch.pose = 'scooty';
@@ -753,7 +759,7 @@ export function createGuruRoutine(ctx) {
 
       /* Update Nathan as passenger */
       if (passengerActive && ctx.player) {
-        const passDist = 0.58;
+        const passDist = 0.68;
         const passY = 0.18;
         ctx.player.group.position.set(
           scootyPos.x - Math.sin(scootyHeading) * passDist,
@@ -761,8 +767,13 @@ export function createGuruRoutine(ctx) {
           scootyPos.z - Math.cos(scootyHeading) * passDist
         );
         ctx.player.heading = scootyHeading;
-        ctx.player.pose = 'ride';
+        ctx.player.pose = 'pillion_scooty';
         ctx.player.riding = true;
+        if (scootyModel?.group) {
+          ctx.player.group.rotation.z = scootyModel.group.rotation.z || 0;
+          ctx.player.group.rotation.x = scootyModel.group.rotation.x || 0;
+          ctx.player.bikeLean = scootyModel.group.rotation.z || 0;
+        }
         ctx.player.update(dt, zeroV, t);
         if (ctx.velocity) {
           ctx.velocity.set(Math.sin(scootyHeading) * currentSpeed, 0, Math.cos(scootyHeading) * currentSpeed);
@@ -899,6 +910,10 @@ export function createGuruRoutine(ctx) {
     triggerRideTogether,
     isGuruMounted,
     getRoutinePhase,
-    isPassengerActive: () => passengerActive
+    isPassengerActive: () => passengerActive,
+    nudge: (dx, dz) => { scootyPos.x += dx; scootyPos.z += dz; },
+    reduceSpeed: (amt) => { currentSpeed = Math.max(0, currentSpeed - amt); },
+    getSpeed: () => currentSpeed,
+    getGuruCharacter: () => getGuruNpc()?.character || null
   };
 }

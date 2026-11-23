@@ -136,27 +136,27 @@ O('photo_table', -23.6, -6.0);
 O('outlaws_villa', 12, -3, { rot: 0 });
 labels.push(point('label', 14, -3, { text: "EUPHONIUM VILLA", color: '#2a2440', height: 5.4 }));
 route('tahiti_cf1', [[23.3, -2.0]], { idles: 'gaze', faces: '90' });                              // at the railing, facing the ocean
-route('tahiti_cf2', [[4.2, 2.6]], { idles: 'film', faces: '180' });                                  // at photo station in west lawn facing south
+route('tahiti_cf2', [[7.6, 8.5]], { idles: 'film', faces: '45' });                                  // at photo station beside the path facing camera
 route('tahiti_cf3', [[20.5, -4.5]], { idles: 'sit', faces: '-90' });
 route('tahiti_cf4', [[19.6, -6.4]], { idles: 'look', faces: '0' });
 route('tahiti_cf5', [[16.9, 14.15]], { idles: 'sittype', faces: '180' });                            // at his gaming station with TV, console & controllers
 route('tahiti_cf6', [[21.6, 1.4]], { idles: 'phone', faces: '90' });
-route('tahiti_cf7', [[2.6, 4.0], [18.2, -1.0]], { idles: 'film,gaze', faces: '180,90' });          // at photography workstation and ocean terrace
+route('tahiti_cf7', [[4.6, 9.2], [18.2, -1.0]], { idles: 'film,gaze', faces: '45,90' });          // at photography workstation and ocean terrace
 route('tahiti_cf8', [[17.4, -1.6]], { idles: 'phone', faces: '135' });
-// Siva keeps his stock-market board in the shared finance corner (see below)
+// Siva keeps his stock-market board inside the hedge (see below)
 interact.push(point('group', 21.4, -2.6, { id: 'outlaws', title: 'Join Euphonium' }));
 
-// ---- Finance & Ideas Corner: open lawn south of the villa (Siva and Shabeer, side by side) ----
-// Boards face the default camera (south-east), each character stands just right of their board.
-const FIN = { siva: [6.0, 9.0], shab: [9.0, -22.5] };   // Siva: SW lawn south of the runway; Shabeer: north lawn beside the Outlaws court
+// ---- Finance & Ideas: Siva inside the hedge, Shabeer in north lawn ----
+// Boards face the default camera (south-east), character faces camera beside the board.
+const FIN = { siva: [4.2, 2.6], shab: [9.0, -22.5] };   // Siva: inside the hedge; Shabeer: north lawn beside the Outlaws court
 const finNpc = ([bx, bz]) => [+(bx + 2.2 * Math.SQRT1_2 + 0.55 * Math.SQRT1_2).toFixed(2), +(bz - 2.2 * Math.SQRT1_2 + 0.55 * Math.SQRT1_2).toFixed(2)];
 O('finance_stock', ...FIN.shab, { rot: -45 });      // Shabeer: stock-trading desk
-O('finance_savings', ...FIN.siva, { rot: -45 });    // Siva: investing / wealth board
-route('tahiti_cf9', [finNpc(FIN.siva)], { idles: 'look', faces: '45' });
+O('finance_savings', ...FIN.siva, { rot: -45 });    // Siva: investing / wealth board inside the hedge
+route('tahiti_cf9', [[6.4, 4.2]], { idles: 'look', faces: '45' });
 route('tahiti_sf5', [finNpc(FIN.shab)], { idles: 'look', faces: '45' });
 
 // ---- Vanderlinde land: their own campfire beside the road ----
-O('campfire', -16.4, -3.6);   // front courtyard, beside the bench (was round the west side)
+O('campfire', -16.4, -3.6);   // front courtyard (was round the west side)
 labels.push(point('label', -29, -23, { text: 'VANDERLINDE BEACH', color: '#5a3a26', height: 3 }));
 labels.push(point('label', 38.5, 0, { text: 'EUPHONIUM BEACH', color: '#2a2440', height: 3 }));
 labels.push(point('label', 2, 38, { text: 'SOUTH BEACH', color: '#c4402f', height: 3 }));
@@ -221,13 +221,12 @@ for (const [x, z] of [[-30, 22], [-24, 26], [-34, 16], [-18, 28], [-36, 24], [24
 for (const [x, z] of [[-28, 28], [20, 28]]) O('rock', x, z, { scale: 1 });
 // ---- centre: kept simple so the junction reads clearly ----
 O('bench', 3.8, -1.2, { rot: -90 });   // (bench beside Guru's scooty removed: it sat on his E-ring)
-for (const [x, z, sc] of [[-5.5, 2.4, 1], [7.6, -5.6, 0.9], [0.5, -7.2, 1.05], [-8.6, -0.4, 0.95], [4.4, 8.6, 1], [-4.2, 7.4, 0.9]]) O('tree_palm', x, z, { scale: sc });
+for (const [x, z, sc] of [[7.6, -5.6, 0.9], [0.5, -7.2, 1.05], [4.4, 8.6, 1], [-4.2, 7.4, 0.9]]) O('tree_palm', x, z, { scale: sc });
 // path lights along each walk (warm bollards, outside the walking width)
 for (const [x, z] of [[-6.6, -4.9], [-3.2, 5.0], [-3.2, 8.0], [5.5, 1.4], [9.5, 1.4], [12.2, 5.0], [16.5, 8.4]]) O('path_light', x, z);
 
-// ---- hideout courtyard: paved, a bench, plants, warm lantern posts, open middle ----
+// ---- hideout courtyard: paved, plants, warm lantern posts, open middle ----
 O('lantern_post', -17.6, -1.4); O('lantern_post', -8.4, -1.4);
-O('bench', -16.2, -1.6, { rot: 0 });
 O('shrub', -17.6, -4.8);
 // clubhouse exterior: string lights, wall lamps and potted plants on the front wall,
 // an illuminated gang sign at the west entrance, low edging stones along the courtyard
@@ -262,8 +261,8 @@ O('race_flag', -4.0, 38.4); O('race_flag', 9.0, 38.0, { color: '#2bb3a3' }); A('
 const COURTS = [{ c: [-17.95, -28.5], u: [0.638, -0.77], w: [-0.77, -0.638], rot: 129.7 }, { c: [35.3, -10], u: [0, 1], w: [1, 0], rot: -90 }];
 O('volley_net', ...COURTS[0].c, { len: 6.8, L: 11, rot: COURTS[0].rot }); A('volley', -22.3, -23.3, { id: 'volley-vg', gang: 'vg', title: 'Vanderlinde volleyball' });
 O('volley_net', ...COURTS[1].c, { len: 6.8, L: 11, rot: COURTS[1].rot }); A('volley', 35.3, -16.9, { id: 'volley-ol', gang: 'ol', title: 'Euphonium volleyball' });
-// Euphonium yard: Sathesh + Shabesh's photo corner in west lawn; Akshai's gaming station at west lawn
-O('photo_station', 4.2, 2.6); A('photosession', 6.4, 4.2, { id: 'photosession', gang: 'ol', title: 'Photography session' });
+// Euphonium yard: Sathesh + Shabesh's photo corner beside the path; Akshai's gaming station at west lawn
+O('photo_station', 6.0, 9.0); A('photosession', 6.0, 7.6, { id: 'photosession', gang: 'ol', title: 'Photography session' });
 O('contest_table', 19.5, -12.5); A('foodcontest', 18.6, -14.2, { id: 'foodcontest', gang: 'ol', title: 'Food challenge' });
 O('tv_corner', 17.5, 13.0); A('tvgame', 19.4, 13.2, { id: 'tvgame', gang: 'ol', title: 'Play with Akshai' });
 A('anuhoop', 18.0, -22.5, { id: 'anuhoop', gang: 'ol', title: 'Play basketball with Anu' });

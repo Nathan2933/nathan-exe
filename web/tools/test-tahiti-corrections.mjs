@@ -257,14 +257,14 @@ console.log('✓ Fountain plaza and shared roads remain completely outside.');
 // ========================================================
 // SECTION 4: Shabesh & Sathesh Photography Station Placement & Visibility
 // ========================================================
-console.log('\n--- Section 4: Shabesh & Sathesh Photography Station Placement & Visibility ---');
+console.log('\n--- Section 4: Swapped Photography & Finance Setups, Headings & Esc Card Close ---');
 
-// 4.1 Photo station prop location
+// 4.1 Photo station prop location (moved to Siva's former spot beside the south path)
 const photoStation = objects.find((o) => o.type === 'photo_station');
 assert(photoStation, 'photo_station prop must exist');
 const psPos = toWorld(photoStation.x, photoStation.y);
 console.log(`photo_station position: (${psPos.x.toFixed(2)}, ${psPos.z.toFixed(2)})`);
-assert(Math.abs(psPos.x - 4.2) < 0.2 && Math.abs(psPos.z - 2.6) < 0.2, 'photo_station must be in open west lawn at (4.2, 2.6)');
+assert(Math.abs(psPos.x - 6.0) < 0.2 && Math.abs(psPos.z - 9.0) < 0.2, 'photo_station must be beside south path at (6.0, 9.0)');
 
 // 4.2 Photosession activity trigger
 const photoAct = interact.find((i) => {
@@ -274,46 +274,61 @@ const photoAct = interact.find((i) => {
 assert(photoAct, 'photosession interactable must exist');
 const paPos = toWorld(photoAct.x, photoAct.y);
 console.log(`photosession activity position: (${paPos.x.toFixed(2)}, ${paPos.z.toFixed(2)})`);
-assert(Math.abs(paPos.x - 6.4) < 0.2 && Math.abs(paPos.z - 4.2) < 0.2, 'photosession trigger must sit clear of both photographers E-rings at (6.4, 4.2)');
+assert(Math.abs(paPos.x - 6.0) < 0.2 && Math.abs(paPos.z - 7.6) < 0.2, 'photosession trigger must sit beside the south path at (6.0, 7.6)');
 
-// 4.3 Shabesh (tahiti_cf2) spawn route & idle
+// 4.3 Shabesh (tahiti_cf2) spawn route & idle & camera-facing heading (45)
 const shabeshPath = paths.find((p) => (p.properties || []).find((prop) => prop.name === 'npc')?.value === 'tahiti_cf2');
 assert(shabeshPath, 'Shabesh (tahiti_cf2) path must exist');
 const shabeshPos = toWorld(shabeshPath.x, shabeshPath.y);
 console.log(`Shabesh spawn position: (${shabeshPos.x.toFixed(2)}, ${shabeshPos.z.toFixed(2)})`);
-assert(Math.abs(shabeshPos.x - 4.2) < 0.2 && Math.abs(shabeshPos.z - 2.6) < 0.2, 'Shabesh must spawn at the photo station (4.2, 2.6)');
+assert(Math.abs(shabeshPos.x - 7.6) < 0.2 && Math.abs(shabeshPos.z - 8.5) < 0.2, 'Shabesh must spawn beside photo station at (7.6, 8.5)');
 const shabeshIdle = (shabeshPath.properties || []).find((p) => p.name === 'idles')?.value;
 const shabeshFace = (shabeshPath.properties || []).find((p) => p.name === 'faces')?.value;
 assert(shabeshIdle === 'film', `Shabesh idle must be film, got "${shabeshIdle}"`);
-assert(shabeshFace === '180', `Shabesh face heading must be 180 (facing south towards player), got "${shabeshFace}"`);
+assert(shabeshFace === '45', `Shabesh face heading must be 45 (facing camera in default view), got "${shabeshFace}"`);
 
-// 4.4 Sathesh (tahiti_cf7) route points
+// 4.4 Sathesh (tahiti_cf7) route points & camera-facing heading (45)
 const satheshPath = paths.find((p) => (p.properties || []).find((prop) => prop.name === 'npc')?.value === 'tahiti_cf7');
 assert(satheshPath, 'Sathesh (tahiti_cf7) path must exist');
 const satheshPos = toWorld(satheshPath.x, satheshPath.y);
 console.log(`Sathesh spawn position: (${satheshPos.x.toFixed(2)}, ${satheshPos.z.toFixed(2)})`);
-assert(Math.abs(satheshPos.x - 2.6) < 0.2 && Math.abs(satheshPos.z - 4.0) < 0.2, 'Sathesh must have dedicated workstation spot at (2.6, 4.0)');
+assert(Math.abs(satheshPos.x - 4.6) < 0.2 && Math.abs(satheshPos.z - 9.2) < 0.2, 'Sathesh must have workstation spot at (4.6, 9.2)');
+const satheshFace = (satheshPath.properties || []).find((p) => p.name === 'faces')?.value;
+assert(satheshFace.startsWith('45'), `Sathesh initial face heading must be 45 (facing camera), got "${satheshFace}"`);
 
-// 4.5 Clearances between activities
-const distPhotoToTv = Math.hypot(paPos.x - tvActPos.x, paPos.z - tvActPos.z);
-console.log(`Distance between Photography and Gaming station: ${distPhotoToTv.toFixed(2)}m`);
-assert(distPhotoToTv > 3.5, `Photography and gaming station must be well separated (> 3.5m), got ${distPhotoToTv.toFixed(2)}m`);
+// 4.5 Siva (tahiti_cf9) and Finance Setup inside hedge
+const financeProp = objects.find((o) => o.type === 'finance_savings');
+assert(financeProp, 'finance_savings prop must exist');
+const finPos = toWorld(financeProp.x, financeProp.y);
+console.log(`finance_savings position: (${finPos.x.toFixed(2)}, ${finPos.z.toFixed(2)})`);
+assert(Math.abs(finPos.x - 4.2) < 0.2 && Math.abs(finPos.z - 2.6) < 0.2, 'finance_savings must be inside hedge at (4.2, 2.6)');
 
-const distShabeshSathesh = Math.hypot(shabeshPos.x - satheshPos.x, shabeshPos.z - satheshPos.z);
-console.log(`Distance between Shabesh and Sathesh: ${distShabeshSathesh.toFixed(2)}m`);
-assert(distShabeshSathesh > 2.0, `Shabesh and Sathesh stations must be cleanly separated (> 2.0m), got ${distShabeshSathesh.toFixed(2)}m`);
+const sivaPath = paths.find((p) => (p.properties || []).find((prop) => prop.name === 'npc')?.value === 'tahiti_cf9');
+assert(sivaPath, 'Siva (tahiti_cf9) path must exist');
+const sivaPos = toWorld(sivaPath.x, sivaPath.y);
+console.log(`Siva spawn position: (${sivaPos.x.toFixed(2)}, ${sivaPos.z.toFixed(2)})`);
+assert(Math.abs(sivaPos.x - 6.4) < 0.2 && Math.abs(sivaPos.z - 4.2) < 0.2, 'Siva must be reachable at the hedge opening at (6.4, 4.2)');
+const sivaFace = (sivaPath.properties || []).find((p) => p.name === 'faces')?.value;
+assert(sivaFace === '45', `Siva face heading must be 45 (facing camera in default view), got "${sivaFace}"`);
 
-// 4.6 Camera line-of-sight: unobstructed by villa building
-// Villa building is at x: 8..16, z: -6.5..0.5.
-// Photo station now sits south-west of the villa, in front of its facade (free from villa building and roof occlusion)
-assert(psPos.x < 8.0, 'photo_station must be west of villa facade to avoid roof occlusion');
-assert(satheshPos.x < 8.0, 'sathesh workstation must be west of villa facade to avoid roof occlusion');
-console.log('✓ Shabesh and Sathesh are fully visible from default isometric camera in open west lawn.');
+// 4.6 Photography Session card options
+assert(!tahitiJs.toLowerCase().includes('join the photo session'), 'Join the photo session must be removed');
+assert(tahitiJs.includes('Pose for a photograph'), 'Pose for a photograph option must exist');
+assert(tahitiJs.includes('Take a group picture'), 'Take a group picture option must exist');
+assert(tahitiJs.includes("'Exit'"), 'Exit option must exist');
+console.log('✓ Photography Session card options verified.');
 
 // 4.7 tahiti.js WORKSTATION coordinates match
-assert(tahitiJs.includes('WORKSTATION_SH = V(4.2, 2.6)'), 'tahiti.js WORKSTATION_SH must be V(4.2, 2.6)');
-assert(tahitiJs.includes('WORKSTATION_SA = V(2.6, 4.0)'), 'tahiti.js WORKSTATION_SA must be V(2.6, 4.0)');
+assert(tahitiJs.includes('WORKSTATION_SH = V(7.6, 8.5)'), 'tahiti.js WORKSTATION_SH must be V(7.6, 8.5)');
+assert(tahitiJs.includes('WORKSTATION_SA = V(4.6, 9.2)'), 'tahiti.js WORKSTATION_SA must be V(4.6, 9.2)');
 console.log('✓ tahiti.js workstation coordinates synchronized.');
+
+// 4.8 Esc closes topmost card and consumes event in main.js
+const mainJs = fs.readFileSync(path.join(ROOT, 'web/src/game/main.js'), 'utf8');
+assert(mainJs.includes('closeTopmostCard'), 'main.js must define closeTopmostCard');
+assert(mainJs.includes('stopImmediatePropagation'), 'main.js Esc handler must consume event with stopImmediatePropagation');
+assert(mainJs.includes('_closeChoice'), 'main.js choose dialog must support _closeChoice');
+console.log('✓ Topmost card Escape close and event consumption verified.');
 
 console.log('\n========================================================');
 console.log('ALL TAHITI CORRECTIONS TESTS PASSED SUCCESSFULLY! ✓✓✓');

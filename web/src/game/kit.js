@@ -473,7 +473,8 @@ export function buildScooty(color = 0x1f6fe0) {
     wheels.push(w);
   }
   k.box(0.36, 0.32, 0.62, blue, 0, 0.32, -0.38);
-  k.box(0.3, 0.06, 0.5, 0x1e1b2e, 0, 0.64, -0.36);
+  k.box(0.32, 0.07, 0.68, 0x1e1b2e, 0, 0.64, -0.38);                               // long two-up seat
+  for (const s of [-1, 1]) { k.box(0.04, 0.04, 0.12, 0xc6d2e0, s * 0.22, 0.24, -0.50); k.box(0.10, 0.03, 0.04, 0x111115, s * 0.26, 0.24, -0.50); } // pillion footpegs
   k.box(0.26, 0.08, 0.5, color === 0x1f6fe0 ? 0x14365f : 0x2b2b33, 0, 0.2, 0.08);
   if (color !== 0x1f6fe0) { k.box(0.37, 0.04, 0.5, 0xc6d2e0, 0, 0.46, -0.38, { shadow: false }); k.box(0.33, 0.05, 0.04, 0xc6d2e0, 0, 0.6, 0.52, { shadow: false }); }   // chrome trim on the black Zest
   k.box(0.32, 0.62, 0.18, blue, 0, 0.3, 0.42);
@@ -508,13 +509,18 @@ export function buildMotorbike(color = 0xc4302b, style = '') {
   k.box(0.38, 0.26, 0.6, color, 0, 0.66, 0.24);                                  // tank
   k.box(0.39, 0.06, 0.6, 0xfff1d6, 0, 0.8, 0.24, { shadow: false });              // tank stripe
   k.box(0.36, 0.12, 0.95, 0x2a2024, 0, 0.7, -0.42);                               // long two-up seat
+  for (const s of [-1, 1]) { k.box(0.04, 0.04, 0.12, 0x7d8fa8, s * 0.22, 0.38, -0.50); k.box(0.10, 0.03, 0.04, 0x111115, s * 0.26, 0.38, -0.50); } // passenger footpegs
   k.box(0.06, 0.5, 0.06, 0x7d8fa8, 0, 0.42, 0.62, { rx: 0.35 });                  // fork
-  k.box(0.7, 0.05, 0.05, 0x2a2440, 0, 0.98, 0.56);                                // handlebar
-  k.box(0.2, 0.18, 0.12, 0xfff1c0, 0, 0.82, 0.78);                                // headlight
+  const bars = new THREE.Group(); bars.position.set(0, 0.98, 0.50); g.add(bars);   // steering handlebars
+  const bk = kit(bars);
+  bk.box(0.60, 0.05, 0.05, 0x2a2440, 0, 0, 0);                                    // handlebar
+  for (const s of [-1, 1]) bk.box(0.10, 0.065, 0.065, 0x111115, s * 0.24, 0, 0);  // grips
+  bk.box(0.2, 0.18, 0.12, 0xfff1c0, 0, -0.16, 0.22);                             // headlight
+  mergeGroupByMat(bars, { trackPalette: true });
   k.box(0.4, 0.06, 0.4, color, 0, 0.58, -0.68);                                   // rear fender
   mergeGroupByMat(g, { trackPalette: true });
   g.userData.dynamic = true;
-  return { group: g, wheels };
+  return { group: g, wheels, bars };
 }
 
 /** Honda Shine 125-style commuter facing +z: slim tank with side shrouds, flat single
@@ -538,19 +544,24 @@ function buildShine(color = 0x2f6fc6) {
   for (const x of [-0.17, 0.17]) { k.box(0.04, 0.2, 0.36, color, x, 0.5, 0.36, { shadow: false }); k.box(0.045, 0.03, 0.34, chrome, x, 0.64, 0.3, { shadow: false }); }   // shrouds + chrome stripe
   k.box(0.24, 0.2, 0.3, color, 0, 0.5, -0.24);                                      // side panel
   k.box(0.32, 0.08, 1.0, black, 0, 0.73, -0.3);                                     // long two-up seat (driver in front, passenger behind)
+  for (const s of [-1, 1]) { k.box(0.04, 0.04, 0.12, chrome, s * 0.22, 0.38, -0.50); k.box(0.10, 0.03, 0.04, black, s * 0.26, 0.38, -0.50); } // passenger footpegs
   k.box(0.34, 0.04, 0.12, chrome, 0, 0.75, -0.86);                                  // grab rail
   k.box(0.32, 0.05, 0.36, black, 0, 0.62, -0.74);                                   // rear fender
   k.box(0.18, 0.08, 0.04, 0xe0202a, 0, 0.62, -0.93, { shadow: false });            // tail lamp
   k.box(0.06, 0.5, 0.06, chrome, 0, 0.44, 0.66, { rx: 0.3 });                       // fork
   k.box(0.36, 0.04, 0.3, black, 0, 0.66, 0.7);                                      // front mudguard
-  k.box(0.64, 0.05, 0.05, black, 0, 1.0, 0.52);                                     // handlebar
-  for (const x of [-0.24, 0.24]) k.box(0.03, 0.18, 0.03, black, x, 1.04, 0.5);      // mirrors
-  k.cyl(0.13, 0.13, 0.1, black, 0, 0.84, 0.74, 12, { rx: Math.PI / 2 });            // round headlamp shell
-  k.cyl(0.1, 0.1, 0.02, 0xfff1c0, 0, 0.84, 0.8, 12, { rx: Math.PI / 2 });
-  k.box(0.22, 0.12, 0.04, color, 0, 0.98, 0.72, { rx: -0.4 });                      // small visor
+  const bars = new THREE.Group(); bars.position.set(0, 0.98, 0.50); g.add(bars);      // steering handlebars
+  const bk = kit(bars);
+  bk.box(0.60, 0.05, 0.05, black, 0, 0, 0);                                          // handlebar
+  for (const s of [-1, 1]) bk.box(0.10, 0.065, 0.065, 0x111115, s * 0.24, 0, 0);     // grips
+  for (const x of [-0.24, 0.24]) bk.box(0.03, 0.18, 0.03, black, x, 0.04, -0.02);   // mirrors
+  bk.cyl(0.13, 0.13, 0.1, black, 0, -0.14, 0.22, 12, { rx: Math.PI / 2 });          // round headlamp shell
+  bk.cyl(0.1, 0.1, 0.02, 0xfff1c0, 0, -0.14, 0.28, 12, { rx: Math.PI / 2 });
+  bk.box(0.22, 0.12, 0.04, color, 0, 0.0, 0.20, { rx: -0.4 });                       // small visor
+  mergeGroupByMat(bars, { trackPalette: true });
   mergeGroupByMat(g, { trackPalette: true });
   g.userData.dynamic = true;
-  return { group: g, wheels };
+  return { group: g, wheels, bars };
 }
 
 /** Yamaha R15-style sport bike facing +z: full fairing, split seat, twin headlamp slit,
@@ -572,17 +583,24 @@ function buildYamaha(color = 0xf4f6fa) {
   for (const x of [-0.2, 0.2]) k.box(0.05, 0.34, 0.56, color, x, 0.46, 0.4);        // side fairing
   k.box(0.38, 0.05, 0.5, blue, 0, 0.8, 0.26, { shadow: false });                    // blue tank stripe
   k.box(0.3, 0.08, 0.5, black, 0, 0.76, -0.28);                                     // rider seat
+  k.box(0.24, 0.06, 0.32, black, 0, 0.82, -0.56);                                   // stepped pillion seat pad
+  for (const s of [-1, 1]) { k.box(0.04, 0.04, 0.12, chrome, s * 0.22, 0.40, -0.50); k.box(0.10, 0.03, 0.04, black, s * 0.26, 0.40, -0.50); } // passenger footpegs
   k.box(0.22, 0.12, 0.3, color, 0, 0.8, -0.74, { rx: 0.15 });                       // tail cowl
   k.box(0.14, 0.05, 0.04, 0xe0202a, 0, 0.78, -0.9, { shadow: false });              // tail lamp
   k.box(0.34, 0.04, 0.3, color, 0, 0.62, 0.7);                                      // front fender
   k.box(0.06, 0.5, 0.06, chrome, 0, 0.44, 0.66, { rx: 0.3 });                       // fork
-  k.box(0.56, 0.05, 0.05, black, 0, 0.98, 0.5);                                     // clip-on bars
+  const bars = new THREE.Group(); bars.position.set(0, 0.98, 0.50); g.add(bars);      // steering clip-on bars
+  const bk = kit(bars);
+  bk.box(0.56, 0.05, 0.05, black, 0, 0, 0);                                          // clip-on bars
+  for (const s of [-1, 1]) bk.box(0.10, 0.065, 0.065, 0x111115, s * 0.24, 0, 0);     // handlebar grips
+  for (const s of [-1, 1]) bk.box(0.02, 0.055, 0.055, chrome, s * 0.285, 0, 0);     // bar ends
+  mergeGroupByMat(bars, { trackPalette: true });
   k.box(0.3, 0.2, 0.2, color, 0, 0.92, 0.66, { rx: -0.35 });                        // nose fairing
   for (const x of [-0.08, 0.08]) k.box(0.1, 0.04, 0.03, 0xfff1c0, x, 0.92, 0.77, { shadow: false });   // twin headlamp slits
   k.box(0.2, 0.18, 0.04, 0x9fd8ff, 0, 1.08, 0.6, { rx: -0.6, shadow: false });      // windscreen
   mergeGroupByMat(g, { trackPalette: true });
   g.userData.dynamic = true;
-  return { group: g, wheels };
+  return { group: g, wheels, bars };
 }
 
 /** Low-poly bicycle facing +z: rolling wheels, turning crank. */

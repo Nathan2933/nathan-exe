@@ -68,7 +68,7 @@ function makeInstancedAlphaMat(opts) {
 /** Optional Blender replacements listed in public/assets/kit/manifest.json */
 // Optional Blender models: only requested when a manifest was shipped with the build, so a plain
 // deployment never makes a request that is bound to 404.
-const HAS_KIT_MANIFEST = Object.keys(import.meta.glob('../../public/assets/kit/manifest.json')).length > 0;
+const HAS_KIT_MANIFEST = typeof import.meta.glob === 'function' && Object.keys(import.meta.glob('../../public/assets/kit/manifest.json')).length > 0;
 export async function loadKitOverrides(base) {
   const out = new Map();
   if (!HAS_KIT_MANIFEST) return out;

@@ -60,10 +60,10 @@ const ACTIVITIES = {
     beach: { w: 2, slots: [[...on('ol', -2, 1.5), 'look', seaFace('ol')], [...on('ol', -1.2, BEACH.ol.sea), 'swim', seaFace('ol'), { free: true, water: true }], [...on('ol', 1.6, BEACH.ol.sea), 'swim', seaFace('ol') + 20, { free: true, water: true }], [...on('ol', 2.4, 1.5), 'cheer', seaFace('ol')], [...on('ol', 0.4, 0.2), 'sit', seaFace('ol'), { free: true }]], lines: ['Last one in buys dinner!', 'This beach is ours.', 'Sun, sand, zero emails.'] },
     // personal stations: Anu's court, the photo corner, Akshay's TV, the volleyball three
     hoop: { w: 2, owner: 'tahiti_cf1', slots: [[18.0, -24.4, 'cheer', 180]], lines: ['Swish!', 'Nothing but net.', 'Airball. Again.'] },
-    photo_sa: { w: 5, owner: 'tahiti_cf7', slots: [[2.6, 4.0, 'film', 180]], poses: ['film', 'look', 'phone', 'film', 'look'], lines: ['Let me fix the white balance.', 'Shutter at 1/250. Nice.', 'Shabesh, look at this frame.'] },
-    photo_sh: { w: 5, owner: 'tahiti_cf2', slots: [[4.2, 2.6, 'film', 180]], poses: ['look', 'film', 'phone', 'cheer', 'film'], lines: ['Okay that one is wallpaper material.', 'Sathesh, check the light over there.', 'Hold on, reviewing the shots.'] },
+    photo_sa: { w: 5, owner: 'tahiti_cf7', slots: [[4.6, 9.2, 'film', 45]], poses: ['film', 'look', 'phone', 'film', 'look'], lines: ['Let me fix the white balance.', 'Shutter at 1/250. Nice.', 'Shabesh, look at this frame.'] },
+    photo_sh: { w: 5, owner: 'tahiti_cf2', slots: [[7.6, 8.5, 'film', 45]], poses: ['look', 'film', 'phone', 'cheer', 'film'], lines: ['Okay that one is wallpaper material.', 'Sathesh, check the light over there.', 'Hold on, reviewing the shots.'] },
     photowalk_ol: { w: 3, owners: ['tahiti_cf2', 'tahiti_cf7'], roam: true, slots: [[...on('ol', -4, 1.0), 'film', seaFace('ol')], [26.6, -17.8, 'film', 200], [7.5, -9.5, 'film', 250], [32.6, -15.0, 'film', 90]], lines: ['Golden hour!', 'One for the album.', 'Look at that sky.'] },
-    finance_sv: { w: 5, owner: 'tahiti_cf9', slots: [[7.94, 7.83, 'look', 45]], poses: ['look', 'phone', 'look', 'type'], lines: ['Green day. Stay patient.', 'Diversify, then leave it alone.', 'Wealth is what you do not need.', 'Check the ledger, not the noise.'] },
+    finance_sv: { w: 5, owner: 'tahiti_cf9', slots: [[6.4, 4.2, 'look', 45]], poses: ['look', 'phone', 'look', 'type'], lines: ['Green day. Stay patient.', 'Diversify, then leave it alone.', 'Wealth is what you do not need.', 'Check the ledger, not the noise.'] },
     feast: { w: 5, owner: 'tahiti_cf4', slots: [[18.6, -12.35, 'eat', 180]], poses: ['eat', 'eat', 'sit', 'eat', 'cheer'], lines: ['Round two of snacks.', 'This is training. For the contest.', 'Who wants to challenge me?', 'Mmm. Undefeated.'] },
     tvgame: { w: 5, owner: 'tahiti_cf5', slots: [[16.9, 14.15, 'sittype', 150]], poses: ['sittype', 'sittype', 'cheer', 'sittype'], lines: ['Boss level!', 'Nathan, grab the other controller.', 'NO. One more try.', 'High score!'] },
     firepit: { w: 2, slots: [[28.0, -16.2, 'sing', 0, { free: true }], [30.2, -14.0, 'sing', -90, { free: true }], [25.8, -14.0, 'sing', 90, { free: true }], [28.0, -12.2, 'sit', 180]], lines: ['Fire\'s perfect tonight.', '♪ one more song ♪', 'Who\'s got the marshmallows?'] },
@@ -126,8 +126,8 @@ function disposeObj(obj) {
 // Two-up seats: where the rear rider sits behind the driver, and the driver's seat on the model
 // (back = how far the driver anchor sits ahead of the model centre).
 export const RIDE_SEATS = {
-  moto: { seatY: 0.62, back: 0.28, rear: 1.2, pose: 'ride' },
-  scooty: { seatY: 0.15, back: -0.36, rear: 0.62, pose: 'scooty' },
+  moto: { seatY: 0.46, pillionSeatY: 0.48, back: 0.0, rear: 0.58, pose: 'ride', pillionPose: 'pillion_moto' },
+  scooty: { seatY: 0.15, pillionSeatY: 0.18, back: -0.18, rear: 0.50, pose: 'scooty', pillionPose: 'pillion_scooty' },
 };
 const INVITE_BOARD_MS = 15000;   // an invited rider has this long to reach the vehicle and get on
 const INVITE_WAIT_MS = 30000;    // how long a friend waits for Nathan to pick a vehicle / climb on behind
@@ -612,7 +612,7 @@ export function createTahiti(ctx) {
   // ---------- treasure hunt ----------
   // a trail: the clue board gives the first clue, each chest holds the next one
   const TREASURE = [
-    { id: 'palm', x: -8.6, z: 0.8, prize: 'a lucky shell', clue: 'Start where the four walks meet. Head west towards the hideout and check under the first palm you pass.', hint: 'Palms on the west walk. Just saying.' },
+    { id: 'palm', x: -8.6, z: 0.8, prize: 'a lucky shell', clue: 'Start where the four walks meet. Head west towards the hideout and check the lawn along the walk.', hint: 'Lawn along the west walk. Just saying.' },
     { id: 'hideout', x: -22.0, z: -4.2, prize: 'an old bottle cap', clue: 'Nobody ever uses the west side of the Vanderlinde hideout. Walk round the outside wall.', hint: 'Round the back of the hideout, west side.' },
     { id: 'rock', x: -24.2, z: 8.2, prize: 'a tiny compass', clue: 'Something tells the pilots which way the wind blows. Look a few steps north of it.', hint: 'Ask the windsock. North of it.' },
     { id: 'beach', x: 11.6, z: 35.4, prize: 'a pirate coin', clue: 'Find the finish flag of the beach race on the south beach, then keep walking east along the sand.', hint: 'East of the race finish, on the sand.' },
@@ -796,6 +796,8 @@ export function createTahiti(ctx) {
       ctx.choose('Who do you want to ride with?', [...pool.map((b) => ({ label: def(b.id).name || b.id, value: b })), { label: 'Ride alone', value: null }], (b) => { if (b && state.mount === m) boardPassenger(b, m); });
     },
     passengerReady() { return !passenger || passenger.seated; },
+    getPassengerNpc() { return passenger?.seated && !passenger?.front ? passenger.b.it : null; },
+    getDriverNpc() { return passenger?.seated && passenger?.front ? passenger.b.it : (driverNpc?.seated ? driverNpc.b.it : null); },
     /** Nathan got off (or the ride ended some other way): the other rider steps off beside the vehicle and resumes their routine. */
     onRideDismount(spot) { finishRide(spot); },
   };
@@ -918,12 +920,27 @@ export function createTahiti(ctx) {
     const { b, v } = driverNpc;
     seatNpc(b, v, v.heading || 0, 0, dt, t);
   }
+  const _seatLocal = new THREE.Vector3();
   // seat one NPC: off = metres behind the driver's seat (0 = at the handlebars)
   function seatNpc(b, it, h, off, dt, t) {
-    const S = RIDE_SEATS[it.vtype], ch = b.it.character, g = it.model.group;
-    const ax = g.position.x + Math.sin(h) * S.back, az = g.position.z + Math.cos(h) * S.back;
-    ch.group.position.set(ax - Math.sin(h) * off, g.position.y + S.seatY, az - Math.cos(h) * off);
-    ch.heading = h; ch.pose = S.pose; ch.steer = off ? 0 : (player.steer || 0);
+    const S = RIDE_SEATS[it.vtype], ch = b.it.character, g = it.model?.group;
+    const sy = off ? (S.pillionSeatY || S.seatY) : S.seatY;
+    if (g) {
+      g.updateMatrixWorld(true);
+      _seatLocal.set(0, sy, S.back - off);
+      ch.group.position.copy(g.localToWorld(_seatLocal.clone()));
+      ch.group.rotation.z = g.rotation.z || 0;
+      ch.group.rotation.x = g.rotation.x || 0;
+      ch.bikeLean = off ? (g.rotation.z || 0) : 0;
+    } else {
+      const ax = (it.x || 0) + Math.sin(h) * S.back, az = (it.z || 0) + Math.cos(h) * S.back;
+      ch.group.position.set(ax - Math.sin(h) * off, (it.y || 0) + sy, az - Math.cos(h) * off);
+      ch.bikeLean = 0;
+    }
+    ch.heading = h;
+    ch.group.rotation.y = h;
+    ch.pose = off ? (S.pillionPose || 'pillion') : S.pose;
+    ch.steer = off ? 0 : (player.steer || 0);
     ch.update(dt, _zeroV, t);
     b.it.x = ch.group.position.x; b.it.z = ch.group.position.z;
     b.it.beacon.group.visible = false;
@@ -936,6 +953,11 @@ export function createTahiti(ctx) {
     passenger = null; driverNpc = null; buddy = null; invite = null; seatOwner.clear();
     if (!b) return;
     const gp = b.it.character.group.position;
+    b.it.character.group.rotation.z = 0;
+    b.it.character.group.rotation.x = 0;
+    b.it.character.bikeLean = 0;
+    b.it.character.upperLean = 0;
+    b.it.character.spineLeanOffset = 0;
     if (hadSeat) {
       let s = spot ? { x: spot.x, z: spot.z } : null;
       if (veh) { const side = sideSpot(veh, spot); if (!s || !ctx.solidFree(s.x, s.z)) s = side; }
@@ -1345,8 +1367,8 @@ export function createTahiti(ctx) {
     });
   }
 
-  const WORKSTATION_SH = V(4.2, 2.6);
-  const WORKSTATION_SA = V(2.6, 4.0);
+  const WORKSTATION_SH = V(7.6, 8.5);
+  const WORKSTATION_SA = V(4.6, 9.2);
   const TRIPOD_POS = { vg: V(-11.0, -0.4), ol: V(22.2, 0.6) };
   const angDiff = (a, b) => Math.atan2(Math.sin(b - a), Math.cos(b - a));
 
@@ -1854,25 +1876,15 @@ export function createTahiti(ctx) {
   }
 
   function photoSession() {
-    const sh = brainOf('tahiti_cf2');
-    const sa = brainOf('tahiti_cf7');
     const ep = epoch;
 
     ctx.choose('Photography session', [
       { label: 'Pose for a photograph (Shabesh takes your picture)', value: 'pose' },
-      { label: 'Join the photo session', value: 'join' },
       { label: 'Take a group picture', value: 'group' },
       { label: 'Exit', value: null },
     ], (v) => {
       if (ep !== epoch) return;
-      if (v === 'join') {
-        const spot = { x: P().x, z: P().z };
-        state.joined = { x: spot.x, z: spot.z, pose: 'film', face: player.heading, swim: false };
-        state.path = [];
-        if (sh) bubble(sh.it, 'Grab a lens, Nathan.', 2.4);
-        if (sa) setTimeout(() => { if (ep === epoch) bubble(sa.it, 'Welcome to the camera club!', 2.6); }, 1200);
-        ctx.toast('Shooting with Shabesh and Sathesh. Move to leave.');
-      } else if (v === 'pose') {
+      if (v === 'pose') {
         startShabeshSession({ mode: 'pose' });
       } else if (v === 'group') {
         startShabeshSession({ mode: 'group' });

@@ -52,7 +52,7 @@ for (const p of ROUTE) {
   if (p.z < -28) p.z -= LANE; else if (p.z > 26.5) p.z += LANE;
 }
 // Seats along the bike's own axis (+z is the direction of travel): the driver sits forward, the passenger directly behind
-const DRIVER_Z = -0.05, PASSENGER_Z = -0.52, SEAT_Y = 0.3;
+const DRIVER_Z = -0.05, PASSENGER_Z = -0.58, SEAT_Y = 0.3;
 const still = { x: 0, y: 0, z: 0, set(x, y, z) { this.x = x; this.y = y; this.z = z; } };
 
 export function createShabeerRoutine(ctx) {
@@ -124,7 +124,9 @@ export function createShabeerRoutine(ctx) {
     passenger = false; dismounting = false;
     const st = ctx.state, pl = ctx.player;
     st.passengerOf = null;
-    pl.pose = null; pl.riding = false;
+    pl.pose = null; pl.riding = false; pl.lastPose = null; pl.poseW = 0;
+    pl.bikeLean = 0; pl.upperLean = 0; pl.spineLeanOffset = 0;
+    pl.group.rotation.set(0, 0, 0);
     const px = Math.cos(heading), pz = -Math.sin(heading), fx = Math.sin(heading), fz = Math.cos(heading);
     const cands = [];
     for (const r of [1.3, 1.8, 2.4]) cands.push([px * r, pz * r], [-px * r, -pz * r], [-fx * r, -fz * r], [px * r - fx * r, pz * r - fz * r], [-px * r - fx * r, -pz * r - fz * r], [fx * r, fz * r]);
@@ -154,7 +156,7 @@ export function createShabeerRoutine(ctx) {
     if (b.beacon?.group) b.beacon.group.visible = false;
     passenger = true; dismounting = false; hold = 0.5;
     st.passengerOf = 'shabeer'; st.path = []; st.nearby = null;
-    ctx.player.pose = 'ride'; ctx.player.riding = true;
+    ctx.player.pose = 'pillion_moto'; ctx.player.riding = true;
     ctx.toast(`Riding with Shabeer! ${ctx.isTouch ? 'Tap Get off' : 'Press E'} to get off.`);
     return true;
   }
@@ -227,21 +229,29 @@ export function createShabeerRoutine(ctx) {
     const step = speed * dt;
     pos.x += Math.sin(heading) * step; pos.z += Math.cos(heading) * step;
     const y = ctx.heightAt(pos.x, pos.z);
-    b.model.group.position.set(pos.x, y, pos.z);
+    const rx = b.recoilX || 0, rz = b.recoilZ || 0, rp = b.recoilPitch || 0;
+    b.model.group.position.set(pos.x + rx, y, pos.z + rz);
     b.model.group.rotation.y = heading;
     b.model.group.rotation.z = -steer * 0.25 * Math.min(1, speed / 4);
+    b.model.group.rotation.x = rp;
     for (const w of b.model.wheels || []) w.rotation.x += step / 0.36;
     b.x = pos.x; b.z = pos.z; b.heading = heading;
     if (b.hit) b.hit.position.set(pos.x, 1.3, pos.z);
     const fx = Math.sin(heading), fz = Math.cos(heading);
-    ch.group.position.set(pos.x + fx * DRIVER_Z, y + SEAT_Y, pos.z + fz * DRIVER_Z);
+    ch.group.position.set(pos.x + fx * DRIVER_Z + rx, y + SEAT_Y + (ch.joltY || 0), pos.z + fz * DRIVER_Z + rz);
     ch.heading = heading; ch.pose = 'scooty';
     ch.update(dt, still, t);
     if (passenger) {
       const pl = ctx.player;
-      pl.group.position.set(pos.x + fx * PASSENGER_Z, y + SEAT_Y, pos.z + fz * PASSENGER_Z);
+      pl.group.position.set(pos.x + fx * PASSENGER_Z, y + SEAT_Y + 0.05, pos.z + fz * PASSENGER_Z);
       pl.group.rotation.set(0, 0, 0);
-      pl.heading = heading; pl.pose = 'ride'; pl.riding = true;
+      if (b.model?.group) {
+        pl.group.rotation.z = b.model.group.rotation.z || 0;
+        pl.group.rotation.x = b.model.group.rotation.x || 0;
+        pl.bikeLean = b.model.group.rotation.z || 0;
+      }
+      pl.heading = heading; pl.pose = 'pillion_moto'; pl.riding = true;
+      pl.update(dt, still, t);
       ctx.velocity?.set(fx * speed, 0, fz * speed);
       if (dismounting && speed < 0.25) placeNathanBeside(false);
     }
@@ -251,6 +261,10 @@ export function createShabeerRoutine(ctx) {
   }
   return {
     enter, exit, update, boardNathanAsPassenger, dismountNathanPassenger,
-    getPhase: () => phase, isPassengerActive: () => passenger
+    getPhase: () => phase, isPassengerActive: () => passenger,
+    nudge: (dx, dz) => { pos.x += dx; pos.z += dz; },
+    reduceSpeed: (amt) => { speed = Math.max(0, speed - amt); },
+    getSpeed: () => speed,
+    getShabeerCharacter: () => getNpc()?.character || null
   };
 }
