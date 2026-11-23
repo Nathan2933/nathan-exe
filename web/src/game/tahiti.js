@@ -127,7 +127,7 @@ function disposeObj(obj) {
 // (back = how far the driver anchor sits ahead of the model centre).
 export const RIDE_SEATS = {
   moto: { seatY: 0.46, pillionSeatY: 0.48, back: 0.0, rear: 0.58, pose: 'ride', pillionPose: 'pillion_moto' },
-  scooty: { seatY: 0.15, pillionSeatY: 0.18, back: -0.18, rear: 0.50, pose: 'scooty', pillionPose: 'pillion_scooty' },
+  scooty: { seatY: 0.15, pillionSeatY: 0.18, back: -0.18, rear: 0.64, pose: 'scooty', pillionPose: 'pillion_scooty' },
 };
 const INVITE_BOARD_MS = 15000;   // an invited rider has this long to reach the vehicle and get on
 const INVITE_WAIT_MS = 30000;    // how long a friend waits for Nathan to pick a vehicle / climb on behind
@@ -898,6 +898,14 @@ export function createTahiti(ctx) {
     seatOwner.set(m.it, b);
     passenger = { b, m, seated: false };
     invite = { b, phase: 'board', t: 0 };
+    ctx.toast(`${def(b.id).name || 'Friend'} is climbing on...`);
+    // If already right beside the vehicle (e.g. following from R invite or walking beside it), seat immediately
+    if (dist(b.it.character.group.position, vehPos(m.it)) <= 2.5) {
+      passenger.seated = true; invite = null; buddy = null;
+      b.riding = true; b.it.passenger = true;
+      bubble(b.it, 'Hold on tight? You hold on tight.', 2.6);
+      return;
+    }
     const spot = sideSpot({ heading: m.heading, model: m.it.model, x: m.it.x, z: m.it.z });
     stepOffBed(b, () => {
       if (passenger?.b !== b) return;
@@ -1385,7 +1393,7 @@ export function createTahiti(ctx) {
     for (let i = 0; i < list.length; i++) {
       const c = list[i];
       const cx = c.cx ?? c.x, cz = c.cz ?? c.z;
-      if (ignoreNear && cx !== undefined && Math.hypot(cx - ignoreNear.x, cz - ignoreNear.z) < 0.45) continue;
+      if (ignoreNear && cx !== undefined && Math.hypot(cx - ignoreNear.x, cz - ignoreNear.z) < 1.05) continue;
       if (c.r !== undefined) {
         if (Math.hypot(x - cx, z - cz) < c.r + r) return false;
       } else if (x > c.minX - r && x < c.maxX + r && z > c.minZ - r && z < c.maxZ + r) {
@@ -1469,6 +1477,8 @@ export function createTahiti(ctx) {
     };
     if (opts.preferAngle != null) {
       for (const off of [0, 5, -5, 10, -10, 15, -15]) pushAng(opts.preferAngle + off);
+    } else if (dist(camPos, WORKSTATION_SH) <= 1.5 || dist(camPos, WORKSTATION_SA) <= 1.5) {
+      for (const a of [330, 325, 335, 320, 340, 315, 345, 0, 350, 355]) pushAng(a);
     } else if (P().z > camPos.z + 2.0 && count <= 3) {
       for (const a of [180, 175, 185, 170, 190, 160, 150, 0, 355, 5]) pushAng(a);
     }
@@ -1568,10 +1578,10 @@ export function createTahiti(ctx) {
     const halfY = Math.max(Math.abs(sy0), Math.abs(sy1));
     const halfX = Math.max(Math.abs(sx0), Math.abs(sx1));
     const isSolo = subjectChars.length === 1;
-    const fillTarget = isSolo ? 0.70 : 0.74;
-    const tanY = Math.max(halfY / fillTarget, halfX / (0.86 * aspect));
-    const fovMin = opts.fovMin ?? 60;
-    const fovMax = opts.fovMax ?? (subjectChars.length <= 2 ? 70 : 76);
+    const fillTarget = opts.fillTarget ?? (isSolo ? 0.68 : 0.64);
+    const tanY = Math.max(halfY / fillTarget, halfX / (fillTarget * aspect));
+    const fovMin = opts.fovMin ?? 50;
+    const fovMax = opts.fovMax ?? (subjectChars.length <= 2 ? 72 : 82);
     const fov = Math.max(fovMin, Math.min(fovMax, (2 * Math.atan(tanY) * 180) / Math.PI));
 
     return {
@@ -1656,6 +1666,60 @@ export function createTahiti(ctx) {
     if (!silent) ctx.toast('Photography session cancelled.');
   }
 
+  function getPhotoboothPosingArea(count, isGroup) {
+    // Photobooth table is at (6.0, 9.0) with front edge at Z=9.3.
+    // Orange circle and Nathan's pose mark are directly in front of the booth at (6.0, 11.0).
+    // Photo camera is positioned in front of the booth at (6.0, 15.0) for a straight-on group shot.
+    const camPos = { x: 6.0, z: 15.0 };
+    const nathanSlot = { x: 6.0, z: 11.0, row: 0, lat: 0 };
+    if (!isGroup || count <= 1) {
+      return {
+        slots: [nathanSlot],
+        nFront: 1,
+        nathanIndex: 0,
+        face: 0,               // facing South (+Z) towards the photo camera
+        center: { x: 6.0, z: 11.0 },
+        camPos,
+        fx: 0, fz: -1,         // camera aims North (-Z) at the booth
+        wsHeading: Math.PI,    // 180 degrees (North)
+        ang: 180,
+        dist: 4.0,
+      };
+    }
+    // Arrange group around Nathan (Nathan front and center at index 0)
+    const slots = [nathanSlot];
+    const stepX = 1.15;
+    const othersCount = count - 1;
+    // Front row flanks Nathan left and right (up to 4 flanking slots)
+    const nFrontFlank = othersCount <= 2 ? othersCount : (othersCount <= 4 ? 2 : 4);
+    const nBack = othersCount - nFrontFlank;
+    for (let i = 1; i <= nFrontFlank; i++) {
+      const sign = i % 2 === 1 ? -1 : 1;
+      const rank = Math.ceil(i / 2);
+      const lat = sign * rank * stepX;
+      slots.push({ x: +(6.0 + lat).toFixed(3), z: 11.0, row: 0, lat });
+    }
+    // Back row at Z = 9.9, staggered between front row slots
+    for (let i = 1; i <= nBack; i++) {
+      const sign = i % 2 === 1 ? -1 : 1;
+      const rank = Math.ceil(i / 2);
+      const lat = sign * (rank - 0.5) * stepX;
+      slots.push({ x: +(6.0 + lat).toFixed(3), z: 9.9, row: 1, lat });
+    }
+    return {
+      slots,
+      nFront: 1 + nFrontFlank,
+      nathanIndex: 0,
+      face: 0,                 // facing South (+Z) towards the photo camera
+      center: { x: 6.0, z: 10.5 },
+      camPos,
+      fx: 0, fz: -1,           // camera aims North (-Z) at the booth
+      wsHeading: Math.PI,      // 180 degrees (North)
+      ang: 180,
+      dist: 4.5,
+    };
+  }
+
   function startShabeshSession(opts = {}) {
     if (session || photo) return false;
     const sh = brainOf('tahiti_cf2');
@@ -1683,25 +1747,23 @@ export function createTahiti(ctx) {
       }
     }
 
-    const area = findPosingArea(ws, 1 + crew.length, { preferAngle: opts.preferAngle });
+    const isAtPhotobooth = cam.id === 'tahiti_cf2' || cam.id === 'tahiti_cf7' || dist(ws, WORKSTATION_SH) <= 2.0 || dist(ws, WORKSTATION_SA) <= 2.0;
+    const area = isAtPhotobooth
+      ? getPhotoboothPosingArea(1 + crew.length, isGroup)
+      : findPosingArea(ws, 1 + crew.length, { preferAngle: opts.preferAngle });
     const nathanSlot = area.slots[area.nathanIndex];
     const otherSlots = orderedOtherSlots(area.slots, area.nathanIndex);
     const wsHeading = Math.atan2(area.fx, area.fz);
+    const camPosShoot = area.camPos || ws;
 
     release(cam); cam.forced = true; cam.vball = false;
-    if (atWorkstation) {
-      cam.path = [];
-      cam.mode = 'photo-cam';
+    cam.photoWalk = true; cam.bypassT = 0;
+    rushTo(cam, camPosShoot.x, camPosShoot.z, () => {
       cam.photoWalk = false; cam.bypassT = 0;
+      cam.mode = 'photo-cam';
+      cam.it.character.heading = wsHeading;
       cam.it.character.pose = 'aim';
-    } else {
-      cam.photoWalk = true; cam.bypassT = 0;
-      rushTo(cam, ws.x, ws.z, () => {
-        cam.photoWalk = false; cam.bypassT = 0;
-        cam.mode = 'photo-cam';
-        cam.it.character.pose = 'aim';
-      });
-    }
+    });
 
     const crewSlots = crew.map((b, i) => {
       const sl = otherSlots[i % otherSlots.length];
@@ -1710,34 +1772,52 @@ export function createTahiti(ctx) {
       rushTo(b, sl.x, sl.z, () => {
         b.photoWalk = false; b.bypassT = 0;
         b.mode = 'photo-pose';
+        b.it.character.heading = area.face;
         b.it.character.pose = 'photo';
         item.arrived = true;
       });
       return item;
     });
 
-    state.joined = null; ctx.clearMarker?.();
-    if (dist(P(), nathanSlot) < 0.25) {
-      state.path = [];
-    } else {
-      const nathanPath = ctx.nav.findPath(P().x, P().z, nathanSlot.x, nathanSlot.z);
-      state.path = nathanPath.length ? nathanPath : [{ x: nathanSlot.x, z: nathanSlot.z }];
-    }
-    state.photoPath = state.path.length > 0;
+    // Place Nathan directly on his posing mark (the exact orange circle spot) facing the photo camera
+    P().set(nathanSlot.x, ctx.heightAt(nathanSlot.x, nathanSlot.z), nathanSlot.z);
+    player.heading = area.face;
+    player.pose = 'photo';
+    state.joined = { x: nathanSlot.x, z: nathanSlot.z, pose: 'photo', face: area.face, swim: false, photo: true };
+    state.path = [];
+    state.photoPath = false;
+    ctx.clearMarker?.();
 
     const camName = def(cam.id).name || 'Shabesh';
     session = {
       mode: isGroup ? 'group' : 'pose',
-      cam, ws, camStart: { x: camPos.x, z: camPos.z },
-      camArrived: atWorkstation, wsHeading, area,
-      nathanSlot, nathanArrived: false, curFace: player.heading,
+      cam, ws, camPosShoot, camStart: { x: camPos.x, z: camPos.z },
+      camArrived: false, wsHeading, area,
+      nathanSlot, nathanArrived: true, curFace: area.face,
       crewSlots, t: 0, phase: 'gather', count: 0, lastCount: 0,
       shot: false, fast: !!opts.fast, doneT: 0, view: null, refreshMark: 0,
       label: isGroup ? `${GANG_NAME.ol} · Portrait by ${camName}` : `Portrait by ${camName}`,
     };
 
+    if (opts.fast) {
+      cam.photoWalk = false; cam.bypassT = 0;
+      cam.mode = 'photo-cam';
+      cam.it.character.group.position.set(camPosShoot.x, ctx.heightAt(camPosShoot.x, camPosShoot.z), camPosShoot.z);
+      cam.it.character.heading = wsHeading;
+      cam.it.character.pose = 'aim';
+      session.camArrived = true;
+      for (const item of crewSlots) {
+        item.b.photoWalk = false; item.b.bypassT = 0;
+        item.b.mode = 'photo-pose';
+        item.b.it.character.group.position.set(item.x, ctx.heightAt(item.x, item.z), item.z);
+        item.b.it.character.heading = area.face;
+        item.b.it.character.pose = 'photo';
+        item.arrived = true;
+      }
+    }
+
     bubble(cam.it, isGroup ? 'Euphonium, assemble in front of my lens!' : 'Step over to your mark, Nathan. Hold right there!', 2.6);
-    ctx.toast(isGroup ? 'Everyone assemble in front of Shabesh.' : 'Walk to your posing mark in front of Shabesh.');
+    ctx.toast(isGroup ? 'Everyone assemble in front of the photobooth.' : 'Walk to your posing mark in front of the photobooth.');
     return true;
   }
 
@@ -1746,11 +1826,12 @@ export function createTahiti(ctx) {
     s.t += dt;
     const { cam, ws, wsHeading, area, nathanSlot } = s;
     const camCh = cam.it.character, camGp = camCh.group.position;
+    const targetCam = s.camPosShoot || ws;
 
     if (cam.mode === 'photo-cam') {
       s.camArrived = true;
-      camGp.x += (ws.x - camGp.x) * Math.min(1, dt * 10);
-      camGp.z += (ws.z - camGp.z) * Math.min(1, dt * 10);
+      camGp.x += (targetCam.x - camGp.x) * Math.min(1, dt * 10);
+      camGp.z += (targetCam.z - camGp.z) * Math.min(1, dt * 10);
       camCh.heading += angDiff(camCh.heading, wsHeading) * Math.min(1, dt * 10);
       camCh.pose = 'aim';
     }
@@ -1777,16 +1858,19 @@ export function createTahiti(ctx) {
       const step = Math.floor(s.t / 5);
       if (step > s.refreshMark) {
         s.refreshMark = step;
-        if (!s.camArrived && dist(camGp, ws) >= 0.3) {
+        if (!s.camArrived && dist(camGp, targetCam) >= 0.3) {
           cam.bypassT = 1.2;
-          goTo(cam, ws.x, ws.z, () => { cam.photoWalk = false; cam.bypassT = 0; cam.mode = 'photo-cam'; camCh.pose = 'aim'; }, true);
+          goTo(cam, targetCam.x, targetCam.z, () => {
+            cam.photoWalk = false; cam.bypassT = 0; cam.mode = 'photo-cam';
+            camCh.heading = wsHeading; camCh.pose = 'aim';
+          }, true);
         }
         for (const item of s.crewSlots) {
           if (!item.arrived && dist(item.b.it.character.group.position, item) >= 0.3) {
             item.b.bypassT = 1.2;
             rushTo(item.b, item.x, item.z, () => {
               item.b.photoWalk = false; item.b.bypassT = 0;
-              item.b.mode = 'photo-pose'; item.b.it.character.pose = 'photo';
+              item.b.mode = 'photo-pose'; item.b.it.character.heading = area.face; item.b.it.character.pose = 'photo';
               item.arrived = true;
             });
           }
@@ -1802,7 +1886,7 @@ export function createTahiti(ctx) {
         ch.pose = 'photo';
       }
 
-      const camReady = s.camArrived && camCh.pose === 'aim' && camCh.speed < 0.08 && (camCh.poseW || 0) > 0.90 && Math.abs(angDiff(camCh.group.rotation.y, wsHeading)) < 0.08;
+      const camReady = s.camArrived && camCh.pose === 'aim' && camCh.speed < 0.08 && (camCh.poseW || 0) > 0.90 && Math.abs(angDiff(camCh.group.rotation.y, wsHeading)) < 0.08 && dist(camGp, targetCam) < 0.45;
       const nReady = s.nathanArrived && player.pose === 'photo' && player.speed < 0.08 && (player.poseW || 0) > 0.92 && Math.abs(angDiff(player.group.rotation.y, area.face)) < 0.08;
       const crewReady = s.crewSlots.every((item) => {
         if (!item.arrived) return false;
@@ -1832,7 +1916,10 @@ export function createTahiti(ctx) {
       if (s.count <= 0 && !s.shot) {
         s.shot = true;
         const subjChars = [player, ...s.crewSlots.map((item) => item.b.it.character)];
-        const view = computePhotoView(ws, { x: area.fx, z: area.fz }, subjChars, ctx.aspect?.() || 16 / 9);
+        const view = computePhotoView(s.camPosShoot || ws, { x: area.fx, z: area.fz }, subjChars, ctx.aspect?.() || 16 / 9, {
+          fillTarget: s.mode === 'group' ? 0.64 : 0.68,
+          fovMax: 82,
+        });
         s.view = view;
         const url = snapPhoto(view, s.crewSlots.map((item) => item.b), cam);
         camFlash(camCh.group.position, camCh.heading);
@@ -1845,6 +1932,7 @@ export function createTahiti(ctx) {
           view,
           camStart: s.camStart,
           camEnd: { x: +camGp.x.toFixed(3), z: +camGp.z.toFixed(3) },
+          camPosShoot: s.camPosShoot ? { ...s.camPosShoot } : null,
           ws: { ...ws },
           nathanPos: { x: +P().x.toFixed(3), y: +P().y.toFixed(3), z: +P().z.toFixed(3) },
           nathanHeading: +player.heading.toFixed(3),

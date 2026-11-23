@@ -472,11 +472,11 @@ export function buildScooty(color = 0x1f6fe0) {
     mergeGroupByMat(w, { trackPalette: true });
     wheels.push(w);
   }
-  k.box(0.36, 0.32, 0.62, blue, 0, 0.32, -0.38);
-  k.box(0.32, 0.07, 0.68, 0x1e1b2e, 0, 0.64, -0.38);                               // long two-up seat
-  for (const s of [-1, 1]) { k.box(0.04, 0.04, 0.12, 0xc6d2e0, s * 0.22, 0.24, -0.50); k.box(0.10, 0.03, 0.04, 0x111115, s * 0.26, 0.24, -0.50); } // pillion footpegs
+  k.box(0.36, 0.32, 0.76, blue, 0, 0.32, -0.45);                                   // rear body
+  k.box(0.32, 0.07, 0.86, 0x1e1b2e, 0, 0.64, -0.47);                               // extended two-up seat
+  for (const s of [-1, 1]) { k.box(0.04, 0.04, 0.12, 0xc6d2e0, s * 0.22, 0.22, -0.62); k.box(0.10, 0.03, 0.04, 0x111115, s * 0.26, 0.22, -0.62); } // pillion footrests
   k.box(0.26, 0.08, 0.5, color === 0x1f6fe0 ? 0x14365f : 0x2b2b33, 0, 0.2, 0.08);
-  if (color !== 0x1f6fe0) { k.box(0.37, 0.04, 0.5, 0xc6d2e0, 0, 0.46, -0.38, { shadow: false }); k.box(0.33, 0.05, 0.04, 0xc6d2e0, 0, 0.6, 0.52, { shadow: false }); }   // chrome trim on the black Zest
+  if (color !== 0x1f6fe0) { k.box(0.37, 0.04, 0.64, 0xc6d2e0, 0, 0.46, -0.45, { shadow: false }); k.box(0.33, 0.05, 0.04, 0xc6d2e0, 0, 0.6, 0.52, { shadow: false }); }   // chrome trim on the black Zest
   k.box(0.32, 0.62, 0.18, blue, 0, 0.3, 0.42);
   const bars = new THREE.Group(); bars.position.set(0, 0, 0.47); g.add(bars);   // steers
   const bk = kit(bars);
@@ -485,7 +485,8 @@ export function buildScooty(color = 0x1f6fe0) {
   bk.box(0.14, 0.1, 0.06, 0xfff1c0, 0, 0.98, 0.05, { shadow: false });
   for (const x of [-0.26, 0.26]) { bk.box(0.02, 0.16, 0.02, 0x3a3a46, x, 1.04, -0.03); bk.box(0.1, 0.06, 0.02, 0xc6d2e0, x, 1.2, -0.03); }
   mergeGroupByMat(bars, { trackPalette: true });
-  k.box(0.16, 0.06, 0.04, 0xe0202a, 0, 0.5, -0.7, { shadow: false });
+  k.box(0.16, 0.06, 0.04, 0xe0202a, 0, 0.5, -0.84, { shadow: false });             // tail lamp
+  k.box(0.30, 0.04, 0.08, 0xc6d2e0, 0, 0.65, -0.90);                               // rear grab rail
   k.box(0.38, 0.06, 0.66, blue, 0, 0.52, 0.55);
   mergeGroupByMat(g, { trackPalette: true });
   return { group: g, wheels, bars };
@@ -4177,15 +4178,17 @@ export const KIT = {
     const g = new THREE.Group(), k = kit(g);
     const blue = 0x1f6fe0;
     for (const z of [-0.5, 0.55]) { k.cyl(0.24, 0.24, 0.12, 0x1e1b2e, 0, 0.24, z, 12, { rz: Math.PI / 2 }); k.cyl(0.13, 0.13, 0.13, 0xc6d2e0, 0, 0.24, z, 10, { rz: Math.PI / 2 }); }
-    k.box(0.36, 0.32, 0.62, blue, 0, 0.32, -0.38);                 // rear body
-    k.box(0.3, 0.06, 0.5, 0x1e1b2e, 0, 0.64, -0.36);               // seat
+    k.box(0.36, 0.32, 0.76, blue, 0, 0.32, -0.45);                 // rear body
+    k.box(0.32, 0.07, 0.86, 0x1e1b2e, 0, 0.64, -0.47);               // extended two-up seat
+    for (const s of [-1, 1]) { k.box(0.04, 0.04, 0.12, 0xc6d2e0, s * 0.22, 0.22, -0.62); k.box(0.10, 0.03, 0.04, 0x111115, s * 0.26, 0.22, -0.62); } // footrests
     k.box(0.26, 0.08, 0.5, 0x14365f, 0, 0.2, 0.08);                // floorboard
     k.box(0.32, 0.62, 0.18, blue, 0, 0.3, 0.42);                   // leg shield
     k.box(0.06, 0.3, 0.06, 0xc6d2e0, 0, 0.84, 0.48);               // stem
     k.box(0.6, 0.06, 0.08, blue, 0, 1.0, 0.46);                    // handlebar cover
     k.box(0.14, 0.1, 0.06, 0xfff1c0, 0, 0.98, 0.52, { shadow: false });   // headlamp
     for (const x of [-0.26, 0.26]) { k.box(0.02, 0.16, 0.02, 0x3a3a46, x, 1.04, 0.44); k.box(0.1, 0.06, 0.02, 0xc6d2e0, x, 1.2, 0.44); }   // mirrors
-    k.box(0.16, 0.06, 0.04, 0xe0202a, 0, 0.5, -0.7, { shadow: false });  // tail lamp
+    k.box(0.16, 0.06, 0.04, 0xe0202a, 0, 0.5, -0.84, { shadow: false });  // tail lamp
+    k.box(0.30, 0.04, 0.08, 0xc6d2e0, 0, 0.65, -0.90);              // rear grab rail
     k.box(0.38, 0.06, 0.66, blue, 0, 0.52, 0.55);                  // front mudguard
     return { obj: g, colliders: [{ x: 0, z: 0, w: 0.45, d: 1.35 }] };
   },

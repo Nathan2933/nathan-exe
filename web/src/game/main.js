@@ -1730,8 +1730,22 @@ function mount(it) {
         player.group.position.set(g.position.x + Math.sin(h) * (S.back - cfg.rear), g.position.y + (cfg.pillionSeatY || S.pillionSeatY || S.seatY), g.position.z + Math.cos(h) * (S.back - cfg.rear));
       }
       player.pose = cfg.pillionPose || 'pillion';
+    } else {
+      player.group.position.set(it.x, heightAt(it.x, it.z) + cfg.seatY, it.z);
+      player.heading = it.heading;
+      if (it.model?.group) {
+        it.model.group.position.set(it.x, heightAt(it.x, it.z), it.z);
+        it.model.group.rotation.y = it.heading + cfg.yaw;
+      }
     }
     tahiti.onRideMount(m, role);
+  } else {
+    player.group.position.set(it.x, heightAt(it.x, it.z) + cfg.seatY, it.z);
+    player.heading = it.heading;
+    if (it.model?.group) {
+      it.model.group.position.set(it.x, heightAt(it.x, it.z), it.z);
+      it.model.group.rotation.y = it.heading + cfg.yaw;
+    }
   }
   if (!state.rideHint) { state.rideHint = true; toast(`${isTouch ? 'Tap to steer' : 'WASD to steer · Shift for speed · Space to jump'} · E to get off${isTouch ? '' : ' · R returns it to its rack'}`); }
 }
@@ -1814,6 +1828,10 @@ function pickDriveRoute(from, cfg) {
 }
 function rideUpdate(dt, t, kx, kz, running) {
   const m = state.mount, cfg = m.cfg, it = m.it, pos = player.group.position;
+  if (state.choosing && (kx || kz)) {
+    if (typeof state.choosing._closeChoice === 'function') state.choosing._closeChoice();
+    else { state.choosing.remove(); state.choosing = null; }
+  }
   if (m.rearOff) { pos.x += Math.sin(m.offH) * m.rearOff; pos.z += Math.cos(m.offH) * m.rearOff; }   // Nathan sits behind: steer from the vehicle's own anchor
   let want = false;
   if (m.npcDrives) {
@@ -1845,7 +1863,7 @@ function rideUpdate(dt, t, kx, kz, running) {
     const h = Math.atan2(rideDir.x, rideDir.z);
     turn = Math.atan2(Math.sin(h - m.heading), Math.cos(h - m.heading));
   }
-  const wantBack = want && Math.abs(turn) > 2.2;
+  const wantBack = want && Math.abs(turn) > 2.2 && (kz < 0 || (touchInput.active && touchInput.y < -0.2));
   const reversing = wantBack && !m.npcDrives && (m.speed < 0.6 || m.isReversing);
   m.isReversing = reversing && want;
   const target = want && !hold ? (reversing ? -2.2 : (running || state.path.length > 6 ? cfg.boost : cfg.speed)) : 0;

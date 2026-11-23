@@ -262,7 +262,7 @@ const COURTS = [{ c: [-17.95, -28.5], u: [0.638, -0.77], w: [-0.77, -0.638], rot
 O('volley_net', ...COURTS[0].c, { len: 6.8, L: 11, rot: COURTS[0].rot }); A('volley', -22.3, -23.3, { id: 'volley-vg', gang: 'vg', title: 'Vanderlinde volleyball' });
 O('volley_net', ...COURTS[1].c, { len: 6.8, L: 11, rot: COURTS[1].rot }); A('volley', 35.3, -16.9, { id: 'volley-ol', gang: 'ol', title: 'Euphonium volleyball' });
 // Euphonium yard: Sathesh + Shabesh's photo corner beside the path; Akshai's gaming station at west lawn
-O('photo_station', 6.0, 9.0); A('photosession', 6.0, 7.6, { id: 'photosession', gang: 'ol', title: 'Photography session' });
+O('photo_station', 6.0, 9.0); A('photosession', 6.0, 11.0, { id: 'photosession', gang: 'ol', title: 'Photography session' });
 O('contest_table', 19.5, -12.5); A('foodcontest', 18.6, -14.2, { id: 'foodcontest', gang: 'ol', title: 'Food challenge' });
 O('tv_corner', 17.5, 13.0); A('tvgame', 19.4, 13.2, { id: 'tvgame', gang: 'ol', title: 'Play with Akshai' });
 A('anuhoop', 18.0, -22.5, { id: 'anuhoop', gang: 'ol', title: 'Play basketball with Anu' });

@@ -759,7 +759,7 @@ export function createGuruRoutine(ctx) {
 
       /* Update Nathan as passenger */
       if (passengerActive && ctx.player) {
-        const passDist = 0.68;
+        const passDist = 0.84;
         const passY = 0.18;
         ctx.player.group.position.set(
           scootyPos.x - Math.sin(scootyHeading) * passDist,

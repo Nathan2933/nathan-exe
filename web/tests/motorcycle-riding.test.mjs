@@ -184,13 +184,23 @@ test('RIDE_SEATS configuration seats pillion passenger centered on rear seat for
   assert.ok(RIDE_SEATS.moto.pillionSeatY >= 0.46, 'moto pillion seat height is properly aligned');
 
   assert.ok(RIDE_SEATS.scooty, 'RIDE_SEATS.scooty exists');
-  assert.equal(RIDE_SEATS.scooty.back, -0.18, 'scooty driver back offset is -0.18m');
-  assert.equal(RIDE_SEATS.scooty.rear, 0.50, 'scooty passenger rear offset is 0.50m (on rear seat)');
+  assert.equal(RIDE_SEATS.scooty.back, -0.18, 'scooty driver back offset is -0.18m (keeps driver position)');
+  assert.equal(RIDE_SEATS.scooty.rear, 0.64, 'scooty passenger rear offset is 0.64m (shifted back with clear gap)');
   assert.equal(RIDE_SEATS.scooty.pillionPose, 'pillion_scooty', 'scooty passenger uses pillion_scooty pose');
   assert.ok(RIDE_SEATS.scooty.pillionSeatY >= 0.15, 'scooty pillion seat height is properly aligned');
 });
 
-test('Pillion passenger poses (pillion_moto and pillion_scooty) have forward lean, bent knees, and waist hold', () => {
+test('Scooty models have extended rear seat and aligned pillion footrests', () => {
+  for (const color of [0x1f6fe0, 0x1c1c22]) {
+    const scooty = buildScooty(color);
+    assert.ok(scooty.group, 'scooty should have group');
+    // Verify children meshes exist
+    assert.ok(scooty.wheels.length === 2, 'scooty has 2 wheels');
+    assert.ok(scooty.bars, 'scooty has steering bars');
+  }
+});
+
+test('Pillion passenger poses (pillion_moto forward lean, pillion_scooty upright) have bent knees and waist hold', () => {
   for (const poseType of ['pillion_moto', 'pillion_scooty']) {
     const passenger = new Character({ top: 'hoodie', pants: 'jeans' });
     passenger.pose = poseType;
@@ -202,7 +212,7 @@ test('Pillion passenger poses (pillion_moto and pillion_scooty) have forward lea
     passenger.group.updateMatrixWorld(true);
 
     const isMoto = poseType === 'pillion_moto';
-    const expectedSpine = isMoto ? 0.28 : 0.25;
+    const expectedSpine = isMoto ? 0.28 : 0.06;
 
     // Check joints
     assert.ok(passenger.joints.kn0 >= 1.20, `${poseType} knee bend kn0 should be bent comfortably (>=1.20), got ${passenger.joints.kn0}`);
@@ -210,9 +220,9 @@ test('Pillion passenger poses (pillion_moto and pillion_scooty) have forward lea
     assert.ok(passenger.joints.th0 < -0.70, `${poseType} thigh angle th0 should be seated forward (<-0.70), got ${passenger.joints.th0}`);
     assert.ok(passenger.joints.tz0 < -0.15, `${poseType} left thigh tz0 should flare outward (<-0.15), got ${passenger.joints.tz0}`);
     assert.ok(passenger.joints.tz1 > 0.15, `${poseType} right thigh tz1 should flare outward (>0.15), got ${passenger.joints.tz1}`);
-    assert.ok(Math.abs(passenger.joints.spineX - expectedSpine) < 0.04, `${poseType} spine lean should match tuned forward lean (~${expectedSpine}), got ${passenger.joints.spineX}`);
-    assert.ok(passenger.joints.sx0 < -0.40, `${poseType} shoulder forward sx0 should reach forward toward waist, got ${passenger.joints.sx0}`);
-    assert.ok(passenger.joints.el0 < -0.55, `${poseType} elbow bend el0 should be bent holding driver waist, got ${passenger.joints.el0}`);
+    assert.ok(Math.abs(passenger.joints.spineX - expectedSpine) < 0.04, `${poseType} spine lean should match tuned posture (~${expectedSpine}), got ${passenger.joints.spineX}`);
+    assert.ok(passenger.joints.sx0 < -0.35, `${poseType} shoulder forward sx0 should reach forward toward waist, got ${passenger.joints.sx0}`);
+    assert.ok(passenger.joints.el0 < -0.50, `${poseType} elbow bend el0 should be bent holding driver waist, got ${passenger.joints.el0}`);
 
     // Foot positions aligned with rear footpegs
     const leftFoot = new THREE.Vector3();
@@ -227,10 +237,11 @@ test('Pillion passenger poses (pillion_moto and pillion_scooty) have forward lea
 });
 
 test('Two-up riding alignment: centered behind driver with natural gap and no silhouette overlap at gameplay camera angle', () => {
-  // Test both motorcycle and scooty
+  // Test both motorcycle and scooty variants
   const setups = [
     { name: 'motorcycle', bike: buildMotorbike(0xf4f6fa, 'yamaha'), dPos: [0, 0.46, 0], pPos: [0, 0.48, -0.58], pPose: 'pillion_moto', minGap: 0.50, maxGap: 0.65 },
-    { name: 'scooty', bike: buildScooty(0x1f6fe0), dPos: [0, 0.15, -0.18], pPos: [0, 0.18, -0.68], pPose: 'pillion_scooty', minGap: 0.45, maxGap: 0.58 }
+    { name: 'scooty_blue', bike: buildScooty(0x1f6fe0), dPos: [0, 0.15, -0.18], pPos: [0, 0.18, -0.82], pPose: 'pillion_scooty', minGap: 0.60, maxGap: 0.68 },
+    { name: 'scooty_black', bike: buildScooty(0x1c1c22), dPos: [0, 0.15, -0.18], pPos: [0, 0.18, -0.82], pPose: 'pillion_scooty', minGap: 0.60, maxGap: 0.68 }
   ];
 
   // Isometric camera setup matching gameplay

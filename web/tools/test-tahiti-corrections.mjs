@@ -274,7 +274,7 @@ const photoAct = interact.find((i) => {
 assert(photoAct, 'photosession interactable must exist');
 const paPos = toWorld(photoAct.x, photoAct.y);
 console.log(`photosession activity position: (${paPos.x.toFixed(2)}, ${paPos.z.toFixed(2)})`);
-assert(Math.abs(paPos.x - 6.0) < 0.2 && Math.abs(paPos.z - 7.6) < 0.2, 'photosession trigger must sit beside the south path at (6.0, 7.6)');
+assert(Math.abs(paPos.x - 6.0) < 0.2 && Math.abs(paPos.z - 11.0) < 0.2, 'photosession trigger must sit directly in front of the photo booth at (6.0, 11.0)');
 
 // 4.3 Shabesh (tahiti_cf2) spawn route & idle & camera-facing heading (45)
 const shabeshPath = paths.find((p) => (p.properties || []).find((prop) => prop.name === 'npc')?.value === 'tahiti_cf2');
@@ -329,6 +329,26 @@ assert(mainJs.includes('closeTopmostCard'), 'main.js must define closeTopmostCar
 assert(mainJs.includes('stopImmediatePropagation'), 'main.js Esc handler must consume event with stopImmediatePropagation');
 assert(mainJs.includes('_closeChoice'), 'main.js choose dialog must support _closeChoice');
 console.log('✓ Topmost card Escape close and event consumption verified.');
+
+// 4.9 Solo and group photo posing in front of the photobooth with a gap
+assert(tahitiJs.includes('getPhotoboothPosingArea'), 'tahiti.js must implement getPhotoboothPosingArea');
+assert(tahitiJs.includes('isAtPhotobooth'), 'startShabeshSession must check isAtPhotobooth');
+// Extract and evaluate getPhotoboothPosingArea logic to verify geometry
+const pbTable = { x: 6.0, z: 9.0, frontZ: 9.3 };
+// Solo
+const soloMatch = tahitiJs.match(/nathanSlot\s*=\s*{\s*x:\s*6\.0,\s*z:\s*11\.0/);
+assert(soloMatch, 'Solo slot must be centered in front of the photobooth at (6.0, 11.0)');
+const soloGap = 11.0 - pbTable.frontZ;
+assert(soloGap >= 1.5, `Solo pose must leave a clear gap from the table (got ${soloGap}m)`);
+
+// Group
+assert(tahitiJs.includes('z: 11.0, row: 0'), 'Group front row must stand at Z=11.0 in front of photobooth');
+assert(tahitiJs.includes('z: 9.9, row: 1'), 'Group back row must stand at Z=9.9 in front of photobooth');
+const backRowGap = 9.9 - pbTable.frontZ;
+assert(backRowGap >= 0.5, `Group back row must leave a clear gap from the table (got ${backRowGap}m)`);
+assert(tahitiJs.includes('camPos = { x: 6.0, z: 15.0 }'), 'Camera must be positioned at (6.0, 15.0) in front of the booth');
+assert(tahitiJs.includes('fx: 0, fz: -1'), 'Camera must aim North (-Z) straight at the booth');
+console.log(`✓ Solo (gap ${soloGap.toFixed(2)}m) and group (front gap ${(11.0 - pbTable.frontZ).toFixed(2)}m, back gap ${backRowGap.toFixed(2)}m) photobooth posing geometry verified.`);
 
 console.log('\n========================================================');
 console.log('ALL TAHITI CORRECTIONS TESTS PASSED SUCCESSFULLY! ✓✓✓');

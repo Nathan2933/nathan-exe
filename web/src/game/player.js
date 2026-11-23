@@ -680,17 +680,17 @@ export class Character {
         pm('ez0', 0); pm('ez1', 0);
         pm('hipX', 0);
       } else if (P === 'pillion_scooty') {
-        // Black Zest scooter pillion: slight forward lean, hands near driver's waist,
+        // Scooty pillion: upright posture, hands near driver's waist,
         // knees bent to scooter running-board pillion footrests
         const st = this.steer || 0;
         pm('hipY', -0.14);
         pm('th0', -0.96); pm('th1', -0.96);
         pm('tz0', -0.20); pm('tz1', 0.20);
         pm('kn0', 1.25); pm('kn1', 1.25);
-        pm('spineX', 0.25); pm('spineY', st * 0.15); pm('headX', -0.08);
-        pm('sx0', -0.45); pm('sx1', -0.45);
-        pm('sz0', 0.28); pm('sz1', -0.28);
-        pm('el0', -0.65); pm('el1', -0.65);
+        pm('spineX', 0.06); pm('spineY', st * 0.15); pm('headX', -0.02);
+        pm('sx0', -0.44); pm('sx1', -0.44);
+        pm('sz0', 0.24); pm('sz1', -0.24);
+        pm('el0', -0.60); pm('el1', -0.60);
         pm('ez0', 0); pm('ez1', 0);
         pm('hipX', 0);
       } else if (P === 'curl') {
