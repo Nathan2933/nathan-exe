@@ -1288,13 +1288,13 @@ const achGallery = (a) => (a.images || []).length ? `<div class="ach-gallery">${
 function openPhotoCard(list, i) {
   document.querySelector('.photo-card')?.remove();
   const card = document.createElement('div');
-  card.className = 'photo-card'; card.setAttribute('role', 'dialog'); card.setAttribute('aria-modal', 'true'); card.setAttribute('aria-label', 'Photo');
-  card.innerHTML = `<div class="pc-box window"><div class="window-bar"><span class="title">tahiti/album</span><button type="button" class="panel-close pc-close" aria-label="Close photo">✕</button></div>
-    <div class="pc-body"><img alt=""><p class="pc-cap"><span></span><b></b></p>
-    <div class="pc-nav"><button type="button" class="btn" data-d="-1" aria-label="Previous photo">◀</button><a class="btn" download="tahiti-photo.jpg">Save ↓</a><button type="button" class="btn" data-d="1" aria-label="Next photo">▶</button></div></div></div>`;
+  card.className = 'photo-card'; card.setAttribute('role', 'dialog'); card.setAttribute('aria-modal', 'true'); card.setAttribute('aria-label', 'Photo album viewer');
+  card.innerHTML = `<div class="pc-box window"><div class="window-bar"><span class="title">tahiti/album</span><button type="button" class="panel-close pc-close" aria-label="Close photo viewer">✕</button></div>
+    <div class="pc-body"><div class="pc-stage"><img alt=""></div><p class="pc-cap"><span></span><b></b></p>
+    <div class="pc-nav"><button type="button" class="btn" data-d="-1" aria-label="Previous photo">◀</button><a class="btn" download="tahiti-photo.jpg" aria-label="Save photo">Save ↓</a><button type="button" class="btn" data-d="1" aria-label="Next photo">▶</button></div></div></div>`;
   const img = card.querySelector('img'), cap = card.querySelector('.pc-cap span'), cnt = card.querySelector('.pc-cap b'), dl = card.querySelector('a[download]');
   const show = () => {
-    const p = list[i]; img.src = p.url; img.alt = p.gang || 'Tahiti photo'; dl.href = p.url;
+    const p = list[i]; img.src = p.url; img.alt = p.gang || 'Tahiti photo'; dl.href = p.url; dl.download = `tahiti-photo-${i + 1}.jpg`;
     cap.textContent = `${p.gang ? p.gang + ' · ' : ''}${new Date(p.at).toLocaleString()}`; cnt.textContent = `${i + 1} / ${list.length}`;
     card.querySelectorAll('[data-d]').forEach((b) => { b.hidden = list.length < 2; });
   };
@@ -1307,6 +1307,26 @@ function openPhotoCard(list, i) {
   card.querySelectorAll('[data-d]').forEach((b) => b.addEventListener('click', () => { i = (i + +b.dataset.d + list.length) % list.length; show(); }));
   card.querySelector('.pc-close').addEventListener('click', close);
   card.addEventListener('click', (e) => { if (e.target === card) close(); });
+
+  // Touch swipe support for mobile and tablet browsing
+  let touchStartX = 0, touchStartY = 0;
+  card.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 1) {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    }
+  }, { passive: true });
+  card.addEventListener('touchend', (e) => {
+    if (e.changedTouches.length === 1 && list.length > 1) {
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      const dy = e.changedTouches[0].clientY - touchStartY;
+      if (Math.abs(dx) > 36 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+        if (dx < 0) { i = (i + 1) % list.length; show(); }
+        else { i = (i - 1 + list.length) % list.length; show(); }
+      }
+    }
+  }, { passive: true });
+
   addEventListener('keydown', key, true);
   document.body.append(card); show(); card.querySelector('.pc-close').focus();
 }

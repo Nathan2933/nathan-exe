@@ -1578,10 +1578,10 @@ export function createTahiti(ctx) {
     const halfY = Math.max(Math.abs(sy0), Math.abs(sy1));
     const halfX = Math.max(Math.abs(sx0), Math.abs(sx1));
     const isSolo = subjectChars.length === 1;
-    const fillTarget = opts.fillTarget ?? (isSolo ? 0.68 : 0.64);
+    const fillTarget = opts.fillTarget ?? (isSolo ? 0.68 : 0.62);
     const tanY = Math.max(halfY / fillTarget, halfX / (fillTarget * aspect));
     const fovMin = opts.fovMin ?? 50;
-    const fovMax = opts.fovMax ?? (subjectChars.length <= 2 ? 72 : 82);
+    const fovMax = opts.fovMax ?? (subjectChars.length <= 2 ? 72 : 90);
     const fov = Math.max(fovMin, Math.min(fovMax, (2 * Math.atan(tanY) * 180) / Math.PI));
 
     return {
@@ -1667,55 +1667,71 @@ export function createTahiti(ctx) {
   }
 
   function getPhotoboothPosingArea(count, isGroup) {
-    // Photobooth table is at (6.0, 9.0) with front edge at Z=9.3.
-    // Orange circle and Nathan's pose mark are directly in front of the booth at (6.0, 11.0).
-    // Photo camera is positioned in front of the booth at (6.0, 15.0) for a straight-on group shot.
-    const camPos = { x: 6.0, z: 15.0 };
-    const nathanSlot = { x: 6.0, z: 11.0, row: 0, lat: 0 };
+    // Photobooth table is at (6.0, 9.0) with front edge at Z=9.3 and stone patio ending at Z=10.4.
+    // Orange interaction circle remains in its current position at (6.0, 11.0).
+    // The booth's camera prop on the tripod is located at (6.95, 8.85), aimed South (+Z).
+    // Shabesh stands behind the camera prop at (6.95, 8.30) facing South (0) to operate it.
+    // Nathan poses directly opposite the camera prop at (6.95, 13.0), facing North (Math.PI) into the lens,
+    // leaving a clear 2.6m gap from the booth patio edge and 4.15m from the camera prop.
+    const camPos = { x: 6.95, z: 8.85 };
+    const operatorPos = { x: 6.95, z: 8.30 };
+    const nathanSlot = { x: 6.95, z: 13.0, row: 0, lat: 0 };
     if (!isGroup || count <= 1) {
       return {
         slots: [nathanSlot],
         nFront: 1,
         nathanIndex: 0,
-        face: 0,               // facing South (+Z) towards the photo camera
-        center: { x: 6.0, z: 11.0 },
+        face: Math.PI,         // facing North (-Z) directly into the camera lens
+        center: { x: 6.95, z: 13.0 },
         camPos,
-        fx: 0, fz: -1,         // camera aims North (-Z) at the booth
-        wsHeading: Math.PI,    // 180 degrees (North)
-        ang: 180,
-        dist: 4.0,
+        operatorPos,
+        fx: 0, fz: 1,          // camera aims South (+Z) from the booth prop towards Nathan
+        wsHeading: 0,          // Shabesh faces South (+Z) towards the camera prop & subjects
+        ang: 0,
+        dist: 4.15,
       };
     }
     // Arrange group around Nathan (Nathan front and center at index 0)
     const slots = [nathanSlot];
-    const stepX = 1.15;
     const othersCount = count - 1;
-    // Front row flanks Nathan left and right (up to 4 flanking slots)
     const nFrontFlank = othersCount <= 2 ? othersCount : (othersCount <= 4 ? 2 : 4);
     const nBack = othersCount - nFrontFlank;
+
+    const zFront = 13.0;
+    const zBack = 14.15;
+
+    // Front row flanks Nathan left and right:
+    // Rank 1 flanks at ±1.65m, Rank 2 flanks at ±3.70m
     for (let i = 1; i <= nFrontFlank; i++) {
       const sign = i % 2 === 1 ? -1 : 1;
       const rank = Math.ceil(i / 2);
-      const lat = sign * rank * stepX;
-      slots.push({ x: +(6.0 + lat).toFixed(3), z: 11.0, row: 0, lat });
+      const lat = sign * (rank === 1 ? 1.65 : 3.70);
+      slots.push({ x: +(6.95 + lat).toFixed(3), z: 13.0, row: 0, lat: +lat.toFixed(3) });
     }
-    // Back row at Z = 9.9, staggered between front row slots
-    for (let i = 1; i <= nBack; i++) {
-      const sign = i % 2 === 1 ? -1 : 1;
-      const rank = Math.ceil(i / 2);
-      const lat = sign * (rank - 0.5) * stepX;
-      slots.push({ x: +(6.0 + lat).toFixed(3), z: 9.9, row: 1, lat });
+
+    // Back row slots staggered in the angular windows between front row sightlines:
+    // Every face has an unobstructed sightline directly into the camera lens.
+    // - Gap between Nathan (0) and Left 1 (-1.65): lat -0.95m
+    // - Gap between Nathan (0) and Right 1 (+1.65): lat +0.95m
+    // - Gap between Left 1 (-1.65) and Left 2 (-3.70): lat -3.10m
+    // - Gap between Right 1 (+1.65) and Right 2 (+3.70): lat +3.10m
+    const backLatSequence = [-0.95, 0.95, -3.10, 3.10, -4.50, 4.50];
+    for (let i = 0; i < nBack; i++) {
+      const lat = backLatSequence[i % backLatSequence.length];
+      slots.push({ x: +(6.95 + lat).toFixed(3), z: 14.15, row: 1, lat: +lat.toFixed(3) });
     }
+
     return {
       slots,
       nFront: 1 + nFrontFlank,
       nathanIndex: 0,
-      face: 0,                 // facing South (+Z) towards the photo camera
-      center: { x: 6.0, z: 10.5 },
+      face: Math.PI,           // facing North (-Z) directly into the camera lens
+      center: { x: 6.95, z: nBack > 0 ? 13.5 : 13.0 },
       camPos,
-      fx: 0, fz: -1,           // camera aims North (-Z) at the booth
-      wsHeading: Math.PI,      // 180 degrees (North)
-      ang: 180,
+      operatorPos,
+      fx: 0, fz: 1,            // camera aims South (+Z) from the booth prop towards the group
+      wsHeading: 0,            // Shabesh faces South (+Z) towards the camera prop & group
+      ang: 0,
       dist: 4.5,
     };
   }
@@ -1753,12 +1769,13 @@ export function createTahiti(ctx) {
       : findPosingArea(ws, 1 + crew.length, { preferAngle: opts.preferAngle });
     const nathanSlot = area.slots[area.nathanIndex];
     const otherSlots = orderedOtherSlots(area.slots, area.nathanIndex);
-    const wsHeading = Math.atan2(area.fx, area.fz);
+    const wsHeading = area.wsHeading ?? Math.atan2(area.fx, area.fz);
     const camPosShoot = area.camPos || ws;
+    const operatorPos = area.operatorPos || camPosShoot;
 
     release(cam); cam.forced = true; cam.vball = false;
     cam.photoWalk = true; cam.bypassT = 0;
-    rushTo(cam, camPosShoot.x, camPosShoot.z, () => {
+    rushTo(cam, operatorPos.x, operatorPos.z, () => {
       cam.photoWalk = false; cam.bypassT = 0;
       cam.mode = 'photo-cam';
       cam.it.character.heading = wsHeading;
@@ -1779,21 +1796,30 @@ export function createTahiti(ctx) {
       return item;
     });
 
-    // Place Nathan directly on his posing mark (the exact orange circle spot) facing the photo camera
-    P().set(nathanSlot.x, ctx.heightAt(nathanSlot.x, nathanSlot.z), nathanSlot.z);
-    player.heading = area.face;
-    player.pose = 'photo';
-    state.joined = { x: nathanSlot.x, z: nathanSlot.z, pose: 'photo', face: area.face, swim: false, photo: true };
-    state.path = [];
-    state.photoPath = false;
+    // Automatically move Nathan to his posing spot directly opposite the booth camera prop
+    const needWalk = dist(P(), nathanSlot) >= 0.25;
+    if (needWalk && !opts.fast) {
+      const pth = ctx.nav?.findPath ? ctx.nav.findPath(P().x, P().z, nathanSlot.x, nathanSlot.z) : [];
+      state.path = pth.length ? pth : [{ x: nathanSlot.x, z: nathanSlot.z }];
+      state.photoPath = true;
+      state.joined = null;
+      player.pose = null;
+    } else {
+      P().set(nathanSlot.x, ctx.heightAt(nathanSlot.x, nathanSlot.z), nathanSlot.z);
+      player.heading = area.face;
+      player.pose = 'photo';
+      state.joined = { x: nathanSlot.x, z: nathanSlot.z, pose: 'photo', face: area.face, swim: false, photo: true };
+      state.path = [];
+      state.photoPath = false;
+    }
     ctx.clearMarker?.();
 
     const camName = def(cam.id).name || 'Shabesh';
     session = {
       mode: isGroup ? 'group' : 'pose',
-      cam, ws, camPosShoot, camStart: { x: camPos.x, z: camPos.z },
+      cam, ws, camPosShoot, operatorPos, camStart: { x: camPos.x, z: camPos.z },
       camArrived: false, wsHeading, area,
-      nathanSlot, nathanArrived: true, curFace: area.face,
+      nathanSlot, nathanArrived: !needWalk || !!opts.fast, curFace: area.face,
       crewSlots, t: 0, phase: 'gather', count: 0, lastCount: 0,
       shot: false, fast: !!opts.fast, doneT: 0, view: null, refreshMark: 0,
       label: isGroup ? `${GANG_NAME.ol} · Portrait by ${camName}` : `Portrait by ${camName}`,
@@ -1802,7 +1828,7 @@ export function createTahiti(ctx) {
     if (opts.fast) {
       cam.photoWalk = false; cam.bypassT = 0;
       cam.mode = 'photo-cam';
-      cam.it.character.group.position.set(camPosShoot.x, ctx.heightAt(camPosShoot.x, camPosShoot.z), camPosShoot.z);
+      cam.it.character.group.position.set(operatorPos.x, ctx.heightAt(operatorPos.x, operatorPos.z), operatorPos.z);
       cam.it.character.heading = wsHeading;
       cam.it.character.pose = 'aim';
       session.camArrived = true;
@@ -1816,8 +1842,8 @@ export function createTahiti(ctx) {
       }
     }
 
-    bubble(cam.it, isGroup ? 'Euphonium, assemble in front of my lens!' : 'Step over to your mark, Nathan. Hold right there!', 2.6);
-    ctx.toast(isGroup ? 'Everyone assemble in front of the photobooth.' : 'Walk to your posing mark in front of the photobooth.');
+    bubble(cam.it, isGroup ? 'Euphonium, assemble in front of my lens!' : 'Strike a pose, Nathan! Looking sharp!', 2.6);
+    ctx.toast(isGroup ? 'Euphonium is assembling for the photo...' : 'Shabesh is getting ready behind the camera...');
     return true;
   }
 
@@ -1826,7 +1852,7 @@ export function createTahiti(ctx) {
     s.t += dt;
     const { cam, ws, wsHeading, area, nathanSlot } = s;
     const camCh = cam.it.character, camGp = camCh.group.position;
-    const targetCam = s.camPosShoot || ws;
+    const targetCam = s.operatorPos || s.camPosShoot || ws;
 
     if (cam.mode === 'photo-cam') {
       s.camArrived = true;
@@ -1841,13 +1867,23 @@ export function createTahiti(ctx) {
         if (dist(P(), nathanSlot) < 0.35 && !state.path.length) {
           s.nathanArrived = true;
           state.photoPath = false;
-          s.curFace = player.heading;
+          P().set(nathanSlot.x, ctx.heightAt(nathanSlot.x, nathanSlot.z), nathanSlot.z);
+          player.heading = area.face;
+          player.pose = 'photo';
+          s.curFace = area.face;
           state.joined = { x: nathanSlot.x, z: nathanSlot.z, pose: 'photo', face: s.curFace, swim: false, photo: true };
-        } else if (state.path.length) {
-          const last = state.path[state.path.length - 1];
-          if (dist(last, nathanSlot) > 0.6) { cancelSession(); return; }
-        } else if (s.t > 0.15) {
-          cancelSession(); return;
+        } else if (!state.path.length && s.t > 0.4) {
+          if (dist(P(), nathanSlot) < 0.8) {
+            s.nathanArrived = true;
+            state.photoPath = false;
+            P().set(nathanSlot.x, ctx.heightAt(nathanSlot.x, nathanSlot.z), nathanSlot.z);
+            player.heading = area.face;
+            player.pose = 'photo';
+            s.curFace = area.face;
+            state.joined = { x: nathanSlot.x, z: nathanSlot.z, pose: 'photo', face: s.curFace, swim: false, photo: true };
+          } else {
+            cancelSession(); return;
+          }
         }
       } else {
         if (!state.joined?.photo) { cancelSession(true); return; }
@@ -1886,12 +1922,12 @@ export function createTahiti(ctx) {
         ch.pose = 'photo';
       }
 
-      const camReady = s.camArrived && camCh.pose === 'aim' && camCh.speed < 0.08 && (camCh.poseW || 0) > 0.90 && Math.abs(angDiff(camCh.group.rotation.y, wsHeading)) < 0.08 && dist(camGp, targetCam) < 0.45;
-      const nReady = s.nathanArrived && player.pose === 'photo' && player.speed < 0.08 && (player.poseW || 0) > 0.92 && Math.abs(angDiff(player.group.rotation.y, area.face)) < 0.08;
+      const camReady = s.camArrived && camCh.pose === 'aim' && camCh.speed < 0.08 && (camCh.poseW || 0) > 0.90 && Math.abs(angDiff(camCh.group.rotation.y, wsHeading)) < 0.12 && dist(camGp, targetCam) < 0.45;
+      const nReady = s.nathanArrived && player.pose === 'photo' && player.speed < 0.08 && (player.poseW || 0) > 0.90 && Math.abs(angDiff(player.group.rotation.y, area.face)) < 0.12;
       const crewReady = s.crewSlots.every((item) => {
         if (!item.arrived) return false;
         const ch = item.b.it.character;
-        return dist(ch.group.position, item) < 0.45 && ch.pose === 'photo' && ch.speed < 0.08 && (ch.poseW || 0) > 0.92 && Math.abs(angDiff(ch.group.rotation.y, area.face)) < 0.08;
+        return dist(ch.group.position, item) < 0.45 && ch.pose === 'photo' && ch.speed < 0.08 && (ch.poseW || 0) > 0.90 && Math.abs(angDiff(ch.group.rotation.y, area.face)) < 0.12;
       });
 
       if (camReady && nReady && crewReady) {
@@ -1917,12 +1953,14 @@ export function createTahiti(ctx) {
         s.shot = true;
         const subjChars = [player, ...s.crewSlots.map((item) => item.b.it.character)];
         const view = computePhotoView(s.camPosShoot || ws, { x: area.fx, z: area.fz }, subjChars, ctx.aspect?.() || 16 / 9, {
-          fillTarget: s.mode === 'group' ? 0.64 : 0.68,
-          fovMax: 82,
+          leadDist: 0.14,
+          camHeight: 1.38,
+          fillTarget: s.mode === 'group' ? 0.62 : 0.68,
+          fovMax: 90,
         });
         s.view = view;
         const url = snapPhoto(view, s.crewSlots.map((item) => item.b), cam);
-        camFlash(camCh.group.position, camCh.heading);
+        camFlash(new THREE.Vector3(s.camPosShoot.x, ctx.heightAt(s.camPosShoot.x, s.camPosShoot.z) + 1.38, s.camPosShoot.z), wsHeading);
         ctx.flash('', true);
         ctx.sfx.memory();
         savePhoto(url, s.label);
@@ -1933,6 +1971,7 @@ export function createTahiti(ctx) {
           camStart: s.camStart,
           camEnd: { x: +camGp.x.toFixed(3), z: +camGp.z.toFixed(3) },
           camPosShoot: s.camPosShoot ? { ...s.camPosShoot } : null,
+          operatorPos: s.operatorPos ? { ...s.operatorPos } : null,
           ws: { ...ws },
           nathanPos: { x: +P().x.toFixed(3), y: +P().y.toFixed(3), z: +P().z.toFixed(3) },
           nathanHeading: +player.heading.toFixed(3),

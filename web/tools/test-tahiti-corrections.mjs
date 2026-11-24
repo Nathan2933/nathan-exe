@@ -330,25 +330,27 @@ assert(mainJs.includes('stopImmediatePropagation'), 'main.js Esc handler must co
 assert(mainJs.includes('_closeChoice'), 'main.js choose dialog must support _closeChoice');
 console.log('✓ Topmost card Escape close and event consumption verified.');
 
-// 4.9 Solo and group photo posing in front of the photobooth with a gap
+// 4.9 Solo and group photo posing opposite the photobooth camera prop with a gap
 assert(tahitiJs.includes('getPhotoboothPosingArea'), 'tahiti.js must implement getPhotoboothPosingArea');
 assert(tahitiJs.includes('isAtPhotobooth'), 'startShabeshSession must check isAtPhotobooth');
 // Extract and evaluate getPhotoboothPosingArea logic to verify geometry
-const pbTable = { x: 6.0, z: 9.0, frontZ: 9.3 };
+const pbTable = { x: 6.0, z: 9.0, frontZ: 9.3, patioEdgeZ: 10.4 };
+const camPropPos = { x: 6.95, z: 8.85 };
 // Solo
-const soloMatch = tahitiJs.match(/nathanSlot\s*=\s*{\s*x:\s*6\.0,\s*z:\s*11\.0/);
-assert(soloMatch, 'Solo slot must be centered in front of the photobooth at (6.0, 11.0)');
-const soloGap = 11.0 - pbTable.frontZ;
-assert(soloGap >= 1.5, `Solo pose must leave a clear gap from the table (got ${soloGap}m)`);
+const soloMatch = tahitiJs.match(/nathanSlot\s*=\s*{\s*x:\s*6\.95,\s*z:\s*13\.0/);
+assert(soloMatch, 'Solo slot must be centered opposite the booth camera prop at (6.95, 13.0)');
+const soloGap = 13.0 - pbTable.patioEdgeZ;
+assert(soloGap >= 1.5, `Solo pose must leave a clear gap from the booth (got ${soloGap}m)`);
 
 // Group
-assert(tahitiJs.includes('z: 11.0, row: 0'), 'Group front row must stand at Z=11.0 in front of photobooth');
-assert(tahitiJs.includes('z: 9.9, row: 1'), 'Group back row must stand at Z=9.9 in front of photobooth');
-const backRowGap = 9.9 - pbTable.frontZ;
-assert(backRowGap >= 0.5, `Group back row must leave a clear gap from the table (got ${backRowGap}m)`);
-assert(tahitiJs.includes('camPos = { x: 6.0, z: 15.0 }'), 'Camera must be positioned at (6.0, 15.0) in front of the booth');
-assert(tahitiJs.includes('fx: 0, fz: -1'), 'Camera must aim North (-Z) straight at the booth');
-console.log(`✓ Solo (gap ${soloGap.toFixed(2)}m) and group (front gap ${(11.0 - pbTable.frontZ).toFixed(2)}m, back gap ${backRowGap.toFixed(2)}m) photobooth posing geometry verified.`);
+assert(tahitiJs.includes('z: 13.0, row: 0'), 'Group front row must stand at Z=13.0 opposite booth camera');
+assert(tahitiJs.includes('z: 14.15, row: 1'), 'Group back row must stand at Z=14.15 staggered behind');
+const backRowGap = 14.15 - pbTable.patioEdgeZ;
+assert(backRowGap >= 2.0, `Group back row must leave a clear gap from the booth (got ${backRowGap}m)`);
+assert(tahitiJs.includes('camPos = { x: 6.95, z: 8.85 }'), 'Camera must be positioned at booth camera prop (6.95, 8.85)');
+assert(tahitiJs.includes('operatorPos = { x: 6.95, z: 8.30 }'), 'Shabesh must stand behind camera prop at (6.95, 8.30)');
+assert(tahitiJs.includes('fx: 0, fz: 1'), 'Camera must aim South (+Z) straight at the posing spot');
+console.log(`✓ Solo (gap ${soloGap.toFixed(2)}m) and group (front gap ${(13.0 - pbTable.patioEdgeZ).toFixed(2)}m, back gap ${backRowGap.toFixed(2)}m) photobooth posing geometry verified.`);
 
 console.log('\n========================================================');
 console.log('ALL TAHITI CORRECTIONS TESTS PASSED SUCCESSFULLY! ✓✓✓');
