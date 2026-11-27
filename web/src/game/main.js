@@ -2096,6 +2096,10 @@ async function switchLevel(name) {
   setupLabels(); setupMinimap();
   // exploring Tahiti: keep the chapter list tucked away unless the player opened it
   if (name === 'tahiti' && !journeyTouched && !isCompactUI()) { $('.journey')?.classList.add('collapsed'); $('#journey-toggle')?.setAttribute('aria-expanded', 'false'); }
+  const sp = map.spawn ? { x: map.spawn.x, z: map.spawn.z } : { x: 0, z: 0 };
+  const sy = heightAt(sp.x, sp.z);
+  player.group.position.set(sp.x, sy, sp.z);
+  lastSafe.set(sp.x, sy, sp.z);
   state.nearby = null; state.talkingTo = null; state.path = [];
   try { renderer.compile(scene, camera); } catch { /* ignore */ }
   if (name === 'tahiti') tahiti.enter();
@@ -2166,7 +2170,11 @@ function standSpotFor(it) {
 async function visitCharacter(canon) {
   const why = visitBusy();
   if (why) { toast(why); return false; }
-  const ids = npcIdsFor(canon);
+  let ids = npcIdsFor(canon);
+  if (!ids.length) {
+    try { await loadTahitiData(); } catch {}
+    ids = npcIdsFor(canon);
+  }
   if (!ids.length) return false;
   const lvl = state.level;
   const target = canon === 'harris' ? lvl : ids.some((i) => npcIslandOf(i) === lvl) ? lvl : npcIslandOf(ids[0]);
@@ -2174,6 +2182,7 @@ async function visitCharacter(canon) {
   state.visiting = true;
   fade.classList.add('on');
   let ok = false;
+  let targetNpc = null;
   try {
     await sleep(190);
     closePanel();
@@ -2193,6 +2202,7 @@ async function visitCharacter(canon) {
     }
     const it = world.npcs.find((n) => ids.includes(n.npcId));
     if (!it) { toast('Could not find them right now.'); return false; }
+    targetNpc = it;
     const a = liveActivity(it.npcId) || {};
     const onBike = state.level === 'island1' && ((it.npcId === 'guru' && ['mount', 'riding'].includes(a.act)) || (it.npcId === 'shabeer' && shabeerRoutine.getPhase() === 'ride'));
     if (!onBike && (a.riding || ['walk_to_scooty', 'mount', 'riding', 'return'].includes(a.act))) { toast('They are on the move. Try again in a moment.'); return false; }
@@ -2227,6 +2237,10 @@ async function visitCharacter(canon) {
     await frames(2);
     fade.classList.remove('on');
     state.visiting = false;
+  }
+  if (ok && targetNpc) {
+    await sleep(80);
+    await talkTo(targetNpc);
   }
   return ok;
 }
@@ -3213,7 +3227,7 @@ function update(dt, t) {
   if (state.gym) gymUpdate(dt);
   if (!state.ko && !state.joined) pos.y += (heightAt(pos.x, pos.z) - pos.y) * Math.min(1, dt * 18);
   if (state.arrival) runArrival(dt);
-  if (!state.cine && !state.arrival) checkHazards(dt);
+  if (!state.cine && !state.arrival && !state.visiting) checkHazards(dt);
   if (state.cine) velocity.copy(state.cine.vel);
   else if (state.arrival) velocity.copy(state.arrival.vel);
   xrayGate.update(dt);
@@ -3890,7 +3904,7 @@ const UP = new THREE.Vector3(0, 1, 0);
 let safeT = 0;
 const lastSafe = new THREE.Vector3(1.2, 0, 6.2);
 function checkHazards(dt) {
-  if (!world || state.ko || !state.started) return;
+  if (!world || state.ko || !state.started || state.visiting) return;
   const p = player.group.position;
   // remember the last dry, off-track spot for respawning
   safeT -= dt;
@@ -4497,12 +4511,39 @@ function knockout(kind) {
   state.path = []; state.pendingOpen = null; marker.visible = false;
   closePanel(); dialogue.close();
   const p = player.group.position;
-  const msg = kind === 'water'
+  const isWater = kind === 'water';
+  const msg = isWater
     ? ['SPLASH!', 'Nathan can lift, but he can’t swim (yet).']
     : ['MIND THE MEMORY LINE', 'Hit by the train. Respawning at the nearest station.'];
   sfx.miss();
   const el = $('#ko');
-  el.innerHTML = `<div class="ko-card"><b>${msg[0]}</b><span>${msg[1]}</span></div>`;
+  if (isWater) {
+    el.innerHTML = `<div class="ko-card ko-card-splash">
+      <div class="splash-ripple" aria-hidden="true">
+        <svg viewBox="0 0 38 20" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+          <rect x="18" y="1" width="2" height="2" fill="#0b726b"/>
+          <rect x="13" y="4" width="2" height="2" fill="#14b8a6"/>
+          <rect x="23" y="4" width="2" height="2" fill="#14b8a6"/>
+          <rect x="14" y="8" width="10" height="2" fill="#14b8a6"/>
+          <rect x="12" y="10" width="2" height="2" fill="#14b8a6"/>
+          <rect x="24" y="10" width="2" height="2" fill="#14b8a6"/>
+          <rect x="14" y="12" width="10" height="2" fill="#14b8a6"/>
+          <rect x="8" y="12" width="22" height="2" fill="#0b726b"/>
+          <rect x="4" y="14" width="4" height="2" fill="#0b726b"/>
+          <rect x="30" y="14" width="4" height="2" fill="#0b726b"/>
+          <rect x="2" y="16" width="2" height="2" fill="#0b726b"/>
+          <rect x="34" y="16" width="2" height="2" fill="#0b726b"/>
+          <rect x="4" y="18" width="30" height="2" fill="#0b726b"/>
+          <rect x="15" y="8" width="4" height="1" fill="#5eead4"/>
+          <rect x="9" y="12" width="6" height="1" fill="#5eead4"/>
+        </svg>
+      </div>
+      <b class="splash-title">${msg[0]}</b>
+      <span class="splash-text">${msg[1]}</span>
+    </div>`;
+  } else {
+    el.innerHTML = `<div class="ko-card"><b>${msg[0]}</b><span>${msg[1]}</span></div>`;
+  }
   setTimeout(() => el.classList.remove('hidden'), reducedMotion ? 0 : 450);
   const t0 = performance.now();
   const start = p.clone();

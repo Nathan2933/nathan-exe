@@ -93,8 +93,9 @@ export function createCharacters(host) {
     const b = e.target.closest('[data-visit]');
     if (!b || b.disabled) return;
     b.disabled = true;
+    close();
     const ok = await host.visit(b.dataset.visit);
-    if (ok) close(); else render();
+    if (!ok) show();
   });
   window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && isOpen) { close(); } });
 
