@@ -7,6 +7,14 @@ const ROOT = __dirname;
 
 export default defineConfig(({ command }) => ({
   base: process.env.VITE_BASE || '/',
+  resolve: {
+    preserveSymlinks: true,
+  },
+  server: {
+    fs: {
+      allow: ['..', 'N:/Nathan_Portfolio', 'N:/NathanEXE_Game_Starter'],
+    },
+  },
   plugins: [adminApi(ROOT), reviewsDevStatic(ROOT)],
   // one id per build: data and map URLs carry it, so a new deploy can never mix with old cached files
   define: { __BUILD_ID__: JSON.stringify(Date.now().toString(36)) },

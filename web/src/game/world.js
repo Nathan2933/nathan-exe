@@ -444,6 +444,10 @@ export function buildWorld(scene, content, map, overrides = new Map()) {
     }
     if (it.route.idles[0]) { ch.pose = it.route.idles[0]; it.route.wait = 3 + Math.random() * 3; }
     if (it.route.faces[0] != null) { ch.heading = it.route.faces[0]; it.homeHeading = it.route.faces[0]; }
+    if (props.visitSpot) {
+      const [vx, vz] = String(props.visitSpot).split(',').map(Number);
+      if (!isNaN(vx) && !isNaN(vz)) it.visitSpot = { x: vx, z: vz };
+    }
     it.beacon = beacon(p0.x, 0, p0.z, { pillar: false });
     hitBox(it, 1.2, 2.6, 1.2);
     interactables.push(it);

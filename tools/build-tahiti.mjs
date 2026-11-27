@@ -70,7 +70,17 @@ walkRect(RING.x0 + 2, -4, -25, -3);                      // west path to the wes
 walkRect(10, 2, 11, RING.z1 - 1);                        // south walkway: connecting main ring road to Villa entrance steps
 // destinations
 disc(0.5, -22, 4.2, T.plaza);                            // fountain plaza (on the north ring)
-rect(14, -28, 22, -21, T.concrete); walkRect(17, -20, 18, -20);   // Outlaws half court, joined to the ring
+rect(19, -28, 27, -21, T.concrete); walkRect(22, -20, 23, -20);   // Outlaws half court (shifted towards ocean), joined to the ring
+rect(27, -29, 33, -20, T.grass);                         // ensure clean green grass lawn along the right sideline and east of hoop
+// Northern vehicle road: continuous drivable route on the fountain side of the architecture studio
+walkRect(-6, -26, -4, -18);                              // west connector from north ring road
+walkRect(-6, -27, 14, -25);                              // front vehicle road across architecture studio (fountain side)
+walkRect(13, -26, 15, -18);                              // east connector down to north ring road
+// flared turning mouths and corners for smooth vehicle driving and turning
+walkRect(-7, -27, -4, -24);
+walkRect(12, -27, 15, -24);
+walkRect(-7, -19, -3, -18);
+walkRect(12, -19, 16, -18);
 walkRect(RING.x0, -23, RING.x0 + 1, RING.z0 - 1);        // Vanderlinde beach
 walkRect(-34, -2, RING.x0 - 1, -1);                      // banyan hangout
 walkRect(RING.x1 + 2, RING.z1, 34, RING.z1 + 1);         // Outlaws beach
@@ -103,7 +113,7 @@ const toPx = (v) => (v + HALF) * PX;
 const props = (o) => Object.entries(o).map(([name, value]) => ({ name, value, type: typeof value === 'number' ? (Number.isInteger(value) ? 'int' : 'float') : typeof value === 'boolean' ? 'bool' : 'string' }));
 const point = (type, x, z, p = {}) => ({ id: nextId++, name: '', type, x: toPx(x), y: toPx(z), point: true, rotation: 0, visible: true, width: 0, height: 0, properties: props(p) });
 const area = (type, x0, z0, x1, z1, p = {}, name = '') => ({ id: nextId++, name, type, x: toPx(Math.min(x0, x1)), y: toPx(Math.min(z0, z1)), width: Math.abs(x1 - x0) * PX, height: Math.abs(z1 - z0) * PX, rotation: 0, visible: true, properties: props(p) });
-const hedge = (x0, z0, x1, z1) => objects.push(area('hedge', x0, z0, x1, z1));
+const hedge = (x0, z0, x1, z1, p = {}) => objects.push(area('hedge', x0, z0, x1, z1, p));
 const line = (type, pts, p = {}) => ({ id: nextId++, name: '', type, x: toPx(pts[0][0]), y: toPx(pts[0][1]), polyline: pts.map(([x, z]) => ({ x: (x - pts[0][0]) * PX, y: (z - pts[0][1]) * PX })), rotation: 0, visible: true, width: 0, height: 0, properties: props(p) });
 const objects = [], interact = [], labels = [], paths = [], spawn = [];
 const O = (piece, x, z, p = {}) => objects.push(point(piece, x, z, p));
@@ -121,8 +131,9 @@ O('hideout_house', -13, -11, { rot: 0 });
 // school friends hang out inside the bedroom (seat/stand/lean, little roaming)
 route('tahiti_sf1', [[-10.45, -14.6]], { idles: 'sit', faces: '-90' });                        // on the bed
 route('tahiti_sf2', [[-13.4, -14.6], [-15.6, -12.0]], { idles: 'look,phone', faces: '0,90' });  // by the wardrobe
-route('tahiti_sf3', [[-6.05, -25.3]], { idles: 'type', faces: '20' });                           // Jeswin works outdoors, at his studio forecourt (see below)
+route('tahiti_sf3', [[6.7, -31.7]], { idles: 'type', faces: '0', visitSpot: '6.7,-29.8' });                            // Jeswin works outdoors beside his drafting desk, clear of fountain
 route('tahiti_sf4', [[-7.6, -7.35]], { idles: 'sit', faces: '180' });                           // at the small table
+route('tahiti_sf6', [[-22.62, 0.06]], { idles: 'look', faces: '149' });                         // Vijay reads at his news corner
 interact.push(point('group', -13.0, -10.6, { id: 'vanderlinde', title: 'Join the gang' }));
 // personal corners: Jeswin's drafting desk, Arok's stream desk, Prince's game corner (inside),
 // Guru's laptop + blue scooter (his own corner outside the east wall), Shabeer's photo table (his own corner outside the west wall)
@@ -138,22 +149,23 @@ labels.push(point('label', 14, -3, { text: "EUPHONIUM VILLA", color: '#2a2440', 
 route('tahiti_cf1', [[23.3, -2.0]], { idles: 'gaze', faces: '90' });                              // at the railing, facing the ocean
 route('tahiti_cf2', [[7.6, 8.5]], { idles: 'film', faces: '45' });                                  // at photo station beside the path facing camera
 route('tahiti_cf3', [[20.5, -4.5]], { idles: 'sit', faces: '-90' });
-route('tahiti_cf4', [[19.6, -6.4]], { idles: 'look', faces: '0' });
+route('tahiti_cf4', [[19.5, -13.35]], { idles: 'sit', faces: '0' });
 route('tahiti_cf5', [[16.9, 14.15]], { idles: 'sittype', faces: '180' });                            // at his gaming station with TV, console & controllers
 route('tahiti_cf6', [[21.6, 1.4]], { idles: 'phone', faces: '90' });
 route('tahiti_cf7', [[4.6, 9.2], [18.2, -1.0]], { idles: 'film,gaze', faces: '45,90' });          // at photography workstation and ocean terrace
 route('tahiti_cf8', [[17.4, -1.6]], { idles: 'phone', faces: '135' });
+route('tahiti_cf10', [[-32.0, 5.0]], { idles: 'study', faces: '0', visitSpot: '-32.0,7.15' });    // Harish studies at his outdoor table
+O('study_corner', -32.0, 5.0);
 // Siva keeps his stock-market board inside the hedge (see below)
 interact.push(point('group', 21.4, -2.6, { id: 'outlaws', title: 'Join Euphonium' }));
 
 // ---- Finance & Ideas: Siva inside the hedge, Shabeer in north lawn ----
 // Boards face the default camera (south-east), character faces camera beside the board.
-const FIN = { siva: [4.2, 2.6], shab: [9.0, -22.5] };   // Siva: inside the hedge; Shabeer: north lawn beside the Outlaws court
-const finNpc = ([bx, bz]) => [+(bx + 2.2 * Math.SQRT1_2 + 0.55 * Math.SQRT1_2).toFixed(2), +(bz - 2.2 * Math.SQRT1_2 + 0.55 * Math.SQRT1_2).toFixed(2)];
-O('finance_stock', ...FIN.shab, { rot: -45 });      // Shabeer: stock-trading desk
+const FIN = { siva: [4.2, 2.6], shab: [8.0, -22.6] };   // Siva: inside the hedge; Shabeer: north lawn beside the Outlaws court
+O('finance_stock', ...FIN.shab, { rot: 0 });      // Shabeer: stock-trading desk aligned straight with grass plot
 O('finance_savings', ...FIN.siva, { rot: -45 });    // Siva: investing / wealth board inside the hedge
 route('tahiti_cf9', [[6.4, 4.2]], { idles: 'look', faces: '45' });
-route('tahiti_sf5', [finNpc(FIN.shab)], { idles: 'look', faces: '45' });
+route('tahiti_sf5', [[10.2, -22.05]], { idles: 'look', faces: '0', visitSpot: '10.2,-20.25' });
 
 // ---- Vanderlinde land: their own campfire beside the road ----
 O('campfire', -16.4, -3.6);   // front courtyard (was round the west side)
@@ -174,8 +186,8 @@ hedge(-25.2, -2.5, -24.4, 2.2);    // west border (south of west entrance)
 hedge(-25.2, -16.0, -24.4, -4.5);  // west border (north of west entrance) up to the north run, around Shabeer's photo corner
 
 // Compound 2: The Outlaws' Villa and outdoor activity yard
-hedge(10.0, -18.5, 24.5, -17.7);   // north border of photo/food yard along north ring road
-hedge(23.7, -18.5, 24.5, -8.0);    // east border of photo yard down to deck
+hedge(16.0, -17.5, 24.5, -16.7, { courtL: 'main' });   // north border of photo/food yard (seamless L-hedge beside court)
+hedge(23.7, -16.7, 24.5, -8.0, { courtL: 'sub' });    // east border down to deck (clean 90° corner, no overlap, no extra strip)
 hedge(23.7, -8.0, 24.5, 6.2);      // east border along wooden deck
 hedge(20.0, 5.4, 24.5, 6.2);       // south border right of deck stairs
 // deck stairs open from x = 16.5 to 20.0 (unobstructed landing)
@@ -191,31 +203,35 @@ labels.push(point('label', -11, -24, { text: 'VANDERLINDE GARDEN', color: '#5a3a
 // ---- Vanderlinde banyan hangout (west) ----
 O('banyan', -36.5, -1.5); O('bench', -36.5, 2.2, { rot: 180 }); O('lantern_post', -33.2, -3.2);
 for (const [x, z] of [[-38, -8], [-34, 6], [-39, 4], [-31, -9]]) O('tree_palm', x, z, { scale: 0.95 });
-// ---- Jeswin's architecture studio: a broad stepped building at the north edge of the Vanderlinde garden,
-// facing south, with his open-air workstation on the lawn in front of it and his black bike beside the entrance ----
-O('architecture_studio', -2.4, -30.6, { w: 12, d: 4.8 });
-O('architect_workspace', -6.6, -25.6);
-O('shrub', -5.2, -27.3, { scale: 0.7 }); O('shrub', 0.5, -27.3, { scale: 0.7 });
-O('parking_pad', 2.9, -26.9);
-interact.push(point('vehicle', 2.9, -26.9, { id: 'moto-jeswin', vtype: 'moto', rot: 90, color: '#17171c', style: 'shine', name: "Jeswin's black bike" }));
+// ---- Jeswin's architecture studio: moved farther back toward the beach,
+// opening up the fountain side for the continuous vehicle road ----
+O('architecture_studio', 2.0, -34.5, { w: 12, d: 4.8 });
+O('architect_workspace', 6.0, -32.0);
+O('shrub', -4.2, -32.2, { scale: 0.7 }); O('shrub', 8.2, -32.2, { scale: 0.7 });
+O('parking_pad', 9.5, -31.5);
+interact.push(point('vehicle', 9.5, -31.5, { id: 'moto-jeswin', vtype: 'moto', rot: 90, color: '#17171c', style: 'shine', name: "Jeswin's black bike" }));
 // ---- neutral fountain plaza ----
 O('fountain', 0.5, -22);
-O('bench', 0.5, -18.5, { rot: 180 });
-O('bench', 0.5, -25.5, { rot: 0 });
 O('bench', -3.0, -22, { rot: 90 });
 O('bench', 4.0, -22, { rot: -90 });
-for (const [x, z] of [[7.4, -25.0], [-4, -17.5], [5, -17.5]]) O('tree_round', x, z, { scale: 0.9 });
+// Tree moved from (11.5, -24.0) to (16.5, -25.5) so Shabeer and his trading setup are 100% visible from camera
+// Note: [-2.0, -16.0] (tree tucked into right corner of Vanderlinde hedge) removed along with its collider
+for (const [x, z] of [[16.5, -25.5], [3.0, -16.0]]) O('tree_round', x, z, { scale: 0.9 });
 O('flower_patch', -2.6, -18.6, { w: 2, d: 1 }); O('flower_patch', 3.6, -18.6, { w: 2, d: 1 });
 O('lamp', -2.0, -14); O('lamp', 3.0, -9);
 // ---- Outlaws outdoors: half court, firepit lounge, hammocks, snack cart ----
-O('basketball_court', 18, -24.5, { w: 8, d: 7 });
-O('hoop', 18, -27.6, { rot: 0 });
+// Anu's basketball court shifted slightly to the right, closer to the ocean with a strip of dry ground
+O('basketball_court', 23, -24.5, { w: 8, d: 7 });
+O('hoop', 23, -27.6, { rot: 0 });
+// Palm beside the hoop moved onto nearby grass east of the court, keeping hoop fully visible and court lines clear
+O('tree_palm', 30.5, -28.0, { scale: 0.95 });
 O('campfire', 28, -14); O('bench', 28, -16.5, { rot: 0 }); O('bench', 30.5, -14, { rot: -90 });
 O('hammock', 27, 14); O('hammock', 31, 17, { rot: 30 });
 for (const [x, z] of [[24.6, 14], [29.6, 11.6], [33.4, 18], [26, 19]]) O('tree_palm', x, z, { scale: 1 });
-for (const [x, z] of [[24, -24], [30, -22], [14, -32], [26, -30], [32, -6], [28, -2], [16, 24], [22, 26], [12, 26]]) O(z < 0 ? 'tree_round' : 'tree_palm', x, z, { scale: 0.95 });
-O('flower_patch', 25.6, 5.0, { w: 2, d: 1 }); O('lantern_post', 27.2, -10.6); O('lantern_post', 22.6, -21);
-labels.push(point('label', 22.9, -20.4, { text: 'EUPHONIUM COURT', color: '#2a2440', height: 1.6 }));   // beside the court's south-east corner, clear of Anu's bubble
+// Trees crowding the right sideline moved onto nearby grass (x >= 32), keeping trunks, branches, and colliders clear of court and entrance
+for (const [x, z] of [[32.5, -21.0], [32.5, -24.5], [32.0, -30.0], [32, -6], [28, -2], [16, 24], [22, 26], [12, 26]]) O(z < 0 ? 'tree_round' : 'tree_palm', x, z, { scale: 0.95 });
+O('flower_patch', 25.6, 5.0, { w: 2, d: 1 }); O('lantern_post', 27.2, -10.6); O('lantern_post', 28.5, -21.0);
+labels.push(point('label', 28.8, -20.4, { text: 'EUPHONIUM COURT', color: '#2a2440', height: 1.6 }));   // beside the court's south-east corner on grass, clear of court and entrance
 // ---- neutral south-west and south-east: palm groves ----
 for (const [x, z] of [[-30, 22], [-24, 26], [-34, 16], [-18, 28], [-36, 24], [24, 22], [28, 26], [18, 30], [30, 20]]) O('tree_palm', x, z, { scale: 0.9 });
 for (const [x, z] of [[-28, 28], [20, 28]]) O('rock', x, z, { scale: 1 });
@@ -242,7 +258,7 @@ O('shrub', 15.6, 7.8); O('shrub', 21.6, 5.2, { scale: 0.8 }); O('shrub', 9.6, 1.
 for (let a = 0; a < Math.PI * 2; a += 0.21) {
   const r = islandR(a) - 6.2, x = Math.cos(a) * r, z = Math.sin(a) * r;
   const near = (cx, cz, rr) => Math.hypot(x - cx, z - cz) < rr;
-  if (near(-14, 15, 15) || near(-14, 12, 9) || near(20, -2, 9) || near(21, 8, 5) || near(-13, -8, 11) || inArc(a > Math.PI ? a - 2 * Math.PI : a, -2.95, -2.0) || inArc(a > Math.PI ? a - 2 * Math.PI : a, -0.5, 0.5) || inArc(a, 1.1, 2.05)) continue;
+  if (near(-14, 15, 15) || near(-14, 12, 9) || near(20, -2, 9) || near(21, 8, 5) || near(-13, -8, 11) || near(2, -34.5, 9) || near(23, -24.5, 9) || inArc(a > Math.PI ? a - 2 * Math.PI : a, -2.95, -2.0) || inArc(a > Math.PI ? a - 2 * Math.PI : a, -0.5, 0.5) || inArc(a, 1.1, 2.05)) continue;
   const i = Math.round(a / 0.21);
   if (i % 5 === 0) O('rock', +x.toFixed(2), +z.toFixed(2), { scale: 0.8 + (i % 4) * 0.15 });
   else O('tree_palm', +x.toFixed(2), +z.toFixed(2), { scale: 0.85 + (i % 5) * 0.06 });
@@ -263,9 +279,9 @@ O('volley_net', ...COURTS[0].c, { len: 6.8, L: 11, rot: COURTS[0].rot }); A('vol
 O('volley_net', ...COURTS[1].c, { len: 6.8, L: 11, rot: COURTS[1].rot }); A('volley', 35.3, -16.9, { id: 'volley-ol', gang: 'ol', title: 'Euphonium volleyball' });
 // Euphonium yard: Sathesh + Shabesh's photo corner beside the path; Akshai's gaming station at west lawn
 O('photo_station', 6.0, 9.0); A('photosession', 6.0, 11.0, { id: 'photosession', gang: 'ol', title: 'Photography session' });
-O('contest_table', 19.5, -12.5); A('foodcontest', 18.6, -14.2, { id: 'foodcontest', gang: 'ol', title: 'Food challenge' });
+O('contest_table', 19.5, -12.5); A('foodcontest', 19.5, -11.2, { id: 'foodcontest', gang: 'ol', title: 'Food challenge' });
 O('tv_corner', 17.5, 13.0); A('tvgame', 19.4, 13.2, { id: 'tvgame', gang: 'ol', title: 'Play with Akshai' });
-A('anuhoop', 18.0, -22.5, { id: 'anuhoop', gang: 'ol', title: 'Play basketball with Anu' });
+A('anuhoop', 23.0, -22.5, { id: 'anuhoop', gang: 'ol', title: 'Play basketball with Anu' });
 // treasure hunt: clue board at the junction, five chests hidden around the island
 O('clue_board', -4.4, -1.6); A('clues', -4.4, -0.6, { title: 'Treasure hunt clues' });
 for (const [id, x, z] of [['palm', -8.6, 0.8], ['beach', 11.6, 35.4], ['stairs', 21.6, 9.6], ['rock', -24.2, 8.2], ['hideout', -22.0, -4.2]]) { O('treasure_chest', x, z); A('treasure_item', x + 0.6, z + 0.6, { id: 'treasure-' + id, treasure: id, title: 'Something shiny' }); }

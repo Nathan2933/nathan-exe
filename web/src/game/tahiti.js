@@ -36,11 +36,11 @@ const AVOID = { tahiti_cf1: 'tahiti_cf2', tahiti_cf2: 'tahiti_cf1' };
 const ACTIVITIES = {
   vg: {
     // personal routines: only the owner uses these, and they come back to them between roams
-    drafting: { w: 5, owner: 'tahiti_sf3', slots: [[-6.05, -25.3, 'type', 20]], poses: ['type', 'type', 'look', 'type'], lines: ["Something that won't collapse after one update.", 'Measure twice, build once.'] },
+    drafting: { w: 5, owner: 'tahiti_sf3', slots: [[6.7, -31.7, 'type', 0]], poses: ['type', 'type', 'look', 'type'], lines: ["Something that won't collapse after one update.", 'Measure twice, build once.'] },
     stream: { w: 5, owner: 'tahiti_sf4', slots: [[-18.45, -7.4, 'sittype', -90]], lines: ['Chat, say hi to Nathan!', "We're live!", 'Thanks for the follow!'] },
     gaming: { w: 5, owner: 'tahiti_sf2', slots: [[-16.6, -8.65, 'sittype', 180]], lines: ['One more round.', 'Arok, did you see that?', 'Clutch!'] },
     coding: { w: 5, owner: 'tahiti_sf1', slots: [[-4.5, -6.0, 'sittype', 180]], lines: ['Just one more commit.', "It works. Don't touch it."] },
-    finance_sh: { w: 5, owner: 'tahiti_sf5', slots: [[10.94, -23.67, 'look', 45]], poses: ['look', 'phone', 'look', 'type'], lines: ['Another week, another deposit.', 'Look at that progress bar.', 'Budget first, fun second.', 'Small coins, big goals.'] },
+    finance_sh: { w: 5, owner: 'tahiti_sf5', slots: [[10.2, -22.05, 'look', 0]], poses: ['look', 'phone', 'look', 'type'], lines: ['Another week, another deposit.', 'Look at that progress bar.', 'Budget first, fun second.', 'Small coins, big goals.'] },
     news: { w: 5, owner: 'tahiti_sf6', slots: [[-22.62, 0.06, 'look', 149]], poses: ['look', 'look', 'cheer', 'phone', 'look'], lines: ['Tea first, world problems later.', 'Page three has opinions. Strong ones.', 'Nobody is wrong until the tea cools.', 'Good paper. Questionable crossword.'] },
     photowalk: { w: 2, owner: 'tahiti_sf5', roam: true, slots: [[-12.4, -23.6, 'film', 150], [...on('vg', 2.8, 1.2), 'film', seaFace('vg')], [-14.6, -2.2, 'film', 200]], lines: ['Golden hour. Perfect.', 'Got it.'] },
     rest: { w: 4, owner: 'harris', slots: [[-9.25, -14.05, 'sleep', 0, { bed: { y: 0.83, approach: [-11.1, -14.05] } }]], lines: ['Five minutes. Then I fly.', "Pilot's break.", 'Zzz...'] },
@@ -59,12 +59,12 @@ const ACTIVITIES = {
     lounge: { w: 1, slots: [[22.6, 0.2, 'sit', -90, { free: true }], [22.6, 2.2, 'sit', -90, { free: true }]], lines: ['Wake me up for food.'] },
     beach: { w: 2, slots: [[...on('ol', -2, 1.5), 'look', seaFace('ol')], [...on('ol', -1.2, BEACH.ol.sea), 'swim', seaFace('ol'), { free: true, water: true }], [...on('ol', 1.6, BEACH.ol.sea), 'swim', seaFace('ol') + 20, { free: true, water: true }], [...on('ol', 2.4, 1.5), 'cheer', seaFace('ol')], [...on('ol', 0.4, 0.2), 'sit', seaFace('ol'), { free: true }]], lines: ['Last one in buys dinner!', 'This beach is ours.', 'Sun, sand, zero emails.'] },
     // personal stations: Anu's court, the photo corner, Akshay's TV, the volleyball three
-    hoop: { w: 2, owner: 'tahiti_cf1', slots: [[18.0, -24.4, 'cheer', 180]], lines: ['Swish!', 'Nothing but net.', 'Airball. Again.'] },
+    hoop: { w: 2, owner: 'tahiti_cf1', slots: [[23.0, -24.4, 'cheer', 180]], lines: ['Swish!', 'Nothing but net.', 'Airball. Again.'] },
     photo_sa: { w: 5, owner: 'tahiti_cf7', slots: [[4.6, 9.2, 'film', 45]], poses: ['film', 'look', 'phone', 'film', 'look'], lines: ['Let me fix the white balance.', 'Shutter at 1/250. Nice.', 'Shabesh, look at this frame.'] },
     photo_sh: { w: 5, owner: 'tahiti_cf2', slots: [[7.6, 8.5, 'film', 45]], poses: ['look', 'film', 'phone', 'cheer', 'film'], lines: ['Okay that one is wallpaper material.', 'Sathesh, check the light over there.', 'Hold on, reviewing the shots.'] },
     photowalk_ol: { w: 3, owners: ['tahiti_cf2', 'tahiti_cf7'], roam: true, slots: [[...on('ol', -4, 1.0), 'film', seaFace('ol')], [26.6, -17.8, 'film', 200], [7.5, -9.5, 'film', 250], [32.6, -15.0, 'film', 90]], lines: ['Golden hour!', 'One for the album.', 'Look at that sky.'] },
     finance_sv: { w: 5, owner: 'tahiti_cf9', slots: [[6.4, 4.2, 'look', 45]], poses: ['look', 'phone', 'look', 'type'], lines: ['Green day. Stay patient.', 'Diversify, then leave it alone.', 'Wealth is what you do not need.', 'Check the ledger, not the noise.'] },
-    feast: { w: 5, owner: 'tahiti_cf4', slots: [[18.6, -12.35, 'eat', 180]], poses: ['eat', 'eat', 'sit', 'eat', 'cheer'], lines: ['Round two of snacks.', 'This is training. For the contest.', 'Who wants to challenge me?', 'Mmm. Undefeated.'] },
+    feast: { w: 5, owner: 'tahiti_cf4', slots: [[19.5, -13.35, 'sit', 0]], poses: ['sit'], lines: ['Round two of snacks.', 'This is training. For the contest.', 'Who wants to challenge me?', 'Mmm. Undefeated.'] },
     tvgame: { w: 5, owner: 'tahiti_cf5', slots: [[16.9, 14.15, 'sittype', 150]], poses: ['sittype', 'sittype', 'cheer', 'sittype'], lines: ['Boss level!', 'Nathan, grab the other controller.', 'NO. One more try.', 'High score!'] },
     firepit: { w: 2, slots: [[28.0, -16.2, 'sing', 0, { free: true }], [30.2, -14.0, 'sing', -90, { free: true }], [25.8, -14.0, 'sing', 90, { free: true }], [28.0, -12.2, 'sit', 180]], lines: ['Fire\'s perfect tonight.', '♪ one more song ♪', 'Who\'s got the marshmallows?'] },
     volley: { w: 3, owners: ['tahiti_cf3', 'tahiti_cf6', 'tahiti_cf8'], slots: volleySlots('ol'), lines: ['Mine!', 'Set it up!', 'Spike it!', 'Out! That was out!'] },
@@ -631,7 +631,18 @@ export function createTahiti(ctx) {
       if (hIt) {
         hIt.brain = true; hIt.seated = true; hIt.radius = 3.0;
         hIt.ringAt = { x: STUDY.ring.x, z: STUDY.ring.z }; hIt.approach = { x: STUDY.ring.x, z: STUDY.ring.z - 0.1 }; hIt.visitSpot = { x: STUDY.ring.x, z: STUDY.ring.z };
+        const gp = hIt.character.group.position;
+        gp.x = STUDY.seat.x; gp.z = STUDY.seat.z; gp.y = ctx.heightAt(gp.x, gp.z);
+        hIt.character.pose = 'study';
+        hIt.character.heading = (STUDY.face * Math.PI) / 180;
+        hIt.beacon.group.visible = true;
+        hIt.beacon.group.position.set(STUDY.ring.x, ctx.heightAt(STUDY.ring.x, STUDY.ring.z) + 0.04, STUDY.ring.z);
+        hIt.hit.position.set(gp.x, 1.1, gp.z);
         study = { it: hIt, mode: 'read', until: 0, wasTalking: false, writeT: 0, upT: 0 };
+      }
+      const jesIt = ctx.world.npcs.find((it) => it.npcId === 'tahiti_sf3');
+      if (jesIt) {
+        jesIt.visitSpot = { x: 6.7, z: -29.8 };
       }
       brains = ctx.world.npcs.filter((it) => it.npcId !== HARISH && (it.npcId === 'harris' || it.npcId.startsWith('tahiti_'))).map((it) => {
         const group = it.npcId.startsWith('tahiti_cf') ? 'ol' : 'vg';
@@ -2037,8 +2048,8 @@ export function createTahiti(ctx) {
     const th = brainOf('tahiti_cf4');
     if (!th) return;
     const ROUND = 10, ep = epoch;
-    state.joined = { x: 18.6, z: -14.05, pose: 'eat', face: 0, swim: false }; state.path = [];
-    bring(th, 18.6, -12.35, 'eat', 180);
+    state.joined = { x: 19.5, z: -11.65, pose: 'eat', face: Math.PI, swim: false }; state.path = [];
+    bring(th, 19.5, -13.35, 'sit', 0);
     bubble(th.it, rand(['You sure about this?', 'I was born for this.', 'Pull up a chair.']), 2.6);
     ctx.minigame(`<h2>Food challenge vs Thianish</h2><p class="muted">Press SPACE (or tap BITE) when the marker is over the plate. Ten seconds.</p>
       <div class="feast-bar" style="position:relative;height:22px;background:#2a2440;border:2px solid #fff6e6;margin:10px 0;image-rendering:pixelated"><i id="feast-zone" style="position:absolute;top:0;bottom:0;background:#6fbf4a"></i><b id="feast-mark" style="position:absolute;top:-4px;bottom:-4px;width:6px;background:#ffd257"></b></div>
@@ -2372,9 +2383,9 @@ export function createTahiti(ctx) {
   // Shootout (E at the court): Nathan and up to three Outlaws, three rounds,
   // one shooter at a time. Nathan stands on the ring and presses Space when
   // the meter is in the green.
-  const RIM = V(18, -26.94), RIM_Y = 2.45;
+  const RIM = V(23.0, -26.94), RIM_Y = 2.45;
   const SPOTS = [-50, -25, 0, 25, 50].map((d) => { const a = (d * Math.PI) / 180; return V(RIM.x + Math.sin(a) * 3.8, RIM.z + Math.cos(a) * 3.8); });
-  const SIDELINE = [V(14.8, -22.4), V(21.2, -22.4), V(14.8, -24.2)];
+  const SIDELINE = [V(19.8, -22.4), V(26.2, -22.4), V(19.8, -24.2)];
   const bb = { mesh: null, ring: null, q: [], cur: null, hold: null, x: RIM.x, y: 0.15, z: RIM.z - 1, busy: false, wait: 1, idx: 0 };
   function hoopMesh() {
     const m = new THREE.Mesh(new THREE.IcosahedronGeometry(0.15, 1), new THREE.MeshLambertMaterial({ color: 0xe0702a }));
@@ -2447,8 +2458,8 @@ export function createTahiti(ctx) {
   }
 
   // the court plus a margin for the ball path and the south entrance (x 17-18): nobody parks or idles in here during practice
-  const inCourtZone = (x, z) => x > 11.5 && x < 24.5 && z > -30.5 && z < -18.2;
-  const PRACTICE_SPOTS = [[26.5, -22.5], [26.5, -19.5], [9.5, -22.5], [9.5, -19.5], [27, -17], [9, -17]];
+  const inCourtZone = (x, z) => x > 16.5 && x < 29.5 && z > -30.5 && z < -18.2;
+  const PRACTICE_SPOTS = [[31.5, -22.5], [31.5, -19.5], [14.5, -22.5], [14.5, -19.5], [32, -17], [14, -17]];
   let hoopMenu = false, hoopBeacons = null;
   function startShootout(opts = {}) {
     hoopMenu = false;

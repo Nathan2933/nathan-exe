@@ -717,8 +717,61 @@ export const KIT = {
     sign.position.set(0, 1.81, 0.08); g.add(sign);
     return { obj: g, colliders: [{ x: -0.9, z: 0, r: 0.15 }, { x: 0.9, z: 0, r: 0.15 }] };
   },
-  hedge({ w = 1, d = 1 }) {
+  hedge({ w = 1, d = 1, courtL = null } = {}) {
+    if (courtL === 'sub') {
+      return { obj: new THREE.Group(), colliders: [{ x: 0, z: 0, w, d }] };
+    }
     const g = new THREE.Group(), k = kit(g);
+    if (courtL === 'main') {
+      // Scoped L-shaped hedge beside Euphonium Court (food contest yard):
+      // Leg 1 (North border): x: 16.0..24.5, z: -17.5..-16.7 (w = 8.5, d = 0.8)
+      // Leg 2 (East border):  x: 23.7..24.5, z: -16.7..-8.0  (w = 0.8, d = 8.7)
+      // Local origin of object: x = 20.25, z = -17.10
+      // Base: height = 0.9m, uniform 0.8m width throughout both legs and the corner
+      // Cap:  height = 0.18m (at y = 0.9m), uniform 0.86m width (0.03m overhang), one continuous top surface at y = 1.08m
+      // Zero overlapping geometry, zero extra strip, clean 90° corner.
+      const baseShape = new THREE.Shape();
+      baseShape.moveTo(-4.25, -0.40);
+      baseShape.lineTo(3.45, -0.40);
+      baseShape.lineTo(3.45, -9.10);
+      baseShape.lineTo(4.25, -9.10);
+      baseShape.lineTo(4.25, 0.40);
+      baseShape.lineTo(-4.25, 0.40);
+      baseShape.closePath();
+
+      const baseGeo = new THREE.ExtrudeGeometry(baseShape, { depth: 0.9, bevelEnabled: false });
+      baseGeo.rotateX(-Math.PI / 2);
+      k.mesh(baseGeo, C.leafDark, 0, 0, 0);
+
+      const capShape = new THREE.Shape();
+      capShape.moveTo(-4.28, -0.43);
+      capShape.lineTo(3.42, -0.43);
+      capShape.lineTo(3.42, -9.13);
+      capShape.lineTo(4.28, -9.13);
+      capShape.lineTo(4.28, 0.43);
+      capShape.lineTo(-4.28, 0.43);
+      capShape.closePath();
+
+      const capGeo = new THREE.ExtrudeGeometry(capShape, { depth: 0.18, bevelEnabled: false });
+      capGeo.rotateX(-Math.PI / 2);
+      k.mesh(capGeo, C.leaf, 0, 0.9, 0);
+
+      // Berry / flower dots along the visible faces of both legs:
+      // North leg south face (local z = +0.40 + 0.01, local x from -4.25 to 3.45, length = 7.7m)
+      const nNorth = Math.floor(7.7 / 1.7);
+      for (let i = 0; i < nNorth; i++) {
+        const t = (i + 0.5) / nNorth - 0.5;
+        k.box(0.12, 0.12, 0.12, i % 2 ? C.pink : C.cream, -0.4 + t * 7.7, 0.62, 0.41, { shadow: false });
+      }
+      // East leg west face (local x = 3.45 - 0.01, local z from +0.40 to +9.10, length = 8.7m)
+      const nEast = Math.floor(8.7 / 1.7);
+      for (let i = 0; i < nEast; i++) {
+        const t = (i + 0.5) / nEast - 0.5;
+        k.box(0.12, 0.12, 0.12, (i + 1) % 2 ? C.pink : C.cream, 3.44, 0.62, 4.75 + t * 8.7, { shadow: false });
+      }
+
+      return { obj: g, colliders: [{ x: 0, z: 0, w: 8.5, d: 0.8 }] };
+    }
     k.box(w, 0.9, d, C.leafDark, 0, 0, 0);
     k.box(w + 0.06, 0.18, d + 0.06, C.leaf, 0, 0.9, 0);
     // a few berry/flower dots for texture
@@ -4280,11 +4333,12 @@ export const KIT = {
     return { obj: g, colliders: [{ x: 0, z: 0, w: 1.1, d: 0.6 }, { x: tx, z: tz, r: 0.25 }], animate: (t) => screen.material.color.setHex(shots[Math.floor(t / 2.5) % 4]) };
   },
   contest_table() {
-    // Thianesh's food-contest station: long table, plates of snacks, two stools, a sign on a stone platform
+    // Thianesh's food-contest station: long table, plates of snacks, two chairs, a sign on a stone platform
     const g = new THREE.Group(), k = kit(g);
     // Coherent stone paved contest platform
-    k.box(3.4, 0.04, 2.4, 0xdcd8d0, 0.2, 0, 0);
-    k.box(3.48, 0.02, 2.48, 0xbab6ae, 0.2, 0, 0, { shadow: false });
+    k.box(3.4, 0.04, 2.7, 0xdcd8d0, 0, 0, 0);
+    k.box(3.48, 0.02, 2.78, 0xbab6ae, 0, 0, 0, { shadow: false });
+    // Dining table
     k.box(1.8, 0.7, 0.8, 0xb07a4a, 0, 0, 0); k.box(1.86, 0.04, 0.86, 0xfff6e6, 0, 0.7, 0);
     k.box(1.86, 0.02, 0.1, 0xc4302b, 0, 0.72, 0, { shadow: false });
     for (const [x, z] of [[-0.5, 0.22], [0.5, 0.22], [-0.5, -0.22], [0.5, -0.22]]) {
@@ -4292,7 +4346,20 @@ export const KIT = {
       [0xffd257, 0xe0702a, 0x6fbf4a].forEach((c, i) => k.box(0.09, 0.07, 0.09, c, x - 0.07 + i * 0.07, 0.77 + (i % 2) * 0.05, z, { ry: i, shadow: false }));
     }
     k.cyl(0.14, 0.12, 0.18, 0xffd08a, 0, 0.74, 0, 8);
-    for (const z of [0.85, -0.85]) { k.cyl(0.22, 0.2, 0.42, 0x3d4058, 0, 0, z, 10); k.cyl(0.24, 0.24, 0.05, 0x2f8f9a, 0, 0.42, z, 10); }
+    // Two comfortable chairs aligned with the table:
+    // North chair (z = -0.85): faces south towards the table (+z). Seat at y = 0.40, backrest behind at z = -1.07.
+    // South chair (z = 0.85): faces north towards the table (-z). Seat at y = 0.40, backrest behind at z = 1.07.
+    const chair = (z, dir) => {
+      for (const [dx, dz] of [[-0.2, -0.19], [0.2, -0.19], [-0.2, 0.19], [0.2, 0.19]]) {
+        k.box(0.06, 0.4, 0.06, 0x5a3a26, dx, 0, z + dz);
+      }
+      k.box(0.50, 0.05, 0.46, 0xb07a4a, 0, 0.38, z);
+      k.box(0.46, 0.03, 0.42, 0x2f8f9a, 0, 0.42, z, { shadow: false });
+      k.box(0.48, 0.44, 0.06, 0x5a3a26, 0, 0.42, z - dir * 0.22);
+      k.box(0.40, 0.12, 0.04, 0x2f8f9a, 0, 0.62, z - dir * 0.20, { shadow: false });
+    };
+    chair(-0.85, 1);
+    chair(0.85, -1);
     k.box(0.08, 1.5, 0.08, 0x6f4a30, 1.25, 0, 0);
     const s = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.3), new THREE.MeshBasicMaterial({ map: signTexture('FOOD CONTEST', { fg: '#ffd257', bg: '#c4302b', w: 128, h: 40, size: 16 }), side: THREE.DoubleSide }));
     s.position.set(1.25, 1.42, 0); s.rotation.y = Math.PI / 2; g.add(s);
@@ -4345,57 +4412,71 @@ export const KIT = {
     return { obj: g, colliders: [{ x: 0.1, z: -0.05, w: 1.0, d: 0.6 }, { x: -0.75, z: 0.55, r: 0.25 }] };
   },
   finance_stock() {
-    // Shabeer's STOCK TRADING setup: a compact dark-navy desk with two small angled monitors (red/green candlesticks
-    // and a scrolling market ticker), a keyboard and a trading notebook, cyan accents, a low stool. No upright board.
+    // Shabeer's STOCK TRADING setup: charcoal monitor frames, dark screens with muted green & amber chart lines,
+    // warm tan and olive setup covers matching Tahiti's palette, keyboard and trading notebook, low stool.
     // Face is local +z; the NPC stands at local x +2.2 (clear of the desk).
     const g = new THREE.Group(), k = kit(g);
-    const NAVY = 0x14213d, NAVY2 = 0x1d2b4d, INK = 0x0b1222, CY = 0x22d3ee;
-    k.box(4.4, 0.04, 2.7, 0x56688c, 0.0, 0, 0.55);
-    k.box(4.4, 0.025, 0.06, CY, 0.0, 0.04, 1.87, { shadow: false }); k.box(4.4, 0.025, 0.06, CY, 0.0, 0.04, -0.77, { shadow: false });
-    // desk: top, two side panels, cyan front trim
-    k.box(2.4, 0.07, 0.95, NAVY2, -0.4, 0.74, 0.5);
-    for (const x of [-1.52, 0.72]) k.box(0.08, 0.74, 0.85, NAVY, x, 0, 0.5);
-    k.box(2.4, 0.035, 0.03, CY, -0.4, 0.74, 0.985, { shadow: false });
-    // two small angled monitors on short necks
+    const CHARCOAL = 0x22252a, DARK_SCREEN = 0x13161a;
+    const MUTED_GREEN = 0x56ab63, AMBER = 0xdf9a34, WICK = 0xdedad2;
+    const WARM_TAN = 0xd2bc98, OLIVE = 0x5c6642, OLIVE_DARK = 0x424a2e, TAN_DARK = 0x8a7252;
+    // Base platform mat: warm tan woven cover with olive perimeter trim
+    k.box(4.4, 0.04, 2.7, WARM_TAN, 0.0, 0, 0.55);
+    k.box(4.4, 0.025, 0.06, OLIVE, 0.0, 0.04, 1.87, { shadow: false }); k.box(4.4, 0.025, 0.06, OLIVE, 0.0, 0.04, -0.77, { shadow: false });
+    // Desk: warm tan/olive covers with olive front trim
+    k.box(2.4, 0.07, 0.95, OLIVE_DARK, -0.4, 0.74, 0.5);
+    for (const x of [-1.52, 0.72]) k.box(0.08, 0.74, 0.85, TAN_DARK, x, 0, 0.5);
+    k.box(2.4, 0.035, 0.03, WARM_TAN, -0.4, 0.74, 0.985, { shadow: false });
+    // Two small angled monitors on short necks with charcoal frames
     const dyn = [], ticks = [];
     const monitor = (x, ry, kind) => {
       const m = new THREE.Group(); m.position.set(x, 0.81, 0.18); m.rotation.y = ry; m.scale.setScalar(1.3); g.add(m);
-      k.box(0.34, 0.03, 0.2, INK, 0, 0, 0, { parent: m });
-      k.box(0.07, 0.2, 0.07, INK, 0, 0.03, 0, { parent: m });
-      k.box(0.92, 0.6, 0.06, INK, 0, 0.23, 0, { parent: m });
-      k.box(0.82, 0.5, 0.03, 0x07162e, 0, 0.28, 0.035, { shadow: false, parent: m });
-      k.box(0.82, 0.02, 0.035, CY, 0, 0.27, 0.04, { shadow: false, parent: m });
+      k.box(0.34, 0.03, 0.2, CHARCOAL, 0, 0, 0, { parent: m });
+      k.box(0.07, 0.2, 0.07, CHARCOAL, 0, 0.03, 0, { parent: m });
+      k.box(0.92, 0.6, 0.06, CHARCOAL, 0, 0.23, 0, { parent: m });
+      k.box(0.82, 0.5, 0.03, DARK_SCREEN, 0, 0.28, 0.035, { shadow: false, parent: m });
+      k.box(0.82, 0.02, 0.035, CHARCOAL, 0, 0.27, 0.04, { shadow: false, parent: m });
       if (kind === 0) {
+        // Candlestick chart: bold muted green and warm amber bars with clear wicks for mobile readability
         const up = [1, 0, 1, 1, 0, 1, 1], hs = [0.1, 0.15, 0.12, 0.2, 0.16, 0.24, 0.3];
         hs.forEach((h, i) => {
-          const px = -0.3 + i * 0.1, c = up[i] ? 0x3ddc6a : 0xff4d5a;
-          k.box(0.015, h + 0.1, 0.015, 0xe6f6ff, px, 0.45, 0.055, { shadow: false, parent: m });
-          const b = k.box(0.065, h, 0.02, c, px, 0.5, 0.06, { shadow: false, parent: m }); b.userData.dynamic = true; dyn.push({ m: b, h, y0: 0.5 });
+          const px = -0.3 + i * 0.1, c = up[i] ? MUTED_GREEN : AMBER;
+          k.box(0.015, h + 0.1, 0.015, WICK, px, 0.45, 0.055, { shadow: false, parent: m });
+          const b = k.box(0.068, h, 0.02, c, px, 0.5, 0.06, { shadow: false, parent: m }); b.userData.dynamic = true; dyn.push({ m: b, h, y0: 0.5 });
         });
       } else {
+        // Trend line chart: warm amber line with muted green and amber volume bars
         const pts = [[-0.34, 0.5], [-0.2, 0.62], [-0.08, 0.55], [0.06, 0.7], [0.2, 0.62], [0.34, 0.78]];
-        for (let i = 0; i < pts.length - 1; i++) { const [x0, y0] = pts[i], [x1, y1] = pts[i + 1]; k.box(Math.hypot(x1 - x0, y1 - y0), 0.025, 0.02, CY, (x0 + x1) / 2, (y0 + y1) / 2, 0.06, { rz: Math.atan2(y1 - y0, x1 - x0), shadow: false, parent: m }); }
-        [[-0.3, 0.1, 0x3ddc6a], [-0.1, 0.07, 0xff4d5a], [0.1, 0.12, 0x3ddc6a], [0.3, 0.06, 0xff4d5a]].forEach(([px, h, c]) => k.box(0.08, h, 0.02, c, px, 0.34, 0.06, { shadow: false, parent: m }));
+        for (let i = 0; i < pts.length - 1; i++) {
+          const [x0, y0] = pts[i], [x1, y1] = pts[i + 1];
+          k.box(Math.hypot(x1 - x0, y1 - y0), 0.028, 0.02, AMBER, (x0 + x1) / 2, (y0 + y1) / 2, 0.06, { rz: Math.atan2(y1 - y0, x1 - x0), shadow: false, parent: m });
+        }
+        [[-0.3, 0.1, MUTED_GREEN], [-0.1, 0.07, AMBER], [0.1, 0.12, MUTED_GREEN], [0.3, 0.06, AMBER]].forEach(([px, h, c]) => k.box(0.08, h, 0.02, c, px, 0.34, 0.06, { shadow: false, parent: m }));
       }
-      // market ticker strip along the bottom of the screen
-      for (let i = 0; i < 8; i++) { const c = k.box(0.085, 0.05, 0.02, 0x3ddc6a, -0.34 + i * 0.097, 0.3, 0.06, { shadow: false, parent: m }); c.userData.dynamic = true; ticks.push({ m: c, i }); }
+      // Market ticker strip along bottom of screen with muted green and amber indicators
+      for (let i = 0; i < 8; i++) {
+        const c = k.box(0.085, 0.05, 0.02, MUTED_GREEN, -0.34 + i * 0.097, 0.3, 0.06, { shadow: false, parent: m });
+        c.userData.dynamic = true; ticks.push({ m: c, i });
+      }
     };
     monitor(-0.95, 0.5, 0); monitor(0.12, -0.28, 1);
-    // keyboard, mouse, trading notebook + pen
-    k.box(0.74, 0.03, 0.26, INK, -0.45, 0.81, 0.72); k.box(0.66, 0.012, 0.03, CY, -0.45, 0.84, 0.64, { shadow: false });
-    for (let r = 0; r < 2; r++) k.box(0.62, 0.012, 0.05, 0x2c3d63, -0.45, 0.84, 0.72 + r * 0.07, { shadow: false });
-    k.box(0.09, 0.03, 0.14, INK, 0.1, 0.81, 0.72);
-    k.box(0.36, 0.035, 0.46, NAVY, 0.52, 0.81, 0.6, { ry: -0.25 }); k.box(0.32, 0.02, 0.42, 0xf6f1e4, 0.52, 0.845, 0.6, { ry: -0.25, shadow: false });
-    k.box(0.36, 0.036, 0.05, CY, 0.5, 0.812, 0.74, { ry: -0.25, shadow: false });
-    for (let i = 0; i < 3; i++) k.box(0.2, 0.006, 0.015, 0x6a7a9a, 0.52, 0.867, 0.46 + i * 0.07, { ry: -0.25, shadow: false });
-    // low stool in front of the desk
-    k.cyl(0.24, 0.24, 0.07, NAVY2, -0.45, 0.4, 1.45, 10); k.cyl(0.05, 0.05, 0.4, INK, -0.45, 0, 1.45, 6); k.cyl(0.2, 0.2, 0.03, CY, -0.45, 0.47, 1.45, 10, { shadow: false });
+    // Keyboard, mouse, trading notebook + pen
+    k.box(0.74, 0.03, 0.26, CHARCOAL, -0.45, 0.81, 0.72); k.box(0.66, 0.012, 0.03, WARM_TAN, -0.45, 0.84, 0.64, { shadow: false });
+    for (let r = 0; r < 2; r++) k.box(0.62, 0.012, 0.05, 0x333740, -0.45, 0.84, 0.72 + r * 0.07, { shadow: false });
+    k.box(0.09, 0.03, 0.14, CHARCOAL, 0.1, 0.81, 0.72);
+    // Warm tan cover notebook with olive strap
+    k.box(0.36, 0.035, 0.46, TAN_DARK, 0.52, 0.81, 0.6, { ry: -0.25 }); k.box(0.32, 0.02, 0.42, 0xf6f1e4, 0.52, 0.845, 0.6, { ry: -0.25, shadow: false });
+    k.box(0.36, 0.036, 0.05, OLIVE, 0.5, 0.812, 0.74, { ry: -0.25, shadow: false });
+    for (let i = 0; i < 3; i++) k.box(0.2, 0.006, 0.015, 0x6a7a72, 0.52, 0.867, 0.46 + i * 0.07, { ry: -0.25, shadow: false });
+    // Low stool in front of the desk: charcoal base, warm olive cushion with tan rim
+    k.cyl(0.24, 0.24, 0.07, OLIVE_DARK, -0.45, 0.4, 1.45, 10);
+    k.cyl(0.05, 0.05, 0.4, CHARCOAL, -0.45, 0, 1.45, 6);
+    k.cyl(0.2, 0.2, 0.03, OLIVE, -0.45, 0.47, 1.45, 10, { shadow: false });
     return {
       obj: g,
       colliders: [{ x: -0.4, z: 0.5, w: 2.4, d: 0.95 }, { x: -0.45, z: 1.45, r: 0.28 }],
       animate: (t) => {
         dyn.forEach((b, i) => { const s = 0.85 + 0.15 * Math.sin(t * 1.8 + i * 1.7); b.m.scale.y = s; b.m.position.y = b.y0 + (b.h * s) / 2; });
-        ticks.forEach(({ m, i }) => m.material.color.setHex(((Math.floor(t * 3) + i * 3) % 5) < 3 ? 0x3ddc6a : 0xff4d5a));
+        ticks.forEach(({ m, i }) => m.material.color.setHex(((Math.floor(t * 3) + i * 3) % 5) < 3 ? MUTED_GREEN : AMBER));
       },
     };
   },
